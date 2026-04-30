@@ -7,7 +7,9 @@ const teacherSchema = new Schema(
     user_id: { type: Types.ObjectId, ref: "User", index: true },
     employee_no: requiredString,
     first_name: requiredString,
-    last_name: requiredString,
+    last_name: { type: String, trim: true, default: "" },
+    phone: requiredString,
+    qualification: { type: String, trim: true, default: "" },
     subjects: [{ type: String, trim: true }],
     class_ids: [{ type: Types.ObjectId, ref: "Class" }],
     status: {

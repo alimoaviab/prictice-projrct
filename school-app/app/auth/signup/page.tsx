@@ -60,9 +60,7 @@ export default function SignupPage() {
                 throw new Error(data.message || "Signup failed");
             }
 
-            const data = await response.json();
-            localStorage.setItem("token", data.token);
-            router.push("/student/dashboard");
+            router.push("/auth/login");
         } catch (err) {
             setError(err instanceof Error ? err.message : "An error occurred");
         } finally {
@@ -82,8 +80,12 @@ export default function SignupPage() {
             }}
         >
             <h1 style={{ ...typography.h2, color: colors.onSurface, marginBottom: spacing.lg }}>
-                Sign Up
+                Account Access
             </h1>
+
+            <p style={{ ...typography.bodyMd, color: colors.onSurfaceVariant, marginBottom: spacing.md }}>
+                New teacher and student accounts are created by the academy administration team.
+            </p>
 
             <form onSubmit={handleSubmit} style={{ display: "grid", gap: spacing.md }}>
                 <Input

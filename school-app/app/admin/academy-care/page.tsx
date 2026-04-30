@@ -1,5 +1,10 @@
+import { SchoolShell } from "../../../layouts/SchoolShell";
 import { AcademyCarePage } from "../../../modules/academyCare/pages/AcademyCarePage";
 
 export default function Page() {
-    return <AcademyCarePage />;
+    return (
+        <SchoolShell eyebrow="Configuration" title="Academy Care">
+            <AcademyCarePage />
+        </SchoolShell>
+    );
 }

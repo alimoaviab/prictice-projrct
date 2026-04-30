@@ -6,7 +6,8 @@ import { colors, layout, spacing, typography } from "@edu/shared/design-system/t
 
 const navItems = [
   { label: "Overview", href: "/admin/dashboard" },
-  { label: "Academy Year", href: "/admin/academy-year" },
+  { label: "Academy Care", href: "/admin/academy-care" },
+  { label: "Academic Years", href: "/admin/academic-years" },
   { label: "Classes", href: "/admin/classes" },
   { label: "Teachers", href: "/admin/teachers" },
   { label: "Students", href: "/admin/students" },
@@ -34,7 +35,8 @@ export function SchoolShell({
         minHeight: "100vh",
         display: "grid",
         gridTemplateColumns: `${layout.sidebarWidth}px 1fr`,
-        background: colors.background
+        background: colors.background,
+        overflow: "hidden"
       }}
     >
       <aside
@@ -44,7 +46,10 @@ export function SchoolShell({
           padding: spacing.md,
           display: "grid",
           alignContent: "start",
-          gap: spacing.md
+          gap: spacing.md,
+          minHeight: "100vh",
+          position: "sticky",
+          top: 0
         }}
       >
         <div style={{ ...typography.h3 }}>Academic Authority</div>
@@ -78,7 +83,15 @@ export function SchoolShell({
           })}
         </nav>
       </aside>
-      <main style={{ padding: spacing.margin, maxWidth: layout.maxContentWidth, width: "100%" }}>
+      <main
+        style={{
+          padding: spacing.margin,
+          maxWidth: layout.maxContentWidth,
+          width: "100%",
+          minWidth: 0,
+          overflowX: "auto"
+        }}
+      >
         <header style={{ display: "grid", gap: spacing.xs, marginBottom: spacing.md }}>
           <span style={{ ...typography.labelMd, color: colors.onSurfaceVariant, textTransform: "uppercase" }}>
             {eyebrow}

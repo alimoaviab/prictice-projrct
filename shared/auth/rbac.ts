@@ -11,6 +11,7 @@ export const roleAccessMatrix: Record<Role, RoleAccess> = {
   },
   admin: {
     users: ["view", "create", "update", "delete", "manage"],
+    settings: ["view", "create", "update", "delete", "manage"],
     students: ["view", "create", "update", "delete", "manage"],
     teachers: ["view", "create", "update", "delete", "manage"],
     classes: ["view", "create", "update", "delete", "manage"],
@@ -23,6 +24,7 @@ export const roleAccessMatrix: Record<Role, RoleAccess> = {
     audit_logs: ["view"]
   },
   teacher: {
+    settings: ["view"],
     teachers: ["view"],
     classes: ["view"],
     attendance: ["view", "create", "update"],
@@ -32,6 +34,7 @@ export const roleAccessMatrix: Record<Role, RoleAccess> = {
     notifications: ["view"]
   },
   student: {
+    settings: ["view"],
     classes: ["view"],
     attendance: ["view"],
     homework: ["view"],

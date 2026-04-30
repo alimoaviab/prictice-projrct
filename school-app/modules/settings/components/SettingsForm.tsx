@@ -1,31 +1,32 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button, Input } from "../../../components/ui";
 import { FormSection, FormGroup } from "../../../components/ui/FormSection";
-import { spacing, colors, typography } from "@edu/shared/design-system/tokens";
+import { spacing, colors } from "@edu/shared/design-system/tokens";
+import { SettingsFormInput } from "../types/settings.types";
 
-interface SettingsFormInput {
-    academy_name: string;
-    academy_phone: string;
-    academy_email: string;
-    academy_address: string;
-    logo_url: string;
-    principal_name: string;
-    established_year: string;
-}
-
-export function SettingsForm({ onSave }: { onSave: (input: SettingsFormInput) => Promise<unknown> }) {
-    const [form, setForm] = useState<SettingsFormInput>({
-        academy_name: "",
-        academy_phone: "",
-        academy_email: "",
-        academy_address: "",
-        logo_url: "",
-        principal_name: "",
-        established_year: new Date().getFullYear().toString()
-    });
+export function SettingsForm({
+    initialValues,
+    onSave
+}: {
+    initialValues: SettingsFormInput;
+    onSave: (input: SettingsFormInput) => Promise<unknown>;
+}) {
+    const router = useRouter();
+    const [form, setForm] = useState<SettingsFormInput>(initialValues);
     const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        setForm(initialValues);
+    }, [initialValues]);
+
+    async function handleLogout() {
+        await fetch("/api/auth/logout", { method: "POST" });
+        localStorage.removeItem("token");
+        router.push("/auth/login");
+    }
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -50,6 +51,24 @@ export function SettingsForm({ onSave }: { onSave: (input: SettingsFormInput) =>
                         placeholder="Principal's name"
                         value={form.principal_name}
                         onChange={(e) => setForm({ ...form, principal_name: e.target.value })}
+                    />
+                </FormGroup>
+
+                <FormGroup label="Principal Email">
+                    <Input
+                        placeholder="principal@school.edu"
+                        type="email"
+                        value={form.principal_email}
+                        onChange={(e) => setForm({ ...form, principal_email: e.target.value })}
+                    />
+                </FormGroup>
+
+                <FormGroup label="Principal Phone">
+                    <Input
+                        placeholder="Principal phone number"
+                        type="tel"
+                        value={form.principal_phone}
+                        onChange={(e) => setForm({ ...form, principal_phone: e.target.value })}
                     />
                 </FormGroup>
 
@@ -108,6 +127,19 @@ export function SettingsForm({ onSave }: { onSave: (input: SettingsFormInput) =>
                 }}
             >
                 {saving ? "Saving..." : "Save Settings"}
+            </Button>
+
+            <Button
+                type="button"
+                onClick={handleLogout}
+                style={{
+                    background: colors.error,
+                    color: "white",
+                    padding: `${spacing.md}px`,
+                    alignSelf: "flex-start"
+                }}
+            >
+                Logout
             </Button>
         </form>
     );

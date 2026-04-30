@@ -1,5 +1,6 @@
 export * from "./audit-log.model";
 export * from "./attendance.model";
+export * from "./academic-year.model";
 export * from "./class.model";
 export * from "./exam.model";
 export * from "./fee.model";

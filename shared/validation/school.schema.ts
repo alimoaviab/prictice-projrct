@@ -14,4 +14,17 @@ export const schoolCreateSchema = z.object({
     .optional()
 });
 
+export const schoolSettingsSchema = z.object({
+  academy_name: z.string().max(160).optional().or(z.literal("")),
+  academy_phone: z.string().max(30).optional().or(z.literal("")),
+  academy_email: z.string().email().optional().or(z.literal("")),
+  academy_address: z.string().max(240).optional().or(z.literal("")),
+  logo_url: z.string().url().optional().or(z.literal("")),
+  principal_name: z.string().max(120).optional().or(z.literal("")),
+  principal_email: z.string().email().optional().or(z.literal("")),
+  principal_phone: z.string().max(30).optional().or(z.literal("")),
+  established_year: z.string().regex(/^\d{4}$/).optional().or(z.literal(""))
+});
+
 export type SchoolCreateInput = z.infer<typeof schoolCreateSchema>;
+export type SchoolSettingsInput = z.infer<typeof schoolSettingsSchema>;

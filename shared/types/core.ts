@@ -20,6 +20,7 @@ export type PermissionAction = "view" | "create" | "update" | "delete" | "manage
 export type Feature =
   | "schools"
   | "users"
+  | "settings"
   | "students"
   | "teachers"
   | "classes"

@@ -6,6 +6,16 @@ const schoolSchema = new Schema(
     school_id: { ...tenantField, index: false },
     name: requiredString,
     code: { ...requiredString, uppercase: true },
+    logo_url: { type: String, trim: true, default: "" },
+    contact_email: { type: String, trim: true, lowercase: true, default: "" },
+    contact_phone: { type: String, trim: true, default: "" },
+    address: { type: String, trim: true, default: "" },
+    established_year: { type: Number },
+    admin_profile: {
+      name: { type: String, trim: true, default: "" },
+      email: { type: String, trim: true, lowercase: true, default: "" },
+      phone: { type: String, trim: true, default: "" }
+    },
     domains: [{ type: String, trim: true, lowercase: true }],
     status: {
       type: String,

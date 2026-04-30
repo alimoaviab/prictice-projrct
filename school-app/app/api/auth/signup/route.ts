@@ -27,26 +27,12 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // TODO: Replace with actual database operations
-        // Check if user already exists
-        const userExists = false; // Placeholder
-
-        if (userExists) {
-            return NextResponse.json(
-                { message: "Email already registered" },
-                { status: 409 }
-            );
-        }
-
-        // TODO: Hash password before storing
-        // TODO: Save user to database
-
-        // TODO: Generate actual JWT token
-        const token = Buffer.from(`${email}:${Date.now()}`).toString("base64");
-
         return NextResponse.json(
-            { token, email, message: "Account created successfully" },
-            { status: 201 }
+            {
+                message:
+                    "Self-service signup is disabled. Ask your academy administrator to create your account."
+            },
+            { status: 403 }
         );
     } catch (error) {
         console.error("Signup error:", error);

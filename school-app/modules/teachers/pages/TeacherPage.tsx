@@ -1,18 +1,40 @@
 "use client";
 
 import { colors, spacing, typography } from "@edu/shared/design-system/tokens";
+import { useCallback, useEffect } from "react";
 import { Card, DataState } from "../../../components/ui";
+import { useSafeAsync } from "../../../hooks/useSafeAsync";
+import { serviceRequest } from "../../../services/service-client";
 import { TeacherForm } from "../components/TeacherForm";
 import { TeacherTable } from "../components/TeacherTable";
 import { useTeachers } from "../hooks/useTeachers";
 
 export function TeacherPage() {
     const { state, addTeacher } = useTeachers();
+    const { state: classState, run } = useSafeAsync<Array<{ _id: string; name: string }>>();
+
+    const loadClasses = useCallback(() => {
+        return run(async () => {
+            const result = await serviceRequest<Array<{ _id: string; name: string }>>("/api/classes");
+            if (!result.ok) {
+                throw new Error(result.error.message);
+            }
+
+            return result.data;
+        });
+    }, [run]);
+
+    useEffect(() => {
+        void loadClasses();
+    }, [loadClasses]);
 
     return (
         <div style={{ display: "grid", gap: spacing.lg }}>
             <Card>
-                <TeacherForm onCreate={addTeacher} />
+                <TeacherForm
+                    onCreate={addTeacher}
+                    classOptions={(classState.data ?? []).map((item) => ({ id: item._id, label: item.name }))}
+                />
             </Card>
 
             {state.status === "loading" || state.status === "idle" ? <DataState variant="loading" title="Loading teachers" /> : null}

@@ -1,53 +1,20 @@
-// School app adapter - calls shared services
-// In production, these would be actual API calls to /api/academic-years
-export async function listAcademicYears() {
-    // TODO: Replace with actual API call
-    return {
-        ok: true,
-        data: [
-            {
-                _id: "1",
-                school_id: "school-1",
-                year: "2024-2025",
-                start_date: "2024-04-01",
-                end_date: "2025-03-31",
-                is_active: true,
-                status: "active"
-            },
-            {
-                _id: "2",
-                school_id: "school-1",
-                year: "2023-2024",
-                start_date: "2023-04-01",
-                end_date: "2024-03-31",
-                is_active: false,
-                status: "completed"
-            }
-        ]
-    };
+import { serviceRequest } from "../../../services/service-client";
+import { AcademicYearFormInput, AcademicYearRow, AcademicYearUpdateInput } from "../types/academicYear.types";
+
+export function listAcademicYears() {
+    return serviceRequest<AcademicYearRow[]>("/api/academic-years");
 }
 
-export async function createAcademicYear(input: any) {
-    // TODO: Replace with actual API call
-    return {
-        ok: true,
-        data: {
-            _id: Date.now().toString(),
-            school_id: "school-1",
-            ...input,
-            status: "draft"
-        }
-    };
+export function createAcademicYear(input: AcademicYearFormInput) {
+    return serviceRequest<AcademicYearRow>("/api/academic-years", {
+        method: "POST",
+        body: JSON.stringify(input)
+    });
 }
 
-export async function updateAcademicYear(id: string, input: any) {
-    // TODO: Replace with actual API call
-    return {
-        ok: true,
-        data: {
-            _id: id,
-            school_id: "school-1",
-            ...input
-        }
-    };
+export function updateAcademicYear(id: string, input: AcademicYearUpdateInput) {
+    return serviceRequest<AcademicYearRow>(`/api/academic-years/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(input)
+    });
 }

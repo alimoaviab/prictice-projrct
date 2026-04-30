@@ -1,7 +1,22 @@
+import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { connectDb } from "@edu/shared/db/connect";
+import { signAuthToken } from "@edu/shared/auth/jwt";
+import { verifyPassword } from "@edu/shared/auth/password";
+import { UserModel } from "@edu/shared/models/user.model";
+
+type LoginUser = {
+    _id: unknown;
+    school_id: string;
+    role: "super_admin" | "admin" | "teacher" | "student";
+    permissions?: string[];
+    email: string;
+    password_hash: string;
+};
 
 export async function POST(request: NextRequest) {
     try {
+        await connectDb();
         const body = await request.json();
         const { email, password } = body;
 
@@ -20,26 +35,44 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // TODO: Replace with actual database query and password verification
-        // For now, this is a placeholder implementation
-        const mockUsers: Record<string, string> = {
-            "student@example.com": "hashedPassword123"
-        };
+        const user = (await UserModel.findOne({
+            email: email.toLowerCase(),
+            status: "active"
+        })
+            .select("_id school_id role permissions email password_hash")
+            .lean()) as LoginUser | null;
 
-        if (!mockUsers[email]) {
+        if (!user || !verifyPassword(password, user.password_hash)) {
             return NextResponse.json(
                 { message: "Invalid email or password" },
                 { status: 401 }
             );
         }
 
-        // TODO: Generate actual JWT token
-        const token = Buffer.from(`${email}:${Date.now()}`).toString("base64");
+        const token = signAuthToken({
+            sub: String(user._id),
+            school_id: user.school_id,
+            role: user.role,
+            permissions: user.permissions ?? [],
+            session_id: randomUUID(),
+            app: "school",
+            actor_email: user.email
+        });
 
-        return NextResponse.json(
-            { token, email, message: "Login successful" },
+        const response = NextResponse.json(
+            { token, email: user.email, role: user.role, message: "Login successful" },
             { status: 200 }
         );
+
+        response.cookies.set("session", token, {
+            httpOnly: true,
+            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production",
+            path: "/",
+            maxAge: 60 * 60 * 8
+        });
+
+        return response;
     } catch (error) {
         console.error("Login error:", error);
         return NextResponse.json(

@@ -7,12 +7,17 @@ export async function serviceRequest<T>(
 ): Promise<ServiceResult<T>> {
   let lastError: unknown;
 
+  const authHeader =
+    typeof window !== "undefined" ? window.localStorage.getItem("token") ?? undefined : undefined;
+
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     try {
       const response = await fetch(url, {
         ...options,
+        credentials: "same-origin",
         headers: {
           "content-type": "application/json",
+          ...(authHeader ? { authorization: `Bearer ${authHeader}` } : {}),
           ...(options.headers ?? {})
         }
       });

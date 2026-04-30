@@ -38,7 +38,13 @@ export default function LoginPage() {
 
             const data = await response.json();
             localStorage.setItem("token", data.token);
-            router.push("/student/dashboard");
+            if (data.role === "admin") {
+                router.push("/admin/dashboard");
+            } else if (data.role === "teacher") {
+                router.push("/teacher/dashboard");
+            } else {
+                router.push("/student/dashboard");
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : "An error occurred");
         } finally {
