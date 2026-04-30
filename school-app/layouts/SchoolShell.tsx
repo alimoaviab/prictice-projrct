@@ -1,6 +1,18 @@
 import { colors, layout, spacing, typography } from "@edu/shared/design-system/tokens";
 
-const navItems = ["Overview", "Students", "Teachers", "Classes", "Attendance", "Homework", "Exams", "Fees"];
+const navItems = [
+  "Overview",
+  "Students",
+  "Teachers",
+  "Academic Class",
+  "Live Class",
+  "Homework",
+  "Attendance",
+  "Exam",
+  "Result",
+  "Setting",
+  "Fees"
+];
 
 export function SchoolShell({
   children,
