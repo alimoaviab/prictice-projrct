@@ -77,15 +77,15 @@ export async function updateSchoolProfile(
             ? { established_year: parsed.established_year ? Number(parsed.established_year) : undefined }
             : {}),
           ...(parsed.principal_name !== undefined ||
-          parsed.principal_email !== undefined ||
-          parsed.principal_phone !== undefined
+            parsed.principal_email !== undefined ||
+            parsed.principal_phone !== undefined
             ? {
-                admin_profile: {
-                  name: parsed.principal_name ?? before.admin_profile?.name ?? "",
-                  email: parsed.principal_email ?? before.admin_profile?.email ?? "",
-                  phone: parsed.principal_phone ?? before.admin_profile?.phone ?? ""
-                }
+              admin_profile: {
+                name: parsed.principal_name ?? before.admin_profile?.name ?? "",
+                email: parsed.principal_email ?? before.admin_profile?.email ?? "",
+                phone: parsed.principal_phone ?? before.admin_profile?.phone ?? ""
               }
+            }
             : {})
         }
       },

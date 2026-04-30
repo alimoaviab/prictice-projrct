@@ -41,8 +41,8 @@ export async function listClasses(ctx: RequestContext): Promise<ServiceResult<un
       teacher_names: (row.teacher_ids ?? []).map((teacher: unknown) =>
         typeof teacher === "object" && teacher
           ? `${String((teacher as { first_name?: unknown }).first_name ?? "")} ${String(
-              (teacher as { last_name?: unknown }).last_name ?? ""
-            )}`.trim()
+            (teacher as { last_name?: unknown }).last_name ?? ""
+          )}`.trim()
           : ""
       )
     }));
