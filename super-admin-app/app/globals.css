@@ -1,0 +1,31 @@
+:root {
+  --edu-surface: #f7fafc;
+  --edu-card: #ffffff;
+  --edu-card-border: #e2e8f0;
+  --edu-primary: #002045;
+  --edu-primary-container: #1a365d;
+  --edu-action: #3182ce;
+  --edu-on-primary: #ffffff;
+  --edu-on-surface: #181c1e;
+  --edu-on-surface-variant: #43474e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--edu-surface);
+  color: var(--edu-on-surface);
+  font-family: Inter, system-ui, sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}

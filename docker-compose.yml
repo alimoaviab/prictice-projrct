@@ -1,0 +1,58 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - edu_net
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  school-app:
+    build:
+      context: .
+      dockerfile: school-app/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env.example
+    environment:
+      APP_NAME: school-app
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - edu_net
+
+  super-admin-app:
+    build:
+      context: .
+      dockerfile: super-admin-app/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env.example
+    environment:
+      APP_NAME: super-admin-app
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - edu_net
+
+volumes:
+  mongo_data:
+
+networks:
+  edu_net:
+    driver: bridge
