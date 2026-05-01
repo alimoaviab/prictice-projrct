@@ -2,6 +2,8 @@
 
 import { useCallback, useState } from "react";
 
+const defaultIsEmpty = <T,>(value: T) => Array.isArray(value) && value.length === 0;
+
 export type AsyncState<T> =
   | { status: "idle"; data?: undefined; error?: undefined }
   | { status: "loading"; data?: T; error?: undefined }
@@ -9,7 +11,7 @@ export type AsyncState<T> =
   | { status: "empty"; data: T; error?: undefined }
   | { status: "error"; data?: T; error: string };
 
-export function useSafeAsync<T>(isEmpty: (value: T) => boolean = (value) => Array.isArray(value) && value.length === 0) {
+export function useSafeAsync<T>(isEmpty: (value: T) => boolean = defaultIsEmpty) {
   const [state, setState] = useState<AsyncState<T>>({ status: "idle" });
 
   const run = useCallback(

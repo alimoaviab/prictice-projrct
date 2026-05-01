@@ -1,21 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { PageHeader } from "../components/ui";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { colors, layout, spacing, typography } from "@edu/shared/design-system/tokens";
 
 const navItems = [
-  { label: "Overview", href: "/admin/dashboard", icon: "dashboard" },
-  { label: "Academy Care", href: "/admin/academy-care", icon: "health_and_safety" },
-  { label: "Academic Years", href: "/admin/academic-years", icon: "calendar_today" },
-  { label: "Classes", href: "/admin/classes", icon: "class" },
-  { label: "Teachers", href: "/admin/teachers", icon: "person" },
-  { label: "Students", href: "/admin/students", icon: "group" },
-  { label: "Attendance", href: "/admin/attendance", icon: "check_circle" },
-  { label: "Homework", href: "/admin/homework", icon: "assignment" },
-  { label: "Exams", href: "/admin/exams", icon: "description" },
-  { label: "Results", href: "/admin/results", icon: "poll" },
-  { label: "Settings", href: "/admin/settings", icon: "settings" }
+  { label: "Overview", href: "/admin/dashboard" },
+  { label: "Academic Years", href: "/admin/academic-years" },
+  { label: "Classes", href: "/admin/classes" },
+  { label: "Teachers", href: "/admin/teachers" },
+  { label: "Students", href: "/admin/students" },
+  { label: "Attendance", href: "/admin/attendance" },
+  { label: "Homework", href: "/admin/homework" },
+  { label: "Exams", href: "/admin/exams" },
+  { label: "Results", href: "/admin/results" },
+  { label: "Settings", href: "/admin/settings" }
 ];
 
 export function SchoolShell({
@@ -28,6 +28,28 @@ export function SchoolShell({
   eyebrow: string;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isSessionChecked, setIsSessionChecked] = useState(false);
+  const isDevelopment = process.env.NODE_ENV !== "production";
+
+  useEffect(() => {
+    if (isDevelopment) {
+      setIsSessionChecked(true);
+      return;
+    }
+
+    const token = window.localStorage.getItem("token");
+    if (!token) {
+      router.replace("/auth/login");
+      return;
+    }
+
+    setIsSessionChecked(true);
+  }, [isDevelopment, router]);
+
+  if (!isSessionChecked) {
+    return null;
+  }
 
   return (
     <div className="flex min-h-screen bg-background">

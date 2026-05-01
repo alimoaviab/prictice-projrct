@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -8,10 +8,31 @@ type Role = "admin" | "teacher" | "student" | "parent";
 
 export default function LoginPage() {
   const router = useRouter();
+  const isDevelopment = process.env.NODE_ENV !== "production";
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [sessionChecked, setSessionChecked] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role>("admin");
   const [formData, setFormData] = useState({ email: "", password: "" });
+
+  useEffect(() => {
+    if (isDevelopment) {
+      router.replace("/admin/dashboard");
+      return;
+    }
+
+    const token = window.localStorage.getItem("token");
+    if (token) {
+      router.replace("/admin/dashboard");
+      return;
+    }
+
+    setSessionChecked(true);
+  }, [isDevelopment, router]);
+
+  if (isDevelopment || !sessionChecked) {
+    return null;
+  }
 
   const roles: { key: Role; label: string; icon: string }[] = [
     { key: "admin", label: "Admin", icon: "admin_panel_settings" },
@@ -49,14 +70,7 @@ export default function LoginPage() {
       const data = await response.json();
       localStorage.setItem("token", data.token);
 
-      // Route based on role
-      const roleRoutes: Record<Role, string> = {
-        admin: "/admin/dashboard",
-        teacher: "/teacher/dashboard",
-        student: "/student/dashboard",
-        parent: "/parent/dashboard",
-      };
-      router.push(roleRoutes[selectedRole] || "/student/dashboard");
+      router.push("/admin/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -110,22 +124,6 @@ export default function LoginPage() {
                 </span>
               </div>
               <h1 className="font-headline-md text-primary">EduFlow</h1>
-            </div>
-
-            {/* Tab Switcher */}
-            <div className="flex p-xs bg-surface-container rounded-lg mb-lg border border-outline-variant/20 shadow-inner">
-              <button
-                className="flex-1 py-sm font-label-md text-on-primary bg-primary rounded-DEFAULT shadow-sm transition-all"
-                disabled
-              >
-                Login
-              </button>
-              <Link
-                href="/auth/signup"
-                className="flex-1 py-sm font-label-md text-on-surface-variant hover:text-on-surface transition-colors rounded-DEFAULT text-center"
-              >
-                Signup
-              </Link>
             </div>
 
             <div className="mb-lg">

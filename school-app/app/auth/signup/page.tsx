@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -8,6 +8,7 @@ type Role = "admin" | "teacher" | "student" | "parent";
 
 export default function SignupPage() {
   const router = useRouter();
+  const isDevelopment = process.env.NODE_ENV !== "production";
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedRole, setSelectedRole] = useState<Role>("admin");
@@ -18,6 +19,16 @@ export default function SignupPage() {
     password: "",
     confirmPassword: "",
   });
+
+  useEffect(() => {
+    if (isDevelopment) {
+      router.replace("/admin/dashboard");
+    }
+  }, [isDevelopment, router]);
+
+  if (isDevelopment) {
+    return null;
+  }
 
   const roles: { key: Role; label: string; icon: string }[] = [
     { key: "admin", label: "Admin", icon: "admin_panel_settings" },
@@ -148,22 +159,6 @@ export default function SignupPage() {
                 </span>
               </div>
               <h1 className="font-headline-md text-primary">EduFlow</h1>
-            </div>
-
-            {/* Tab Switcher */}
-            <div className="flex p-xs bg-surface-container rounded-lg mb-lg border border-outline-variant/20 shadow-inner">
-              <Link
-                href="/auth/login"
-                className="flex-1 py-sm font-label-md text-on-surface-variant hover:text-on-surface transition-colors rounded-DEFAULT text-center"
-              >
-                Login
-              </Link>
-              <button
-                className="flex-1 py-sm font-label-md text-on-primary bg-primary rounded-DEFAULT shadow-sm transition-all"
-                disabled
-              >
-                Signup
-              </button>
             </div>
 
             <div className="mb-lg">
