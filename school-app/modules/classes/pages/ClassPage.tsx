@@ -1,7 +1,6 @@
 "use client";
 
-import { colors, spacing, typography } from "@edu/shared/design-system/tokens";
-import { Card, DataState } from "../../../components/ui";
+import { Card, DataState, Skeleton, TableSkeleton } from "../../../components/ui";
 import { useAcademicYears } from "../../academicYear/hooks/useAcademicYears";
 import { useTeachers } from "../../teachers/hooks/useTeachers";
 import { ClassForm } from "../components/ClassForm";
@@ -22,8 +21,13 @@ export function ClassPage() {
     const hasAcademicYears = (academicYearState.data ?? []).length > 0;
 
     return (
-        <div style={{ display: "grid", gap: spacing.lg }}>
-            {isDependencyLoading ? <DataState variant="loading" title="Loading class setup data" /> : null}
+        <div className="flex flex-col gap-8">
+            {isDependencyLoading ? (
+                <div className="space-y-6">
+                    <Skeleton className="h-[400px] w-full rounded-xl" />
+                    <TableSkeleton />
+                </div>
+            ) : null}
 
             {academicYearState.status === "error" ? (
                 <DataState
@@ -46,7 +50,11 @@ export function ClassPage() {
             ) : null}
 
             {!isDependencyLoading && hasAcademicYears ? (
-                <Card>
+                <Card className="max-w-4xl">
+                    <div className="mb-6">
+                        <h2 className="text-xl font-bold text-gray-900">Create New Class</h2>
+                        <p className="text-sm text-gray-500">Set up a new classroom and assign teachers and subjects.</p>
+                    </div>
                     <ClassForm
                         onCreate={addClass}
                         academyCareOptions={(academicYearState.data ?? []).map((item) => ({
@@ -62,26 +70,30 @@ export function ClassPage() {
             ) : null}
 
             {state.status === "loading" || state.status === "idle" ? (
-                <DataState variant="loading" title="Loading classes" />
+                <div className="space-y-4">
+                   <Skeleton className="h-8 w-48" />
+                   <TableSkeleton />
+                </div>
             ) : null}
 
             {state.status === "error" ? (
                 <DataState variant="error" title="Failed to load classes" message={state.error} />
             ) : null}
 
-            {state.status === "empty" ? (
+            {state.status === "empty" && !isDependencyLoading && hasAcademicYears ? (
                 <DataState variant="empty" title="No classes created" message="Create your first class to begin." />
             ) : null}
 
             {state.status === "success" && state.data && state.data.length > 0 ? (
-                <Card style={{ padding: 0, overflow: "hidden", borderColor: colors.cardBorder }}>
-                    <div style={{ padding: spacing.md, borderBottom: `1px solid ${colors.cardBorder}`, background: colors.surfaceContainerLowest }}>
-                        <h2 style={{ ...typography.h3, margin: 0, color: colors.onSurface }}>Classes</h2>
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-bold text-gray-900">Classes List</h3>
+                        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                           {state.data.length} Total
+                        </span>
                     </div>
-                    <div style={{ padding: spacing.md }}>
-                        <ClassTable rows={state.data} />
-                    </div>
-                </Card>
+                    <ClassTable rows={state.data} />
+                </div>
             ) : null}
         </div>
     );

@@ -1,18 +1,10 @@
-import { colors, radius, shadows, spacing } from "@edu/shared/design-system/tokens";
 import { HTMLAttributes } from "react";
 
-export function Card({ style, ...props }: HTMLAttributes<HTMLDivElement>) {
+export function Card({ className = "", ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <section
+    <div
       {...props}
-      style={{
-        background: colors.surfaceContainerLowest,
-        border: `1px solid ${colors.cardBorder}`,
-        borderRadius: radius.default,
-        boxShadow: shadows.card,
-        padding: spacing.md,
-        ...style
-      }}
+      className={`bg-surface border border-border rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow duration-200 ${className}`}
     />
   );
 }

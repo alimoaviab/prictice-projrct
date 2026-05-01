@@ -1,9 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Button, Input } from "../../../components/ui";
-import { FormSection, FormGroup } from "../../../components/ui/FormSection";
-import { spacing, colors } from "@edu/shared/design-system/tokens";
+import { Button, Input, Select } from "../../../components/ui";
 import { ClassFormInput } from "../types/class.types";
 
 const initialForm: ClassFormInput = {
@@ -52,38 +50,35 @@ export function ClassForm({
     }
 
     return (
-        <form onSubmit={handleSubmit} style={{ display: "grid", gap: spacing.lg }}>
-            <FormSection title="Class Details" description="Create a new class for your school" columns={2}>
-                <FormGroup label="Class Name" required error={errors.name}>
+        <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="space-y-6">
+                <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Basic Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Input
+                        label="Class Name"
                         placeholder="e.g., Class 10-A"
                         value={form.name}
                         onChange={(e) => setForm({ ...form, name: e.target.value })}
+                        error={errors.name}
+                        required
                     />
-                </FormGroup>
 
-                <FormGroup label="Linked Academy Care" required error={errors.academy_care_id}>
-                    <select
+                    <Select
+                        label="Linked Academy Year"
                         value={form.academy_care_id}
                         onChange={(event) => setForm({ ...form, academy_care_id: event.target.value })}
-                        style={{
-                            padding: spacing.sm,
-                            borderRadius: 4,
-                            border: `1px solid ${colors.outline}`,
-                            minHeight: 42
-                        }}
-                    >
-                        <option value="">Select academic year</option>
-                        {academyCareOptions.map((option) => (
-                            <option key={option.id} value={option.id}>
-                                {option.label}
-                            </option>
-                        ))}
-                    </select>
-                </FormGroup>
+                        options={[
+                            { label: "Select academic year", value: "" },
+                            ...academyCareOptions.map(o => ({ label: o.label, value: o.id }))
+                        ]}
+                        error={errors.academy_care_id}
+                        required
+                    />
+                </div>
 
-                <FormGroup label="Assigned Teacher">
-                    <select
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Select
+                        label="Assigned Teacher"
                         value={form.teacher_ids[0] || ""}
                         onChange={(event) =>
                             setForm({
@@ -91,43 +86,33 @@ export function ClassForm({
                                 teacher_ids: event.target.value ? [event.target.value] : []
                             })
                         }
-                        style={{
-                            padding: spacing.sm,
-                            borderRadius: 4,
-                            border: `1px solid ${colors.outline}`,
-                            minHeight: 42
-                        }}
-                    >
-                        <option value="">Unassigned</option>
-                        {teacherOptions.map((option) => (
-                            <option key={option.id} value={option.id}>
-                                {option.label}
-                            </option>
-                        ))}
-                    </select>
-                </FormGroup>
+                        options={[
+                            { label: "Unassigned", value: "" },
+                            ...teacherOptions.map(o => ({ label: o.label, value: o.id }))
+                        ]}
+                    />
 
-                <FormGroup label="Room Number">
                     <Input
+                        label="Room Number"
                         placeholder="e.g., Room 101"
                         value={form.room_number || ""}
                         onChange={(e) => setForm({ ...form, room_number: e.target.value })}
                     />
-                </FormGroup>
+                </div>
 
-                <FormGroup label="Description">
-                    <Input
-                        placeholder="Add description or notes"
-                        value={form.description || ""}
-                        onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    />
-                </FormGroup>
-            </FormSection>
+                <Input
+                    label="Description"
+                    placeholder="Add description or notes"
+                    value={form.description || ""}
+                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                />
+            </div>
 
-            <FormSection title="Subjects" description="Add one or more subjects attached to this class">
-                <div style={{ display: "grid", gap: spacing.sm }}>
+            <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Subjects</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {form.subjects.map((subject, index) => (
-                        <div key={`${index}-${subject}`} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: spacing.sm }}>
+                        <div key={index} className="flex gap-2">
                             <Input
                                 placeholder={`Subject ${index + 1}`}
                                 value={subject}
@@ -140,51 +125,46 @@ export function ClassForm({
                                     })
                                 }
                             />
-                            <Button
-                                type="button"
-                                onClick={() =>
-                                    setForm({
-                                        ...form,
-                                        subjects:
-                                            form.subjects.length === 1
-                                                ? form.subjects
-                                                : form.subjects.filter((_, subjectIndex) => subjectIndex !== index)
-                                    })
-                                }
-                                style={{ minWidth: 44 }}
-                            >
-                                -
-                            </Button>
+                            {form.subjects.length > 1 && (
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={() =>
+                                        setForm({
+                                            ...form,
+                                            subjects: form.subjects.filter((_, subjectIndex) => subjectIndex !== index)
+                                        })
+                                    }
+                                    className="text-error hover:bg-error/5"
+                                >
+                                    <span className="material-symbols-outlined">delete</span>
+                                </Button>
+                            )}
                         </div>
                     ))}
-                    <div style={{ display: "flex", gap: spacing.sm, alignItems: "center" }}>
-                        <Button
-                            type="button"
-                            onClick={() => setForm({ ...form, subjects: [...form.subjects, ""] })}
-                            style={{ minWidth: 44 }}
-                        >
-                            +
-                        </Button>
-                        <span style={{ color: colors.onSurfaceVariant, fontSize: 14 }}>
-                            Add another subject
-                        </span>
-                    </div>
-                    {errors.subjects ? <span style={{ color: colors.error, fontSize: 14 }}>{errors.subjects}</span> : null}
                 </div>
-            </FormSection>
+                <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setForm({ ...form, subjects: [...form.subjects, ""] })}
+                    className="flex items-center gap-2"
+                >
+                    <span className="material-symbols-outlined text-sm">add</span>
+                    Add another subject
+                </Button>
+                {errors.subjects ? <span className="text-xs text-error block">{errors.subjects}</span> : null}
+            </div>
 
-            <Button
-                type="submit"
-                disabled={saving}
-                style={{
-                    background: colors.actionBlue,
-                    color: "white",
-                    padding: `${spacing.md}px`,
-                    alignSelf: "flex-start"
-                }}
-            >
-                {saving ? "Creating..." : "Create Class"}
-            </Button>
+            <div className="flex justify-end pt-4 border-t border-border">
+                <Button
+                    type="submit"
+                    disabled={saving}
+                    className="w-full md:w-auto min-w-[150px]"
+                >
+                    {saving ? "Creating..." : "Create Class"}
+                </Button>
+            </div>
         </form>
     );
 }

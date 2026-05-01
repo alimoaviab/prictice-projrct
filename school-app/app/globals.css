@@ -1,115 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
 @import "tailwindcss";
 
 @theme {
-  --color-surface-bright: #f8f9ff;
-  --color-on-secondary-fixed-variant: #034e58;
-  --color-surface-variant: #d5e3fc;
-  --color-outline: #6f797c;
-  --color-on-error: #ffffff;
-  --color-on-tertiary-container: #ebfefd;
-  --color-secondary: #286771;
-  --color-on-background: #0d1c2e;
-  --color-on-surface-variant: #3f484b;
-  --color-surface: #f8f9ff;
-  --color-secondary-container: #b0ecf8;
-  --color-surface-container-lowest: #ffffff;
-  --color-background: #f8f9ff;
-  --color-tertiary-fixed: #d4e6e5;
-  --color-on-error-container: #93000a;
-  --color-inverse-surface: #233144;
-  --color-inverse-primary: #87d2e4;
-  --color-on-secondary: #ffffff;
-  --color-surface-container-high: #dce9ff;
-  --color-on-tertiary: #ffffff;
-  --color-surface-dim: #ccdbf3;
-  --color-primary-container: #2d7d8e;
-  --color-outline-variant: #bec8cb;
-  --color-on-primary-fixed-variant: #004e5b;
-  --color-inverse-on-surface: #eaf1ff;
-  --color-on-primary: #ffffff;
-  --color-primary-fixed: #a9edff;
-  --color-on-primary-container: #f3fcff;
-  --color-on-tertiary-fixed-variant: #3a4a49;
-  --color-on-tertiary-fixed: #0e1e1e;
-  --color-surface-tint: #086878;
-  --color-on-secondary-container: #306d77;
-  --color-surface-container-highest: #d5e3fc;
-  --color-tertiary-container: #657676;
-  --color-error: #ba1a1a;
-  --color-surface-container-low: #eff4ff;
-  --color-on-primary-fixed: #001f26;
-  --color-tertiary-fixed-dim: #b8cac9;
-  --color-secondary-fixed: #b0ecf8;
-  --color-secondary-fixed-dim: #95d0db;
-  --color-surface-container: #e6eeff;
-  --color-error-container: #ffdad6;
-  --color-primary-fixed-dim: #87d2e4;
-  --color-on-secondary-fixed: #001f24;
-  --color-on-surface: #0d1c2e;
-  --color-primary: #006474;
-  --color-tertiary: #4d5e5d;
+  --color-primary: #1E3A8A;
+  --color-secondary: #3B82F6;
+  --color-background: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-border: #E2E8F0;
+  --color-success: #22C55E;
+  --color-error: #EF4444;
+  --color-warning: #F59E0B;
 
-  --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
-  --radius-full: 9999px;
+  --radius-lg: 0.5rem;
 
-  --spacing-xs: 4px;
-  --spacing-container-max: 1440px;
-  --spacing-xl: 64px;
-  --spacing-lg: 40px;
-  --spacing-md: 24px;
-  --spacing-sm: 12px;
-  --spacing-base: 8px;
-  --spacing-gutter: 24px;
+  --spacing-4: 1rem;
+  --spacing-6: 1.5rem;
 
-  --font-body-md: "Plus Jakarta Sans", sans-serif;
-  --font-label-md: "Plus Jakarta Sans", sans-serif;
-  --font-display-lg: "Plus Jakarta Sans", sans-serif;
-  --font-body-lg: "Plus Jakarta Sans", sans-serif;
-  --font-headline-md: "Plus Jakarta Sans", sans-serif;
-  --font-headline-lg: "Plus Jakarta Sans", sans-serif;
-  --font-label-sm: "Plus Jakarta Sans", sans-serif;
-
-  --text-body-md: 16px;
-  --text-label-md: 14px;
-  --text-display-lg: 48px;
-  --text-body-lg: 18px;
-  --text-headline-md: 24px;
-  --text-headline-lg: 32px;
-  --text-label-sm: 12px;
-
-  --shadow-soft-ambient: 0 20px 40px rgba(45, 125, 142, 0.05), 0 1px 3px rgba(45, 125, 142, 0.02);
-  --shadow-card: 0 10px 30px rgba(45, 125, 142, 0.08);
+  --font-sans: 'Inter', system-ui, sans-serif;
 }
-
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
 
 .material-symbols-outlined {
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
-* {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  margin: 0;
-  min-height: 100%;
-  background: #f8f9ff;
-  color: #0d1c2e;
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-button,
-input,
-select,
-textarea {
-  font: inherit;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-gray-900 font-sans;
+  }
+  h1 {
+    @apply text-2xl font-semibold;
+  }
+  h2 {
+    @apply text-xl font-medium;
+  }
+  p, span, div {
+    @apply text-sm text-gray-600;
+  }
 }

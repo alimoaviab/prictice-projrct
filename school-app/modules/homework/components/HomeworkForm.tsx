@@ -1,9 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Button, Input } from "../../../components/ui";
-import { FormSection, FormGroup } from "../../../components/ui/FormSection";
-import { spacing, colors } from "@edu/shared/design-system/tokens";
+import { Button, Input, Select } from "../../../components/ui";
 import { HomeworkFormInput, HomeworkStatus } from "../types/homework.types";
 
 export function HomeworkForm({
@@ -61,110 +59,97 @@ export function HomeworkForm({
     }
 
     return (
-        <form onSubmit={handleSubmit} style={{ display: "grid", gap: spacing.lg }}>
-            <FormSection title="Assign Homework" description="Create new homework assignment" columns={2}>
-                <FormGroup label="Title" required error={errors.title}>
-                    <Input
-                        placeholder="e.g., Math Algebra Problems"
-                        value={form.title}
-                        onChange={(e) => setForm({ ...form, title: e.target.value })}
-                    />
-                </FormGroup>
+        <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Input
+                    label="Assignment Title"
+                    placeholder="e.g., Math Algebra Problems"
+                    value={form.title}
+                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    error={errors.title}
+                    required
+                />
 
-                <FormGroup label="Class" required error={errors.class_id}>
-                    <select
-                        value={form.class_id}
-                        onChange={(e) => setForm({ ...form, class_id: e.target.value })}
-                        style={{
-                            padding: spacing.sm,
-                            borderRadius: "4px",
-                            border: `1px solid ${colors.outline}`,
-                            minHeight: 42
-                        }}
-                    >
-                        <option value="">Select class</option>
-                        {classOptions.map((option) => (
-                            <option key={option.id} value={option.id}>
-                                {option.label}
-                            </option>
-                        ))}
-                    </select>
-                </FormGroup>
+                <Select
+                    label="Subject"
+                    value={form.subject}
+                    onChange={(e) => setForm({ ...form, subject: e.target.value })}
+                    options={[
+                        { label: "Select subject", value: "" },
+                        { label: "Mathematics", value: "Mathematics" },
+                        { label: "English", value: "English" },
+                        { label: "Science", value: "Science" },
+                        { label: "History", value: "History" }
+                    ]}
+                    error={errors.subject}
+                    required
+                />
+            </div>
 
-                <FormGroup label="Teacher" required error={errors.teacher_id}>
-                    <select
-                        value={form.teacher_id}
-                        onChange={(e) => setForm({ ...form, teacher_id: e.target.value })}
-                        style={{
-                            padding: spacing.sm,
-                            borderRadius: "4px",
-                            border: `1px solid ${colors.outline}`,
-                            minHeight: 42
-                        }}
-                    >
-                        <option value="">Select teacher</option>
-                        {teacherOptions.map((option) => (
-                            <option key={option.id} value={option.id}>
-                                {option.label}
-                            </option>
-                        ))}
-                    </select>
-                </FormGroup>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Select
+                    label="Target Class"
+                    value={form.class_id}
+                    onChange={(e) => setForm({ ...form, class_id: e.target.value })}
+                    options={[
+                        { label: "Select class", value: "" },
+                        ...classOptions.map(o => ({ label: o.label, value: o.id }))
+                    ]}
+                    error={errors.class_id}
+                    required
+                />
 
-                <FormGroup label="Subject" required error={errors.subject}>
-                    <Input
-                        placeholder="e.g., Mathematics"
-                        value={form.subject}
-                        onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                    />
-                </FormGroup>
+                <Select
+                    label="Assigning Teacher"
+                    value={form.teacher_id}
+                    onChange={(e) => setForm({ ...form, teacher_id: e.target.value })}
+                    options={[
+                        { label: "Select teacher", value: "" },
+                        ...teacherOptions.map(o => ({ label: o.label, value: o.id }))
+                    ]}
+                    error={errors.teacher_id}
+                    required
+                />
+            </div>
 
-                <FormGroup label="Due Date" required error={errors.due_at}>
-                    <Input
-                        type="date"
-                        value={form.due_at}
-                        onChange={(e) => setForm({ ...form, due_at: e.target.value })}
-                    />
-                </FormGroup>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Input
+                    label="Due Date"
+                    type="date"
+                    value={form.due_at}
+                    onChange={(e) => setForm({ ...form, due_at: e.target.value })}
+                    error={errors.due_at}
+                    required
+                />
 
-                <FormGroup label="Instructions">
-                    <Input
-                        placeholder="Describe the homework assignment"
-                        value={form.instructions || ""}
-                        onChange={(e) => setForm({ ...form, instructions: e.target.value })}
-                    />
-                </FormGroup>
+                <Select
+                    label="Assignment Status"
+                    value={form.status}
+                    onChange={(e) => setForm({ ...form, status: e.target.value as HomeworkStatus })}
+                    options={[
+                        { label: "Assigned", value: "assigned" },
+                        { label: "Draft", value: "draft" },
+                        { label: "Closed", value: "closed" }
+                    ]}
+                />
+            </div>
 
-                <FormGroup label="Status">
-                    <select
-                        value={form.status}
-                        onChange={(e) => setForm({ ...form, status: e.target.value as HomeworkStatus })}
-                        style={{
-                            padding: spacing.sm,
-                            borderRadius: "4px",
-                            border: `1px solid ${colors.outline}`,
-                            minHeight: 42
-                        }}
-                    >
-                        <option value="assigned">Assigned</option>
-                        <option value="draft">Draft</option>
-                        <option value="closed">Closed</option>
-                    </select>
-                </FormGroup>
-            </FormSection>
+            <Input
+                label="Instructions"
+                placeholder="Describe the homework assignment in detail..."
+                value={form.instructions || ""}
+                onChange={(e) => setForm({ ...form, instructions: e.target.value })}
+            />
 
-            <Button
-                type="submit"
-                disabled={saving}
-                style={{
-                    background: colors.actionBlue,
-                    color: "white",
-                    padding: `${spacing.md}px`,
-                    alignSelf: "flex-start"
-                }}
-            >
-                {saving ? "Creating..." : "Assign Homework"}
-            </Button>
+            <div className="flex justify-end pt-4 border-t border-border">
+                <Button
+                    type="submit"
+                    disabled={saving}
+                    className="w-full md:w-auto min-w-[150px]"
+                >
+                    {saving ? "Creating..." : "Assign Homework"}
+                </Button>
+            </div>
         </form>
     );
 }

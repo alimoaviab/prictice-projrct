@@ -1,41 +1,55 @@
 "use client";
 
-import { colors, spacing, typography } from "@edu/shared/design-system/tokens";
-import { Card } from "../../../components/ui";
+import { Badge, Card } from "../../../components/ui";
 import { ExamRow } from "../types/exam.types";
 
 export function ExamTable({ rows }: { rows: ExamRow[] }) {
   return (
-    <div style={{ display: "grid", gap: spacing.md, gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {rows.map((row) => (
-        <Card key={row._id} style={{ display: "grid", gap: spacing.sm, borderColor: colors.cardBorder }}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: spacing.sm, alignItems: "start" }}>
+        <Card key={row._id} className="flex flex-col gap-4">
+          <div className="flex justify-between items-start">
             <div>
-              <h3 style={{ ...typography.h3, margin: 0, color: colors.onSurface }}>{row.title}</h3>
-              <p style={{ ...typography.bodyMd, margin: 0, color: colors.onSurfaceVariant }}>{row.subject}</p>
+              <h3 className="text-lg font-bold text-gray-900">{row.title}</h3>
+              <p className="text-sm font-medium text-primary">{row.subject}</p>
             </div>
-            <span style={{ ...typography.labelMd, color: colors.actionBlue, textTransform: "uppercase" }}>{row.status}</span>
+            <Badge
+              variant={row.status === "scheduled" ? "primary" : row.status === "completed" ? "success" : "error"}
+              className="capitalize"
+            >
+              {row.status}
+            </Badge>
           </div>
 
-          <div style={{ display: "grid", gap: 6 }}>
-            <span style={{ ...typography.bodyMd, color: colors.onSurfaceVariant }}>Class</span>
-            <strong style={{ ...typography.bodyMd, color: colors.onSurface }}>{row.class_name || row.class_id}</strong>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: spacing.sm }}>
-            <div>
-              <span style={{ ...typography.bodyMd, color: colors.onSurfaceVariant }}>Date</span>
-              <div style={{ ...typography.bodyMd, color: colors.onSurface }}>{row.starts_at}</div>
+          <div className="space-y-3 py-2 border-y border-border">
+            <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Class</span>
+                <span className="font-medium text-gray-700">{row.class_name || row.class_id}</span>
             </div>
-            <div>
-              <span style={{ ...typography.bodyMd, color: colors.onSurfaceVariant }}>Max Marks</span>
-              <div style={{ ...typography.bodyMd, color: colors.onSurface }}>{row.max_marks}</div>
+            <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Date</span>
+                <span className="font-medium text-gray-700">{row.starts_at}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Max Marks</span>
+                <span className="font-medium text-gray-700">{row.max_marks}</span>
             </div>
           </div>
 
           {row.description ? (
-            <p style={{ ...typography.bodyMd, margin: 0, color: colors.onSurfaceVariant }}>{row.description}</p>
-          ) : null}
+            <p className="text-xs text-gray-500 line-clamp-2">{row.description}</p>
+          ) : (
+            <p className="text-xs text-gray-300 italic">No description provided</p>
+          )}
+
+          <div className="mt-auto pt-2 flex gap-2">
+             <button className="flex-1 text-xs font-medium py-2 rounded-lg border border-border hover:bg-gray-50 transition-colors">
+                View Details
+             </button>
+             <button className="px-3 py-2 rounded-lg border border-border hover:bg-gray-50 transition-colors">
+                <span className="material-symbols-outlined text-sm">more_horiz</span>
+             </button>
+          </div>
         </Card>
       ))}
     </div>

@@ -1,8 +1,7 @@
 "use client";
 
-import { colors, spacing, typography } from "@edu/shared/design-system/tokens";
 import { useCallback, useEffect } from "react";
-import { Card, DataState } from "../../../components/ui";
+import { Card, DataState, Skeleton, TableSkeleton } from "../../../components/ui";
 import { useSafeAsync } from "../../../hooks/useSafeAsync";
 import { serviceRequest } from "../../../services/service-client";
 import { TeacherForm } from "../components/TeacherForm";
@@ -35,30 +34,52 @@ export function TeacherPage() {
     const classOptions = (classState.data ?? []).map((item) => ({ id: item._id, label: item.name }));
 
     return (
-        <div style={{ display: "grid", gap: spacing.lg }}>
-            {isClassDependencyLoading ? <DataState variant="loading" title="Loading class options" /> : null}
+        <div className="flex flex-col gap-8">
+            <Card className="max-w-4xl">
+                <div className="mb-6">
+                    <h2 className="text-xl font-bold text-gray-900">Add New Teacher</h2>
+                    <p className="text-sm text-gray-500">Register a new faculty member and assign their initial details.</p>
+                </div>
+                {isClassDependencyLoading ? (
+                    <div className="space-y-4">
+                        <Skeleton className="h-10 w-full" />
+                        <div className="grid grid-cols-2 gap-4">
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                    </div>
+                ) : (
+                    <TeacherForm onCreate={addTeacher} classOptions={classOptions} />
+                )}
+            </Card>
 
             {classState.status === "error" ? (
                 <DataState variant="error" title="Failed to load classes" message={classState.error} />
             ) : null}
 
-            {!isClassDependencyLoading ? <Card>{<TeacherForm onCreate={addTeacher} classOptions={classOptions} />}</Card> : null}
-
-            {state.status === "loading" || state.status === "idle" ? <DataState variant="loading" title="Loading teachers" /> : null}
+            {state.status === "loading" || state.status === "idle" ? (
+                <div className="space-y-4">
+                   <Skeleton className="h-8 w-48" />
+                   <TableSkeleton />
+                </div>
+            ) : null}
 
             {state.status === "error" ? <DataState variant="error" title="Failed to load teachers" message={state.error} /> : null}
 
-            {state.status === "empty" ? <DataState variant="empty" title="No teachers found" message="Add the first teacher to your school." /> : null}
+            {state.status === "empty" ? (
+                <DataState variant="empty" title="No teachers found" message="Add the first teacher to your school." />
+            ) : null}
 
             {state.status === "success" && state.data && state.data.length > 0 ? (
-                <Card style={{ padding: 0, overflow: "hidden", borderColor: colors.cardBorder }}>
-                    <div style={{ padding: spacing.md, borderBottom: `1px solid ${colors.cardBorder}`, background: colors.surfaceContainerLowest }}>
-                        <h2 style={{ ...typography.h3, margin: 0, color: colors.onSurface }}>Teachers</h2>
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-bold text-gray-900">Teachers Directory</h3>
+                        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                           {state.data.length} Total
+                        </span>
                     </div>
-                    <div style={{ padding: spacing.md }}>
-                        <TeacherTable teachers={state.data} />
-                    </div>
-                </Card>
+                    <TeacherTable teachers={state.data} />
+                </div>
             ) : null}
         </div>
     );

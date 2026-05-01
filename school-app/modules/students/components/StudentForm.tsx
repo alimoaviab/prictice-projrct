@@ -1,9 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Button, Input } from "../../../components/ui";
-import { FormSection, FormGroup } from "../../../components/ui/FormSection";
-import { colors, spacing, typography } from "@edu/shared/design-system/tokens";
+import { Button, Input, Select } from "../../../components/ui";
 import { StudentFormInput } from "../types/student.types";
 
 const initialForm: StudentFormInput = {
@@ -58,101 +56,107 @@ export function StudentForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: "grid", gap: spacing.lg }}>
-      <FormSection title="Student Information" description="Add basic details about the student" columns={2}>
-        <FormGroup label="Admission Number" required error={errors.admission_no}>
+    <form onSubmit={handleSubmit} className="space-y-8">
+      <div className="space-y-6">
+        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Academic Placement</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Input
+            label="Admission Number"
             placeholder="e.g., ADM-2024-001"
             value={form.admission_no}
             onChange={(e) => setForm({ ...form, admission_no: e.target.value })}
+            error={errors.admission_no}
+            required
           />
-        </FormGroup>
 
-        <FormGroup label="Class" required error={errors.class_id}>
-          <select
-            value={form.class_id}
-            onChange={(e) => setForm({ ...form, class_id: e.target.value })}
-            style={{
-              padding: spacing.sm,
-              borderRadius: 4,
-              border: `1px solid ${colors.outline}`,
-              minHeight: 42
-            }}
-          >
-            <option value="">Select class</option>
-            {classOptions.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </FormGroup>
+          <div className="grid grid-cols-2 gap-4">
+             <Select
+                label="Class"
+                value={form.class_id}
+                onChange={(e) => setForm({ ...form, class_id: e.target.value })}
+                options={[
+                  { label: "Select class", value: "" },
+                  ...classOptions.map(o => ({ label: o.label, value: o.id }))
+                ]}
+                error={errors.class_id}
+                required
+              />
+              <Input
+                label="Section"
+                placeholder="e.g., A"
+                value={form.section}
+                onChange={(e) => setForm({ ...form, section: e.target.value })}
+                error={errors.section}
+                required
+              />
+          </div>
+        </div>
+      </div>
 
-        <FormGroup label="First Name" required error={errors.first_name}>
+      <div className="space-y-6 border-t border-border pt-6">
+        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Personal Details</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Input
+            label="First Name"
             placeholder="Student's first name"
             value={form.first_name}
             onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+            error={errors.first_name}
+            required
           />
-        </FormGroup>
 
-        <FormGroup label="Last Name" required error={errors.last_name}>
           <Input
+            label="Last Name"
             placeholder="Student's last name"
             value={form.last_name}
             onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+            error={errors.last_name}
+            required
           />
-        </FormGroup>
+        </div>
+      </div>
 
-        <FormGroup label="Section" required error={errors.section}>
+      <div className="space-y-6 border-t border-border pt-6">
+        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Guardian Details</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Input
-            placeholder="e.g., A, B, C"
-            value={form.section}
-            onChange={(e) => setForm({ ...form, section: e.target.value })}
-          />
-        </FormGroup>
-      </FormSection>
-
-      <FormSection title="Guardian Information" description="Parent or guardian contact details" columns={2}>
-        <FormGroup label="Guardian Name" required error={errors.guardian_name}>
-          <Input
+            label="Guardian Name"
             placeholder="Parent or guardian name"
             value={form.guardian.name}
             onChange={(e) => setForm({ ...form, guardian: { ...form.guardian, name: e.target.value } })}
+            error={errors.guardian_name}
+            required
           />
-        </FormGroup>
 
-        <FormGroup label="Phone" required error={errors.guardian_phone}>
           <Input
+            label="Phone Number"
             placeholder="Contact phone number"
             type="tel"
             value={form.guardian.phone}
             onChange={(e) => setForm({ ...form, guardian: { ...form.guardian, phone: e.target.value } })}
+            error={errors.guardian_phone}
+            required
           />
-        </FormGroup>
+        </div>
 
-        <FormGroup label="Email">
-          <Input
-            placeholder="Contact email address"
-            type="email"
-            value={form.guardian.email || ""}
-            onChange={(e) => setForm({ ...form, guardian: { ...form.guardian, email: e.target.value } })}
-          />
-        </FormGroup>
-      </FormSection>
+        <Input
+          label="Email Address"
+          placeholder="Contact email address"
+          type="email"
+          value={form.guardian.email || ""}
+          onChange={(e) => setForm({ ...form, guardian: { ...form.guardian, email: e.target.value } })}
+        />
+      </div>
 
-      <Button
-        type="submit"
-        disabled={saving}
-        style={{
-          background: colors.actionBlue,
-          color: "white",
-          padding: `${spacing.md}px`,
-          alignSelf: "flex-start"
-        }}
-      >
-        {saving ? "Creating..." : "Create Student"}
-      </Button>
+      <div className="flex justify-end pt-4 border-t border-border">
+        <Button
+          type="submit"
+          disabled={saving}
+          className="w-full md:w-auto min-w-[150px]"
+        >
+          {saving ? "Enrolling..." : "Enroll Student"}
+        </Button>
+      </div>
     </form>
   );
 }

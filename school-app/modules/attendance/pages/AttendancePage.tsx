@@ -1,8 +1,7 @@
 "use client";
 
-import { colors, spacing, typography } from "@edu/shared/design-system/tokens";
+import { Card, DataState, Skeleton, TableSkeleton } from "../../../components/ui";
 import { useCallback, useEffect } from "react";
-import { Card, DataState } from "../../../components/ui";
 import { useSafeAsync } from "../../../hooks/useSafeAsync";
 import { serviceRequest } from "../../../services/service-client";
 import { AttendanceForm } from "../components/AttendanceForm";
@@ -63,8 +62,24 @@ export function AttendancePage() {
     }));
 
     return (
-        <div style={{ display: "grid", gap: spacing.lg }}>
-            {isDependencyLoading ? <DataState variant="loading" title="Loading attendance setup data" /> : null}
+        <div className="flex flex-col gap-8">
+            <Card className="max-w-4xl">
+                <div className="mb-6">
+                    <h2 className="text-xl font-bold text-gray-900">Mark Attendance</h2>
+                    <p className="text-sm text-gray-500">Record daily attendance for students in their respective classes.</p>
+                </div>
+                {isDependencyLoading ? (
+                    <div className="space-y-4">
+                        <Skeleton className="h-10 w-full" />
+                        <div className="grid grid-cols-2 gap-4">
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                    </div>
+                ) : (
+                    <AttendanceForm onCreate={addAttendance} classOptions={classOptions} studentOptions={studentOptions} />
+                )}
+            </Card>
 
             {classState.status === "error" ? (
                 <DataState variant="error" title="Classes unavailable" message={classState.error} />
@@ -74,14 +89,11 @@ export function AttendancePage() {
                 <DataState variant="error" title="Students unavailable" message={studentState.error} />
             ) : null}
 
-            {!isDependencyLoading ? (
-                <Card>
-                    <AttendanceForm onCreate={addAttendance} classOptions={classOptions} studentOptions={studentOptions} />
-                </Card>
-            ) : null}
-
             {state.status === "loading" || state.status === "idle" ? (
-                <DataState variant="loading" title="Loading attendance records" />
+                <div className="space-y-4">
+                   <Skeleton className="h-8 w-48" />
+                   <TableSkeleton />
+                </div>
             ) : null}
 
             {state.status === "error" ? (
@@ -93,14 +105,15 @@ export function AttendancePage() {
             ) : null}
 
             {state.status === "success" && state.data && state.data.length > 0 ? (
-                <Card style={{ padding: 0, overflow: "hidden", borderColor: colors.cardBorder }}>
-                    <div style={{ padding: spacing.md, borderBottom: `1px solid ${colors.cardBorder}`, background: colors.surfaceContainerLowest }}>
-                        <h2 style={{ ...typography.h3, margin: 0, color: colors.onSurface }}>Attendance Records</h2>
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-bold text-gray-900">Attendance Log</h3>
+                        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                           {state.data.length} Records
+                        </span>
                     </div>
-                    <div style={{ padding: spacing.md }}>
-                        <AttendanceTable rows={state.data} />
-                    </div>
-                </Card>
+                    <AttendanceTable rows={state.data} />
+                </div>
             ) : null}
         </div>
     );

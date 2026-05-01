@@ -1,8 +1,7 @@
 "use client";
 
+import { Card, DataState, Skeleton, TableSkeleton } from "../../../components/ui";
 import { useCallback, useEffect } from "react";
-import { colors, spacing, typography } from "@edu/shared/design-system/tokens";
-import { Card, DataState } from "../../../components/ui";
 import { useSafeAsync } from "../../../hooks/useSafeAsync";
 import { serviceRequest } from "../../../services/service-client";
 import { ExamForm } from "../components/ExamForm";
@@ -34,19 +33,32 @@ export function ExamPage() {
     const classOptions = (classState.data ?? []).map((item) => ({ id: item._id, label: item.name }));
 
     return (
-        <div style={{ display: "grid", gap: spacing.lg }}>
-            {isDependencyLoading ? <DataState variant="loading" title="Loading exam setup data" /> : null}
+        <div className="flex flex-col gap-8">
+            <Card className="max-w-4xl">
+                <div className="mb-6">
+                    <h2 className="text-xl font-bold text-gray-900">Schedule Exam</h2>
+                    <p className="text-sm text-gray-500">Create a new examination schedule for specific classes and subjects.</p>
+                </div>
+                {isDependencyLoading ? (
+                    <div className="space-y-4">
+                        <Skeleton className="h-10 w-full" />
+                        <div className="grid grid-cols-2 gap-4">
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                    </div>
+                ) : (
+                    <ExamForm classOptions={classOptions} onCreate={addExam} />
+                )}
+            </Card>
 
             {classState.status === "error" ? <DataState variant="error" title="Classes unavailable" message={classState.error} /> : null}
 
-            {!isDependencyLoading && classOptions.length > 0 ? (
-                <Card>
-                    <ExamForm classOptions={classOptions} onCreate={addExam} />
-                </Card>
-            ) : null}
-
             {state.status === "loading" || state.status === "idle" ? (
-                <DataState variant="loading" title="Loading exams" />
+                <div className="space-y-4">
+                   <Skeleton className="h-8 w-48" />
+                   <TableSkeleton />
+                </div>
             ) : null}
 
             {state.status === "error" ? <DataState variant="error" title="Failed to load exams" message={state.error} /> : null}
@@ -56,12 +68,15 @@ export function ExamPage() {
             ) : null}
 
             {state.status === "success" && state.data && state.data.length > 0 ? (
-                <Card style={{ padding: spacing.md }}>
-                    <div style={{ marginBottom: spacing.md }}>
-                        <h2 style={{ ...typography.h3, margin: 0, color: colors.onSurface }}>Exams</h2>
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-bold text-gray-900">Scheduled Exams</h3>
+                        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                           {state.data.length} Total
+                        </span>
                     </div>
                     <ExamTable rows={state.data} />
-                </Card>
+                </div>
             ) : null}
         </div>
     );

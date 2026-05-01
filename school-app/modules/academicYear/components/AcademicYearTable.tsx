@@ -1,98 +1,61 @@
 "use client";
 
-import { colors, spacing, typography } from "@edu/shared/design-system/tokens";
-import { DataTable } from "../../../components/ui";
+import { Badge, Button, DataTable } from "../../../components/ui";
 import { AcademicYearRow } from "../types/academicYear.types";
-import { ACADEMIC_YEAR_TABLE_COLUMNS } from "../constants/academicYear.constants";
 
 export function AcademicYearTable({ years }: { years: AcademicYearRow[] }) {
-    return (
-        <table
-            style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                fontFamily: typography.bodyMd.fontFamily
-            }}
-        >
-            <thead>
-                <tr style={{ background: colors.surfaceContainerHigh, borderBottom: `1px solid ${colors.cardBorder}` }}>
-                    {ACADEMIC_YEAR_TABLE_COLUMNS.map((col) => (
-                        <th
-                            key={col.key}
-                            style={{
-                                padding: spacing.md,
-                                textAlign: "left",
-                                width: col.width,
-                                ...typography.tableHeader,
-                                color: colors.onSurface
-                            }}
-                        >
-                            {col.header}
-                        </th>
-                    ))}
-                </tr>
-            </thead>
-            <tbody>
-                {years.map((year) => (
-                    <tr key={year._id} className="academic-year-row" style={{ borderBottom: `1px solid ${colors.cardBorder}` }}>
-                        <td style={{ padding: spacing.md, ...typography.bodyMd }}>{year.year}</td>
-                        <td style={{ padding: spacing.md, ...typography.bodyMd }}>
-                            {new Date(year.start_date).toLocaleDateString()}
-                        </td>
-                        <td style={{ padding: spacing.md, ...typography.bodyMd }}>
-                            {new Date(year.end_date).toLocaleDateString()}
-                        </td>
-                        <td style={{ padding: spacing.md }}>
-                            <span
-                                style={{
-                                    background:
-                                        year.status === "active"
-                                            ? colors.success
-                                            : year.status === "completed"
-                                                ? colors.outlineVariant
-                                                : colors.outline,
-                                    color: "white",
-                                    padding: `${spacing.xs}px ${spacing.sm}px`,
-                                    borderRadius: "4px",
-                                    fontSize: "12px",
-                                    fontWeight: 500,
-                                    textTransform: "capitalize"
-                                }}
-                            >
-                                {year.status}
-                            </span>
-                        </td>
-                        <td style={{ padding: spacing.md, textAlign: "center" }}>
-                            <input
-                                type="checkbox"
-                                checked={year.is_active}
-                                disabled
-                                style={{ width: "20px", height: "20px", cursor: "not-allowed" }}
-                            />
-                        </td>
-                        <td style={{ padding: spacing.md }}>
-                            <button
-                                style={{
-                                    background: colors.actionBlue,
-                                    color: "white",
-                                    border: "none",
-                                    padding: `${spacing.xs}px ${spacing.sm}px`,
-                                    borderRadius: "4px",
-                                    cursor: "pointer",
-                                    fontSize: "12px"
-                                }}
-                            >
-                                Edit
-                            </button>
-                        </td>
-                    </tr>
-                ))}
-            </tbody>
-            <style jsx>{`
-                .academic-year-row:hover {
-                    background: ${colors.rowHover};
-                }
-            `}</style>
-        </table>
-    );
+    const columns = [
+        {
+            key: "year",
+            label: "Academic Year",
+            render: (row: AcademicYearRow) => (
+                <div className="font-semibold text-gray-900">{row.year}</div>
+            )
+        },
+        {
+            key: "start_date",
+            label: "Start Date",
+            render: (row: AcademicYearRow) => (
+                <div className="text-gray-600">{new Date(row.start_date).toLocaleDateString()}</div>
+            )
+        },
+        {
+            key: "end_date",
+            label: "End Date",
+            render: (row: AcademicYearRow) => (
+                <div className="text-gray-600">{new Date(row.end_date).toLocaleDateString()}</div>
+            )
+        },
+        {
+            key: "status",
+            label: "Status",
+            render: (row: AcademicYearRow) => {
+                const variant = row.status === "active" ? "success" : row.status === "completed" ? "secondary" : "gray";
+                return <Badge variant={variant} className="capitalize">{row.status}</Badge>;
+            }
+        },
+        {
+            key: "is_active",
+            label: "Current",
+            render: (row: AcademicYearRow) => (
+                row.is_active ? (
+                    <div className="flex items-center gap-1 text-success font-medium">
+                        <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                        Active
+                    </div>
+                ) : <span className="text-gray-400">—</span>
+            )
+        },
+        {
+            key: "actions",
+            label: "Actions",
+            render: () => (
+                <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/5">
+                    Edit
+                </Button>
+            )
+        }
+    ];
+
+    return <DataTable columns={columns} rows={years} />;
 }

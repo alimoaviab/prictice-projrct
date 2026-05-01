@@ -1,39 +1,58 @@
-import { DataTable } from "../../../components/ui";
+"use client";
+
+import { Badge, DataTable } from "../../../components/ui";
 import { HomeworkRecordRow } from "../types/homework.types";
 
-const columns = [
-  {
-    key: "due_at",
-    label: "Due Date",
-    render: (row: HomeworkRecordRow) => row.due_at
-  },
-  {
-    key: "class_name",
-    label: "Class",
-    render: (row: HomeworkRecordRow) => row.class_name
-  },
-  {
-    key: "subject",
-    label: "Subject",
-    render: (row: HomeworkRecordRow) => row.subject
-  },
-  {
-    key: "title",
-    label: "Title",
-    render: (row: HomeworkRecordRow) => row.title
-  },
-  {
-    key: "teacher_name",
-    label: "Teacher",
-    render: (row: HomeworkRecordRow) => `${row.teacher_employee_no} - ${row.teacher_name}`.trim()
-  },
-  {
-    key: "status",
-    label: "Status",
-    render: (row: HomeworkRecordRow) => row.status
-  }
-];
-
 export function HomeworkTable({ rows }: { rows: HomeworkRecordRow[] }) {
-  return <DataTable columns={columns} rows={rows} />;
+    const columns = [
+        {
+            key: "due_at",
+            label: "Due Date",
+            render: (row: HomeworkRecordRow) => (
+                <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-sm text-gray-400">event</span>
+                    <span className="text-gray-600 font-medium">{row.due_at}</span>
+                </div>
+            )
+        },
+        {
+            key: "title",
+            label: "Title / Subject",
+            render: (row: HomeworkRecordRow) => (
+                <div className="flex flex-col">
+                    <span className="font-semibold text-gray-900">{row.title}</span>
+                    <span className="text-xs text-primary">{row.subject}</span>
+                </div>
+            )
+        },
+        {
+            key: "class",
+            label: "Class",
+            render: (row: HomeworkRecordRow) => <Badge variant="secondary">{row.class_name}</Badge>
+        },
+        {
+            key: "teacher",
+            label: "Teacher",
+            render: (row: HomeworkRecordRow) => (
+                <div className="text-sm text-gray-600">
+                    {row.teacher_name}
+                    <div className="text-[10px] text-gray-400">{row.teacher_employee_no}</div>
+                </div>
+            )
+        },
+        {
+            key: "status",
+            label: "Status",
+            render: (row: HomeworkRecordRow) => {
+                const variants: Record<string, any> = {
+                    assigned: "primary",
+                    draft: "gray",
+                    closed: "success"
+                };
+                return <Badge variant={variants[row.status] || "gray"} className="capitalize">{row.status}</Badge>;
+            }
+        }
+    ];
+
+    return <DataTable columns={columns} rows={rows} />;
 }

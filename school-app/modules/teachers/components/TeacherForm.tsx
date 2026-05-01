@@ -1,9 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Button, Input } from "../../../components/ui";
-import { FormSection, FormGroup } from "../../../components/ui/FormSection";
-import { spacing, colors } from "@edu/shared/design-system/tokens";
+import { Button, Input, Select } from "../../../components/ui";
 import { TeacherFormInput } from "../types/teacher.types";
 
 const initialForm: TeacherFormInput = {
@@ -57,62 +55,78 @@ export function TeacherForm({
     }
 
     return (
-        <form onSubmit={handleSubmit} style={{ display: "grid", gap: spacing.lg }}>
-            <FormSection title="Teacher Information" description="Add a new teacher to your school" columns={2}>
-                <FormGroup label="Email" required error={errors.email}>
+        <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="space-y-6">
+                <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Account Credentials</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Input
+                        label="Email Address"
                         placeholder="teacher@school.edu"
                         type="email"
                         value={form.email}
                         onChange={(e) => setForm({ ...form, email: e.target.value })}
+                        error={errors.email}
+                        required
                     />
-                </FormGroup>
 
-                <FormGroup label="Password" required error={errors.password}>
                     <Input
-                        placeholder="Set teacher login password"
+                        label="Login Password"
+                        placeholder="Set password"
                         type="password"
                         value={form.password}
                         onChange={(e) => setForm({ ...form, password: e.target.value })}
+                        error={errors.password}
+                        required
                     />
-                </FormGroup>
+                </div>
+            </div>
 
-                <FormGroup label="First Name" required error={errors.first_name}>
+            <div className="space-y-6 border-t border-border pt-6">
+                <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Personal Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Input
-                        placeholder="Teacher's first name"
+                        label="First Name"
+                        placeholder="e.g., John"
                         value={form.first_name}
                         onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+                        error={errors.first_name}
+                        required
                     />
-                </FormGroup>
 
-                <FormGroup label="Last Name">
                     <Input
-                        placeholder="Teacher's last name"
+                        label="Last Name"
+                        placeholder="e.g., Doe"
                         value={form.last_name}
                         onChange={(e) => setForm({ ...form, last_name: e.target.value })}
                     />
-                </FormGroup>
+                </div>
 
-                <FormGroup label="Phone Number" required error={errors.phone}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Input
-                        placeholder="Teacher's contact number"
+                        label="Phone Number"
+                        placeholder="+1 234 567 890"
                         type="tel"
                         value={form.phone}
                         onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                        error={errors.phone}
+                        required
                     />
-                </FormGroup>
 
-                <FormGroup label="Qualification">
                     <Input
+                        label="Qualification"
                         placeholder="e.g., MSc Mathematics"
                         value={form.qualification || ""}
                         onChange={(e) => setForm({ ...form, qualification: e.target.value })}
                     />
-                </FormGroup>
+                </div>
+            </div>
 
-                <FormGroup label="Subject Specialization">
+            <div className="space-y-6 border-t border-border pt-6">
+                <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Professional Assignment</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Input
-                        placeholder="e.g., Mathematics, English (comma-separated)"
+                        label="Subject Specialization"
+                        placeholder="e.g., Math, Science (comma-separated)"
                         value={form.subjects?.join(", ") || ""}
                         onChange={(e) =>
                             setForm({
@@ -124,10 +138,9 @@ export function TeacherForm({
                             })
                         }
                     />
-                </FormGroup>
 
-                <FormGroup label="Assign Class">
-                    <select
+                    <Select
+                        label="Primary Class Assignment"
                         value={form.class_ids[0] || ""}
                         onChange={(event) =>
                             setForm({
@@ -135,35 +148,23 @@ export function TeacherForm({
                                 class_ids: event.target.value ? [event.target.value] : []
                             })
                         }
-                        style={{
-                            padding: spacing.sm,
-                            borderRadius: 4,
-                            border: `1px solid ${colors.outline}`,
-                            minHeight: 42
-                        }}
-                    >
-                        <option value="">Unassigned</option>
-                        {classOptions.map((option) => (
-                            <option key={option.id} value={option.id}>
-                                {option.label}
-                            </option>
-                        ))}
-                    </select>
-                </FormGroup>
-            </FormSection>
+                        options={[
+                            { label: "Unassigned", value: "" },
+                            ...classOptions.map(o => ({ label: o.label, value: o.id }))
+                        ]}
+                    />
+                </div>
+            </div>
 
-            <Button
-                type="submit"
-                disabled={saving}
-                style={{
-                    background: colors.actionBlue,
-                    color: "white",
-                    padding: `${spacing.md}px`,
-                    alignSelf: "flex-start"
-                }}
-            >
-                {saving ? "Creating..." : "Add Teacher"}
-            </Button>
+            <div className="flex justify-end pt-4 border-t border-border">
+                <Button
+                    type="submit"
+                    disabled={saving}
+                    className="w-full md:w-auto min-w-[150px]"
+                >
+                    {saving ? "Creating..." : "Add Teacher"}
+                </Button>
+            </div>
         </form>
     );
 }

@@ -1,43 +1,74 @@
 "use client";
 
-import { colors, spacing, typography } from "@edu/shared/design-system/tokens";
-import { Card } from "../../../components/ui";
+import { Badge, DataTable } from "../../../components/ui";
 import { ResultRow } from "../types/result.types";
 
 export function ResultTable({ rows }: { rows: ResultRow[] }) {
-  return (
-    <div style={{ display: "grid", gap: spacing.md, gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
-      {rows.map((row) => (
-        <Card key={row._id} style={{ display: "grid", gap: spacing.sm, borderColor: colors.cardBorder }}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: spacing.sm, alignItems: "start" }}>
-            <div>
-              <h3 style={{ ...typography.h3, margin: 0, color: colors.onSurface }}>{row.student_name || row.admission_no}</h3>
-              <p style={{ ...typography.bodyMd, margin: 0, color: colors.onSurfaceVariant }}>{row.exam_title}</p>
-            </div>
-            <span style={{ ...typography.labelMd, color: colors.actionBlue, textTransform: "uppercase" }}>{row.grade || "N/A"}</span>
-          </div>
+    const columns = [
+        {
+            key: "student",
+            label: "Student",
+            render: (row: ResultRow) => (
+                <div className="flex flex-col">
+                    <span className="font-semibold text-gray-900">{row.student_name}</span>
+                    <span className="text-xs text-gray-400">ID: {row.admission_no}</span>
+                </div>
+            )
+        },
+        {
+            key: "exam",
+            label: "Exam / Subject",
+            render: (row: ResultRow) => (
+                <div className="flex flex-col">
+                    <span className="text-sm font-medium text-gray-700">{row.exam_title}</span>
+                    <span className="text-xs text-primary">{row.exam_subject}</span>
+                </div>
+            )
+        },
+        {
+            key: "marks",
+            label: "Marks Obtained",
+            render: (row: ResultRow) => (
+                <div className="flex items-center gap-2">
+                    <span className="text-lg font-bold text-gray-900">{row.obtained_marks}</span>
+                    <span className="text-gray-400">/ {row.max_marks}</span>
+                </div>
+            )
+        },
+        {
+            key: "grade",
+            label: "Grade",
+            render: (row: ResultRow) => <Badge variant="primary">{row.grade}</Badge>
+        },
+        {
+            key: "percentage",
+            label: "Percentage",
+            render: (row: ResultRow) => {
+                const percentage = Math.round((row.obtained_marks / row.max_marks) * 100);
+                const variant = percentage >= 80 ? "success" : percentage >= 40 ? "warning" : "error";
+                return (
+                    <div className="flex flex-col gap-1">
+                        <Badge variant={variant}>{percentage}%</Badge>
+                        <div className="w-16 h-1 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                                className={`h-full ${variant === 'success' ? 'bg-success' : variant === 'warning' ? 'bg-warning' : 'bg-error'}`}
+                                style={{ width: `${percentage}%` }}
+                            />
+                        </div>
+                    </div>
+                );
+            }
+        },
+        {
+            key: "remarks",
+            label: "Remarks",
+            render: (row: ResultRow) => (
+                <div className="text-sm text-gray-500 italic truncate max-w-[150px]" title={row.remarks}>
+                    {row.remarks || "—"}
+                </div>
+            )
+        }
+    ];
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: spacing.sm }}>
-            <div>
-              <span style={{ ...typography.bodyMd, color: colors.onSurfaceVariant }}>Marks</span>
-              <div style={{ ...typography.bodyMd, color: colors.onSurface }}>
-                {row.obtained_marks} / {row.max_marks}
-              </div>
-            </div>
-            <div>
-              <span style={{ ...typography.bodyMd, color: colors.onSurfaceVariant }}>Class</span>
-              <div style={{ ...typography.bodyMd, color: colors.onSurface }}>{row.class_name || row.class_id}</div>
-            </div>
-          </div>
-
-          <div style={{ display: "grid", gap: 4 }}>
-            <span style={{ ...typography.bodyMd, color: colors.onSurfaceVariant }}>Exam Subject</span>
-            <strong style={{ ...typography.bodyMd, color: colors.onSurface }}>{row.exam_subject}</strong>
-          </div>
-
-          {row.remarks ? <p style={{ ...typography.bodyMd, margin: 0, color: colors.onSurfaceVariant }}>{row.remarks}</p> : null}
-        </Card>
-      ))}
-    </div>
-  );
+    return <DataTable columns={columns} rows={rows} />;
 }

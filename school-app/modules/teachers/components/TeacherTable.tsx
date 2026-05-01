@@ -1,39 +1,57 @@
 "use client";
 
-import { colors, spacing, typography } from "@edu/shared/design-system/tokens";
+import { Badge, DataTable } from "../../../components/ui";
 import { TeacherRow } from "../types/teacher.types";
 
 export function TeacherTable({ teachers }: { teachers: TeacherRow[] }) {
-    return (
-        <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: typography.bodyMd.fontFamily }}>
-            <thead>
-                <tr style={{ background: colors.surfaceContainerHigh, borderBottom: `1px solid ${colors.cardBorder}` }}>
-                    <th style={{ padding: spacing.md, textAlign: "left", ...typography.tableHeader, color: colors.onSurface }}>Employee No</th>
-                    <th style={{ padding: spacing.md, textAlign: "left", ...typography.tableHeader, color: colors.onSurface }}>Name</th>
-                    <th style={{ padding: spacing.md, textAlign: "left", ...typography.tableHeader, color: colors.onSurface }}>Email</th>
-                    <th style={{ padding: spacing.md, textAlign: "left", ...typography.tableHeader, color: colors.onSurface }}>Phone</th>
-                    <th style={{ padding: spacing.md, textAlign: "left", ...typography.tableHeader, color: colors.onSurface }}>Qualification</th>
-                    <th style={{ padding: spacing.md, textAlign: "left", ...typography.tableHeader, color: colors.onSurface }}>Subjects</th>
-                    <th style={{ padding: spacing.md, textAlign: "left", ...typography.tableHeader, color: colors.onSurface }}>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                {teachers.map((teacher) => (
-                    <tr key={teacher._id} style={{ borderBottom: `1px solid ${colors.cardBorder}` }}>
-                        <td style={{ padding: spacing.md, ...typography.bodyMd }}>{teacher.employee_no}</td>
-                        <td style={{ padding: spacing.md, ...typography.bodyMd }}>{teacher.first_name} {teacher.last_name}</td>
-                        <td style={{ padding: spacing.md, ...typography.bodyMd }}>{teacher.email}</td>
-                        <td style={{ padding: spacing.md, ...typography.bodyMd }}>{teacher.phone}</td>
-                        <td style={{ padding: spacing.md, ...typography.bodyMd }}>{teacher.qualification || "N/A"}</td>
-                        <td style={{ padding: spacing.md, ...typography.bodyMd }}>{teacher.subjects.join(", ")}</td>
-                        <td style={{ padding: spacing.md }}>
-                            <span style={{ background: colors.success, color: "white", padding: `${spacing.xs}px ${spacing.sm}px`, borderRadius: "4px", fontSize: "12px" }}>
-                                {teacher.status}
-                            </span>
-                        </td>
-                    </tr>
-                ))}
-            </tbody>
-        </table>
-    );
+    const columns = [
+        {
+            key: "employee_no",
+            label: "Employee No",
+            render: (row: TeacherRow) => <div className="font-mono text-xs text-gray-500">{row.employee_no}</div>
+        },
+        {
+            key: "name",
+            label: "Name",
+            render: (row: TeacherRow) => (
+                <div className="flex flex-col">
+                    <span className="font-semibold text-gray-900">{row.first_name} {row.last_name}</span>
+                    <span className="text-xs text-gray-400">{row.email}</span>
+                </div>
+            )
+        },
+        {
+            key: "phone",
+            label: "Phone",
+            render: (row: TeacherRow) => <div className="text-gray-600">{row.phone}</div>
+        },
+        {
+            key: "qualification",
+            label: "Qualification",
+            render: (row: TeacherRow) => <div className="text-sm text-gray-600">{row.qualification || "—"}</div>
+        },
+        {
+            key: "subjects",
+            label: "Subjects",
+            render: (row: TeacherRow) => (
+                <div className="flex flex-wrap gap-1">
+                    {row.subjects.map(s => (
+                        <Badge key={s} variant="primary" className="text-[10px]">{s}</Badge>
+                    ))}
+                    {row.subjects.length === 0 && <span className="text-gray-400 italic text-xs">None</span>}
+                </div>
+            )
+        },
+        {
+            key: "status",
+            label: "Status",
+            render: (row: TeacherRow) => (
+                <Badge variant={row.status === "active" ? "success" : "gray"} className="capitalize">
+                    {row.status}
+                </Badge>
+            )
+        }
+    ];
+
+    return <DataTable columns={columns} rows={teachers} />;
 }

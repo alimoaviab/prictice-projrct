@@ -2,7 +2,6 @@
 
 import { FormEvent, useState } from "react";
 import { Button, Input } from "../../../components/ui";
-import { spacing, colors } from "@edu/shared/design-system/tokens";
 import { AcademicYearFormInput } from "../types/academicYear.types";
 
 const initialForm: AcademicYearFormInput = {
@@ -26,16 +25,31 @@ export function AcademicYearForm({ onCreate }: { onCreate: (input: AcademicYearF
     }
 
     return (
-        <form onSubmit={handleSubmit} style={{ display: "grid", gap: spacing.md }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: spacing.md }}>
+        <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Input
-                    label="Academic Year"
+                    label="Academic Year Name"
                     placeholder="e.g., 2024-2025"
                     value={form.year}
                     onChange={(e) => setForm({ ...form, year: e.target.value })}
                     required
                 />
 
+                <div className="flex flex-col gap-1.5">
+                    <span className="text-sm font-medium text-gray-700">Status</span>
+                    <label className="flex items-center gap-3 h-10 px-4 border border-border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                        <input
+                            type="checkbox"
+                            checked={form.is_active}
+                            onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+                            className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                        />
+                        <span className="text-sm text-gray-600">Set as Active Year</span>
+                    </label>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Input
                     label="Start Date"
                     type="date"
@@ -43,9 +57,7 @@ export function AcademicYearForm({ onCreate }: { onCreate: (input: AcademicYearF
                     onChange={(e) => setForm({ ...form, start_date: e.target.value })}
                     required
                 />
-            </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: spacing.md }}>
                 <Input
                     label="End Date"
                     type="date"
@@ -53,39 +65,29 @@ export function AcademicYearForm({ onCreate }: { onCreate: (input: AcademicYearF
                     onChange={(e) => setForm({ ...form, end_date: e.target.value })}
                     required
                 />
-
-                <div style={{ display: "flex", alignItems: "flex-end", gap: spacing.sm }}>
-                    <label style={{ display: "flex", alignItems: "center", gap: spacing.xs }}>
-                        <input
-                            type="checkbox"
-                            checked={form.is_active}
-                            onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-                            style={{ width: "20px", height: "20px", cursor: "pointer" }}
-                        />
-                        <span style={{ fontSize: "14px", color: colors.onSurface }}>Set as Active</span>
-                    </label>
-                </div>
             </div>
 
             <Input
                 label="Description (Optional)"
-                placeholder="Add notes about this academic year"
+                placeholder="Add notes about this academic year..."
                 value={form.description || ""}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
             />
 
-            <Button
-                type="submit"
-                disabled={saving}
-                style={{
-                    background: colors.actionBlue,
-                    color: "white",
-                    padding: `${spacing.md}px`,
-                    marginTop: spacing.md
-                }}
-            >
-                {saving ? "Creating..." : "Create Academic Year"}
-            </Button>
+            <div className="flex justify-end pt-2">
+                <Button
+                    type="submit"
+                    disabled={saving}
+                    className="w-full md:w-auto min-w-[200px]"
+                >
+                    {saving ? (
+                        <span className="flex items-center gap-2">
+                            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                            Creating...
+                        </span>
+                    ) : "Create Academic Year"}
+                </Button>
+            </div>
         </form>
     );
 }

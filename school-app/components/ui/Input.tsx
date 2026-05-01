@@ -1,53 +1,30 @@
 "use client";
 
-import { colors, componentSizing, radius, spacing, typography } from "@edu/shared/design-system/tokens";
 import { InputHTMLAttributes } from "react";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
+  error?: string;
 }
 
-export function Input({ label, id, style, ...props }: InputProps) {
+export function Input({ label, error, id, className = "", ...props }: InputProps) {
   const inputId = id ?? props.name;
 
-  // When label is provided, render with label wrapper; otherwise render input directly
-  if (label) {
-    return (
-      <label style={{ display: "grid", gap: spacing.xs }}>
-        <span style={{ ...typography.labelMd, color: colors.onSurfaceVariant }}>{label}</span>
-        <input
-          id={inputId}
-          {...props}
-          style={{
-            height: componentSizing.inputHeight,
-            borderRadius: radius.default,
-            border: `1px solid ${colors.cardBorder}`,
-            background: colors.surfaceContainerLowest,
-            color: colors.onSurface,
-            padding: `0 ${spacing.sm}px`,
-            outlineColor: colors.actionBlue,
-            ...style
-          }}
-        />
-      </label>
-    );
-  }
-
-  // When used inside FormGroup, render input without label wrapper
   return (
-    <input
-      id={inputId}
-      {...props}
-      style={{
-        height: componentSizing.inputHeight,
-        borderRadius: radius.default,
-        border: `1px solid ${colors.cardBorder}`,
-        background: colors.surfaceContainerLowest,
-        color: colors.onSurface,
-        padding: `0 ${spacing.sm}px`,
-        outlineColor: colors.actionBlue,
-        ...style
-      }}
-    />
+    <div className="flex flex-col gap-1.5 w-full">
+      {label && (
+        <label htmlFor={inputId} className="text-sm font-medium text-gray-700">
+          {label}
+        </label>
+      )}
+      <input
+        id={inputId}
+        {...props}
+        className={`w-full px-4 py-2 text-sm bg-surface border rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20 ${
+          error ? "border-error focus:border-error focus:ring-error/20" : "border-border focus:border-primary"
+        } ${className}`}
+      />
+      {error && <span className="text-xs text-error mt-1">{error}</span>}
+    </div>
   );
 }

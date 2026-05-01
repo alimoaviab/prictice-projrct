@@ -1,8 +1,7 @@
 "use client";
 
-import { colors, spacing, typography } from "@edu/shared/design-system/tokens";
 import { useCallback, useEffect } from "react";
-import { Card, DataState } from "../../../components/ui";
+import { Card, DataState, Skeleton, TableSkeleton } from "../../../components/ui";
 import { useSafeAsync } from "../../../hooks/useSafeAsync";
 import { serviceRequest } from "../../../services/service-client";
 import { StudentForm } from "../components/StudentForm";
@@ -34,21 +33,34 @@ export function StudentsPage() {
   const classOptions = (classState.data ?? []).map((item) => ({ id: item._id, label: item.name }));
 
   return (
-    <div style={{ display: "grid", gap: spacing.lg }}>
-      {isClassDependencyLoading ? <DataState variant="loading" title="Loading class options" /> : null}
+    <div className="flex flex-col gap-8">
+      <Card className="max-w-4xl">
+        <div className="mb-6">
+            <h2 className="text-xl font-bold text-gray-900">Student Admission</h2>
+            <p className="text-sm text-gray-500">Enter details to enroll a new student into the system.</p>
+        </div>
+        {isClassDependencyLoading ? (
+            <div className="space-y-4">
+                <Skeleton className="h-10 w-full" />
+                <div className="grid grid-cols-2 gap-4">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                </div>
+            </div>
+        ) : (
+            <StudentForm onCreate={addStudent} classOptions={classOptions} />
+        )}
+      </Card>
 
       {classState.status === "error" ? (
         <DataState variant="error" title="Failed to load classes" message={classState.error} />
       ) : null}
 
-      {!isClassDependencyLoading ? (
-        <Card>
-          <StudentForm onCreate={addStudent} classOptions={classOptions} />
-        </Card>
-      ) : null}
-
       {state.status === "loading" || state.status === "idle" ? (
-        <DataState variant="loading" title="Loading students" />
+        <div className="space-y-4">
+           <Skeleton className="h-8 w-48" />
+           <TableSkeleton />
+        </div>
       ) : null}
 
       {state.status === "error" ? (
@@ -60,14 +72,15 @@ export function StudentsPage() {
       ) : null}
 
       {state.status === "success" && state.data && state.data.length > 0 ? (
-        <Card style={{ padding: 0, overflow: "hidden", borderColor: colors.cardBorder }}>
-          <div style={{ padding: spacing.md, borderBottom: `1px solid ${colors.cardBorder}`, background: colors.surfaceContainerLowest }}>
-            <h2 style={{ ...typography.h3, margin: 0, color: colors.onSurface }}>Students</h2>
-          </div>
-          <div style={{ padding: spacing.md }}>
+        <div className="space-y-4">
+            <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-gray-900">Students Directory</h3>
+                <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                   {state.data.length} Total
+                </span>
+            </div>
             <StudentTable students={state.data} />
-          </div>
-        </Card>
+        </div>
       ) : null}
     </div>
   );

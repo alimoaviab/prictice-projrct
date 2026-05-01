@@ -1,4 +1,3 @@
-import { colors, spacing, typography } from "@edu/shared/design-system/tokens";
 import { Card } from "./Card";
 
 type DataStateVariant = "loading" | "empty" | "error" | "success";
@@ -12,18 +11,17 @@ export function DataState({
   title: string;
   message?: string;
 }) {
-  const tone = variant === "error" ? colors.error : colors.onSurfaceVariant;
+  const tones = {
+    error: "text-error",
+    loading: "text-primary",
+    empty: "text-gray-400",
+    success: "text-success",
+  };
 
   return (
-    <Card
-      style={{
-        display: "grid",
-        gap: spacing.xs,
-        borderColor: variant === "error" ? colors.errorContainer : colors.cardBorder
-      }}
-    >
-      <strong style={{ ...typography.h3, color: tone }}>{title}</strong>
-      {message ? <p style={{ ...typography.bodyMd, margin: 0, color: colors.onSurfaceVariant }}>{message}</p> : null}
+    <Card className="flex flex-col items-center justify-center py-12 text-center border-dashed">
+      <h3 className={`text-lg font-medium mb-1 ${tones[variant]}`}>{title}</h3>
+      {message && <p className="text-sm text-gray-500 max-w-xs">{message}</p>}
     </Card>
   );
 }

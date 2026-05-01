@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback, useEffect } from "react";
-import { colors, spacing, typography } from "@edu/shared/design-system/tokens";
-import { Card, DataState } from "../../../components/ui";
+import { Card, DataState, Skeleton, TableSkeleton } from "../../../components/ui";
 import { useSafeAsync } from "../../../hooks/useSafeAsync";
 import { serviceRequest } from "../../../services/service-client";
 import { ResultForm } from "../components/ResultForm";
@@ -65,19 +64,34 @@ export function ResultPage() {
     }));
 
     return (
-        <div style={{ display: "grid", gap: spacing.lg }}>
-            {isDependencyLoading ? <DataState variant="loading" title="Loading result setup data" /> : null}
+        <div className="flex flex-col gap-8">
+            <Card className="max-w-4xl">
+                <div className="mb-6">
+                    <h2 className="text-xl font-bold text-gray-900">Record Results</h2>
+                    <p className="text-sm text-gray-500">Enter and publish student performance for completed examinations.</p>
+                </div>
+                {isDependencyLoading ? (
+                    <div className="space-y-4">
+                        <Skeleton className="h-10 w-full" />
+                        <div className="grid grid-cols-2 gap-4">
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                    </div>
+                ) : (
+                    <ResultForm examOptions={examOptions} studentOptions={studentOptions} onCreate={addResult} />
+                )}
+            </Card>
 
             {examState.status === "error" ? <DataState variant="error" title="Exams unavailable" message={examState.error} /> : null}
             {studentState.status === "error" ? <DataState variant="error" title="Students unavailable" message={studentState.error} /> : null}
 
-            {!isDependencyLoading && examOptions.length > 0 && studentOptions.length > 0 ? (
-                <Card>
-                    <ResultForm examOptions={examOptions} studentOptions={studentOptions} onCreate={addResult} />
-                </Card>
+            {state.status === "loading" || state.status === "idle" ? (
+                <div className="space-y-4">
+                   <Skeleton className="h-8 w-48" />
+                   <TableSkeleton />
+                </div>
             ) : null}
-
-            {state.status === "loading" || state.status === "idle" ? <DataState variant="loading" title="Loading results" /> : null}
 
             {state.status === "error" ? <DataState variant="error" title="Failed to load results" message={state.error} /> : null}
 
@@ -86,12 +100,15 @@ export function ResultPage() {
             ) : null}
 
             {state.status === "success" && state.data && state.data.length > 0 ? (
-                <Card style={{ padding: spacing.md }}>
-                    <div style={{ marginBottom: spacing.md }}>
-                        <h2 style={{ ...typography.h3, margin: 0, color: colors.onSurface }}>Results</h2>
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-bold text-gray-900">Published Results</h3>
+                        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                           {state.data.length} Records
+                        </span>
                     </div>
                     <ResultTable rows={state.data} />
-                </Card>
+                </div>
             ) : null}
         </div>
     );

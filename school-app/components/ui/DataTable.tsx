@@ -1,44 +1,32 @@
-import { colors, spacing, typography } from "@edu/shared/design-system/tokens";
-
 export interface DataTableColumn<T> {
   key: string;
   label: string;
   render: (row: T) => React.ReactNode;
 }
 
-export function DataTable<T>({ columns, rows }: { columns: DataTableColumn<T>[]; rows: T[] }) {
+export function DataTable<T>({ columns, rows, className = "" }: { columns: DataTableColumn<T>[]; rows: T[]; className?: string }) {
   return (
-    <div style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", background: colors.surfaceContainerLowest }}>
-        <thead>
+    <div className={`overflow-x-auto rounded-xl border border-border bg-surface ${className}`}>
+      <table className="w-full text-left border-collapse">
+        <thead className="bg-gray-50/50">
           <tr>
             {columns.map((column) => (
               <th
                 key={column.key}
-                style={{
-                  ...typography.tableHeader,
-                  color: colors.onSurfaceVariant,
-                  padding: `${spacing.sm}px ${spacing.md}px`,
-                  textAlign: "left",
-                  borderBottom: `1px solid ${colors.cardBorder}`
-                }}
+                className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 border-b border-border"
               >
                 {column.label}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y divide-border">
           {rows.map((row, rowIndex) => (
-            <tr key={rowIndex}>
+            <tr key={rowIndex} className="hover:bg-gray-50/50 transition-colors">
               {columns.map((column) => (
                 <td
                   key={column.key}
-                  style={{
-                    ...typography.bodyMd,
-                    padding: `${spacing.sm}px ${spacing.md}px`,
-                    borderBottom: `1px solid ${colors.cardBorder}`
-                  }}
+                  className="px-6 py-4 text-sm text-gray-600"
                 >
                   {column.render(row)}
                 </td>
