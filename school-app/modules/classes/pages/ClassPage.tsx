@@ -13,21 +13,53 @@ export function ClassPage() {
     const { state: academicYearState } = useAcademicYears();
     const { state: teacherState } = useTeachers();
 
+    const isDependencyLoading =
+        academicYearState.status === "idle" ||
+        academicYearState.status === "loading" ||
+        teacherState.status === "idle" ||
+        teacherState.status === "loading";
+
+    const hasAcademicYears = (academicYearState.data ?? []).length > 0;
+
     return (
         <div style={{ display: "grid", gap: spacing.lg }}>
-            <Card>
-                <ClassForm
-                    onCreate={addClass}
-                    academyCareOptions={(academicYearState.data ?? []).map((item) => ({
-                        id: item._id,
-                        label: item.year
-                    }))}
-                    teacherOptions={(teacherState.data ?? []).map((item) => ({
-                        id: item._id,
-                        label: `${item.first_name} ${item.last_name}`.trim()
-                    }))}
+            {isDependencyLoading ? <DataState variant="loading" title="Loading class setup data" /> : null}
+
+            {academicYearState.status === "error" ? (
+                <DataState
+                    variant="error"
+                    title="Academic years unavailable"
+                    message={academicYearState.error}
                 />
-            </Card>
+            ) : null}
+
+            {teacherState.status === "error" ? (
+                <DataState variant="error" title="Teachers unavailable" message={teacherState.error} />
+            ) : null}
+
+            {!isDependencyLoading && !hasAcademicYears ? (
+                <DataState
+                    variant="empty"
+                    title="Create an academic year first"
+                    message="You need at least one academic year before creating classes."
+                />
+            ) : null}
+
+            {!isDependencyLoading && hasAcademicYears ? (
+                <Card>
+                    <ClassForm
+                        onCreate={addClass}
+                        academyCareOptions={(academicYearState.data ?? []).map((item) => ({
+                            id: item._id,
+                            label: item.year
+                        }))}
+                        teacherOptions={(teacherState.data ?? []).map((item) => ({
+                            id: item._id,
+                            label: `${item.first_name} ${item.last_name}`.trim()
+                        }))}
+                    />
+                </Card>
+            ) : null}
 
             {state.status === "loading" || state.status === "idle" ? (
                 <DataState variant="loading" title="Loading classes" />

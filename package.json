@@ -12,7 +12,11 @@
     "dev:super-admin": "npm --workspace super-admin-app run dev",
     "build": "turbo run build",
     "check": "turbo run check",
-    "lint": "turbo run lint"
+    "lint": "turbo run lint",
+    "test:settings": "node test-settings.js",
+    "test:exams": "node test-exams.js",
+    "test:results": "node test-results.js",
+    "test:all": "node test-all.js"
   },
   "devDependencies": {
     "turbo": "^2.5.0",

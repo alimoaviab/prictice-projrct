@@ -7,6 +7,7 @@ export * from "./fee.model";
 export * from "./homework.model";
 export * from "./notification.model";
 export * from "./school.model";
+export * from "./result.model";
 export * from "./student.model";
 export * from "./sync-job.model";
 export * from "./teacher.model";

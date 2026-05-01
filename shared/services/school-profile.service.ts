@@ -92,6 +92,10 @@ export async function updateSchoolProfile(
       { new: true, runValidators: true }
     ).lean()) as unknown as SchoolProfileDoc | null;
 
+    if (!updated) {
+      throw new Error("School profile not found.");
+    }
+
     await writeAuditLog(ctx, {
       action: "update",
       entity_type: "school",
@@ -100,6 +104,6 @@ export async function updateSchoolProfile(
       after: updated
     });
 
-    return mapSchoolProfile(updated ?? before);
+    return mapSchoolProfile(updated);
   });
 }

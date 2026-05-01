@@ -19,7 +19,13 @@ const initialForm: StudentFormInput = {
   }
 };
 
-export function StudentForm({ onCreate }: { onCreate: (input: StudentFormInput) => Promise<unknown> }) {
+export function StudentForm({
+  onCreate,
+  classOptions
+}: {
+  onCreate: (input: StudentFormInput) => Promise<unknown>;
+  classOptions: Array<{ id: string; label: string }>;
+}) {
   const [form, setForm] = useState<StudentFormInput>(initialForm);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -30,6 +36,7 @@ export function StudentForm({ onCreate }: { onCreate: (input: StudentFormInput) 
     if (!form.first_name.trim()) newErrors.first_name = "First name is required";
     if (!form.last_name.trim()) newErrors.last_name = "Last name is required";
     if (!form.class_id.trim()) newErrors.class_id = "Class is required";
+    if (!form.section.trim()) newErrors.section = "Section is required";
     if (!form.guardian.name.trim()) newErrors.guardian_name = "Guardian name is required";
     if (!form.guardian.phone.trim()) newErrors.guardian_phone = "Guardian phone is required";
     setErrors(newErrors);
@@ -40,9 +47,14 @@ export function StudentForm({ onCreate }: { onCreate: (input: StudentFormInput) 
     event.preventDefault();
     if (!validate()) return;
     setSaving(true);
-    await onCreate(form);
-    setForm(initialForm);
-    setSaving(false);
+    try {
+      const result = (await onCreate(form)) as { ok?: boolean } | undefined;
+      if (result?.ok !== false) {
+        setForm(initialForm);
+      }
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -57,11 +69,23 @@ export function StudentForm({ onCreate }: { onCreate: (input: StudentFormInput) 
         </FormGroup>
 
         <FormGroup label="Class" required error={errors.class_id}>
-          <Input
-            placeholder="Select or enter class"
+          <select
             value={form.class_id}
             onChange={(e) => setForm({ ...form, class_id: e.target.value })}
-          />
+            style={{
+              padding: spacing.sm,
+              borderRadius: 4,
+              border: `1px solid ${colors.outline}`,
+              minHeight: 42
+            }}
+          >
+            <option value="">Select class</option>
+            {classOptions.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </FormGroup>
 
         <FormGroup label="First Name" required error={errors.first_name}>
@@ -80,7 +104,7 @@ export function StudentForm({ onCreate }: { onCreate: (input: StudentFormInput) 
           />
         </FormGroup>
 
-        <FormGroup label="Section">
+        <FormGroup label="Section" required error={errors.section}>
           <Input
             placeholder="e.g., A, B, C"
             value={form.section}

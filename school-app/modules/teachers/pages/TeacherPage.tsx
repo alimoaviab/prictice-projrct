@@ -17,7 +17,7 @@ export function TeacherPage() {
         return run(async () => {
             const result = await serviceRequest<Array<{ _id: string; name: string }>>("/api/classes");
             if (!result.ok) {
-                throw new Error(result.error.message);
+                throw new Error(result.error.message || "Failed to load classes");
             }
 
             return result.data;
@@ -25,17 +25,24 @@ export function TeacherPage() {
     }, [run]);
 
     useEffect(() => {
-        void loadClasses();
+        void loadClasses().catch(() => {
+            // Error state is already managed by useSafeAsync.
+        });
     }, [loadClasses]);
+
+    const isClassDependencyLoading = classState.status === "idle" || classState.status === "loading";
+
+    const classOptions = (classState.data ?? []).map((item) => ({ id: item._id, label: item.name }));
 
     return (
         <div style={{ display: "grid", gap: spacing.lg }}>
-            <Card>
-                <TeacherForm
-                    onCreate={addTeacher}
-                    classOptions={(classState.data ?? []).map((item) => ({ id: item._id, label: item.name }))}
-                />
-            </Card>
+            {isClassDependencyLoading ? <DataState variant="loading" title="Loading class options" /> : null}
+
+            {classState.status === "error" ? (
+                <DataState variant="error" title="Failed to load classes" message={classState.error} />
+            ) : null}
+
+            {!isClassDependencyLoading ? <Card>{<TeacherForm onCreate={addTeacher} classOptions={classOptions} />}</Card> : null}
 
             {state.status === "loading" || state.status === "idle" ? <DataState variant="loading" title="Loading teachers" /> : null}
 

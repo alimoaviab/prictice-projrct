@@ -46,9 +46,14 @@ export function TeacherForm({
         event.preventDefault();
         if (!validate()) return;
         setSaving(true);
-        await onCreate(form);
-        setForm(initialForm);
-        setSaving(false);
+        try {
+            const result = (await onCreate(form)) as { ok?: boolean } | undefined;
+            if (result?.ok !== false) {
+                setForm(initialForm);
+            }
+        } finally {
+            setSaving(false);
+        }
     }
 
     return (

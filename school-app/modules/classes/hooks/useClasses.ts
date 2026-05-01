@@ -13,7 +13,7 @@ export function useClasses() {
         return run(async () => {
             const result = await service.listClasses();
             if (!result.ok) {
-                throw new Error(result.error.message);
+                throw new Error(result.error.message || "Failed to load classes");
             }
 
             return result.data;
@@ -36,7 +36,9 @@ export function useClasses() {
     );
 
     useEffect(() => {
-        void loadClasses();
+        void loadClasses().catch(() => {
+            // Error state is already managed by useSafeAsync.
+        });
     }, [loadClasses]);
 
     return { state, addClass };

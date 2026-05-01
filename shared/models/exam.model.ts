@@ -9,6 +9,7 @@ const examSchema = new Schema(
     title: requiredString,
     starts_at: { type: Date, required: true, index: true },
     max_marks: { type: Number, required: true },
+    description: { type: String, trim: true, default: "" },
     status: {
       type: String,
       enum: ["scheduled", "completed", "cancelled"],

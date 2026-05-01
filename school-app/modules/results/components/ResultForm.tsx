@@ -4,25 +4,42 @@ import { FormEvent, useState } from "react";
 import { Button, Input } from "../../../components/ui";
 import { FormSection, FormGroup } from "../../../components/ui/FormSection";
 import { spacing, colors } from "@edu/shared/design-system/tokens";
+import { ServiceResult } from "@edu/shared/types/core";
+import { ResultFormInput, ResultOption } from "../types/result.types";
 
-interface ResultFormInput {
-    student_id: string;
-    exam_id: string;
-    obtained_marks: number;
-    grade: string;
-    remarks: string;
-}
+const controlStyle = {
+    height: 40,
+    borderRadius: 8,
+    border: `1px solid ${colors.cardBorder}`,
+    background: colors.surfaceContainerLowest,
+    color: colors.onSurface,
+    padding: `0 ${spacing.sm}px`,
+    outlineColor: colors.actionBlue
+};
 
-export function ResultForm({ onCreate }: { onCreate: (input: ResultFormInput) => Promise<unknown> }) {
+export function ResultForm({
+    examOptions,
+    studentOptions,
+    onCreate
+}: {
+    examOptions: ResultOption[];
+    studentOptions: ResultOption[];
+    onCreate: (input: ResultFormInput) => Promise<ServiceResult<unknown>>;
+}) {
     const [form, setForm] = useState<ResultFormInput>({
-        student_id: "",
-        exam_id: "",
-        obtained_marks: 0,
-        grade: "",
-        remarks: ""
+                exam_id: examOptions[0]?.id ?? "",
+                student_id: studentOptions[0]?.id ?? "",
+                obtained_marks: 0,
+                grade: "",
+                remarks: ""
     });
     const [saving, setSaving] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
+
+    const selectedExam = examOptions.find((item) => item.id === form.exam_id);
+    const visibleStudentOptions = selectedExam?.class_id
+        ? studentOptions.filter((item) => item.class_id === selectedExam.class_id)
+        : studentOptions;
 
     function validate() {
         const newErrors: Record<string, string> = {};
@@ -37,34 +54,63 @@ export function ResultForm({ onCreate }: { onCreate: (input: ResultFormInput) =>
         event.preventDefault();
         if (!validate()) return;
         setSaving(true);
-        await onCreate(form);
-        setForm({
-            student_id: "",
-            exam_id: "",
-            obtained_marks: 0,
-            grade: "",
-            remarks: ""
-        });
-        setSaving(false);
+        try {
+            const result = await onCreate(form);
+            if (result.ok) {
+                setForm({
+                    exam_id: examOptions[0]?.id ?? "",
+                    student_id: studentOptions[0]?.id ?? "",
+                    obtained_marks: 0,
+                    grade: "",
+                    remarks: ""
+                });
+            }
+        } finally {
+            setSaving(false);
+        }
     }
 
     return (
         <form onSubmit={handleSubmit} style={{ display: "grid", gap: spacing.lg }}>
             <FormSection title="Enter Results" description="Record exam results for students" columns={2}>
                 <FormGroup label="Student" required error={errors.student_id}>
-                    <Input
-                        placeholder="Select student"
-                        value={form.student_id}
-                        onChange={(e) => setForm({ ...form, student_id: e.target.value })}
-                    />
+                    <select value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })} style={controlStyle}>
+                        <option value="">Select student</option>
+                        {visibleStudentOptions.map((option) => (
+                            <option key={option.id} value={option.id}>
+                                {option.label}
+                            </option>
+                        ))}
+                    </select>
                 </FormGroup>
 
                 <FormGroup label="Exam" required error={errors.exam_id}>
-                    <Input
-                        placeholder="Select exam"
+                    <select
                         value={form.exam_id}
-                        onChange={(e) => setForm({ ...form, exam_id: e.target.value })}
-                    />
+                        onChange={(e) => {
+                            const nextExamId = e.target.value;
+                            const nextExam = examOptions.find((item) => item.id === nextExamId);
+                            const nextStudents = nextExam?.class_id
+                                ? studentOptions.filter((item) => item.class_id === nextExam.class_id)
+                                : studentOptions;
+
+                            setForm({
+                                ...form,
+                                exam_id: nextExamId,
+                                student_id: nextStudents.some((item) => item.id === form.student_id)
+                                    ? form.student_id
+                                    : nextStudents[0]?.id ?? ""
+                            });
+                        }}
+                        style={controlStyle}
+                    >
+                        <option value="">Select exam</option>
+                        {examOptions.map((option) => (
+                            <option key={option.id} value={option.id}>
+                                {option.label}
+                            </option>
+                        ))}
+                    </select>
                 </FormGroup>
 
                 <FormGroup label="Obtained Marks" required error={errors.obtained_marks}>
@@ -78,11 +124,7 @@ export function ResultForm({ onCreate }: { onCreate: (input: ResultFormInput) =>
                 </FormGroup>
 
                 <FormGroup label="Grade">
-                    <Input
-                        placeholder="e.g., A, B, C, D, F"
-                        value={form.grade}
-                        onChange={(e) => setForm({ ...form, grade: e.target.value })}
-                    />
+                    <Input placeholder="e.g., A, B, C, D, F" value={form.grade} onChange={(e) => setForm({ ...form, grade: e.target.value })} />
                 </FormGroup>
 
                 <FormGroup label="Remarks">

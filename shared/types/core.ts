@@ -11,6 +11,7 @@ export type EntityType =
   | "attendance"
   | "homework"
   | "exam"
+  | "result"
   | "fee"
   | "notification"
   | "sync_job";
@@ -27,6 +28,7 @@ export type Feature =
   | "attendance"
   | "homework"
   | "exams"
+  | "results"
   | "fees"
   | "reports"
   | "notifications"

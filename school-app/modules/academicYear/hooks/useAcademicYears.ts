@@ -13,7 +13,7 @@ export function useAcademicYears() {
         return run(async () => {
             const result = await service.listAcademicYears();
             if (!result.ok) {
-                throw new Error("Failed to load academic years");
+                throw new Error(result.error.message || "Failed to load academic years");
             }
             return result.data as AcademicYearRow[];
         });
@@ -48,7 +48,9 @@ export function useAcademicYears() {
     );
 
     useEffect(() => {
-        loadAcademicYears();
+        void loadAcademicYears().catch(() => {
+            // Error state is already managed by useSafeAsync.
+        });
     }, [loadAcademicYears]);
 
     return { state, addAcademicYear, updateAcademicYear };

@@ -12,7 +12,9 @@ export function useAcademyCare() {
     const loadAcademyYears = useCallback(() => {
         return run(async () => {
             const result = await service.listAcademyYears();
-            if (!result.ok) throw new Error("Failed to load academic years");
+            if (!result.ok) {
+                throw new Error(result.error.message || "Failed to load academic years");
+            }
             return result.data as AcademyYear[];
         });
     }, [run]);
@@ -32,7 +34,9 @@ export function useAcademyCare() {
     );
 
     useEffect(() => {
-        loadAcademyYears();
+        void loadAcademyYears().catch(() => {
+            // Error state is already managed by useSafeAsync.
+        });
     }, [loadAcademyYears]);
 
     return { state, addAcademyYear };

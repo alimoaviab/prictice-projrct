@@ -12,7 +12,9 @@ export function useTeachers() {
     const loadTeachers = useCallback(() => {
         return run(async () => {
             const result = await service.listTeachers();
-            if (!result.ok) throw new Error("Failed to load teachers");
+            if (!result.ok) {
+                throw new Error(result.error.message || "Failed to load teachers");
+            }
             return result.data as TeacherRow[];
         });
     }, [run]);
@@ -21,7 +23,7 @@ export function useTeachers() {
         async (input: TeacherFormInput) => {
             const result = await service.createTeacher(input);
             if (!result.ok) {
-                showToast("Failed to create teacher", "error");
+                showToast(result.error.message || "Failed to create teacher", "error");
                 return result;
             }
             showToast("Teacher created.", "success");
@@ -32,7 +34,9 @@ export function useTeachers() {
     );
 
     useEffect(() => {
-        loadTeachers();
+        void loadTeachers().catch(() => {
+            // Error state is already managed by useSafeAsync.
+        });
     }, [loadTeachers]);
 
     return { state, addTeacher };

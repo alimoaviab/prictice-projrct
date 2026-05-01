@@ -18,6 +18,7 @@ export const roleAccessMatrix: Record<Role, RoleAccess> = {
     attendance: ["view", "create", "update", "delete", "manage"],
     homework: ["view", "create", "update", "delete", "manage"],
     exams: ["view", "create", "update", "delete", "manage"],
+    results: ["view", "create", "update", "delete", "manage"],
     fees: ["view", "create", "update", "delete", "manage"],
     reports: ["view"],
     notifications: ["view", "create", "update"],
@@ -30,6 +31,7 @@ export const roleAccessMatrix: Record<Role, RoleAccess> = {
     attendance: ["view", "create", "update"],
     homework: ["view", "create", "update"],
     exams: ["view", "create", "update"],
+    results: ["view", "create", "update"],
     reports: ["view"],
     notifications: ["view"]
   },
@@ -39,6 +41,7 @@ export const roleAccessMatrix: Record<Role, RoleAccess> = {
     attendance: ["view"],
     homework: ["view"],
     exams: ["view"],
+    results: ["view"],
     fees: ["view"],
     reports: ["view"],
     notifications: ["view"]

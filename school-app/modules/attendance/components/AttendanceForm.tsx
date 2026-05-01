@@ -4,22 +4,23 @@ import { FormEvent, useState } from "react";
 import { Button, Input } from "../../../components/ui";
 import { FormSection, FormGroup } from "../../../components/ui/FormSection";
 import { spacing, colors } from "@edu/shared/design-system/tokens";
+import { AttendanceFormInput, AttendanceStatus } from "../types/attendance.types";
 
-interface AttendanceFormInput {
-    student_id: string;
-    class_id: string;
-    date: string;
-    status: "present" | "absent" | "late" | "excused";
-    remarks: string;
-}
-
-export function AttendanceForm({ onCreate }: { onCreate: (input: AttendanceFormInput) => Promise<unknown> }) {
+export function AttendanceForm({
+    onCreate,
+    classOptions,
+    studentOptions
+}: {
+    onCreate: (input: AttendanceFormInput) => Promise<unknown>;
+    classOptions: Array<{ id: string; label: string }>;
+    studentOptions: Array<{ id: string; class_id: string; label: string }>;
+}) {
     const [form, setForm] = useState<AttendanceFormInput>({
         student_id: "",
         class_id: "",
         date: new Date().toISOString().split("T")[0],
         status: "present",
-        remarks: ""
+        note: ""
     });
     const [saving, setSaving] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -37,34 +38,71 @@ export function AttendanceForm({ onCreate }: { onCreate: (input: AttendanceFormI
         event.preventDefault();
         if (!validate()) return;
         setSaving(true);
-        await onCreate(form);
-        setForm({
-            student_id: "",
-            class_id: "",
-            date: new Date().toISOString().split("T")[0],
-            status: "present",
-            remarks: ""
-        });
-        setSaving(false);
+        try {
+            const result = (await onCreate(form)) as { ok?: boolean } | undefined;
+            if (result?.ok !== false) {
+                setForm({
+                    student_id: "",
+                    class_id: "",
+                    date: new Date().toISOString().split("T")[0],
+                    status: "present",
+                    note: ""
+                });
+            }
+        } finally {
+            setSaving(false);
+        }
     }
+
+    const filteredStudents = studentOptions.filter((student) => !form.class_id || student.class_id === form.class_id);
 
     return (
         <form onSubmit={handleSubmit} style={{ display: "grid", gap: spacing.lg }}>
             <FormSection title="Mark Attendance" description="Record student attendance" columns={2}>
                 <FormGroup label="Student" required error={errors.student_id}>
-                    <Input
-                        placeholder="Select student"
+                    <select
                         value={form.student_id}
                         onChange={(e) => setForm({ ...form, student_id: e.target.value })}
-                    />
+                        style={{
+                            padding: spacing.sm,
+                            borderRadius: "4px",
+                            border: `1px solid ${colors.outline}`,
+                            minHeight: 42
+                        }}
+                    >
+                        <option value="">Select student</option>
+                        {filteredStudents.map((option) => (
+                            <option key={option.id} value={option.id}>
+                                {option.label}
+                            </option>
+                        ))}
+                    </select>
                 </FormGroup>
 
                 <FormGroup label="Class" required error={errors.class_id}>
-                    <Input
-                        placeholder="Select class"
+                    <select
                         value={form.class_id}
-                        onChange={(e) => setForm({ ...form, class_id: e.target.value })}
-                    />
+                        onChange={(e) =>
+                            setForm({
+                                ...form,
+                                class_id: e.target.value,
+                                student_id: ""
+                            })
+                        }
+                        style={{
+                            padding: spacing.sm,
+                            borderRadius: "4px",
+                            border: `1px solid ${colors.outline}`,
+                            minHeight: 42
+                        }}
+                    >
+                        <option value="">Select class</option>
+                        {classOptions.map((option) => (
+                            <option key={option.id} value={option.id}>
+                                {option.label}
+                            </option>
+                        ))}
+                    </select>
                 </FormGroup>
 
                 <FormGroup label="Date" required error={errors.date}>
@@ -78,7 +116,7 @@ export function AttendanceForm({ onCreate }: { onCreate: (input: AttendanceFormI
                 <FormGroup label="Status" required>
                     <select
                         value={form.status}
-                        onChange={(e) => setForm({ ...form, status: e.target.value as "present" | "absent" | "late" | "excused" })}
+                        onChange={(e) => setForm({ ...form, status: e.target.value as AttendanceStatus })}
                         style={{
                             padding: spacing.sm,
                             borderRadius: "4px",
@@ -96,8 +134,8 @@ export function AttendanceForm({ onCreate }: { onCreate: (input: AttendanceFormI
                 <FormGroup label="Remarks">
                     <Input
                         placeholder="Add any remarks"
-                        value={form.remarks}
-                        onChange={(e) => setForm({ ...form, remarks: e.target.value })}
+                        value={form.note || ""}
+                        onChange={(e) => setForm({ ...form, note: e.target.value })}
                     />
                 </FormGroup>
             </FormSection>
