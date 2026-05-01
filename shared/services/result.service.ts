@@ -8,7 +8,8 @@ import { ResultModel } from "../models/result.model";
 import { StudentModel } from "../models/student.model";
 import { RequestContext, ServiceResult } from "../types/core";
 import { serviceTry } from "../utils/result";
-import { ResultCreateInput, resultCreateSchema } from "../validation/result.schema";
+import { ResultCreateInput, ResultUpdateInput, resultCreateSchema, resultUpdateSchema } from "../validation/result.schema";
+import { resolveClassIdsForAcademyCare } from "./_academy-care-filter";
 import { writeAuditLog } from "./audit.service";
 
 type ResultRecord = {
@@ -44,12 +45,17 @@ function mapResultRecord(row: Record<string, any>) {
   };
 }
 
-export async function listResults(ctx: RequestContext): Promise<ServiceResult<unknown[]>> {
+export async function listResults(
+  ctx: RequestContext,
+  filter: { academy_care_id?: string } = {}
+): Promise<ServiceResult<unknown[]>> {
   return serviceTry(async () => {
     await connectDb();
     assertPermission(ctx, "results", "view");
 
-    const rows = await ResultModel.find(tenantFilter(ctx))
+    const classIds = await resolveClassIdsForAcademyCare(ctx, filter.academy_care_id);
+
+    const rows = await ResultModel.find(tenantFilter(ctx, { class_id: { $in: classIds } }))
       .populate("exam_id", "title subject class_id max_marks")
       .populate("student_id", "first_name last_name admission_no class_id")
       .populate("class_id", "name")
@@ -129,5 +135,76 @@ export async function saveResult(ctx: RequestContext, input: ResultCreateInput):
     });
 
     return mapResultRecord(saved ?? patch);
+  });
+}
+
+export async function updateResult(
+  ctx: RequestContext,
+  id: string,
+  input: ResultUpdateInput
+): Promise<ServiceResult<unknown>> {
+  return serviceTry(async () => {
+    await connectDb();
+    assertPermission(ctx, "results", "update");
+
+    const parsed = resultUpdateSchema.parse(input);
+    const existing = (await ResultModel.findOne(tenantFilter(ctx, { _id: id })).lean()) as any;
+    if (!existing) {
+      throw new Error("Result not found.");
+    }
+
+    const patch: any = {};
+    if (parsed.obtained_marks !== undefined) {
+      patch.obtained_marks = parsed.obtained_marks;
+    }
+    if (parsed.grade !== undefined) {
+      patch.grade = parsed.grade;
+    }
+    if (parsed.remarks !== undefined) {
+      patch.remarks = parsed.remarks;
+    }
+    patch.graded_at = new Date();
+
+    const updated = await ResultModel.findOneAndUpdate(
+      tenantFilter(ctx, { _id: id }),
+      { $set: patch },
+      { new: true, runValidators: true }
+    ).lean();
+
+    await writeAuditLog(ctx, {
+      action: "update",
+      entity_type: "result",
+      entity_id: id,
+      before: existing,
+      after: updated
+    });
+
+    return mapResultRecord(updated!);
+  });
+}
+
+export async function deleteResult(
+  ctx: RequestContext,
+  id: string
+): Promise<ServiceResult<unknown>> {
+  return serviceTry(async () => {
+    await connectDb();
+    assertPermission(ctx, "results", "delete");
+
+    const existing = await ResultModel.findOne(tenantFilter(ctx, { _id: id })).lean();
+    if (!existing) {
+      throw new Error("Result not found.");
+    }
+
+    await ResultModel.findOneAndDelete(tenantFilter(ctx, { _id: id }));
+
+    await writeAuditLog(ctx, {
+      action: "delete",
+      entity_type: "result",
+      entity_id: id,
+      before: existing
+    });
+
+    return { success: true, id };
   });
 }

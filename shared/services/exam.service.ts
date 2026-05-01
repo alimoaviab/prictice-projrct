@@ -6,7 +6,8 @@ import { ClassModel } from "../models/class.model";
 import { ExamModel } from "../models/exam.model";
 import { RequestContext, ServiceResult } from "../types/core";
 import { serviceTry } from "../utils/result";
-import { ExamCreateInput, examCreateSchema } from "../validation/exam.schema";
+import { ExamCreateInput, ExamUpdateInput, examCreateSchema, examUpdateSchema } from "../validation/exam.schema";
+import { resolveClassIdsForAcademyCare } from "./_academy-care-filter";
 import { writeAuditLog } from "./audit.service";
 
 type ExamRecord = {
@@ -32,12 +33,17 @@ function mapExamRecord(row: Record<string, any>) {
   };
 }
 
-export async function listExams(ctx: RequestContext): Promise<ServiceResult<unknown[]>> {
+export async function listExams(
+  ctx: RequestContext,
+  filter: { academy_care_id?: string } = {}
+): Promise<ServiceResult<unknown[]>> {
   return serviceTry(async () => {
     await connectDb();
     assertPermission(ctx, "exams", "view");
 
-    const rows = await ExamModel.find(tenantFilter(ctx))
+    const classIds = await resolveClassIdsForAcademyCare(ctx, filter.academy_care_id);
+
+    const rows = await ExamModel.find(tenantFilter(ctx, { class_id: { $in: classIds } }))
       .populate("class_id", "name")
       .sort({ starts_at: -1 })
       .lean();
@@ -77,5 +83,76 @@ export async function createExam(ctx: RequestContext, input: ExamCreateInput): P
     });
 
     return mapExamRecord(created.toObject());
+  });
+}
+
+export async function updateExam(
+  ctx: RequestContext,
+  id: string,
+  input: ExamUpdateInput
+): Promise<ServiceResult<unknown>> {
+  return serviceTry(async () => {
+    await connectDb();
+    assertPermission(ctx, "exams", "update");
+
+    const parsed = examUpdateSchema.parse(input);
+    const existing = await ExamModel.findOne(tenantFilter(ctx, { _id: id })).lean();
+    if (!existing) {
+      throw new Error("Exam not found.");
+    }
+
+    if (parsed.class_id) {
+      const classroom = await ClassModel.findOne(tenantFilter(ctx, { _id: parsed.class_id })).lean();
+      if (!classroom) {
+        throw new Error("Selected class was not found.");
+      }
+    }
+
+    const patch = { ...parsed } as any;
+    if (parsed.class_id) {
+      patch.class_id = new Types.ObjectId(parsed.class_id);
+    }
+
+    const updated = await ExamModel.findOneAndUpdate(
+      tenantFilter(ctx, { _id: id }),
+      { $set: patch },
+      { new: true, runValidators: true }
+    ).lean();
+
+    await writeAuditLog(ctx, {
+      action: "update",
+      entity_type: "exam",
+      entity_id: id,
+      before: existing,
+      after: updated
+    });
+
+    return mapExamRecord(updated!);
+  });
+}
+
+export async function deleteExam(
+  ctx: RequestContext,
+  id: string
+): Promise<ServiceResult<unknown>> {
+  return serviceTry(async () => {
+    await connectDb();
+    assertPermission(ctx, "exams", "delete");
+
+    const existing = await ExamModel.findOne(tenantFilter(ctx, { _id: id })).lean();
+    if (!existing) {
+      throw new Error("Exam not found.");
+    }
+
+    await ExamModel.findOneAndDelete(tenantFilter(ctx, { _id: id }));
+
+    await writeAuditLog(ctx, {
+      action: "delete",
+      entity_type: "exam",
+      entity_id: id,
+      before: existing
+    });
+
+    return { success: true, id };
   });
 }

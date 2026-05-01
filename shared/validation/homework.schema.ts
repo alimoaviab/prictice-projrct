@@ -12,4 +12,7 @@ export const homeworkCreateSchema = z.object({
   status: homeworkStatusSchema.default("assigned")
 });
 
+export const homeworkUpdateSchema = homeworkCreateSchema.partial();
+
 export type HomeworkCreateInput = z.infer<typeof homeworkCreateSchema>;
+export type HomeworkUpdateInput = z.infer<typeof homeworkUpdateSchema>;

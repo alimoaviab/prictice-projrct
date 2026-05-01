@@ -8,7 +8,8 @@ import { TeacherModel } from "../models/teacher.model";
 import { UserModel } from "../models/user.model";
 import { RequestContext, ServiceResult } from "../types/core";
 import { serviceTry } from "../utils/result";
-import { TeacherCreateInput, teacherCreateSchema } from "../validation/teacher.schema";
+import { TeacherCreateInput, TeacherUpdateInput, teacherCreateSchema, teacherUpdateSchema } from "../validation/teacher.schema";
+import { resolveClassIdsForAcademyCare } from "./_academy-care-filter";
 import { writeAuditLog } from "./audit.service";
 
 async function nextEmployeeNumber(schoolId: string) {
@@ -16,12 +17,21 @@ async function nextEmployeeNumber(schoolId: string) {
   return `TCH-${String(count + 1).padStart(4, "0")}`;
 }
 
-export async function listTeachers(ctx: RequestContext): Promise<ServiceResult<unknown[]>> {
+export async function listTeachers(
+  ctx: RequestContext,
+  filter: { academy_care_id?: string } = {}
+): Promise<ServiceResult<unknown[]>> {
   return serviceTry(async () => {
     await connectDb();
     assertPermission(ctx, "teachers", "view");
 
-    const teachers = await TeacherModel.find(tenantFilter(ctx)).sort({ first_name: 1, last_name: 1 }).lean();
+    const classIds = await resolveClassIdsForAcademyCare(ctx, filter.academy_care_id);
+
+    const teachers = await TeacherModel.find(
+      tenantFilter(ctx, { class_ids: { $in: classIds } })
+    )
+      .sort({ first_name: 1, last_name: 1 })
+      .lean();
     const userIds = teachers.map((teacher) => teacher.user_id).filter(Boolean);
     const users = await UserModel.find({ _id: { $in: userIds } }).lean();
     const usersById = new Map(users.map((user) => [String(user._id), user]));
@@ -105,5 +115,103 @@ export async function createTeacher(
     });
 
     return teacher;
+  });
+}
+
+export async function updateTeacher(
+  ctx: RequestContext,
+  id: string,
+  input: TeacherUpdateInput
+): Promise<ServiceResult<unknown>> {
+  return serviceTry(async () => {
+    await connectDb();
+    assertPermission(ctx, "teachers", "update");
+
+    const parsed = teacherUpdateSchema.parse(input);
+    const existing = (await TeacherModel.findOne(tenantFilter(ctx, { _id: id })).lean()) as {
+      user_id?: unknown;
+    } | null;
+    if (!existing) {
+      throw new Error("Teacher not found.");
+    }
+
+    const patch = { ...parsed } as any;
+    if (parsed.class_ids) {
+      patch.class_ids = parsed.class_ids.map((value) => new Types.ObjectId(value));
+    }
+
+    const updated = await TeacherModel.findOneAndUpdate(
+      tenantFilter(ctx, { _id: id }),
+      { $set: patch },
+      { new: true, runValidators: true }
+    ).lean();
+
+    // Update associated user if needed
+    if (existing.user_id && (parsed.first_name || parsed.last_name || parsed.phone || parsed.password)) {
+      const userPatch: any = {};
+      if (parsed.first_name) userPatch["profile.first_name"] = parsed.first_name;
+      if (parsed.last_name) userPatch["profile.last_name"] = parsed.last_name;
+      if (parsed.phone) userPatch["profile.phone"] = parsed.phone;
+      if (parsed.password) userPatch["password_hash"] = hashPassword(parsed.password);
+
+      if (Object.keys(userPatch).length > 0) {
+        await UserModel.updateOne(
+          { _id: existing.user_id },
+          { $set: userPatch }
+        );
+      }
+    }
+
+    await writeAuditLog(ctx, {
+      action: "update",
+      entity_type: "teacher",
+      entity_id: id,
+      before: existing,
+      after: updated
+    });
+
+    return updated;
+  });
+}
+
+export async function deleteTeacher(
+  ctx: RequestContext,
+  id: string
+): Promise<ServiceResult<unknown>> {
+  return serviceTry(async () => {
+    await connectDb();
+    assertPermission(ctx, "teachers", "delete");
+
+    const existing = (await TeacherModel.findOne(tenantFilter(ctx, { _id: id })).lean()) as {
+      class_ids?: unknown[];
+      user_id?: unknown;
+    } | null;
+    if (!existing) {
+      throw new Error("Teacher not found.");
+    }
+
+    // Remove teacher from classes
+    if (existing.class_ids && existing.class_ids.length > 0) {
+      await ClassModel.updateMany(
+        tenantFilter(ctx, { _id: { $in: existing.class_ids } }),
+        { $pull: { teacher_ids: new Types.ObjectId(id) } }
+      );
+    }
+
+    // Delete associated user
+    if (existing.user_id) {
+      await UserModel.deleteOne({ _id: existing.user_id });
+    }
+
+    await TeacherModel.findOneAndDelete(tenantFilter(ctx, { _id: id }));
+
+    await writeAuditLog(ctx, {
+      action: "delete",
+      entity_type: "teacher",
+      entity_id: id,
+      before: existing
+    });
+
+    return { success: true, id };
   });
 }

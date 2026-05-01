@@ -7,7 +7,7 @@ declare global {
 
 export async function connectDb(uri = process.env.MONGODB_URI): Promise<typeof mongoose> {
   if (!uri) {
-    throw new Error("MONGODB_URI is required.");
+    throw new Error("MONGODB_URI environment variable is required. Set it in .env.local");
   }
 
   if (!global.__edu_mongoose_connection) {

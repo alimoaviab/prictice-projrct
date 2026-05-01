@@ -9,6 +9,7 @@ export * from "./notification.model";
 export * from "./school.model";
 export * from "./result.model";
 export * from "./student.model";
+export * from "./subject.model";
 export * from "./sync-job.model";
 export * from "./teacher.model";
 export * from "./user.model";

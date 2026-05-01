@@ -9,13 +9,18 @@ export interface SessionRequest {
 }
 
 export function authenticateRequest(request: SessionRequest, expectedApp: AppName): RequestContext {
-  if (process.env.NODE_ENV !== "production") {
+  const token =
+    request.cookies?.session ||
+    request.headers?.authorization?.replace(/^Bearer\s+/i, "");
+
+  // Development bypass: allow unauthenticated requests in dev mode
+  if (!token && process.env.NODE_ENV === "development") {
     return {
-      school_id: "dev-school",
-      user_id: "dev-user",
+      school_id: "dev-school-id",
+      user_id: "dev-user-id",
       role: "admin",
       app: expectedApp,
-      permissions: ["manage"],
+      permissions: ["*"],
       session_id: "dev-session",
       actor_email: "dev@example.com",
       ip: request.ip,
@@ -23,14 +28,11 @@ export function authenticateRequest(request: SessionRequest, expectedApp: AppNam
     };
   }
 
-  const token =
-    request.cookies?.session ||
-    request.headers?.authorization?.replace(/^Bearer\s+/i, "");
-
   if (!token) {
     throw new Error("Authentication required.");
   }
 
+  // Production requires valid token
   return contextFromToken(verifyAuthToken(token, expectedApp), {
     ip: request.ip,
     user_agent: request.headers?.["user-agent"]

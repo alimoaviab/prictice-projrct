@@ -125,3 +125,30 @@ export async function updateAcademicYear(
     return updated;
   });
 }
+
+export async function deleteAcademicYear(
+  ctx: RequestContext,
+  id: string
+): Promise<ServiceResult<unknown>> {
+  return serviceTry(async () => {
+    await connectDb();
+    assertPermission(ctx, "settings", "delete");
+
+    const existing = (await AcademicYearModel.findOne(tenantFilter(ctx, { _id: id })).lean()) as unknown as AcademicYearRecord | null;
+    if (!existing) {
+      throw new Error("Academic year not found.");
+    }
+
+    await AcademicYearModel.findOneAndDelete(tenantFilter(ctx, { _id: id }));
+
+    await writeAuditLog(ctx, {
+      action: "delete",
+      entity_type: "school",
+      entity_id: id,
+      before: existing,
+      metadata: { scope: "academic_year" }
+    });
+
+    return { success: true, id };
+  });
+}

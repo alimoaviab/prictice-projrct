@@ -10,4 +10,7 @@ export const attendanceCreateSchema = z.object({
   note: z.string().trim().max(300).optional().or(z.literal(""))
 });
 
+export const attendanceUpdateSchema = attendanceCreateSchema.partial();
+
 export type AttendanceCreateInput = z.infer<typeof attendanceCreateSchema>;
+export type AttendanceUpdateInput = z.infer<typeof attendanceUpdateSchema>;

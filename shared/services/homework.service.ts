@@ -7,15 +7,21 @@ import { HomeworkModel } from "../models/homework.model";
 import { TeacherModel } from "../models/teacher.model";
 import { RequestContext, ServiceResult } from "../types/core";
 import { serviceTry } from "../utils/result";
-import { HomeworkCreateInput, homeworkCreateSchema } from "../validation/homework.schema";
+import { HomeworkCreateInput, HomeworkUpdateInput, homeworkCreateSchema, homeworkUpdateSchema } from "../validation/homework.schema";
+import { resolveClassIdsForAcademyCare } from "./_academy-care-filter";
 import { writeAuditLog } from "./audit.service";
 
-export async function listHomework(ctx: RequestContext): Promise<ServiceResult<unknown[]>> {
+export async function listHomework(
+  ctx: RequestContext,
+  filter: { academy_care_id?: string } = {}
+): Promise<ServiceResult<unknown[]>> {
   return serviceTry(async () => {
     await connectDb();
     assertPermission(ctx, "homework", "view");
 
-    const rows = await HomeworkModel.find(tenantFilter(ctx))
+    const classIds = await resolveClassIdsForAcademyCare(ctx, filter.academy_care_id);
+
+    const rows = await HomeworkModel.find(tenantFilter(ctx, { class_id: { $in: classIds } }))
       .populate("class_id", "name")
       .populate("teacher_id", "employee_no first_name last_name")
       .sort({ due_at: 1, createdAt: -1 })
@@ -90,5 +96,91 @@ export async function createHomework(
     });
 
     return created.toObject();
+  });
+}
+
+export async function updateHomework(
+  ctx: RequestContext,
+  id: string,
+  input: HomeworkUpdateInput
+): Promise<ServiceResult<unknown>> {
+  return serviceTry(async () => {
+    await connectDb();
+    assertPermission(ctx, "homework", "update");
+
+    const parsed = homeworkUpdateSchema.parse(input);
+    const existing = await HomeworkModel.findOne(tenantFilter(ctx, { _id: id })).lean();
+    if (!existing) {
+      throw new Error("Homework not found.");
+    }
+
+    if (parsed.class_id) {
+      const classroom = await ClassModel.findOne(tenantFilter(ctx, { _id: parsed.class_id })).lean();
+      if (!classroom) {
+        throw new Error("Selected class was not found.");
+      }
+    }
+
+    if (parsed.teacher_id) {
+      const teacher = await TeacherModel.findOne(tenantFilter(ctx, { _id: parsed.teacher_id })).lean();
+      if (!teacher) {
+        throw new Error("Selected teacher was not found.");
+      }
+    }
+
+    const patch = { ...parsed } as any;
+    if (parsed.class_id) {
+      patch.class_id = new Types.ObjectId(parsed.class_id);
+    }
+    if (parsed.teacher_id) {
+      patch.teacher_id = new Types.ObjectId(parsed.teacher_id);
+    }
+    if (parsed.due_at) {
+      const dueAt = new Date(parsed.due_at);
+      dueAt.setHours(23, 59, 0, 0);
+      patch.due_at = dueAt;
+    }
+
+    const updated = await HomeworkModel.findOneAndUpdate(
+      tenantFilter(ctx, { _id: id }),
+      { $set: patch },
+      { new: true, runValidators: true }
+    ).lean();
+
+    await writeAuditLog(ctx, {
+      action: "update",
+      entity_type: "homework",
+      entity_id: id,
+      before: existing,
+      after: updated
+    });
+
+    return updated;
+  });
+}
+
+export async function deleteHomework(
+  ctx: RequestContext,
+  id: string
+): Promise<ServiceResult<unknown>> {
+  return serviceTry(async () => {
+    await connectDb();
+    assertPermission(ctx, "homework", "delete");
+
+    const existing = await HomeworkModel.findOne(tenantFilter(ctx, { _id: id })).lean();
+    if (!existing) {
+      throw new Error("Homework not found.");
+    }
+
+    await HomeworkModel.findOneAndDelete(tenantFilter(ctx, { _id: id }));
+
+    await writeAuditLog(ctx, {
+      action: "delete",
+      entity_type: "homework",
+      entity_id: id,
+      before: existing
+    });
+
+    return { success: true, id };
   });
 }

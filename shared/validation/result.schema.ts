@@ -9,5 +9,7 @@ const resultBaseSchema = z.object({
 });
 
 export const resultCreateSchema = resultBaseSchema;
+export const resultUpdateSchema = resultBaseSchema.partial();
 
 export type ResultCreateInput = z.infer<typeof resultCreateSchema>;
+export type ResultUpdateInput = z.infer<typeof resultUpdateSchema>;

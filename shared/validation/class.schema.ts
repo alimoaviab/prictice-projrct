@@ -9,4 +9,7 @@ export const classCreateSchema = z.object({
   description: z.string().max(500).optional().or(z.literal(""))
 });
 
+export const classUpdateSchema = classCreateSchema.partial();
+
 export type ClassCreateInput = z.infer<typeof classCreateSchema>;
+export type ClassUpdateInput = z.infer<typeof classUpdateSchema>;

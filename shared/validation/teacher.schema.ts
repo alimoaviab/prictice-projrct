@@ -11,4 +11,10 @@ export const teacherCreateSchema = z.object({
   password: z.string().min(6).max(128)
 });
 
+export const teacherUpdateSchema = teacherCreateSchema.omit({ password: true }).partial().extend({
+  password: z.string().min(6).max(128).optional(),
+  status: z.enum(["active", "inactive"]).optional()
+});
+
 export type TeacherCreateInput = z.infer<typeof teacherCreateSchema>;
+export type TeacherUpdateInput = z.infer<typeof teacherUpdateSchema>;

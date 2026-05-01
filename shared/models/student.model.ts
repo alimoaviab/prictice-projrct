@@ -9,6 +9,7 @@ const studentSchema = new Schema(
     first_name: requiredString,
     last_name: requiredString,
     class_id: { type: Types.ObjectId, ref: "Class", required: true, index: true },
+    subjects: [{ type: String, trim: true }],
     section: { type: String, required: true, trim: true },
     guardian: {
       name: requiredString,
