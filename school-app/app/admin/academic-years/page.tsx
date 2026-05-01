@@ -1,10 +1,10 @@
 import { SchoolShell } from "../../../layouts/SchoolShell";
-import { AcademicYearPage } from "../../../modules/academicYear/pages/AcademicYearPage";
+import { AcademicYearListPage } from "../../../modules/academicYear/pages/AcademicYearListPage";
 
 export default function AdminAcademicYearPage() {
     return (
-        <SchoolShell eyebrow="Settings" title="Academic Years">
-            <AcademicYearPage />
+        <SchoolShell eyebrow="Academic" title="Academic Years">
+            <AcademicYearListPage />
         </SchoolShell>
     );
 }

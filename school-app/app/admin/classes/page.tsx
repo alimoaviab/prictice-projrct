@@ -1,10 +1,10 @@
 import { SchoolShell } from "../../../layouts/SchoolShell";
-import { ClassPage } from "../../../modules/classes/pages/ClassPage";
+import { ClassListPage } from "../../../modules/classes/pages/ClassListPage";
 
 export default function AdminClassesPage() {
     return (
         <SchoolShell eyebrow="Academic" title="Classes">
-            <ClassPage />
+            <ClassListPage />
         </SchoolShell>
     );
 }

@@ -1,10 +1,10 @@
 import { SchoolShell } from "../../../layouts/SchoolShell";
-import { StudentsPage } from "../../../modules/students/pages/StudentsPage";
+import { StudentListPage } from "../../../modules/students/pages/StudentListPage";
 
 export default function AdminStudentsPage() {
   return (
     <SchoolShell eyebrow="Operations" title="Student Records">
-      <StudentsPage />
+      <StudentListPage />
     </SchoolShell>
   );
 }
