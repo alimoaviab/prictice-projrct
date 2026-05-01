@@ -116,10 +116,11 @@ async function ensureSchoolProfile() {
   const School = mongoose.models.TestSchool || mongoose.model("TestSchool", schoolSchema);
   const existing = await School.findOne({ school_id: SCHOOL_ID }).lean();
   if (existing) {
+    await mongoose.disconnect();
     return existing;
   }
 
-  return School.create({
+  const created = await School.create({
     school_id: SCHOOL_ID,
     name: "Test Academy",
     code: "TEST-001",
@@ -133,6 +134,9 @@ async function ensureSchoolProfile() {
       phone: "1111111111"
     }
   });
+
+  await mongoose.disconnect();
+  return created;
 }
 
 async function ensureAcademicYear() {
