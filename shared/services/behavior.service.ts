@@ -89,7 +89,7 @@ export async function listBehavior(
 
     return rows.map(row => ({
       ...row,
-      _id: String(row._id),
+      _id: String((row as any)._id),
       student_id: String(row.student_id),
       student_name: `${(row.student_id as any)?.first_name ?? ""} ${(row.student_id as any)?.last_name ?? ""}`.trim(),
       admission_no: (row.student_id as any)?.admission_no ?? "",
@@ -121,7 +121,7 @@ export async function getBehavior(
 
     return {
       ...row,
-      _id: String(row._id)
+      _id: String((row as any)._id)
     };
   });
 }
@@ -145,7 +145,7 @@ export async function updateBehavior(
     if (parsed.class_id) patch.class_id = new Types.ObjectId(parsed.class_id);
 
     // Auto-resolve if status changed to resolved
-    if (parsed.status === "resolved" && existing.status !== "resolved") {
+    if (parsed.status === "resolved" && (existing as any).status !== "resolved") {
       patch.resolved_at = new Date();
       patch.resolved_by = new Types.ObjectId(ctx.user_id);
     }

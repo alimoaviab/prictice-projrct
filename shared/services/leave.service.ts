@@ -88,13 +88,13 @@ export async function listLeave(
 
     return rows.map(row => ({
       ...row,
-      _id: String(row._id),
-      requester_id: String(row.requester_id),
-      requester_name: `${(row.requester_id as any)?.first_name ?? ""} ${(row.requester_id as any)?.last_name ?? ""}`.trim() || row.requester_name,
+      _id: String((row as any)._id),
+      requester_id: String((row as any).requester_id),
+      requester_name: `${((row as any).requester_id as any)?.first_name ?? ""} ${((row as any).requester_id as any)?.last_name ?? ""}`.trim() || row.requester_name,
       approved_by: row.approved_by ? String(row.approved_by) : null,
       approver_name: row.approved_by ? `${(row.approved_by as any)?.first_name ?? ""} ${(row.approved_by as any)?.last_name ?? ""}`.trim() : null,
-      start_date: row.start_date instanceof Date ? row.start_date.toISOString().split("T")[0] : row.start_date,
-      end_date: row.end_date instanceof Date ? row.end_date.toISOString().split("T")[0] : row.end_date
+      start_date: (row as any).start_date instanceof Date ? (row as any).start_date.toISOString().split("T")[0] : (row as any).start_date,
+      end_date: (row as any).end_date instanceof Date ? (row as any).end_date.toISOString().split("T")[0] : (row as any).end_date
     }));
   });
 }
@@ -117,10 +117,10 @@ export async function getLeave(
 
     return {
       ...row,
-      _id: String(row._id),
-      requester_id: String(row.requester_id),
-      start_date: row.start_date instanceof Date ? row.start_date.toISOString().split("T")[0] : row.start_date,
-      end_date: row.end_date instanceof Date ? row.end_date.toISOString().split("T")[0] : row.end_date
+      _id: String((row as any)._id),
+      requester_id: String((row as any).requester_id),
+      start_date: (row as any).start_date instanceof Date ? (row as any).start_date.toISOString().split("T")[0] : (row as any).start_date,
+      end_date: (row as any).end_date instanceof Date ? (row as any).end_date.toISOString().split("T")[0] : (row as any).end_date
     };
   });
 }
@@ -140,7 +140,7 @@ export async function updateLeave(
     if (!existing) throw new Error("Leave request not found");
 
     // Only pending requests can be updated (unless cancelling)
-    if (existing.status !== "pending" && parsed.status !== "cancelled") {
+    if ((existing as any).status !== "pending" && parsed.status !== "cancelled") {
       throw new Error("Only pending requests can be updated");
     }
 
@@ -156,8 +156,8 @@ export async function updateLeave(
 
     // Handle date validation if dates are being updated
     if (parsed.start_date || parsed.end_date) {
-      const startDate = parsed.start_date ? new Date(parsed.start_date) : existing.start_date;
-      const endDate = parsed.end_date ? new Date(parsed.end_date) : existing.end_date;
+      const startDate = parsed.start_date ? new Date(parsed.start_date) : (existing as any).start_date;
+      const endDate = parsed.end_date ? new Date(parsed.end_date) : (existing as any).end_date;
       if (endDate < startDate) {
         throw new Error("End date must be after start date");
       }
@@ -196,7 +196,7 @@ export async function deleteLeave(
     if (!existing) throw new Error("Leave request not found");
 
     // Only pending requests can be deleted
-    if (existing.status !== "pending") {
+    if ((existing as any).status !== "pending") {
       throw new Error("Only pending requests can be cancelled");
     }
 

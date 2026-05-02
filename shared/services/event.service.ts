@@ -87,7 +87,7 @@ export async function listEvents(
       .sort({ start_date: 1 })
       .lean();
 
-    return rows.map(row => ({
+    return rows.map((row: any) => ({
       ...row,
       _id: String(row._id),
       created_by: row.created_by ? {
@@ -118,9 +118,9 @@ export async function getEvent(
 
     return {
       ...row,
-      _id: String(row._id),
-      start_date: row.start_date instanceof Date ? row.start_date.toISOString().split("T")[0] : row.start_date,
-      end_date: row.end_date instanceof Date ? row.end_date.toISOString().split("T")[0] : row.end_date
+      _id: String((row as any)._id),
+      start_date: (row as any).start_date instanceof Date ? (row as any).start_date.toISOString().split("T")[0] : (row as any).start_date,
+      end_date: (row as any).end_date instanceof Date ? (row as any).end_date.toISOString().split("T")[0] : (row as any).end_date
     };
   });
 }
@@ -143,8 +143,8 @@ export async function updateEvent(
     
     // Validate date range if dates are being updated
     if (parsed.start_date || parsed.end_date) {
-      const startDate = parsed.start_date ? new Date(parsed.start_date) : existing.start_date;
-      const endDate = parsed.end_date ? new Date(parsed.end_date) : existing.end_date;
+      const startDate = parsed.start_date ? new Date(parsed.start_date) : (existing as any).start_date;
+      const endDate = parsed.end_date ? new Date(parsed.end_date) : (existing as any).end_date;
       if (endDate < startDate) {
         throw new Error("End date must be after start date");
       }

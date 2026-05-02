@@ -62,7 +62,7 @@ export async function listAnnouncements(
       .sort({ created_at: -1, priority: -1 })
       .lean();
 
-    return rows.map(row => ({
+    return rows.map((row: any) => ({
       ...row,
       _id: String(row._id),
       created_by: row.created_by ? {
@@ -90,7 +90,7 @@ export async function getAnnouncement(
 
     return {
       ...row,
-      _id: String(row._id)
+      _id: String((row as any)._id)
     };
   });
 }
@@ -113,7 +113,7 @@ export async function updateAnnouncement(
     if (parsed.target_ids) {
       patch.target_ids = parsed.target_ids.map(id => new Types.ObjectId(id));
     }
-    if (parsed.status === "published" && !existing.published_at) {
+    if (parsed.status === "published" && !(existing as any).published_at) {
       patch.published_at = new Date();
     }
     if (parsed.expires_at) {

@@ -106,7 +106,7 @@ export async function listTimetable(
       .sort({ day_of_week: 1, period_number: 1 })
       .lean();
 
-    return rows.map(row => ({
+    return rows.map((row: any) => ({
       ...row,
       _id: String(row._id),
       class_id: String(row.class_id),
@@ -138,7 +138,7 @@ export async function getTimetable(
 
     return {
       ...row,
-      _id: String(row._id)
+      _id: String((row as any)._id)
     };
   });
 }
@@ -167,10 +167,10 @@ export async function updateTimetable(
     if (parsed.teacher_id || parsed.day_of_week || parsed.period_number || parsed.academic_year_id) {
       const teacherConflict = await TimetableModel.findOne(
         tenantFilter(ctx, {
-          teacher_id: patch.teacher_id ?? existing.teacher_id,
-          day_of_week: parsed.day_of_week ?? existing.day_of_week,
-          period_number: parsed.period_number ?? existing.period_number,
-          academic_year_id: patch.academic_year_id ?? existing.academic_year_id,
+          teacher_id: patch.teacher_id ?? (existing as any).teacher_id,
+          day_of_week: parsed.day_of_week ?? (existing as any).day_of_week,
+          period_number: parsed.period_number ?? (existing as any).period_number,
+          academic_year_id: patch.academic_year_id ?? (existing as any).academic_year_id,
           _id: { $ne: new Types.ObjectId(id) }
         })
       ).lean();
@@ -183,10 +183,10 @@ export async function updateTimetable(
     if (parsed.class_id || parsed.day_of_week || parsed.period_number || parsed.academic_year_id) {
       const classConflict = await TimetableModel.findOne(
         tenantFilter(ctx, {
-          class_id: patch.class_id ?? existing.class_id,
-          day_of_week: parsed.day_of_week ?? existing.day_of_week,
-          period_number: parsed.period_number ?? existing.period_number,
-          academic_year_id: patch.academic_year_id ?? existing.academic_year_id,
+          class_id: patch.class_id ?? (existing as any).class_id,
+          day_of_week: parsed.day_of_week ?? (existing as any).day_of_week,
+          period_number: parsed.period_number ?? (existing as any).period_number,
+          academic_year_id: patch.academic_year_id ?? (existing as any).academic_year_id,
           _id: { $ne: new Types.ObjectId(id) }
         })
       ).lean();

@@ -1,4 +1,4 @@
-import BehaviorListPage from "../../../modules/behavior/components/BehaviorListPage";
+import { BehaviorListPage } from "../../../modules/behavior/pages/BehaviorListPage";
 
 export default function BehaviorPage() {
   return <BehaviorListPage />;

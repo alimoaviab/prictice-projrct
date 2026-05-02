@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "../../../components/ui";
 import { AnnouncementForm } from "../components/AnnouncementForm";
 import { useAnnouncements } from "../hooks/useAnnouncements";
+import { showToast } from "../../../utils/toast";
 
 export function AnnouncementCreatePage() {
   const router = useRouter();
@@ -13,7 +13,10 @@ export function AnnouncementCreatePage() {
   async function handleCreate(input: any) {
     const result = await addAnnouncement(input);
     if (result.ok) {
+      showToast("Announcement published successfully", "success");
       router.push("/admin/announcements");
+    } else {
+      showToast(result.error.message || "Failed to publish announcement", "error");
     }
     return result;
   }
