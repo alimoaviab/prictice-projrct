@@ -9,6 +9,7 @@ import { useClasses } from "../../classes/hooks/useClasses";
 import { useTeachers } from "../../teachers/hooks/useTeachers";
 import { useSubjects } from "../../subjects/hooks/useSubjects";
 import { TimetableForm } from "../components/TimetableForm";
+import { findTimetableConflicts } from "../utils/conflicts";
 
 export function TimetablePage() {
   const [classId, setClassId] = useState<string>("");
@@ -22,15 +23,15 @@ export function TimetablePage() {
 
   const classOptions = useMemo(() =>
     (classesState.data || []).map(c => ({ id: c._id, label: c.name })),
-  [classesState.data]);
+    [classesState.data]);
 
   const teacherOptions = useMemo(() =>
     (teachersState.data || []).map(t => ({ id: t._id, label: `${t.first_name} ${t.last_name || ""}`.trim() })),
-  [teachersState.data]);
+    [teachersState.data]);
 
   const subjectOptions = useMemo(() =>
     (subjectsData || []).map(s => ({ id: s._id, label: s.name })),
-  [subjectsData]);
+    [subjectsData]);
 
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this timetable entry?")) {
@@ -44,23 +45,10 @@ export function TimetablePage() {
   };
 
   const handleSave = async (data: TimetableFormInput) => {
-    // Conflict Detection Logic (Naive Implementation)
-    const conflicts = (state.data || []).filter(r => {
-      if (editingRecord && r._id === editingRecord._id) return false;
-
-      const sameTime = (data.start_time >= r.start_time && data.start_time < r.end_time) ||
-                       (data.end_time > r.start_time && data.end_time <= r.end_time);
-
-      if (r.day === data.day && sameTime) {
-        if (r.teacher_id === data.teacher_id) return true;
-        if (r.class_id === data.class_id) return true;
-        if (r.room === data.room && data.room) return true;
-      }
-      return false;
-    });
+    const conflicts = findTimetableConflicts(state.data || [], data, editingRecord?._id);
 
     if (conflicts.length > 0) {
-      alert("Conflict detected! This teacher, class, or room is already occupied during this time.");
+      alert("Conflict detected! This class, subject, or room is already occupied during this time.");
       return;
     }
 
@@ -90,19 +78,19 @@ export function TimetablePage() {
       </div>
 
       <div className="flex gap-4 items-center bg-white p-4 rounded-xl border border-gray-200">
-         <div className="flex flex-col gap-1 flex-1 max-w-xs">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Filter by Class</label>
-            <select
-              value={classId}
-              onChange={(e) => setClassId(e.target.value)}
-              className="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2"
-            >
-              <option value="">All Classes</option>
-              {classOptions.map(opt => (
-                <option key={opt.id} value={opt.id}>{opt.label}</option>
-              ))}
-            </select>
-         </div>
+        <div className="flex flex-col gap-1 flex-1 max-w-xs">
+          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Filter by Class</label>
+          <select
+            value={classId}
+            onChange={(e) => setClassId(e.target.value)}
+            className="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2"
+          >
+            <option value="">All Classes</option>
+            {classOptions.map(opt => (
+              <option key={opt.id} value={opt.id}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {state.status === "loading" && <TableSkeleton />}

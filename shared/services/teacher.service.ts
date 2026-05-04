@@ -26,27 +26,35 @@ export async function listTeachers(
     assertPermission(ctx, "teachers", "view");
 
     const classIds = await resolveClassIdsForAcademyCare(ctx, filter.academy_care_id);
+    const classIdSet = new Set(classIds.map(String));
 
-    const teachers = await TeacherModel.find(
-      tenantFilter(ctx, { class_ids: { $in: classIds } })
-    )
+    const teachers = await TeacherModel.find(tenantFilter(ctx))
       .sort({ first_name: 1, last_name: 1 })
       .lean();
     const userIds = teachers.map((teacher) => teacher.user_id).filter(Boolean);
     const users = await UserModel.find({ _id: { $in: userIds } }).lean();
     const usersById = new Map(users.map((user) => [String(user._id), user]));
 
-    return teachers.map((teacher) => {
-      const user = teacher.user_id ? usersById.get(String(teacher.user_id)) : undefined;
-      return {
-        ...teacher,
-        _id: String(teacher._id),
-        email: user?.email ?? "",
-        phone: teacher.phone ?? user?.profile?.phone ?? "",
-        qualification: teacher.qualification ?? "",
-        class_ids: (teacher.class_ids ?? []).map((value: unknown) => String(value))
-      };
-    });
+    return teachers
+      .filter((teacher) => {
+        if (classIdSet.size === 0) {
+          return true;
+        }
+
+        const teacherClassIds = (teacher.class_ids ?? []).map(String);
+        return teacherClassIds.length === 0 || teacherClassIds.some((classId) => classIdSet.has(classId));
+      })
+      .map((teacher) => {
+        const user = teacher.user_id ? usersById.get(String(teacher.user_id)) : undefined;
+        return {
+          ...teacher,
+          _id: String(teacher._id),
+          email: user?.email ?? "",
+          phone: teacher.phone ?? user?.profile?.phone ?? "",
+          qualification: teacher.qualification ?? "",
+          class_ids: (teacher.class_ids ?? []).map((value: unknown) => String(value))
+        };
+      });
   });
 }
 

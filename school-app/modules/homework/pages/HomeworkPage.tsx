@@ -7,6 +7,7 @@ import { serviceRequest } from "../../../services/service-client";
 import { HomeworkForm } from "../components/HomeworkForm";
 import { HomeworkTable } from "../components/HomeworkTable";
 import { useHomework } from "../hooks/useHomework";
+import { useSubjects } from "../../subjects/hooks/useSubjects";
 
 export function HomeworkPage() {
     const { state, addHomework } = useHomework();
@@ -14,6 +15,7 @@ export function HomeworkPage() {
     const { state: teacherState, run: runTeachers } = useSafeAsync<
         Array<{ _id: string; first_name: string; last_name: string; employee_no: string }>
     >();
+    const { data: subjectData, isLoading: subjectLoading, error: subjectError } = useSubjects();
 
     const loadClasses = useCallback(() => {
         return runClasses(async () => {
@@ -40,25 +42,23 @@ export function HomeworkPage() {
     }, [runTeachers]);
 
     useEffect(() => {
-        void loadClasses().catch(() => {
-            // Error state is already managed by useSafeAsync.
-        });
-        void loadTeachers().catch(() => {
-            // Error state is already managed by useSafeAsync.
-        });
+        void loadClasses().catch(() => { });
+        void loadTeachers().catch(() => { });
     }, [loadClasses, loadTeachers]);
 
     const isDependencyLoading =
         classState.status === "idle" ||
         classState.status === "loading" ||
         teacherState.status === "idle" ||
-        teacherState.status === "loading";
+        teacherState.status === "loading" ||
+        subjectLoading;
 
     const classOptions = (classState.data ?? []).map((item) => ({ id: item._id, label: item.name }));
     const teacherOptions = (teacherState.data ?? []).map((item) => ({
         id: item._id,
         label: `${item.employee_no} - ${item.first_name} ${item.last_name}`.trim()
     }));
+    const subjectOptions = (subjectData ?? []).map((item: any) => ({ id: item._id, label: item.name }));
 
     return (
         <div className="flex flex-col gap-8">
@@ -76,7 +76,7 @@ export function HomeworkPage() {
                         </div>
                     </div>
                 ) : (
-                    <HomeworkForm onCreate={addHomework} classOptions={classOptions} teacherOptions={teacherOptions} />
+                    <HomeworkForm onCreate={addHomework} classOptions={classOptions} teacherOptions={teacherOptions} subjectOptions={subjectOptions} />
                 )}
             </Card>
 
@@ -88,10 +88,14 @@ export function HomeworkPage() {
                 <DataState variant="error" title="Teachers unavailable" message={teacherState.error} />
             ) : null}
 
+            {subjectError ? (
+                <DataState variant="error" title="Subjects unavailable" message={subjectError} />
+            ) : null}
+
             {state.status === "loading" || state.status === "idle" ? (
                 <div className="space-y-4">
-                   <Skeleton className="h-8 w-48" />
-                   <TableSkeleton />
+                    <Skeleton className="h-8 w-48" />
+                    <TableSkeleton />
                 </div>
             ) : null}
 
@@ -108,7 +112,7 @@ export function HomeworkPage() {
                     <div className="flex items-center justify-between">
                         <h3 className="text-lg font-bold text-gray-900">Homework Assignments</h3>
                         <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                           {state.data.length} Records
+                            {state.data.length} Records
                         </span>
                     </div>
                     <HomeworkTable rows={state.data} />

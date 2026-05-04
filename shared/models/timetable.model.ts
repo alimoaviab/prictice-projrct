@@ -10,7 +10,7 @@ const timetableSchema = new Schema(
     day_of_week: {
       type: Number,
       required: true,
-      min: 1,
+      min: 0, // 0 = Everyday, 1-7 = Monday-Sunday
       max: 7,
       index: true
     },
@@ -23,13 +23,13 @@ const timetableSchema = new Schema(
     start_time: requiredString,
     end_time: requiredString,
     room: { type: String, trim: true },
-    academic_year_id: { type: Types.ObjectId, ref: "AcademicYear", required: true, index: true }
+    academic_year_id: { type: Types.ObjectId, ref: "AcademicYear", index: true }
   },
   { ...schemaOptions, collection: "timetable" }
 );
 
 timetableSchema.index({ school_id: 1, class_id: 1, day_of_week: 1, period_number: 1 }, { unique: true });
-timetableSchema.index({ school_id: 1, teacher_id: 1, day_of_week: 1, period_number: 1 }, { unique: true });
+timetableSchema.index({ school_id: 1, teacher_id: 1, day_of_week: 1, period_number: 1 });
 timetableSchema.index({ school_id: 1, academic_year_id: 1, class_id: 1 });
 
 export const TimetableModel = models.Timetable || model("Timetable", timetableSchema);

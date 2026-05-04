@@ -6,7 +6,7 @@ import { ClassModel } from "../models/class.model";
 import { ExamModel } from "../models/exam.model";
 import { ResultModel } from "../models/result.model";
 import { StudentModel } from "../models/student.model";
-import { RequestContext, ServiceResult } from "../types/core";
+import { RequestContext, ServiceResult, ControlledError } from "../types/core";
 import { serviceTry } from "../utils/result";
 import { ResultCreateInput, ResultUpdateInput, resultCreateSchema, resultUpdateSchema } from "../validation/result.schema";
 import { resolveClassIdsForAcademyCare } from "./_academy-care-filter";
@@ -76,27 +76,31 @@ export async function saveResult(ctx: RequestContext, input: ResultCreateInput):
       | { _id: unknown; class_id: unknown; max_marks: number; title?: string }
       | null;
     if (!exam) {
-      throw new Error("Selected exam was not found.");
+      throw new ControlledError("NOT_FOUND", "Selected exam was not found.", 404);
     }
 
     const student = (await StudentModel.findOne(tenantFilter(ctx, { _id: parsed.student_id })).lean()) as
       | { _id: unknown; class_id: unknown; first_name?: string; last_name?: string }
       | null;
     if (!student) {
-      throw new Error("Selected student was not found.");
+      throw new ControlledError("NOT_FOUND", "Selected student was not found.", 404);
     }
 
     if (String(student.class_id) !== String(exam.class_id)) {
-      throw new Error("Selected student does not belong to the exam class.");
+      throw new ControlledError(
+        "INVALID_STUDENT",
+        "Selected student does not belong to the exam class.",
+        400
+      );
     }
 
     if (parsed.obtained_marks > Number(exam.max_marks ?? 0)) {
-      throw new Error("Obtained marks cannot exceed exam total marks.");
+      throw new ControlledError("INVALID", "Obtained marks cannot exceed exam total marks.", 400);
     }
 
     const classroom = await ClassModel.findOne(tenantFilter(ctx, { _id: exam.class_id })).lean();
     if (!classroom) {
-      throw new Error("Exam class was not found.");
+      throw new ControlledError("NOT_FOUND", "Exam class was not found.", 404);
     }
 
     const existing = (await ResultModel.findOne(

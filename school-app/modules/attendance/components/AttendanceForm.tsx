@@ -7,18 +7,20 @@ import { AttendanceFormInput, AttendanceStatus } from "../types/attendance.types
 export function AttendanceForm({
     onCreate,
     classOptions,
-    studentOptions
+    studentOptions,
+    initial
 }: {
     onCreate: (input: AttendanceFormInput) => Promise<unknown>;
     classOptions: Array<{ id: string; label: string }>;
     studentOptions: Array<{ id: string; class_id: string; label: string }>;
+    initial?: Partial<AttendanceFormInput>;
 }) {
     const [form, setForm] = useState<AttendanceFormInput>({
-        student_id: "",
-        class_id: "",
-        date: new Date().toISOString().split("T")[0],
-        status: "present",
-        note: ""
+        student_id: initial?.student_id ?? "",
+        class_id: initial?.class_id ?? "",
+        date: initial?.date ?? new Date().toISOString().split("T")[0],
+        status: (initial?.status as AttendanceStatus) ?? "present",
+        note: initial?.note ?? ""
     });
     const [saving, setSaving] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});

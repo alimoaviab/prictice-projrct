@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { SubjectRow, SubjectFormInput } from "../types";
-import { serviceRequest } from "@/services/service-client";
+import * as service from "../services/subject.service";
 
 export function useSubjects() {
   const [data, setData] = useState<SubjectRow[]>([]);
@@ -11,7 +11,7 @@ export function useSubjects() {
     try {
       setIsLoading(true);
       setError(null);
-      const res = await serviceRequest<SubjectRow[]>("/api/subjects");
+      const res = await service.listSubjects();
       if (!res.success) throw new Error(res.message || "Failed to fetch subjects");
       setData(res.data || []);
     } catch (err: any) {
@@ -22,27 +22,19 @@ export function useSubjects() {
   }, []);
 
   const createSubject = async (input: SubjectFormInput) => {
-    const res = await serviceRequest<SubjectRow>("/api/subjects", {
-      method: "POST",
-      body: JSON.stringify(input),
-    });
+    const res = await service.createSubject(input);
     if (!res.success) throw new Error(res.message || "Failed to create subject");
     await fetchSubjects();
   };
 
   const updateSubject = async (id: string, input: Partial<SubjectFormInput>) => {
-    const res = await serviceRequest<SubjectRow>(`/api/subjects/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(input),
-    });
+    const res = await service.updateSubject(id, input);
     if (!res.success) throw new Error(res.message || "Failed to update subject");
     await fetchSubjects();
   };
 
   const deleteSubject = async (id: string) => {
-    const res = await serviceRequest<null>(`/api/subjects/${id}`, {
-      method: "DELETE",
-    });
+    const res = await service.deleteSubject(id);
     if (!res.success) throw new Error(res.message || "Failed to delete subject");
     await fetchSubjects();
   };

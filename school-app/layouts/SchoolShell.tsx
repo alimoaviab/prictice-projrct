@@ -131,7 +131,7 @@ export function SchoolShell({
     let ignore = false;
     void (async () => {
       try {
-        const response = await fetch("/api/academic-years", { credentials: "same-origin" });
+        const response = await fetch("/api/academic-years", { credentials: "include" });
         const payload = await response.json();
         if (ignore || !payload?.ok || !Array.isArray(payload?.data)) {
           return;

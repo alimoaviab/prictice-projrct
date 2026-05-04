@@ -10,6 +10,7 @@ import { AttendanceForm } from "../components/AttendanceForm";
 import { useAttendance } from "../hooks/useAttendance";
 import { AttendanceFormInput } from "../types/attendance.types";
 import { showToast } from "../../../utils/toast";
+import { useSearchParams } from "next/navigation";
 
 export function AttendanceCreatePage() {
   const router = useRouter();
@@ -38,8 +39,8 @@ export function AttendanceCreatePage() {
   }, [runStudents]);
 
   useEffect(() => {
-    void loadClasses().catch(() => {});
-    void loadStudents().catch(() => {});
+    void loadClasses().catch(() => { });
+    void loadStudents().catch(() => { });
   }, [loadClasses, loadStudents]);
 
   const isDependencyLoading =
@@ -54,6 +55,9 @@ export function AttendanceCreatePage() {
     class_id: item.class_id,
     label: `${item.admission_no} - ${item.first_name} ${item.last_name}`.trim(),
   }));
+
+  const search = useSearchParams();
+  const preselectedClass = search?.get("class_id") ?? "";
 
   async function handleCreate(input: AttendanceFormInput) {
     const result = await addAttendance(input);
@@ -100,6 +104,7 @@ export function AttendanceCreatePage() {
             onCreate={handleCreate}
             classOptions={classOptions}
             studentOptions={studentOptions}
+            initial={{ class_id: preselectedClass }}
           />
         )}
       </Card>

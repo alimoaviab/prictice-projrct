@@ -10,14 +10,16 @@ import { TimetableForm } from "../components/TimetableForm";
 import { useTimetable } from "../hooks/useTimetable";
 import { TimetableFormInput } from "../types/timetable.types";
 import { showToast } from "../../../utils/toast";
+import { findTimetableConflicts } from "../utils/conflicts";
 
 export function TimetableCreatePage() {
   const router = useRouter();
-  const { addTimetable } = useTimetable();
+  const { state: timetableState, addTimetable } = useTimetable();
 
   const { state: classState, run: runClasses } = useSafeAsync<Array<{ _id: string; name: string }>>();
   const { state: teacherState, run: runTeachers } = useSafeAsync<Array<{ _id: string; name: string }>>();
   const { state: subjectState, run: runSubjects } = useSafeAsync<Array<{ _id: string; name: string }>>();
+  // academic year removed: no longer required or fetched
 
   const loadDependencies = useCallback(() => {
     return Promise.all([
@@ -35,35 +37,61 @@ export function TimetableCreatePage() {
         const result = await serviceRequest<Array<{ _id: string; name: string }>>("/api/subjects");
         if (!result.ok) throw new Error(result.error.message || "Failed to load subjects");
         return result.data;
-      })
+      }),
+      // academic years not fetched
     ]);
   }, [runClasses, runTeachers, runSubjects]);
 
   useEffect(() => {
-    void loadDependencies().catch(() => {});
+    void loadDependencies().catch(() => { });
   }, [loadDependencies]);
 
-  const isLoading = classState.status === "loading" || teacherState.status === "loading" || subjectState.status === "loading" || classState.status === "idle";
+  const isLoading =
+    classState.status === "loading" ||
+    teacherState.status === "loading" ||
+    subjectState.status === "loading" ||
+    classState.status === "idle";
 
   async function handleCreate(input: TimetableFormInput) {
-    const result = await addTimetable(input);
-    if (result.ok) {
-      showToast("Timetable entry added successfully", "success");
-      router.push("/admin/timetable");
-      router.refresh();
-    } else {
-      showToast(result.error.message || "Failed to add entry", "error");
+    try {
+      const conflicts = findTimetableConflicts(timetableState.data || [], input);
+      if (conflicts.length > 0) {
+        return {
+          ok: false,
+          error: { message: "Conflict detected! This class, subject, or room is already occupied during this time." }
+        };
+      }
+
+      const result = await addTimetable(input);
+      if (result.ok) {
+        showToast("Timetable entry created successfully", "success");
+        router.push("/admin/timetable");
+        router.refresh();
+      } else {
+        showToast(result.error.message || "Failed to create entry", "error");
+      }
+      return result;
+    } catch (error: any) {
+      console.error("[TimetableCreatePage] Error:", error);
+      showToast(error.message || "Failed to create entry", "error");
+      return { ok: false, error: { message: error.message } };
     }
-    return result;
   }
 
   if (classState.status === "error" || teacherState.status === "error" || subjectState.status === "error") {
-    return <DataState variant="error" title="Failed to load dependencies" message={classState.error || teacherState.error || subjectState.error} />;
+    return (
+      <DataState
+        variant="error"
+        title="Failed to load dependencies"
+        message={classState.error || teacherState.error || subjectState.error}
+      />
+    );
   }
 
   const classOptions = (classState.data ?? []).map(o => ({ id: o._id, label: o.name }));
   const teacherOptions = (teacherState.data ?? []).map(o => ({ id: o._id, label: o.name }));
   const subjectOptions = (subjectState.data ?? []).map(o => ({ id: o._id, label: o.name }));
+  // academicYearOptions removed
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -97,6 +125,7 @@ export function TimetableCreatePage() {
             classOptions={classOptions}
             teacherOptions={teacherOptions}
             subjectOptions={subjectOptions}
+            isLoading={isLoading}
           />
         )}
       </Card>

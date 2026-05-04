@@ -5,6 +5,8 @@ export * from "./DataTable";
 export * from "./Input";
 export * from "./Badge";
 export * from "./Select";
+export * from "./SubjectSelect";
+export * from "./SubjectMultiSelect";
 export * from "./PageHeader";
 export * from "./Breadcrumb";
 export * from "./EmptyState";

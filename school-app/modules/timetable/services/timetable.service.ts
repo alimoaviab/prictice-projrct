@@ -2,11 +2,11 @@ import { serviceRequest } from "../../../services/service-client";
 import { getAcademyCareQuery } from "../../../services/academy-care-context";
 import { TimetableFormInput, TimetableRecord } from "../types/timetable.types";
 
-export function listTimetable(filters?: { class_id?: string; teacher_id?: string; day?: string }) {
+export function listTimetable(filters?: { class_id?: string; teacher_id?: string; day_of_week?: number }) {
   const params = new URLSearchParams();
   if (filters?.class_id) params.set("class_id", filters.class_id);
   if (filters?.teacher_id) params.set("teacher_id", filters.teacher_id);
-  if (filters?.day) params.set("day", filters.day);
+  if (filters?.day_of_week !== undefined) params.set("day_of_week", String(filters.day_of_week));
 
   const academyQuery = getAcademyCareQuery();
   const baseQuery = academyQuery ? academyQuery : "?";
@@ -16,6 +16,17 @@ export function listTimetable(filters?: { class_id?: string; teacher_id?: string
 }
 
 export function createTimetable(input: TimetableFormInput) {
+  console.log("[TimetableService] Creating timetable with input:", input);
+
+  // Validate required fields
+  if (!input.class_id) throw new Error("Class ID is required");
+  if (!input.teacher_id) throw new Error("Teacher ID is required");
+  if (!input.subject_id) throw new Error("Subject ID is required");
+  if (!input.day_of_week) throw new Error("Day is required");
+  if (!input.period_number) throw new Error("Period number is required");
+  if (!input.start_time) throw new Error("Start time is required");
+  if (!input.end_time) throw new Error("End time is required");
+
   return serviceRequest<TimetableRecord>("/api/timetable", {
     method: "POST",
     body: JSON.stringify(input)

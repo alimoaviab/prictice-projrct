@@ -2,30 +2,19 @@
 
 import { useState } from "react";
 import { useLeave } from "../hooks/useLeave";
-import { LeaveRecordRow, LeaveFormInput } from "../types/leave.types";
-import LeaveForm from "./LeaveForm";
+import { LeaveRecordRow } from "../types/leave.types";
 import { showToast } from "../../../utils/toast";
 
 export default function LeaveListPage() {
   const { state, addLeave, updateLeave, deleteLeave, approveLeave, rejectLeave } = useLeave();
-  const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState<LeaveRecordRow | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [rejectingId, setRejectingId] = useState<string | null>(null);
 
-  const handleSubmit = async (data: LeaveFormInput) => {
-    if (editing) {
-      await updateLeave(editing._id, data);
-    } else {
-      await addLeave(data);
-    }
-    setShowForm(false);
-    setEditing(null);
-  };
-
   const handleEdit = (record: LeaveRecordRow) => {
-    setEditing(record);
-    setShowForm(true);
+    // allow editing existing leave requests
+    // open a simple prompt flow for quick edits
+    const notes = window.prompt("Notes/Reason", record.notes || "")?.trim() || "";
+    updateLeave(record._id, { notes });
   };
 
   const handleDelete = async (id: string) => {
@@ -57,28 +46,9 @@ export default function LeaveListPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Leave Management</h1>
-        <button
-          onClick={() => { setEditing(null); setShowForm(true); }}
-          className="px-4 py-2 bg-blue-600 text-white rounded"
-        >
-          + Add Leave Request
-        </button>
+        <h1 className="text-2xl font-bold">Leave Requests</h1>
+        <div className="text-sm text-gray-500">Showing submitted leave requests. Admins can approve/reject.</div>
       </div>
-
-      {showForm && (
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-lg font-semibold mb-4">
-            {editing ? "Edit Leave Request" : "New Leave Request"}
-          </h2>
-          <LeaveForm
-            initial={editing ?? undefined}
-            onSubmit={handleSubmit}
-            onCancel={() => { setShowForm(false); setEditing(null); }}
-            requesters={requesters}
-          />
-        </div>
-      )}
 
       {state.status === "loading" && <p>Loading...</p>}
       {state.error && <p className="text-red-600">{state.error}</p>}
@@ -105,12 +75,11 @@ export default function LeaveListPage() {
                 <td className="px-4 py-3">{record.start_date}</td>
                 <td className="px-4 py-3">{record.end_date}</td>
                 <td className="px-4 py-3">
-                  <span className={`px-2 py-1 rounded text-xs ${
-                    record.status === "approved" ? "bg-green-100 text-green-800" :
-                    record.status === "rejected" ? "bg-red-100 text-red-800" :
-                    record.status === "cancelled" ? "bg-gray-100 text-gray-800" :
-                    "bg-yellow-100 text-yellow-800"
-                  }`}>
+                  <span className={`px-2 py-1 rounded text-xs ${record.status === "approved" ? "bg-green-100 text-green-800" :
+                      record.status === "rejected" ? "bg-red-100 text-red-800" :
+                        record.status === "cancelled" ? "bg-gray-100 text-gray-800" :
+                          "bg-yellow-100 text-yellow-800"
+                    }`}>
                     {record.status}
                   </span>
                 </td>

@@ -10,14 +10,24 @@ export async function serviceRequest<T>(
   const authHeader =
     typeof window !== "undefined" ? window.localStorage.getItem("token") ?? undefined : undefined;
 
+  // Validate token format on client side
+  if (authHeader && !authHeader.startsWith("eyJ")) {
+    console.warn(
+      `[ServiceRequest] Invalid token format in localStorage. Token starts with: ${authHeader.substring(0, 20)}. ` +
+      `Please clear localStorage and log in again.`
+    );
+    // Don't send malformed token, let it fall back to cookies
+  }
+
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     try {
       const response = await fetch(url, {
         ...options,
-        credentials: "same-origin",
+        credentials: "include",
         headers: {
           "content-type": "application/json",
-          ...(authHeader ? { authorization: `Bearer ${authHeader}` } : {}),
+          // Only send Bearer token if it's a valid JWT
+          ...(authHeader && authHeader.startsWith("eyJ") ? { authorization: `Bearer ${authHeader}` } : {}),
           ...(options.headers ?? {})
         }
       });

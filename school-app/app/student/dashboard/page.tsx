@@ -1,6 +1,7 @@
 import { Card } from "../../../components/ui";
 import { SchoolShell } from "../../../layouts/SchoolShell";
 import { colors, spacing, typography } from "@edu/shared/design-system/tokens";
+import { TimetablePreview } from "../../../modules/timetable/components/TimetablePreview";
 
 const summaries = [
   { title: "Daily Summary", detail: "4 classes, 1 homework due, attendance marked" },
@@ -18,6 +19,9 @@ export default function StudentDashboardPage() {
             <p style={{ ...typography.bodyMd, marginBottom: 0, color: colors.onSurfaceVariant }}>{summary.detail}</p>
           </Card>
         ))}
+      </div>
+      <div style={{ marginTop: spacing.md }}>
+        <TimetablePreview />
       </div>
     </SchoolShell>
   );

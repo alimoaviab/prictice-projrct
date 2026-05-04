@@ -5,6 +5,7 @@ import { tenantFilter } from "../db/tenant-query";
 import { ClassModel } from "../models/class.model";
 import { HomeworkModel } from "../models/homework.model";
 import { TeacherModel } from "../models/teacher.model";
+import { SubjectModel } from "../models/subject.model";
 import { RequestContext, ServiceResult } from "../types/core";
 import { serviceTry } from "../utils/result";
 import { HomeworkCreateInput, HomeworkUpdateInput, homeworkCreateSchema, homeworkUpdateSchema } from "../validation/homework.schema";
@@ -24,6 +25,7 @@ export async function listHomework(
     const rows = await HomeworkModel.find(tenantFilter(ctx, { class_id: { $in: classIds } }))
       .populate("class_id", "name")
       .populate("teacher_id", "employee_no first_name last_name")
+      .populate({ path: "subject_id", select: "name", strictPopulate: false })
       .sort({ due_at: 1, createdAt: -1 })
       .lean();
 
@@ -35,6 +37,7 @@ export async function listHomework(
         first_name?: string;
         last_name?: string;
       };
+      const subject = row.subject_id as { _id?: unknown; name?: string };
 
       return {
         ...row,
@@ -44,6 +47,8 @@ export async function listHomework(
         teacher_id: teacher?._id ? String(teacher._id) : String(row.teacher_id),
         teacher_name: `${teacher?.first_name ?? ""} ${teacher?.last_name ?? ""}`.trim(),
         teacher_employee_no: teacher?.employee_no ?? "",
+        subject_id: subject?._id ? String(subject._id) : (row.subject_id ? String(row.subject_id) : ""),
+        subject_name: subject?.name ?? (row.subject ?? ""),
         due_at: row.due_at instanceof Date ? row.due_at.toISOString().split("T")[0] : row.due_at
       };
     });
@@ -76,11 +81,20 @@ export async function createHomework(
       throw new Error("Selected teacher was not found.");
     }
 
+    // Validate subject exists
+    const subject = await SubjectModel.findOne(
+      tenantFilter(ctx, { _id: parsed.subject_id })
+    ).lean();
+    if (!subject) {
+      throw new Error("Selected subject was not found.");
+    }
+
     const created = await HomeworkModel.create({
       school_id: ctx.school_id,
       class_id: new Types.ObjectId(parsed.class_id),
       teacher_id: new Types.ObjectId(parsed.teacher_id),
-      subject: parsed.subject,
+      subject_id: new Types.ObjectId(parsed.subject_id),
+      subject: subject.name, // Set subject name for backward compatibility
       title: parsed.title,
       instructions: parsed.instructions ?? "",
       due_at: dueAt,
@@ -128,12 +142,24 @@ export async function updateHomework(
       }
     }
 
+    if (parsed.subject_id) {
+      const subject = await SubjectModel.findOne(tenantFilter(ctx, { _id: parsed.subject_id })).lean();
+      if (!subject) {
+        throw new Error("Selected subject was not found.");
+      }
+    }
+
     const patch = { ...parsed } as any;
     if (parsed.class_id) {
       patch.class_id = new Types.ObjectId(parsed.class_id);
     }
     if (parsed.teacher_id) {
       patch.teacher_id = new Types.ObjectId(parsed.teacher_id);
+    }
+    if (parsed.subject_id) {
+      patch.subject_id = new Types.ObjectId(parsed.subject_id);
+      const subject = await SubjectModel.findOne(tenantFilter(ctx, { _id: parsed.subject_id })).lean();
+      patch.subject = subject?.name; // Update subject name for backward compatibility
     }
     if (parsed.due_at) {
       const dueAt = new Date(parsed.due_at);

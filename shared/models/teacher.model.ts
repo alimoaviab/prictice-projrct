@@ -10,7 +10,8 @@ const teacherSchema = new Schema(
     last_name: { type: String, trim: true, default: "" },
     phone: requiredString,
     qualification: { type: String, trim: true, default: "" },
-    subjects: [{ type: String, trim: true }],
+    subject_ids: [{ type: Types.ObjectId, ref: "Subject", index: true }],
+    subjects: [{ type: String, trim: true }], // Keep for backward compatibility, will be deprecated
     class_ids: [{ type: Types.ObjectId, ref: "Class" }],
     status: {
       type: String,

@@ -80,6 +80,7 @@ export default function SignupPage() {
     try {
       const response = await fetch("/api/auth/signup", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fullName: formData.fullName,
@@ -181,11 +182,10 @@ export default function SignupPage() {
                     key={role.key}
                     type="button"
                     onClick={() => setSelectedRole(role.key)}
-                    className={`py-sm px-xs font-label-sm rounded-DEFAULT transition-colors flex flex-col items-center gap-xs ${
-                      selectedRole === role.key
+                    className={`py-sm px-xs font-label-sm rounded-DEFAULT transition-colors flex flex-col items-center gap-xs ${selectedRole === role.key
                         ? "text-on-primary bg-primary shadow-sm"
                         : "text-on-surface-variant hover:bg-surface-variant/50"
-                    }`}
+                      }`}
                   >
                     <span className="material-symbols-outlined text-[20px]">
                       {role.icon}

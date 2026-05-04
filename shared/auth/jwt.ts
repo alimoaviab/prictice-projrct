@@ -32,12 +32,30 @@ export function verifyAuthToken(
     throw new Error("JWT_SECRET is required.");
   }
 
-  const decoded = jwt.verify(token, secret) as AuthTokenPayload;
-  if (decoded.app !== expectedApp) {
-    throw new Error("Invalid application session.");
+  // Validate token format before attempting to verify
+  if (!token || typeof token !== "string" || token.trim() === "") {
+    throw new Error("Token is empty or invalid.");
   }
 
-  return decoded;
+  if (!token.startsWith("eyJ")) {
+    throw new Error(`Invalid token format. Expected JWT, got: ${token.substring(0, 50)}`);
+  }
+
+  try {
+    const decoded = jwt.verify(token, secret) as AuthTokenPayload;
+    if (decoded.app !== expectedApp) {
+      throw new Error("Invalid application session.");
+    }
+
+    return decoded;
+  } catch (error: any) {
+    if (error.name === "JsonWebTokenError") {
+      throw new Error(`JWT verification failed: ${error.message}. Token: ${token.substring(0, 50)}...`);
+    } else if (error.name === "TokenExpiredError") {
+      throw new Error("Token has expired. Please log in again.");
+    }
+    throw error;
+  }
 }
 
 export function contextFromToken(

@@ -1,6 +1,7 @@
 import { Button, Card } from "../../../components/ui";
 import { SchoolShell } from "../../../layouts/SchoolShell";
 import { colors, spacing, typography } from "@edu/shared/design-system/tokens";
+import { TimetablePreview } from "../../../modules/timetable/components/TimetablePreview";
 
 const quickActions = ["Start Class", "Auto Attendance", "Homework", "Test"];
 const insights = ["3 students absent repeatedly", "Low marks detected", "Homework submission drop detected"];
@@ -36,6 +37,9 @@ export default function TeacherDashboardPage() {
             ))}
           </div>
         </Card>
+      </div>
+      <div style={{ marginTop: spacing.md }}>
+        <TimetablePreview />
       </div>
     </SchoolShell>
   );

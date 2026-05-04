@@ -7,7 +7,8 @@ export interface HomeworkRecordRow {
   teacher_id: string;
   teacher_name: string;
   teacher_employee_no: string;
-  subject: string;
+  subject_id: string;
+  subject_name: string;
   title: string;
   instructions?: string;
   due_at: string;
@@ -17,7 +18,7 @@ export interface HomeworkRecordRow {
 export interface HomeworkFormInput {
   class_id: string;
   teacher_id: string;
-  subject: string;
+  subject_id: string;
   title: string;
   instructions?: string;
   due_at: string;

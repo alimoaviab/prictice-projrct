@@ -7,17 +7,19 @@ import { HomeworkFormInput, HomeworkStatus } from "../types/homework.types";
 export function HomeworkForm({
     onCreate,
     classOptions,
-    teacherOptions
+    teacherOptions,
+    subjectOptions = []
 }: {
     onCreate: (input: HomeworkFormInput) => Promise<unknown>;
     classOptions: Array<{ id: string; label: string }>;
     teacherOptions: Array<{ id: string; label: string }>;
+    subjectOptions?: Array<{ id: string; label: string }>;
 }) {
     const [form, setForm] = useState<HomeworkFormInput>({
         title: "",
         class_id: "",
         teacher_id: "",
-        subject: "",
+        subject_id: "",
         due_at: "",
         instructions: "",
         status: "assigned"
@@ -30,7 +32,7 @@ export function HomeworkForm({
         if (!form.title.trim()) newErrors.title = "Title is required";
         if (!form.class_id.trim()) newErrors.class_id = "Class is required";
         if (!form.teacher_id.trim()) newErrors.teacher_id = "Teacher is required";
-        if (!form.subject.trim()) newErrors.subject = "Subject is required";
+        if (!form.subject_id.trim()) newErrors.subject_id = "Subject is required";
         if (!form.due_at) newErrors.due_at = "Due date is required";
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -47,7 +49,7 @@ export function HomeworkForm({
                     title: "",
                     class_id: "",
                     teacher_id: "",
-                    subject: "",
+                    subject_id: "",
                     due_at: "",
                     instructions: "",
                     status: "assigned"
@@ -72,16 +74,13 @@ export function HomeworkForm({
 
                 <Select
                     label="Subject"
-                    value={form.subject}
-                    onChange={(e) => setForm({ ...form, subject: e.target.value })}
+                    value={form.subject_id}
+                    onChange={(e) => setForm({ ...form, subject_id: e.target.value })}
                     options={[
                         { label: "Select subject", value: "" },
-                        { label: "Mathematics", value: "Mathematics" },
-                        { label: "English", value: "English" },
-                        { label: "Science", value: "Science" },
-                        { label: "History", value: "History" }
+                        ...subjectOptions.map(o => ({ label: o.label, value: o.id }))
                     ]}
-                    error={errors.subject}
+                    error={errors.subject_id}
                     required
                 />
             </div>

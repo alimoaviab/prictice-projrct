@@ -6,7 +6,8 @@ const homeworkSchema = new Schema(
     school_id: tenantField,
     class_id: { type: Types.ObjectId, ref: "Class", required: true, index: true },
     teacher_id: { type: Types.ObjectId, ref: "Teacher", required: true, index: true },
-    subject: requiredString,
+    subject_id: { type: Types.ObjectId, ref: "Subject", required: true, index: true },
+    subject: { type: String, trim: true, default: "" }, // Backward compatibility
     title: requiredString,
     instructions: String,
     attachment_urls: [{ type: String, trim: true }],

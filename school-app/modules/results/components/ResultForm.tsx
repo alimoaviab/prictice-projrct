@@ -5,13 +5,13 @@ import { Button, Input, Select } from "../../../components/ui";
 import { ResultFormInput, ResultOption } from "../types/result.types";
 
 export function ResultForm({
-  examOptions,
-  studentOptions,
-  onCreate
+    examOptions,
+    studentOptions,
+    onCreate
 }: {
-  examOptions: ResultOption[];
-  studentOptions: ResultOption[];
-  onCreate: (input: ResultFormInput) => Promise<unknown>;
+    examOptions: ResultOption[];
+    studentOptions: ResultOption[];
+    onCreate: (input: ResultFormInput) => Promise<unknown>;
 }) {
     const [form, setForm] = useState<ResultFormInput>({
         exam_id: "",
@@ -50,6 +50,11 @@ export function ResultForm({
         }
     }
 
+    const selectedExamClassId = examOptions.find((e) => e.id === form.exam_id)?.class_id;
+    const visibleStudents = selectedExamClassId
+        ? studentOptions.filter((s) => s.class_id === selectedExamClassId)
+        : studentOptions;
+
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -71,7 +76,7 @@ export function ResultForm({
                     onChange={(e) => setForm({ ...form, student_id: e.target.value })}
                     options={[
                         { label: "Choose a student", value: "" },
-                        ...studentOptions.map(o => ({ label: o.label, value: o.id }))
+                        ...visibleStudents.map((o) => ({ label: o.label, value: o.id }))
                     ]}
                     error={errors.student_id}
                     required

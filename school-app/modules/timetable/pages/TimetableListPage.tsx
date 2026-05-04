@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { DataTable, DataTableColumn, RowAction, Badge, DataState, TableSkeleton } from "../../../components/ui";
 import { useTimetable } from "../hooks/useTimetable";
-import { TimetableRecord } from "../types/timetable.types";
+import { TimetableRecord, getDayLabel } from "../types/timetable.types";
 import { showToast } from "../../../utils/toast";
 
 export function TimetableListPage() {
@@ -12,9 +12,9 @@ export function TimetableListPage() {
 
   const columns: DataTableColumn<TimetableRecord>[] = useMemo(() => [
     {
-      key: "day",
+      key: "day_of_week",
       label: "Day",
-      render: (row) => <span className="font-medium">{row.day}</span>,
+      render: (row) => <span className="font-medium">{getDayLabel(row.day_of_week)}</span>,
       sortable: true,
     },
     {
@@ -51,7 +51,7 @@ export function TimetableListPage() {
       variant: "danger",
       requireConfirm: true,
       confirmTitle: "Delete Timetable Entry",
-      confirmMessage: (row) => `Delete ${row.class_name} - ${row.subject_name} on ${row.day}?`,
+      confirmMessage: (row) => `Delete ${row.class_name} - ${row.subject_name} on ${getDayLabel(row.day_of_week)}?`,
       onClick: async (row) => {
         const result = await deleteTimetable(row._id);
         if (!result.success) showToast(result.message || "Failed to delete", "error");
@@ -83,7 +83,7 @@ export function TimetableListPage() {
         rows={rows}
         rowKey={(row) => row._id}
         searchable
-        searchKeys={["class_name", "subject_name", "teacher_name", "room", "day"]}
+        searchKeys={["class_name", "subject_name", "teacher_name", "room", "day_of_week"]}
         sortable
         paginated={15}
         rowActions={rowActions}

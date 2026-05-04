@@ -1,4 +1,5 @@
 import { Types } from "mongoose";
+import { connectDb } from "../db/connect";
 import { SubjectModel } from "../models";
 import { tenantFilter } from "../db/tenant-query";
 import { ok, fail, serviceTry } from "../utils/result";
@@ -6,6 +7,7 @@ import { RequestContext, ServiceResult } from "../types/core";
 
 export async function listSubjects(ctx: RequestContext, query: any = {}): Promise<ServiceResult<any[]>> {
     return serviceTry(async () => {
+        await connectDb();
         const filter = tenantFilter(ctx);
         Object.assign(filter, query);
         return await SubjectModel.find(filter).sort({ name: 1 });
@@ -14,6 +16,7 @@ export async function listSubjects(ctx: RequestContext, query: any = {}): Promis
 
 export async function getSubject(ctx: RequestContext, id: string): Promise<ServiceResult<any>> {
     return serviceTry(async () => {
+        await connectDb();
         const filter = tenantFilter(ctx);
         Object.assign(filter, { _id: new Types.ObjectId(id) });
         const subject = await SubjectModel.findOne(filter);
@@ -24,6 +27,7 @@ export async function getSubject(ctx: RequestContext, id: string): Promise<Servi
 
 export async function createSubject(ctx: RequestContext, data: any): Promise<ServiceResult<any>> {
     return serviceTry(async () => {
+        await connectDb();
         try {
             const newSubject = new SubjectModel({
                 school_id: ctx.school_id,
@@ -39,6 +43,7 @@ export async function createSubject(ctx: RequestContext, data: any): Promise<Ser
 
 export async function updateSubject(ctx: RequestContext, id: string, data: any): Promise<ServiceResult<any>> {
     return serviceTry(async () => {
+        await connectDb();
         try {
             const filter = tenantFilter(ctx);
             Object.assign(filter, { _id: new Types.ObjectId(id) });
@@ -54,6 +59,7 @@ export async function updateSubject(ctx: RequestContext, id: string, data: any):
 
 export async function deleteSubject(ctx: RequestContext, id: string): Promise<ServiceResult<null>> {
     return serviceTry(async () => {
+        await connectDb();
         const filter = tenantFilter(ctx);
         Object.assign(filter, { _id: new Types.ObjectId(id) });
         const deleted = await SubjectModel.findOneAndDelete(filter);

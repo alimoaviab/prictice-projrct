@@ -4,6 +4,8 @@ import { connectDb } from "@edu/shared/db/connect";
 import { signAuthToken } from "@edu/shared/auth/jwt";
 import { verifyPassword } from "@edu/shared/auth/password";
 import { UserModel } from "@edu/shared/models/user.model";
+import { TeacherModel } from "@edu/shared/models/teacher.model";
+import { StudentModel } from "@edu/shared/models/student.model";
 
 type LoginUser = {
     _id: unknown;
@@ -12,18 +14,19 @@ type LoginUser = {
     permissions?: string[];
     email: string;
     password_hash: string;
+    status: string;
 };
 
 export async function POST(request: NextRequest) {
     try {
         await connectDb();
         const body = await request.json();
-        const { email, password } = body;
+        const { email, password, role } = body;
 
         // Validation
-        if (!email || !password) {
+        if (!email || !password || !role) {
             return NextResponse.json(
-                { message: "Email and password are required" },
+                { message: "Email, password, and role are required" },
                 { status: 400 }
             );
         }
@@ -36,10 +39,9 @@ export async function POST(request: NextRequest) {
         }
 
         const user = (await UserModel.findOne({
-            email: email.toLowerCase(),
-            status: "active"
+            email: email.toLowerCase()
         })
-            .select("_id school_id role permissions email password_hash")
+            .select("_id school_id role permissions email password_hash status")
             .lean()) as LoginUser | null;
 
         if (!user || !verifyPassword(password, user.password_hash)) {
@@ -47,6 +49,33 @@ export async function POST(request: NextRequest) {
                 { message: "Invalid email or password" },
                 { status: 401 }
             );
+        }
+        
+        if (user.status !== "active") {
+            return NextResponse.json(
+                { message: "Account is disabled or locked" },
+                { status: 403 }
+            );
+        }
+
+        if (user.role !== role && !(role === "admin" && user.role === "super_admin")) {
+            return NextResponse.json(
+                { message: `Invalid role selected. This account is registered as: ${user.role}` },
+                { status: 403 }
+            );
+        }
+
+        // Additional data integrity checks for specific roles
+        if (user.role === "teacher") {
+            const teacher = await TeacherModel.findOne({ user_id: user._id, status: "active" });
+            if (!teacher) {
+                return NextResponse.json({ message: "Teacher portfolio not found or inactive" }, { status: 403 });
+            }
+        } else if (user.role === "student") {
+            const student = await StudentModel.findOne({ user_id: user._id, status: "active" });
+            if (!student) {
+                return NextResponse.json({ message: "Student enrollment not found or inactive" }, { status: 403 });
+            }
         }
 
         const token = signAuthToken({

@@ -8,6 +8,7 @@ import { useSafeAsync } from "../../../hooks/useSafeAsync";
 import { serviceRequest } from "../../../services/service-client";
 import { HomeworkForm } from "../components/HomeworkForm";
 import { useHomework } from "../hooks/useHomework";
+import { useSubjects } from "../../subjects/hooks/useSubjects";
 import { HomeworkFormInput } from "../types/homework.types";
 import { showToast } from "../../../utils/toast";
 
@@ -18,6 +19,7 @@ export function HomeworkCreatePage() {
   const { state: teacherState, run: runTeachers } = useSafeAsync<
     Array<{ _id: string; first_name: string; last_name: string; employee_no: string }>
   >();
+  const { data: subjectData, isLoading: subjectLoading, error: subjectError } = useSubjects();
 
   const loadClasses = useCallback(() => {
     return runClasses(async () => {
@@ -38,21 +40,23 @@ export function HomeworkCreatePage() {
   }, [runTeachers]);
 
   useEffect(() => {
-    void loadClasses().catch(() => {});
-    void loadTeachers().catch(() => {});
+    void loadClasses().catch(() => { });
+    void loadTeachers().catch(() => { });
   }, [loadClasses, loadTeachers]);
 
   const isDependencyLoading =
     classState.status === "idle" ||
     classState.status === "loading" ||
     teacherState.status === "idle" ||
-    teacherState.status === "loading";
+    teacherState.status === "loading" ||
+    subjectLoading;
 
   const classOptions = (classState.data ?? []).map((item) => ({ id: item._id, label: item.name }));
   const teacherOptions = (teacherState.data ?? []).map((item) => ({
     id: item._id,
     label: `${item.employee_no} - ${item.first_name} ${item.last_name}`.trim(),
   }));
+  const subjectOptions = (subjectData ?? []).map((item: any) => ({ id: item._id, label: item.name }));
 
   async function handleCreate(input: HomeworkFormInput) {
     const result = await addHomework(input);
@@ -86,6 +90,8 @@ export function HomeworkCreatePage() {
           <DataState variant="error" title="Classes unavailable" message={classState.error} />
         ) : teacherState.status === "error" ? (
           <DataState variant="error" title="Teachers unavailable" message={teacherState.error} />
+        ) : subjectError ? (
+          <DataState variant="error" title="Subjects unavailable" message={subjectError} />
         ) : isDependencyLoading ? (
           <div className="space-y-4">
             <Skeleton className="h-10 w-full" />
@@ -99,6 +105,7 @@ export function HomeworkCreatePage() {
             onCreate={handleCreate}
             classOptions={classOptions}
             teacherOptions={teacherOptions}
+            subjectOptions={subjectOptions}
           />
         )}
       </Card>

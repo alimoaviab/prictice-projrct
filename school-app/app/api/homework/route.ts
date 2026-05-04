@@ -19,9 +19,19 @@ export async function POST(request: NextRequest) {
   try {
     const ctx = authenticateRequest(sessionRequest(request), "school");
     const body = await request.json();
+    console.log("[POST /api/homework] Request body:", JSON.stringify(body, null, 2));
     const result = await createHomework(ctx, body);
+    console.log("[POST /api/homework] Result:", JSON.stringify(result, null, 2));
     return NextResponse.json(result, { status: result.ok ? 201 : result.error.status ?? 400 });
-  } catch {
-    return NextResponse.json(fail("UNAUTHORIZED", "Authentication required.", 401), { status: 401 });
+  } catch (error: any) {
+    console.error("[POST /api/homework] Error:", error?.message);
+    console.error("[POST /api/homework] Full error:", error);
+    if (error?.message?.includes("Authentication")) {
+      return NextResponse.json(fail("UNAUTHORIZED", "Authentication required.", 401), { status: 401 });
+    }
+    return NextResponse.json(
+      fail("INTERNAL_ERROR", error?.message || "Failed to create homework", 500),
+      { status: 500 }
+    );
   }
 }

@@ -6,7 +6,8 @@ const classSchema = new Schema(
     school_id: tenantField,
     name: requiredString,
     academy_care_id: { type: Types.ObjectId, ref: "AcademicYear", required: true, index: true },
-    subjects: [{ type: String, trim: true }],
+    subject_ids: [{ type: Types.ObjectId, ref: "Subject", index: true }],
+    subjects: [{ type: String, trim: true }], // Keep for backward compatibility, will be deprecated
     grade: { type: String, trim: true, default: "" },
     section: { type: String, trim: true, default: "" },
     academic_year: { type: String, trim: true, default: "" },
@@ -17,7 +18,8 @@ const classSchema = new Schema(
       {
         day: String,
         period: Number,
-        subject: String,
+        subject_id: { type: Types.ObjectId, ref: "Subject" },
+        subject: String, // Keep for backward compatibility
         teacher_id: { type: Types.ObjectId, ref: "Teacher" },
         starts_at: String,
         ends_at: String

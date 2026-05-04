@@ -1,6 +1,6 @@
 "use client";
 
-import { TimetableRecord, DayOfWeek } from "../types/timetable.types";
+import { TimetableRecord, DayOfWeek, getDayLabel } from "../types/timetable.types";
 import { Card } from "../../../components/ui";
 
 const DAYS: DayOfWeek[] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -34,7 +34,8 @@ export function TimetableGrid({ records, onEdit, onDelete }: TimetableGridProps)
                 {time}
               </div>
               {DAYS.map(day => {
-                const slots = records.filter(r => r.day === day && r.start_time.startsWith(time.substring(0, 2)));
+                const dayNumber = DAYS.indexOf(day) + 1;
+                const slots = records.filter(r => r.day_of_week === dayNumber && r.start_time.startsWith(time.substring(0, 2)));
                 return (
                   <div key={`${day}-${time}`} className="p-2 border-r last:border-r-0 border-gray-100 min-h-[100px] relative hover:bg-gray-50/50 transition-colors">
                     {slots.map(slot => (

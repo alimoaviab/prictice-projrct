@@ -20,7 +20,7 @@ export function HomeworkListPage() {
     {
       key: "subject",
       label: "Subject",
-      render: (row) => <span className="text-sm text-gray-600">{row.subject}</span>,
+      render: (row) => <span className="text-sm text-gray-600">{row.subject_name}</span>,
     },
     {
       key: "class",
@@ -144,7 +144,7 @@ export function HomeworkListPage() {
         rows={state.data || []}
         rowKey={(row) => row._id}
         searchable
-        searchKeys={["title", "subject", "class_name", "teacher_name", "status"]}
+        searchKeys={["title", "subject_name", "class_name", "teacher_name", "status"]}
         sortable
         paginated={10}
         rowActions={rowActions}
