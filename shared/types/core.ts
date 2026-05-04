@@ -1,4 +1,4 @@
-export type Role = "super_admin" | "admin" | "teacher" | "student";
+export type Role = "super_admin" | "admin" | "teacher" | "parent";
 
 export type AppName = "school" | "super_admin";
 
@@ -19,7 +19,8 @@ export type EntityType =
   | "timetable"
   | "behavior"
   | "leave"
-  | "event";
+  | "event"
+  | "parent";
 
 export type PermissionAction = "view" | "create" | "update" | "delete" | "manage";
 
@@ -91,6 +92,14 @@ export type ServiceResult<T> =
       message: string;
       errorCode?: string;
     };
+
+export interface BaseEntity {
+  id: string;
+  school_id: string;
+  created_at: Date;
+  updated_at?: Date;
+  created_by?: string;
+}
 
 export class ControlledError extends Error {
   code: string;

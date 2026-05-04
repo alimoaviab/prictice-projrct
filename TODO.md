@@ -1,58 +1,269 @@
-# School Admin App - New Backend Modules Implementation
+# 📋 CURRENT STATUS
 
-## Modules to Implement
-1. Announcements
-2. Timetable
-3. Student Behavior (Discipline)
-4. Leave Management
-5. Homework / Assignments (Enhanced)
-6. Events / School Calendar
+* [x] Phase 1: Core Types & RBAC ✅
+* [x] Phase 2: Models ✅
+* [x] Phase 3: Validation Schemas ✅
+* [x] Phase 4: Services ✅ COMPLETE
+* [x] Phase 5: API Routes ✅ COMPLETE
+* [ ] Phase 6: Frontend Integration ❗ (MISSING — CRITICAL)
+* [ ] Phase 7: Testing & Production
 
-## Progress Tracker
+---
 
-### Phase 1: Core Types & RBAC
-- [ ] Update `shared/types/core.ts` - Add EntityTypes and Features
-- [ ] Update `shared/auth/rbac.ts` - Add role permissions for new features
+# 🔒 GLOBAL RULES (NON-NEGOTIABLE)
 
-### Phase 2: Models
-- [ ] Create `shared/models/announcement.model.ts`
-- [ ] Create `shared/models/timetable.model.ts`
-- [ ] Create `shared/models/behavior.model.ts`
-- [ ] Create `shared/models/leave.model.ts`
-- [ ] Create `shared/models/event.model.ts`
-- [ ] Update `shared/models/homework.model.ts` - Enhance existing
-- [ ] Update `shared/models/index.ts` - Export new models
+* [ ] Every model includes `school_id`
+* [ ] Every query filters `school_id`
+* [ ] RBAC enforced in EVERY API
+* [ ] Role NEVER comes from frontend
+* [ ] Teacher sees ONLY assigned data
+* [ ] Admin sees ONLY own school
 
-### Phase 3: Validation Schemas
-- [ ] Create `shared/validation/announcement.schema.ts`
-- [ ] Create `shared/validation/timetable.schema.ts`
-- [ ] Create `shared/validation/behavior.schema.ts`
-- [ ] Create `shared/validation/leave.schema.ts`
-- [ ] Create `shared/validation/event.schema.ts`
-- [ ] Update `shared/validation/homework.schema.ts` - Enhance existing
-- [ ] Update `shared/validation/index.ts` - Export new schemas
+---
 
-### Phase 4: Services
-- [ ] Create `shared/services/announcement.service.ts`
-- [ ] Create `shared/services/timetable.service.ts`
-- [ ] Create `shared/services/behavior.service.ts`
-- [ ] Create `shared/services/leave.service.ts`
-- [ ] Create `shared/services/event.service.ts`
-- [ ] Update `shared/services/homework.service.ts` - Enhance existing
+# ⚙️ PHASE 4: SERVICES (COMPLETE BACKEND LOGIC)
 
-### Phase 5: API Routes
-- [ ] Create `school-app/app/api/announcements/route.ts`
-- [ ] Create `school-app/app/api/announcements/[id]/route.ts`
-- [ ] Create `school-app/app/api/timetable/route.ts`
-- [ ] Create `school-app/app/api/timetable/[id]/route.ts`
-- [ ] Create `school-app/app/api/behavior/route.ts`
-- [ ] Create `school-app/app/api/behavior/[id]/route.ts`
-- [ ] Create `school-app/app/api/leave/route.ts`
-- [ ] Create `school-app/app/api/leave/[id]/route.ts`
-- [ ] Create `school-app/app/api/events/route.ts`
-- [ ] Create `school-app/app/api/events/[id]/route.ts`
+### Announcement Service
 
-### Phase 6: Testing & Verification
-- [ ] Verify all imports resolve correctly
-- [ ] Check for TypeScript errors
-- [ ] Validate API route consistency
+* [ ] createAnnouncement(data, user)
+
+  * [ ] enforce role = admin
+  * [ ] attach school_id
+* [ ] getAnnouncements(user)
+
+  * [ ] filter by school_id
+
+---
+
+### Timetable Service
+
+* [ ] createTimetable(data, user)
+
+  * [ ] role = admin
+* [ ] getTeacherTimetable(user)
+
+  * [ ] filter teacher_id + school_id
+
+---
+
+### Behavior Service ✅ (already done)
+
+* [x] createBehavior()
+* [x] getBehaviors() with joins
+
+---
+
+### Leave Service
+
+* [ ] applyLeave(user, data)
+* [ ] approveReject(admin, leave_id, status)
+
+---
+
+### Event Service
+
+* [ ] createEvent(admin)
+* [ ] listEvents(user)
+
+---
+
+### Homework Service
+
+* [ ] assignHomework(teacher)
+* [ ] getHomework(student/teacher)
+
+---
+
+# 🌐 PHASE 5: API ROUTES (NEXT.JS)
+
+## 🔑 COMMON RULE (ALL APIs)
+
+* [ ] Extract user from middleware
+* [ ] Apply RBAC check
+* [ ] Apply school_id filter
+
+---
+
+### Announcement APIs
+
+* [ ] GET /api/announcements
+* [ ] POST /api/announcements
+* [ ] GET /api/announcements/[id]
+
+---
+
+### Timetable APIs
+
+* [ ] GET /api/timetable
+* [ ] POST /api/timetable
+
+---
+
+### Behavior APIs
+
+* [ ] GET /api/behavior
+* [ ] POST /api/behavior
+
+---
+
+### Leave APIs
+
+* [ ] GET /api/leave
+* [ ] POST /api/leave
+* [ ] PATCH /api/leave/[id]
+
+---
+
+### Event APIs
+
+* [ ] GET /api/events
+* [ ] POST /api/events
+
+---
+
+# 🎨 PHASE 6: FRONTEND (CRITICAL — ADD THIS)
+
+## 🔐 AUTH UI
+
+* [ ] Create `/login` page
+
+  * [ ] email input
+  * [ ] password input
+  * [ ] submit → API
+* [ ] Handle redirect:
+
+  * [ ] admin → /admin/dashboard
+  * [ ] teacher → /teacher/dashboard
+  * [ ] student → /student/dashboard
+
+---
+
+## 🧭 TEACHER DASHBOARD
+
+### Layout
+
+* [ ] Sidebar:
+
+  * Dashboard
+  * Timetable
+  * Exams
+  * Results
+  * Attendance
+  * Behavior
+  * Announcements
+  * Events
+
+---
+
+### Timetable Page
+
+* [ ] Fetch `/api/timetable`
+* [ ] Show ONLY teacher timetable
+
+---
+
+### Behavior Page (IMPORTANT)
+
+* [ ] Create "Add Behavior" form:
+
+  * [ ] Select Class
+  * [ ] Select Student (dynamic)
+  * [ ] Title
+  * [ ] Description
+  * [ ] Severity
+
+* [ ] On submit:
+
+  * [ ] POST /api/behavior
+
+* [ ] Behavior List:
+
+  * [ ] Show own created behaviors
+
+---
+
+### Attendance Page
+
+* [ ] Select class
+* [ ] Fetch students
+* [ ] Mark present/absent
+* [ ] Submit
+
+---
+
+### Announcement Page
+
+* [ ] GET announcements
+* [ ] Display list
+
+---
+
+### Events Page
+
+* [ ] GET events
+* [ ] Display calendar/list
+
+---
+
+## 🏫 ADMIN DASHBOARD FIX (IMPORTANT)
+
+⚠️ DO NOT redesign UI — only fix logic
+
+### Behavior Page FIX
+
+* [ ] Remove class-only listing ❌
+* [ ] Fetch `/api/behavior`
+* [ ] Display table:
+
+  * Student Name
+  * Class
+  * Teacher
+  * Title
+  * Severity
+  * Date
+
+---
+
+# 🔗 PHASE 7: INTEGRATION (CONNECT FRONTEND + BACKEND)
+
+* [ ] Connect all pages with APIs
+* [ ] Handle loading states
+* [ ] Handle error states
+* [ ] Ensure correct role-based rendering
+
+---
+
+# 🧪 PHASE 8: TESTING & PRODUCTION
+
+### Build Check
+
+* [ ] `npm run build` passes
+* [ ] No TypeScript errors
+
+---
+
+### Security Test
+
+* [ ] Teacher cannot access other school data
+* [ ] Student cannot modify data
+* [ ] Admin restricted to own school
+
+---
+
+### Behavior System Test (CRITICAL)
+
+* [ ] Teacher creates behavior ✅
+* [ ] Admin sees correct list ✅
+* [ ] No empty class UI ❌ removed
+* [ ] Data integrity verified
+
+---
+
+# 🎯 FINAL COMPLETION
+
+* [ ] Auth working
+* [ ] Teacher dashboard working
+* [ ] Behavior system FIXED
+* [ ] No data leakage
+* [ ] Full frontend + backend connected
+* [ ] Production ready 🚀

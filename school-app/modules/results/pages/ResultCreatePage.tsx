@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Card, Skeleton, DataState } from "../../../components/ui";
 import { useSafeAsync } from "../../../hooks/useSafeAsync";
 import { serviceRequest } from "../../../services/service-client";
@@ -13,6 +13,7 @@ import { showToast } from "../../../utils/toast";
 
 export function ResultCreatePage() {
   const router = useRouter();
+  const pathname = usePathname();
   const { addResult } = useResults();
 
   const { state: studentState, run: runStudents } = useSafeAsync<Array<{ _id: string; name: string }>>();
@@ -43,7 +44,8 @@ export function ResultCreatePage() {
     const result = await addResult(input);
     if (result.ok) {
       showToast("Result recorded successfully", "success");
-      router.push("/admin/results");
+      const basePath = pathname.includes("/teacher") ? "/teacher/results" : "/admin/results";
+      router.push(basePath);
       router.refresh();
     } else {
       showToast(result.error.message || "Failed to record result", "error");
@@ -61,7 +63,7 @@ export function ResultCreatePage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <Link
-        href="/admin/results"
+        href={pathname.includes("/teacher") ? "/teacher/results" : "/admin/results"}
         className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition-colors"
       >
         <span className="material-symbols-outlined text-lg">arrow_back</span>

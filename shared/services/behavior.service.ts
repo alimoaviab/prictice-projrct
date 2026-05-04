@@ -1,231 +1,217 @@
+import mongoose from "mongoose";
 import { Types } from "mongoose";
+import { RequestContext, ServiceResult } from "../types/core";
+import { 
+  CreateBehaviorDto, 
+  UpdateBehaviorDto 
+} from "../validation/behavior.schema";
 import { assertPermission } from "../auth/rbac";
+import { BehaviorModel, StudentModel } from "../models";
 import { connectDb } from "../db/connect";
 import { tenantFilter } from "../db/tenant-query";
-import { BehaviorModel } from "../models/behavior.model";
-import { StudentModel } from "../models/student.model";
-import { ClassModel } from "../models/class.model";
-import { RequestContext, ServiceResult, ControlledError } from "../types/core";
-import { serviceTry } from "../utils/result";
-import { BehaviorCreateInput, BehaviorUpdateInput, behaviorCreateSchema, behaviorUpdateSchema } from "../validation/behavior.schema";
-import { writeAuditLog } from "./audit.service";
 
-// CREATE
+const FEATURE = "behavior" as const;
+
 export async function createBehavior(
   ctx: RequestContext,
-  input: BehaviorCreateInput
-): Promise<ServiceResult<unknown>> {
-  return serviceTry(async () => {
+  data: CreateBehaviorDto
+): Promise<ServiceResult<any>> {
+  assertPermission(ctx, FEATURE, "create");
+
+  try {
     await connectDb();
-    assertPermission(ctx, "behavior", "create");
 
-    const parsed = behaviorCreateSchema.parse(input);
-
-    // Validate student exists
-    const student = await StudentModel.findOne(tenantFilter(ctx, { _id: parsed.student_id })).lean();
-    if (!student) throw new Error("Student not found");
-
-    // Validate class exists
-    const classroom = await ClassModel.findOne(tenantFilter(ctx, { _id: parsed.class_id })).lean();
-    if (!classroom) throw new Error("Class not found");
-
-    // Ensure user context is valid. In dev mode (`dev-school-id`) allow a generated fallback reporter id
-    const isDevContext = true && ctx.school_id === "dev-school-id";
-    let reporterId: Types.ObjectId;
-    if (ctx.user_id && Types.ObjectId.isValid(String(ctx.user_id))) {
-      reporterId = new Types.ObjectId(String(ctx.user_id));
-    } else if (isDevContext) {
-      reporterId = new Types.ObjectId();
-    } else {
-      throw new ControlledError("AUTH_REQUIRED", "A valid user context is required to report behavior.", 403);
+    const student = await StudentModel.findOne(tenantFilter(ctx, { _id: data.student_id })).lean();
+    if (!student) {
+      return {
+        ok: false,
+        success: false,
+        error: { code: "STUDENT_NOT_FOUND", message: "Student not found" },
+        message: "Student not found in this school",
+      };
     }
 
-    // Get current warning count for student
-    const existingRecords = await BehaviorModel.find(
-      tenantFilter(ctx, {
-        student_id: new Types.ObjectId(parsed.student_id),
-        status: { $in: ["open", "under_review"] }
-      })
-    ).lean();
-    const warningCount = existingRecords.length + 1;
-
-    const created = await BehaviorModel.create({
+    const behaviorData = {
       school_id: ctx.school_id,
-      student_id: new Types.ObjectId(parsed.student_id),
-      class_id: new Types.ObjectId(parsed.class_id),
-      reported_by: reporterId,
-      incident_type: parsed.incident_type,
-      severity: parsed.severity,
-      description: parsed.description,
-      action_taken: parsed.action_taken,
-      status: parsed.status,
-      warning_count: warningCount,
-      parent_notified: parsed.parent_notified ?? false,
-      notes: parsed.notes
-    });
+      student_id: new Types.ObjectId(data.student_id),
+      class_id: new Types.ObjectId(data.class_id),
+      teacher_id: new Types.ObjectId(ctx.user_id),
+      title: data.title,
+      description: data.description,
+      severity: data.severity,
+      date: data.date,
+    };
 
-    await writeAuditLog(ctx, {
-      action: "create",
-      entity_type: "behavior",
-      entity_id: String(created._id),
-      after: created.toObject()
-    });
-
-    return created.toObject();
-  });
+    const created = await BehaviorModel.create(behaviorData);
+    return {
+      ok: true,
+      success: true,
+      data: created.toObject(),
+      message: "Behavior record created successfully",
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      success: false,
+      error: { code: "CREATE_FAILED", message: "Failed to create behavior record" },
+      message: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
 }
 
-// LIST ALL
-export async function listBehavior(
-  ctx: RequestContext,
-  query: { status?: string; severity?: string; incident_type?: string; student_id?: string; class_id?: string } = {}
-): Promise<ServiceResult<unknown[]>> {
-  return serviceTry(async () => {
-    await connectDb();
-    assertPermission(ctx, "behavior", "view");
-
-    const filter = tenantFilter(ctx);
-    if (query.status) filter.status = query.status;
-    if (query.severity) filter.severity = query.severity;
-    if (query.incident_type) filter.incident_type = query.incident_type;
-    if (query.student_id) filter.student_id = new Types.ObjectId(query.student_id);
-    if (query.class_id) filter.class_id = new Types.ObjectId(query.class_id);
-
-    const rows = await BehaviorModel.find(filter)
-      .populate("student_id", "first_name last_name admission_no")
-      .populate("class_id", "name")
-      .populate("reported_by", "first_name last_name")
-      .sort({ created_at: -1 })
-      .lean();
-
-    return rows.map(row => ({
-      ...row,
-      _id: String((row as any)._id),
-      student_id: String(row.student_id),
-      student_name: `${(row.student_id as any)?.first_name ?? ""} ${(row.student_id as any)?.last_name ?? ""}`.trim(),
-      admission_no: (row.student_id as any)?.admission_no ?? "",
-      class_id: String(row.class_id),
-      class_name: (row.class_id as any)?.name ?? "",
-      reported_by: String(row.reported_by),
-      reporter_name: `${(row.reported_by as any)?.first_name ?? ""} ${(row.reported_by as any)?.last_name ?? ""}`.trim()
-    }));
-  });
-}
-
-// GET SINGLE
 export async function getBehavior(
   ctx: RequestContext,
   id: string
-): Promise<ServiceResult<unknown>> {
-  return serviceTry(async () => {
-    await connectDb();
-    assertPermission(ctx, "behavior", "view");
+): Promise<ServiceResult<any>> {
+  assertPermission(ctx, FEATURE, "view");
 
-    const row = await BehaviorModel.findOne(tenantFilter(ctx, { _id: id }))
+  try {
+    await connectDb();
+    const behavior = await BehaviorModel.findOne(tenantFilter(ctx, { _id: id }))
       .populate("student_id", "first_name last_name admission_no")
       .populate("class_id", "name")
-      .populate("reported_by", "first_name last_name")
-      .populate("resolved_by", "first_name last_name")
+      .populate("teacher_id", "first_name last_name")
       .lean();
 
-    if (!row) throw new Error("Behavior record not found");
+    if (!behavior) {
+      return {
+        ok: false,
+        success: false,
+        error: { code: "NOT_FOUND", message: "Behavior record not found" },
+        message: "Behavior record not found or access denied",
+      };
+    }
 
     return {
-      ...row,
-      _id: String((row as any)._id)
+      ok: true,
+      success: true,
+      data: {
+        ...behavior,
+        id: behavior._id,
+      },
     };
-  });
+  } catch (error) {
+    return {
+      ok: false,
+      success: false,
+      error: { code: "FETCH_FAILED", message: "Failed to fetch behavior record" },
+      message: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
 }
 
-// UPDATE
+export async function listBehavior(
+  ctx: RequestContext,
+  query: any = {}
+): Promise<ServiceResult<any[]>> {
+  assertPermission(ctx, FEATURE, "view");
+
+  try {
+    await connectDb();
+
+    const behaviors = await BehaviorModel.find(tenantFilter(ctx, query))
+      .populate("student_id", "first_name last_name admission_no")
+      .populate("class_id", "name")
+      .populate("teacher_id", "first_name last_name")
+      .sort({ date: -1, created_at: -1 })
+      .lean();
+
+    return {
+      ok: true,
+      success: true,
+      data: behaviors.map(b => ({
+        ...b,
+        id: b._id,
+        student_id: b.student_id?._id || b.student_id,
+        student_name: b.student_id ? `${(b.student_id as any).first_name ?? ""} ${(b.student_id as any).last_name ?? ""}`.trim() : "",
+        class_id: b.class_id?._id || b.class_id,
+        class_name: (b.class_id as any)?.name ?? "",
+        teacher_id: b.teacher_id?._id || b.teacher_id,
+        teacher_name: b.teacher_id ? `${(b.teacher_id as any).first_name ?? ""} ${(b.teacher_id as any).last_name ?? ""}`.trim() : "",
+      })),
+      meta: { count: behaviors.length },
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      success: false,
+      error: { code: "FETCH_FAILED", message: "Failed to fetch behaviors" },
+      message: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
 export async function updateBehavior(
   ctx: RequestContext,
   id: string,
-  input: BehaviorUpdateInput
-): Promise<ServiceResult<unknown>> {
-  return serviceTry(async () => {
+  data: UpdateBehaviorDto
+): Promise<ServiceResult<any>> {
+  assertPermission(ctx, FEATURE, "update");
+
+  try {
     await connectDb();
-    assertPermission(ctx, "behavior", "update");
+    const behavior = await BehaviorModel.findOneAndUpdate(
+      tenantFilter(ctx, { _id: id }),
+      { ...data, updated_at: new Date() },
+      { new: true, lean: true }
+    );
 
-    const parsed = behaviorUpdateSchema.parse(input);
-    const existing = await BehaviorModel.findOne(tenantFilter(ctx, { _id: id })).lean();
-    if (!existing) throw new Error("Behavior record not found");
-
-    const patch: any = { ...parsed };
-    if (parsed.student_id) patch.student_id = new Types.ObjectId(parsed.student_id);
-    if (parsed.class_id) patch.class_id = new Types.ObjectId(parsed.class_id);
-
-    // Auto-resolve if status changed to resolved
-    if (parsed.status === "resolved" && (existing as any).status !== "resolved") {
-      patch.resolved_at = new Date();
-      if (ctx.user_id && Types.ObjectId.isValid(String(ctx.user_id))) {
-        patch.resolved_by = new Types.ObjectId(String(ctx.user_id));
-      } else if (isDevContext) {
-        patch.resolved_by = new Types.ObjectId();
-      } else {
-        throw new ControlledError("AUTH_REQUIRED", "A valid user context is required to resolve behavior.", 403);
-      }
+    if (!behavior) {
+      return {
+        ok: false,
+        success: false,
+        error: { code: "NOT_FOUND", message: "Behavior record not found" },
+        message: "Behavior record not found or access denied",
+      };
     }
 
-    const updated = await BehaviorModel.findOneAndUpdate(
-      tenantFilter(ctx, { _id: id }),
-      { $set: patch },
-      { new: true, runValidators: true }
-    ).lean();
-
-    await writeAuditLog(ctx, {
-      action: "update",
-      entity_type: "behavior",
-      entity_id: id,
-      before: existing,
-      after: updated
-    });
-
-    return updated;
-  });
+    return {
+      ok: true,
+      success: true,
+      data: behavior,
+      message: "Behavior record updated successfully",
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      success: false,
+      error: { code: "UPDATE_FAILED", message: "Failed to update behavior record" },
+      message: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
 }
 
-// DELETE
 export async function deleteBehavior(
   ctx: RequestContext,
   id: string
-): Promise<ServiceResult<unknown>> {
-  return serviceTry(async () => {
+): Promise<ServiceResult<null>> {
+  assertPermission(ctx, FEATURE, "delete");
+
+  try {
     await connectDb();
-    assertPermission(ctx, "behavior", "delete");
+    const result = await BehaviorModel.findOneAndDelete(tenantFilter(ctx, { _id: id }));
 
-    const existing = await BehaviorModel.findOne(tenantFilter(ctx, { _id: id })).lean();
-    if (!existing) throw new Error("Behavior record not found");
+    if (!result) {
+      return {
+        ok: false,
+        success: false,
+        error: { code: "NOT_FOUND", message: "Behavior record not found" },
+        message: "Behavior record not found or access denied",
+      };
+    }
 
-    await BehaviorModel.findOneAndDelete(tenantFilter(ctx, { _id: id }));
-
-    await writeAuditLog(ctx, {
-      action: "delete",
-      entity_type: "behavior",
-      entity_id: id,
-      before: existing
-    });
-
-    return { success: true, id };
-  });
-}
-
-// GET WARNING COUNT (helper for student)
-export async function getStudentWarningCount(
-  ctx: RequestContext,
-  studentId: string
-): Promise<ServiceResult<number>> {
-  return serviceTry(async () => {
-    await connectDb();
-    assertPermission(ctx, "behavior", "view");
-
-    const count = await BehaviorModel.countDocuments(
-      tenantFilter(ctx, {
-        student_id: new Types.ObjectId(studentId),
-        status: { $in: ["open", "under_review"] }
-      })
-    );
-
-    return count;
-  });
+    return {
+      ok: true,
+      success: true,
+      data: null,
+      message: "Behavior record deleted successfully",
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      success: false,
+      error: { code: "DELETE_FAILED", message: "Failed to delete behavior record" },
+      message: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
 }

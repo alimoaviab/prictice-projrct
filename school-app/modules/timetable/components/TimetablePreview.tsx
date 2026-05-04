@@ -1,11 +1,18 @@
 "use client";
 
+import { useMemo } from "react";
 import { Card } from "../../../components/ui";
 import { useTimetable } from "../hooks/useTimetable";
 import { getDayLabel } from "../types/timetable.types";
 
-export function TimetablePreview() {
-    const { state } = useTimetable();
+export function TimetablePreview({ classId, teacherId }: { classId?: string; teacherId?: string }) {
+    const filters = useMemo(() => {
+        if (classId) return { class_id: classId };
+        if (teacherId) return { teacher_id: teacherId };
+        return undefined;
+    }, [classId, teacherId]);
+
+    const { state } = useTimetable(filters);
 
     const rows = (state.data || []).slice(0, 5);
 

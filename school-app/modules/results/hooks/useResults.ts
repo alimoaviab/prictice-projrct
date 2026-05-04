@@ -6,19 +6,21 @@ import { showToast } from "../../../utils/toast";
 import { ResultFormInput, ResultRow } from "../types/result.types";
 import * as service from "../services/result.service";
 
-export function useResults() {
+export function useResults(filters?: { exam_id?: string; student_id?: string }) {
   const { state, run } = useSafeAsync<ResultRow[]>();
+
+  const filterKey = JSON.stringify(filters);
 
   const loadResults = useCallback(() => {
     return run(async () => {
-      const result = await service.listResults();
+      const result = await service.listResults(filters);
       if (!result.ok) {
         throw new Error(result.error.message || "Failed to load results");
       }
 
       return result.data;
     });
-  }, [run]);
+  }, [run, filterKey]);
 
   const addResult = useCallback(
     async (input: ResultFormInput) => {

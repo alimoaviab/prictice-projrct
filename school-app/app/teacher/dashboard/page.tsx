@@ -1,3 +1,5 @@
+"use client";
+
 import { Button, Card } from "../../../components/ui";
 import { SchoolShell } from "../../../layouts/SchoolShell";
 import { colors, spacing, typography } from "@edu/shared/design-system/tokens";

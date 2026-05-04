@@ -6,18 +6,18 @@ import { showToast } from "../../../utils/toast";
 import { BehaviorFormInput, BehaviorRecordRow } from "../types/behavior.types";
 import * as service from "../services/behavior.service";
 
-export function useBehavior() {
+export function useBehavior(filters?: { student_id?: string; teacher_id?: string; status?: string }) {
 	const { state, run } = useSafeAsync<BehaviorRecordRow[]>();
 
 	const loadBehavior = useCallback(() => {
 		return run(async () => {
-			const result = await service.listBehavior();
+			const result = await service.listBehavior(filters);
 			if (!result.success) {
 				throw new Error(result.message || "Failed to load behavior records");
 			}
 			return result.data;
 		});
-	}, [run]);
+	}, [run, filters]);
 
 	const addBehavior = useCallback(
 		async (input: BehaviorFormInput) => {

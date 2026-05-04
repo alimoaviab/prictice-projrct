@@ -1,39 +1,40 @@
-import { Schema, Types, model, models } from "mongoose";
-import { requiredString, schemaOptions, tenantField } from "./base";
+import mongoose, { Schema, Types, model, models } from "mongoose";
+import { schemaOptions } from "./base";
 
 const announcementSchema = new Schema(
   {
-    school_id: tenantField,
-    title: requiredString,
-    content: { type: String, required: true },
-    target_type: {
-      type: String,
-      enum: ["all", "classes", "teachers", "students"],
-      default: "all",
-      index: true
+    school_id: {
+      type: Types.ObjectId,
+      ref: "School",
+      required: true,
+      index: true,
     },
-    target_ids: [{ type: Types.ObjectId, index: true }],
-    priority: {
+    title: {
       type: String,
-      enum: ["low", "normal", "high", "urgent"],
-      default: "normal",
-      index: true
+      required: true,
+      trim: true,
     },
-    status: {
+    message: {
       type: String,
-      enum: ["draft", "published", "archived"],
-      default: "draft",
-      index: true
+      required: true,
     },
-    published_at: { type: Date, index: true },
-    expires_at: { type: Date, index: true },
-    created_by: { type: Types.ObjectId, ref: "User", required: true }
+    created_by: {
+      type: Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
   },
-  { ...schemaOptions, collection: "announcements" }
+  { ...schemaOptions, timestamps: true, collection: "announcements" }
 );
 
-announcementSchema.index({ school_id: 1, status: 1, created_at: -1 });
-announcementSchema.index({ school_id: 1, target_type: 1, target_ids: 1 });
-announcementSchema.index({ school_id: 1, priority: 1, created_at: -1 });
+announcementSchema.index({ school_id: 1, created_at: -1 });
 
-export const AnnouncementModel = models.Announcement || model("Announcement", announcementSchema);
+export interface AnnouncementModel {
+  title: string;
+  message: string;
+  created_by: string;
+}
+
+export const AnnouncementDocModel = models.Announcement || model("Announcement", announcementSchema);
+export type AnnouncementModelDoc = mongoose.HydratedDocument<AnnouncementModel & mongoose.Document>;

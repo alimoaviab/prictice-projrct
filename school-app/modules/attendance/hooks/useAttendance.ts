@@ -6,18 +6,20 @@ import { showToast } from "../../../utils/toast";
 import { AttendanceFormInput, AttendanceRecordRow } from "../types/attendance.types";
 import * as service from "../services/attendance.service";
 
-export function useAttendance() {
+export function useAttendance(filters?: { class_id?: string; student_id?: string; date?: string }) {
   const { state, run } = useSafeAsync<AttendanceRecordRow[]>();
+
+  const filterKey = JSON.stringify(filters);
 
   const loadAttendance = useCallback(() => {
     return run(async () => {
-      const result = await service.listAttendance();
+      const result = await service.listAttendance(filters);
       if (!result.ok) {
         throw new Error(result.error.message || "Failed to load attendance");
       }
       return result.data;
     });
-  }, [run]);
+  }, [run, filterKey]);
 
   const addAttendance = useCallback(
     async (input: AttendanceFormInput) => {

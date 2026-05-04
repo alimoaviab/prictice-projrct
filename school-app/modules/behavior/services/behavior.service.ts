@@ -2,9 +2,14 @@ import { serviceRequest } from "../../../services/service-client";
 import { getAcademyCareQuery } from "../../../services/academy-care-context";
 import { BehaviorFormInput, BehaviorRecordRow } from "../types/behavior.types";
 
-export function listBehavior() {
-	const queryString = getAcademyCareQuery();
-	return serviceRequest<BehaviorRecordRow[]>(`/api/behavior${queryString}`);
+export function listBehavior(filters?: { student_id?: string; teacher_id?: string; status?: string }) {
+	const baseQuery = getAcademyCareQuery();
+	let filterQuery = "";
+	if (filters?.student_id) filterQuery += `&student_id=${filters.student_id}`;
+	if (filters?.teacher_id) filterQuery += `&teacher_id=${filters.teacher_id}`;
+	if (filters?.status) filterQuery += `&status=${filters.status}`;
+
+	return serviceRequest<BehaviorRecordRow[]>(`/api/behavior${baseQuery}${filterQuery}`);
 }
 
 export function createBehavior(input: BehaviorFormInput) {

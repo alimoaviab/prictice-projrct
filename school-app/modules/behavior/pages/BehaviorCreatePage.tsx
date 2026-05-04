@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Card, Skeleton, DataState } from "../../../components/ui";
 import { useSafeAsync } from "../../../hooks/useSafeAsync";
 import { serviceRequest } from "../../../services/service-client";
@@ -13,6 +13,7 @@ import { showToast } from "../../../utils/toast";
 
 export function BehaviorCreatePage() {
   const router = useRouter();
+  const pathname = usePathname();
   const { addBehavior } = useBehavior();
 
   const { state: studentState, run: runStudents } = useSafeAsync<Array<{ _id: string; name: string; class_id?: string }>>();
@@ -43,7 +44,8 @@ export function BehaviorCreatePage() {
     const result = await addBehavior(input);
     if (result.ok) {
       showToast("Behavior record added successfully", "success");
-      router.push("/admin/behavior");
+      const basePath = pathname.includes("/teacher") ? "/teacher/behavior" : "/admin/behavior";
+      router.push(basePath);
       router.refresh();
     } else {
       showToast(result.error.message || "Failed to add record", "error");
@@ -58,7 +60,7 @@ export function BehaviorCreatePage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <Link
-        href="/admin/behavior"
+        href={pathname.includes("/teacher") ? "/teacher/behavior" : "/admin/behavior"}
         className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition-colors"
       >
         <span className="material-symbols-outlined text-lg">arrow_back</span>
@@ -84,7 +86,7 @@ export function BehaviorCreatePage() {
         ) : (
           <BehaviorForm
             onSubmit={handleCreate}
-            onCancel={() => router.push("/admin/behavior")}
+            onCancel={() => router.push(pathname.includes("/teacher") ? "/teacher/behavior" : "/admin/behavior")}
             students={studentState.data ?? []}
             classes={classState.data ?? []}
           />

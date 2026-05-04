@@ -6,18 +6,20 @@ import { showToast } from "../../../utils/toast";
 import { HomeworkFormInput, HomeworkRecordRow } from "../types/homework.types";
 import * as service from "../services/homework.service";
 
-export function useHomework() {
+export function useHomework(filters?: { class_id?: string; teacher_id?: string }) {
   const { state, run } = useSafeAsync<HomeworkRecordRow[]>();
+
+  const filterKey = JSON.stringify(filters);
 
   const loadHomework = useCallback(() => {
     return run(async () => {
-      const result = await service.listHomework();
+      const result = await service.listHomework(filters);
       if (!result.ok) {
         throw new Error(result.error.message || "Failed to load homework");
       }
       return result.data;
     });
-  }, [run]);
+  }, [run, filterKey]);
 
   const addHomework = useCallback(
     async (input: HomeworkFormInput) => {

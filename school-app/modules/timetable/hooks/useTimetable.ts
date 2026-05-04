@@ -9,6 +9,8 @@ import * as service from "../services/timetable.service";
 export function useTimetable(filters?: { class_id?: string; teacher_id?: string; day_of_week?: number }) {
   const { state, run } = useSafeAsync<TimetableRecord[]>();
 
+  const filterKey = JSON.stringify(filters);
+
   const loadTimetable = useCallback(() => {
     return run(async () => {
       const result = await service.listTimetable(filters);
@@ -17,7 +19,7 @@ export function useTimetable(filters?: { class_id?: string; teacher_id?: string;
       }
       return result.data || [];
     });
-  }, [run, filters]);
+  }, [run, filterKey]);
 
   const addTimetable = useCallback(
     async (input: TimetableFormInput) => {

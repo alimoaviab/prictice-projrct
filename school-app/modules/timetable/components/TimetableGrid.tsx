@@ -10,8 +10,8 @@ const TIME_SLOTS = [
 
 interface TimetableGridProps {
   records: TimetableRecord[];
-  onEdit: (record: TimetableRecord) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (record: TimetableRecord) => void;
+  onDelete?: (id: string) => void;
 }
 
 export function TimetableGrid({ records, onEdit, onDelete }: TimetableGridProps) {
@@ -46,12 +46,16 @@ export function TimetableGrid({ records, onEdit, onDelete }: TimetableGridProps)
                         <div className="flex justify-between items-start mb-1">
                           <p className="text-xs font-bold text-primary truncate pr-4">{slot.subject_name}</p>
                           <div className="flex gap-1 absolute top-1 right-1 opacity-0 group-hover/item:opacity-100 transition-opacity bg-white/90 rounded p-0.5 shadow-sm">
-                            <button onClick={() => onEdit(slot)} className="text-primary hover:text-primary/70">
-                              <span className="material-symbols-outlined text-[14px]">edit</span>
-                            </button>
-                            <button onClick={() => onDelete(slot._id)} className="text-error hover:text-error/70">
-                              <span className="material-symbols-outlined text-[14px]">delete</span>
-                            </button>
+                            {onEdit && (
+                              <button onClick={() => onEdit(slot)} className="text-primary hover:text-primary/70">
+                                <span className="material-symbols-outlined text-[14px]">edit</span>
+                              </button>
+                            )}
+                            {onDelete && (
+                              <button onClick={() => onDelete(slot._id)} className="text-error hover:text-error/70">
+                                <span className="material-symbols-outlined text-[14px]">delete</span>
+                              </button>
+                            )}
                           </div>
                         </div>
                         <p className="text-[10px] text-gray-600 truncate">{slot.teacher_name}</p>

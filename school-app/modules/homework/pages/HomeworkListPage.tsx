@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { DataTable, DataTableColumn, RowAction, Badge, DataState, Skeleton, TableSkeleton } from "../../../components/ui";
 import { useHomework } from "../hooks/useHomework";
 import { HomeworkRecordRow } from "../types/homework.types";
 import { showToast } from "../../../utils/toast";
 
-export function HomeworkListPage() {
-  const { state, updateHomework, deleteHomework } = useHomework();
+export function HomeworkListPage({ filters }: { filters?: { class_id?: string; teacher_id?: string } }) {
+  const pathname = usePathname();
+  const { state, updateHomework, deleteHomework } = useHomework(filters);
 
   const columns: DataTableColumn<HomeworkRecordRow>[] = [
     {
@@ -130,13 +132,15 @@ export function HomeworkListPage() {
           <h2 className="text-lg font-bold text-gray-900">Homework Assignments</h2>
           <p className="text-sm text-gray-500">Manage all homework and assignments</p>
         </div>
-        <Link
-          href="/admin/homework/create"
-          className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all hover:shadow-lg hover:shadow-blue-600/25 active:scale-[0.98]"
-        >
-          <span className="material-symbols-outlined text-lg">add</span>
-          Add Homework
-        </Link>
+        {!pathname.includes("/parent") && (
+          <Link
+            href={pathname.includes("/teacher") ? "/teacher/homework/create" : "/admin/homework/create"}
+            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all hover:shadow-lg hover:shadow-blue-600/25 active:scale-[0.98]"
+          >
+            <span className="material-symbols-outlined text-lg">add</span>
+            Add Homework
+          </Link>
+        )}
       </div>
 
       <DataTable
@@ -147,11 +151,11 @@ export function HomeworkListPage() {
         searchKeys={["title", "subject_name", "class_name", "teacher_name", "status"]}
         sortable
         paginated={10}
-        rowActions={rowActions}
+        rowActions={pathname.includes("/parent") ? rowActions.filter(a => a.label === "View Details") : rowActions}
         emptyState={{
           title: "No homework assigned",
           description: "Create homework for your classes.",
-          action: { label: "Add Homework", href: "/admin/homework/create" },
+          action: { label: "Add Homework", href: pathname.includes("/teacher") ? "/teacher/homework/create" : "/admin/homework/create" },
         }}
       />
     </div>

@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   DataTable,
   DataTableColumn,
@@ -14,8 +15,9 @@ import { useBehavior } from "../hooks/useBehavior";
 import { BehaviorRecordRow } from "../types/behavior.types";
 import { showToast } from "../../../utils/toast";
 
-export function BehaviorListPage() {
-  const { state, deleteBehavior } = useBehavior();
+export function BehaviorListPage({ filters }: { filters?: { student_id?: string; teacher_id?: string; status?: string } }) {
+  const pathname = usePathname();
+  const { state, deleteBehavior } = useBehavior(filters);
 
   const handleDelete = async (id: string) => {
     const result = await deleteBehavior(id);
@@ -100,6 +102,14 @@ export function BehaviorListPage() {
 
   const rowActions: RowAction<BehaviorRecordRow>[] = useMemo(() => [
     {
+      icon: "visibility",
+      label: "View Details",
+      variant: "primary",
+      onClick: (row) => {
+        alert(`Record: ${row.title}\nType: ${row.incident_type}\nSeverity: ${row.severity}\nDate: ${row.date}\n\nDescription: ${row.description || "N/A"}`);
+      },
+    },
+    {
       icon: "delete",
       label: "Delete",
       variant: "danger",
@@ -108,7 +118,7 @@ export function BehaviorListPage() {
       confirmMessage: (row) => `Are you sure you want to delete the behavior record for ${row.student_name}?`,
       onClick: (row) => handleDelete(row._id),
     },
-  ], []);
+  ], [pathname]);
 
   if (state.status === "loading" && !state.data) {
     return <TableSkeleton />;
@@ -125,13 +135,15 @@ export function BehaviorListPage() {
           <h2 className="text-lg font-bold text-gray-900">Student Behavior</h2>
           <p className="text-sm text-gray-500">Monitor and record student discipline and achievements</p>
         </div>
-        <Link
-          href="/admin/behavior/create"
-          className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all hover:shadow-lg hover:shadow-blue-600/25 active:scale-[0.98]"
-        >
-          <span className="material-symbols-outlined text-lg">add</span>
-          Add Record
-        </Link>
+        {!pathname.includes("/parent") && (
+          <Link
+            href={pathname.includes("/teacher") ? "/teacher/behavior/create" : "/admin/behavior/create"}
+            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all hover:shadow-lg hover:shadow-blue-600/25 active:scale-[0.98]"
+          >
+            <span className="material-symbols-outlined text-lg">add</span>
+            Add Record
+          </Link>
+        )}
       </div>
 
       <DataTable
@@ -142,11 +154,11 @@ export function BehaviorListPage() {
         searchKeys={["student_name", "class_name", "incident_type", "severity", "status"]}
         sortable
         paginated={10}
-        rowActions={rowActions}
+        rowActions={pathname.includes("/parent") ? rowActions.filter(a => a.label === "View Details") : rowActions}
         emptyState={{
           title: "No behavior records",
           description: "Start by adding a new behavior record for a student.",
-          action: { label: "Add Record", href: "/admin/behavior/create" }
+          action: { label: "Add Record", href: pathname.includes("/teacher") ? "/teacher/behavior/create" : "/admin/behavior/create" }
         }}
       />
     </div>

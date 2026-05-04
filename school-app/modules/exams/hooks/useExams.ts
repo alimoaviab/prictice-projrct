@@ -6,19 +6,21 @@ import { showToast } from "../../../utils/toast";
 import { ExamFormInput, ExamRow } from "../types/exam.types";
 import * as service from "../services/exam.service";
 
-export function useExams() {
+export function useExams(filters?: { class_id?: string; subject?: string }) {
   const { state, run } = useSafeAsync<ExamRow[]>();
+
+  const filterKey = JSON.stringify(filters);
 
   const loadExams = useCallback(() => {
     return run(async () => {
-      const result = await service.listExams();
+      const result = await service.listExams(filters);
       if (!result.ok) {
         throw new Error(result.error.message || "Failed to load exams");
       }
 
       return result.data;
     });
-  }, [run]);
+  }, [run, filterKey]);
 
   const addExam = useCallback(
     async (input: ExamFormInput) => {

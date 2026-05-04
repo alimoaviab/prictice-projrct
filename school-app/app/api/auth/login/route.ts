@@ -7,10 +7,12 @@ import { UserModel } from "@edu/shared/models/user.model";
 import { TeacherModel } from "@edu/shared/models/teacher.model";
 import { StudentModel } from "@edu/shared/models/student.model";
 
+import { ParentModel } from "@edu/shared/models/parent.model";
+
 type LoginUser = {
     _id: unknown;
     school_id: string;
-    role: "super_admin" | "admin" | "teacher" | "student";
+    role: "super_admin" | "admin" | "teacher" | "parent";
     permissions?: string[];
     email: string;
     password_hash: string;
@@ -21,12 +23,12 @@ export async function POST(request: NextRequest) {
     try {
         await connectDb();
         const body = await request.json();
-        const { email, password, role } = body;
+        const { email, password } = body;
 
         // Validation
-        if (!email || !password || !role) {
+        if (!email || !password) {
             return NextResponse.json(
-                { message: "Email, password, and role are required" },
+                { message: "Email and password are required" },
                 { status: 400 }
             );
         }
@@ -58,23 +60,16 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        if (user.role !== role && !(role === "admin" && user.role === "super_admin")) {
-            return NextResponse.json(
-                { message: `Invalid role selected. This account is registered as: ${user.role}` },
-                { status: 403 }
-            );
-        }
-
         // Additional data integrity checks for specific roles
         if (user.role === "teacher") {
             const teacher = await TeacherModel.findOne({ user_id: user._id, status: "active" });
             if (!teacher) {
                 return NextResponse.json({ message: "Teacher portfolio not found or inactive" }, { status: 403 });
             }
-        } else if (user.role === "student") {
-            const student = await StudentModel.findOne({ user_id: user._id, status: "active" });
-            if (!student) {
-                return NextResponse.json({ message: "Student enrollment not found or inactive" }, { status: 403 });
+        } else if (user.role === "parent") {
+            const parent = await ParentModel.findOne({ user_id: user._id, status: "active" });
+            if (!parent) {
+                return NextResponse.json({ message: "Parent profile not found or inactive" }, { status: 403 });
             }
         }
 
@@ -88,8 +83,33 @@ export async function POST(request: NextRequest) {
             actor_email: user.email
         });
 
+        let profileId: string | undefined;
+        let classId: string | undefined;
+        let studentId: string | undefined;
+
+        if (user.role === "teacher") {
+            const teacher = await TeacherModel.findOne({ user_id: user._id, status: "active" });
+            if (teacher) profileId = String(teacher._id);
+        } else if (user.role === "parent") {
+            const parent = await ParentModel.findOne({ user_id: user._id, status: "active" })
+                .populate("student_id");
+            if (parent) {
+                profileId = String(parent._id);
+                studentId = String(parent.student_id?._id || parent.student_id);
+                classId = String((parent.student_id as any)?.class_id || "");
+            }
+        }
+
         const response = NextResponse.json(
-            { token, email: user.email, role: user.role, message: "Login successful" },
+            { 
+                token, 
+                email: user.email, 
+                role: user.role, 
+                profile_id: profileId,
+                class_id: classId,
+                student_id: studentId,
+                message: "Login successful" 
+            },
             { status: 200 }
         );
 

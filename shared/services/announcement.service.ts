@@ -1,164 +1,182 @@
-import { Types } from "mongoose";
+import mongoose from "mongoose";
+import { RequestContext, ServiceResult } from "../types/core";
+import { 
+  CreateAnnouncementDto, 
+  UpdateAnnouncementDto 
+} from "../validation/announcement.schema";
 import { assertPermission } from "../auth/rbac";
+import { AnnouncementDocModel as AnnouncementModel } from "../models/announcement.model";
 import { connectDb } from "../db/connect";
 import { tenantFilter } from "../db/tenant-query";
-import { AnnouncementModel } from "../models/announcement.model";
-import { RequestContext, ServiceResult } from "../types/core";
-import { serviceTry } from "../utils/result";
-import { AnnouncementCreateInput, AnnouncementUpdateInput, announcementCreateSchema, announcementUpdateSchema } from "../validation/announcement.schema";
-import { writeAuditLog } from "./audit.service";
 
-// CREATE
+const FEATURE = "announcements" as const;
+
 export async function createAnnouncement(
   ctx: RequestContext,
-  input: AnnouncementCreateInput
-): Promise<ServiceResult<unknown>> {
-  return serviceTry(async () => {
-    await connectDb();
-    assertPermission(ctx, "announcements", "create");
+  data: CreateAnnouncementDto
+): Promise<ServiceResult<any>> {
+  assertPermission(ctx, FEATURE, "create");
 
-    const parsed = announcementCreateSchema.parse(input);
-    
-    const created = await AnnouncementModel.create({
+  try {
+    await connectDb();
+    const announcement = await AnnouncementModel.create({
+      ...data,
       school_id: ctx.school_id,
-      title: parsed.title,
-      content: parsed.content,
-      target_type: parsed.target_type,
-      target_ids: parsed.target_ids?.map(id => new Types.ObjectId(id)) ?? [],
-      priority: parsed.priority,
-      status: parsed.status,
-      published_at: parsed.status === "published" ? new Date() : undefined,
-      expires_at: parsed.expires_at ? new Date(parsed.expires_at) : undefined,
-      created_by: new Types.ObjectId(ctx.user_id)
+      created_by: ctx.user_id,
     });
 
-    await writeAuditLog(ctx, {
-      action: "create",
-      entity_type: "announcement",
-      entity_id: String(created._id),
-      after: created.toObject()
-    });
-
-    return created.toObject();
-  });
+    return {
+      ok: true,
+      success: true,
+      data: announcement.toObject(),
+      message: "Announcement created successfully",
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      success: false,
+      error: { code: "CREATE_FAILED", message: "Failed to create announcement" },
+      message: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
 }
 
-// LIST ALL
-export async function listAnnouncements(
-  ctx: RequestContext,
-  query: { status?: string; target_type?: string; priority?: string } = {}
-): Promise<ServiceResult<unknown[]>> {
-  return serviceTry(async () => {
-    await connectDb();
-    assertPermission(ctx, "announcements", "view");
-
-    const filter = tenantFilter(ctx);
-    if (query.status) filter.status = query.status;
-    if (query.target_type) filter.target_type = query.target_type;
-    if (query.priority) filter.priority = query.priority;
-
-    const rows = await AnnouncementModel.find(filter)
-      .populate("created_by", "first_name last_name email")
-      .sort({ created_at: -1, priority: -1 })
-      .lean();
-
-    return rows.map((row: any) => ({
-      ...row,
-      _id: String(row._id),
-      created_by: row.created_by ? {
-        _id: String((row.created_by as any)._id),
-        name: `${(row.created_by as any).first_name ?? ""} ${(row.created_by as any).last_name ?? ""}`.trim()
-      } : null
-    }));
-  });
-}
-
-// GET SINGLE
 export async function getAnnouncement(
   ctx: RequestContext,
   id: string
-): Promise<ServiceResult<unknown>> {
-  return serviceTry(async () => {
-    await connectDb();
-    assertPermission(ctx, "announcements", "view");
+): Promise<ServiceResult<any>> {
+  assertPermission(ctx, FEATURE, "view");
 
-    const row = await AnnouncementModel.findOne(tenantFilter(ctx, { _id: id }))
-      .populate("created_by", "first_name last_name email")
+  try {
+    await connectDb();
+    const announcement = await AnnouncementModel.findOne(tenantFilter(ctx, { _id: id }))
+      .populate("created_by", "first_name last_name")
       .lean();
 
-    if (!row) throw new Error("Announcement not found");
+    if (!announcement) {
+      return {
+        ok: false,
+        success: false,
+        error: { code: "NOT_FOUND", message: "Announcement not found" },
+        message: "Announcement not found or access denied",
+      };
+    }
 
     return {
-      ...row,
-      _id: String((row as any)._id)
+      ok: true,
+      success: true,
+      data: announcement,
     };
-  });
+  } catch (error) {
+    return {
+      ok: false,
+      success: false,
+      error: { code: "FETCH_FAILED", message: "Failed to fetch announcement" },
+      message: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
 }
 
-// UPDATE
+export async function listAnnouncements(
+  ctx: RequestContext,
+  query: any = {}
+): Promise<ServiceResult<any[]>> {
+  assertPermission(ctx, FEATURE, "view");
+
+  try {
+    await connectDb();
+    const filter = tenantFilter(ctx, query);
+    const announcements = await AnnouncementModel.find(filter)
+      .sort({ created_at: -1 })
+      .lean();
+
+    return {
+      ok: true,
+      success: true,
+      data: announcements,
+      meta: { count: announcements.length },
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      success: false,
+      error: { code: "FETCH_FAILED", message: "Failed to fetch announcements" },
+      message: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
 export async function updateAnnouncement(
   ctx: RequestContext,
   id: string,
-  input: AnnouncementUpdateInput
-): Promise<ServiceResult<unknown>> {
-  return serviceTry(async () => {
+  data: UpdateAnnouncementDto
+): Promise<ServiceResult<any>> {
+  assertPermission(ctx, FEATURE, "update");
+
+  try {
     await connectDb();
-    assertPermission(ctx, "announcements", "update");
-
-    const parsed = announcementUpdateSchema.parse(input);
-    const existing = await AnnouncementModel.findOne(tenantFilter(ctx, { _id: id })).lean();
-    if (!existing) throw new Error("Announcement not found");
-
-    const patch: any = { ...parsed };
-    if (parsed.target_ids) {
-      patch.target_ids = parsed.target_ids.map(id => new Types.ObjectId(id));
-    }
-    if (parsed.status === "published" && !(existing as any).published_at) {
-      patch.published_at = new Date();
-    }
-    if (parsed.expires_at) {
-      patch.expires_at = new Date(parsed.expires_at);
-    }
-
-    const updated = await AnnouncementModel.findOneAndUpdate(
+    const announcement = await AnnouncementModel.findOneAndUpdate(
       tenantFilter(ctx, { _id: id }),
-      { $set: patch },
-      { new: true, runValidators: true }
-    ).lean();
+      { ...data, updated_at: new Date() },
+      { new: true, lean: true }
+    );
 
-    await writeAuditLog(ctx, {
-      action: "update",
-      entity_type: "announcement",
-      entity_id: id,
-      before: existing,
-      after: updated
-    });
+    if (!announcement) {
+      return {
+        ok: false,
+        success: false,
+        error: { code: "NOT_FOUND", message: "Announcement not found" },
+        message: "Announcement not found or access denied",
+      };
+    }
 
-    return updated;
-  });
+    return {
+      ok: true,
+      success: true,
+      data: announcement,
+      message: "Announcement updated successfully",
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      success: false,
+      error: { code: "UPDATE_FAILED", message: "Failed to update announcement" },
+      message: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
 }
 
-// DELETE
 export async function deleteAnnouncement(
   ctx: RequestContext,
   id: string
-): Promise<ServiceResult<unknown>> {
-  return serviceTry(async () => {
+): Promise<ServiceResult<null>> {
+  assertPermission(ctx, FEATURE, "delete");
+
+  try {
     await connectDb();
-    assertPermission(ctx, "announcements", "delete");
+    const result = await AnnouncementModel.findOneAndDelete(tenantFilter(ctx, { _id: id }));
 
-    const existing = await AnnouncementModel.findOne(tenantFilter(ctx, { _id: id })).lean();
-    if (!existing) throw new Error("Announcement not found");
+    if (!result) {
+      return {
+        ok: false,
+        success: false,
+        error: { code: "NOT_FOUND", message: "Announcement not found" },
+        message: "Announcement not found or access denied",
+      };
+    }
 
-    await AnnouncementModel.findOneAndDelete(tenantFilter(ctx, { _id: id }));
-
-    await writeAuditLog(ctx, {
-      action: "delete",
-      entity_type: "announcement",
-      entity_id: id,
-      before: existing
-    });
-
-    return { success: true, id };
-  });
+    return {
+      ok: true,
+      success: true,
+      data: null,
+      message: "Announcement deleted successfully",
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      success: false,
+      error: { code: "DELETE_FAILED", message: "Failed to delete announcement" },
+      message: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
 }

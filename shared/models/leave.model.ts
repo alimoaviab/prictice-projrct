@@ -1,42 +1,38 @@
 import { Schema, Types, model, models } from "mongoose";
-import { requiredString, schemaOptions, tenantField } from "./base";
+import { schemaOptions, tenantField, requiredString } from "./base";
 
 const leaveSchema = new Schema(
   {
     school_id: tenantField,
     requester_type: {
       type: String,
-      enum: ["student", "teacher"],
       required: true,
-      index: true
+      enum: ["student", "teacher"],
     },
     requester_id: { type: Types.ObjectId, required: true, index: true },
-    requester_name: requiredString,
+    requester_name: String,
     leave_type: {
       type: String,
-      enum: ["sick", "personal", "family", "vacation", "other"],
       required: true,
-      index: true
+      enum: ["sick", "personal", "family", "other"],
     },
-    start_date: { type: Date, required: true, index: true },
-    end_date: { type: Date, required: true, index: true },
-    reason: { type: String, required: true },
+    reason: requiredString,
+    start_date: { type: Date, required: true },
+    end_date: { type: Date, required: true },
     status: {
       type: String,
       enum: ["pending", "approved", "rejected", "cancelled"],
       default: "pending",
-      index: true
+      index: true,
     },
     approved_by: { type: Types.ObjectId, ref: "User" },
-    approved_at: { type: Date },
-    rejection_reason: { type: String, trim: true },
-    attachments: [{ type: String, trim: true }]
+    approved_at: Date,
+    rejection_reason: String,
+    attachments: [{ type: String }],
   },
-  { ...schemaOptions, collection: "leave_requests" }
+  { ...schemaOptions, collection: "leaves" }
 );
 
-leaveSchema.index({ school_id: 1, status: 1, created_at: -1 });
 leaveSchema.index({ school_id: 1, requester_id: 1, start_date: -1 });
-leaveSchema.index({ school_id: 1, start_date: 1, end_date: 1 });
 
 export const LeaveModel = models.Leave || model("Leave", leaveSchema);

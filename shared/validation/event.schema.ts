@@ -1,24 +1,18 @@
 import { z } from "zod";
 
-export const eventTypeSchema = z.enum(["holiday", "exam", "meeting", "activity", "sports", "other"]);
-
-export const visibilitySchema = z.enum(["public", "teachers_only", "students_only", "specific_classes"]);
-
-export const eventStatusSchema = z.enum(["draft", "published", "cancelled"]);
-
 export const eventCreateSchema = z.object({
-  title: z.string().trim().min(1).max(200),
-  description: z.string().trim().max(2000).optional(),
-  event_type: eventTypeSchema,
-  start_date: z.coerce.date(),
-  end_date: z.coerce.date().optional(),
-  start_time: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Time must be HH:MM format").optional(),
-  end_time: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Time must be HH:MM format").optional(),
-  location: z.string().trim().max(100).optional(),
-  visibility: visibilitySchema.default("public"),
-  target_class_ids: z.array(z.string().min(12)).optional(),
-  organizer: z.string().trim().max(100).optional(),
-  status: eventStatusSchema.default("draft")
+  title: z.string().min(1).max(200),
+  description: z.string().max(5000).optional(),
+  event_type: z.enum(["academic", "holiday", "sports", "cultural", "other"]).default("other"),
+  start_date: z.string().or(z.date()),
+  end_date: z.string().or(z.date()).optional(),
+  start_time: z.string().optional(),
+  end_time: z.string().optional(),
+  location: z.string().optional(),
+  visibility: z.enum(["all", "specific_classes"]).default("all"),
+  target_class_ids: z.array(z.string()).optional(),
+  organizer: z.string().optional(),
+  status: z.enum(["scheduled", "cancelled", "completed"]).default("scheduled"),
 });
 
 export const eventUpdateSchema = eventCreateSchema.partial();

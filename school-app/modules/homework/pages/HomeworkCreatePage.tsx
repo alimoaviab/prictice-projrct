@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useCallback, useEffect } from "react";
 import { Card, Skeleton, DataState } from "../../../components/ui";
@@ -14,6 +14,7 @@ import { showToast } from "../../../utils/toast";
 
 export function HomeworkCreatePage() {
   const router = useRouter();
+  const pathname = usePathname();
   const { addHomework } = useHomework();
   const { state: classState, run: runClasses } = useSafeAsync<Array<{ _id: string; name: string }>>();
   const { state: teacherState, run: runTeachers } = useSafeAsync<
@@ -62,7 +63,8 @@ export function HomeworkCreatePage() {
     const result = await addHomework(input);
     if (result && (result as { ok?: boolean }).ok !== false) {
       showToast("Homework assigned successfully", "success");
-      router.push("/admin/homework");
+      const basePath = pathname.includes("/teacher") ? "/teacher/homework" : "/admin/homework";
+      router.push(basePath);
       router.refresh();
     }
     return result;
@@ -71,7 +73,7 @@ export function HomeworkCreatePage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <Link
-        href="/admin/homework"
+        href={pathname.includes("/teacher") ? "/teacher/homework" : "/admin/homework"}
         className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition-colors"
       >
         <span className="material-symbols-outlined text-lg">arrow_back</span>

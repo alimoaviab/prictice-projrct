@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { useEvents } from "../hooks/useEvents";
 import { EventRecordRow, EventFormInput } from "../types/events.types";
 import EventForm from "./EventForm";
 
 export default function EventListPage() {
+  const pathname = usePathname();
   const { state, addEvent, updateEvent, deleteEvent } = useEvents();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<EventRecordRow | null>(null);
@@ -34,12 +36,14 @@ export default function EventListPage() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Events & Calendar</h1>
-        <button
-          onClick={() => { setEditing(null); setShowForm(true); }}
-          className="px-4 py-2 bg-blue-600 text-white rounded"
-        >
-          + Add Event
-        </button>
+        {!pathname.includes("/parent") && (
+          <button
+            onClick={() => { setEditing(null); setShowForm(true); }}
+            className="px-4 py-2 bg-blue-600 text-white rounded"
+          >
+            + Add Event
+          </button>
+        )}
       </div>
 
       {showForm && (
@@ -68,7 +72,7 @@ export default function EventListPage() {
               <th className="px-4 py-3 text-left">End Date</th>
               <th className="px-4 py-3 text-left">Location</th>
               <th className="px-4 py-3 text-left">Status</th>
-              <th className="px-4 py-3 text-right">Actions</th>
+              {!pathname.includes("/parent") && <th className="px-4 py-3 text-right">Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -88,14 +92,16 @@ export default function EventListPage() {
                     {record.status}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-right space-x-2">
-                  <button onClick={() => handleEdit(record)} className="text-blue-600 hover:underline">
-                    Edit
-                  </button>
-                  <button onClick={() => handleDelete(record._id)} className="text-red-600 hover:underline">
-                    Delete
-                  </button>
-                </td>
+                {!pathname.includes("/parent") && (
+                  <td className="px-4 py-3 text-right space-x-2">
+                    <button onClick={() => handleEdit(record)} className="text-blue-600 hover:underline">
+                      Edit
+                    </button>
+                    <button onClick={() => handleDelete(record._id)} className="text-red-600 hover:underline">
+                      Delete
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

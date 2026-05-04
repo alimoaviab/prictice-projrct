@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Card, Skeleton, DataState } from "../../../components/ui";
 import { useSafeAsync } from "../../../hooks/useSafeAsync";
 import { serviceRequest } from "../../../services/service-client";
@@ -13,6 +13,7 @@ import { showToast } from "../../../utils/toast";
 
 export function ExamCreatePage() {
   const router = useRouter();
+  const pathname = usePathname();
   const { addExam } = useExams();
   const { state: classState, run: runClasses } = useSafeAsync<Array<{ _id: string; name: string }>>();
 
@@ -37,7 +38,8 @@ export function ExamCreatePage() {
     const result = await addExam(input);
     if (result.ok) {
       showToast("Exam scheduled successfully", "success");
-      router.push("/admin/exams");
+      const basePath = pathname.includes("/teacher") ? "/teacher/exams" : "/admin/exams";
+      router.push(basePath);
       router.refresh();
     }
     return result;
@@ -46,7 +48,7 @@ export function ExamCreatePage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <Link
-        href="/admin/exams"
+        href={pathname.includes("/teacher") ? "/teacher/exams" : "/admin/exams"}
         className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition-colors"
       >
         <span className="material-symbols-outlined text-lg">arrow_back</span>

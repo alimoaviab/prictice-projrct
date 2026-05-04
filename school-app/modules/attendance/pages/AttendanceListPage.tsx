@@ -5,15 +5,16 @@ import Link from "next/link";
 import { DataTable, DataTableColumn, RowAction, Badge, DataState, Skeleton, TableSkeleton, Select } from "../../../components/ui";
 import { useSafeAsync } from "../../../hooks/useSafeAsync";
 import { serviceRequest } from "../../../services/service-client";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAttendance } from "../hooks/useAttendance";
 import { AttendanceRecordRow } from "../types/attendance.types";
 import { showToast } from "../../../utils/toast";
 
-export function AttendanceListPage() {
-  const { state, updateAttendance, deleteAttendance } = useAttendance();
+export function AttendanceListPage({ filters }: { filters?: { class_id?: string; student_id?: string; date?: string } }) {
+  const { state, updateAttendance, deleteAttendance } = useAttendance(filters);
   const { state: classState, run: runClasses } = useSafeAsync<Array<{ _id: string; name: string }>>();
   const router = useRouter();
+  const pathname = usePathname();
 
   const loadClasses = () =>
     runClasses(async () => {
@@ -153,22 +154,27 @@ export function AttendanceListPage() {
           <h2 className="text-lg font-bold text-gray-900">Attendance Records</h2>
           <p className="text-sm text-gray-500">Track student daily attendance</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Select
-            label="Open class"
-            value={selectedClass}
-            onChange={(e) => setSelectedClass(e.target.value)}
-            options={[{ label: "Select class", value: "" }, ...classOptions.map(c => ({ label: c.label, value: c.id }))]}
-          />
-          <button
-            onClick={() => router.push(`/admin/attendance/create?class_id=${selectedClass}`)}
-            disabled={!selectedClass}
-            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all"
-          >
-            <span className="material-symbols-outlined text-lg">open_in_new</span>
-            Open Class
-          </button>
-        </div>
+        {!pathname.includes("/parent") && (
+          <div className="flex items-center gap-3">
+            <Select
+              label="Open class"
+              value={selectedClass}
+              onChange={(e) => setSelectedClass(e.target.value)}
+              options={[{ label: "Select class", value: "" }, ...classOptions.map(c => ({ label: c.label, value: c.id }))]}
+            />
+            <button
+              onClick={() => {
+                const basePath = pathname.includes("/teacher") ? "/teacher/attendance" : "/admin/attendance";
+                router.push(`${basePath}/create?class_id=${selectedClass}`);
+              }}
+              disabled={!selectedClass}
+              className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all"
+            >
+              <span className="material-symbols-outlined text-lg">open_in_new</span>
+              Open Class
+            </button>
+          </div>
+        )}
       </div>
 
       <DataTable
@@ -179,11 +185,11 @@ export function AttendanceListPage() {
         searchKeys={["student_name", "admission_no", "class_name", "status", "note"]}
         sortable
         paginated={10}
-        rowActions={rowActions}
+        rowActions={pathname.includes("/parent") ? rowActions.filter(a => a.label === "View Details") : rowActions}
         emptyState={{
           title: "No attendance records",
           description: "Start marking attendance for your classes.",
-          action: { label: "Mark Attendance", href: "/admin/attendance/create" },
+          action: { label: "Mark Attendance", href: pathname.includes("/teacher") ? "/teacher/attendance/create" : "/admin/attendance/create" },
         }}
       />
     </div>

@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { DataTable, DataTableColumn, RowAction, Badge, DataState, Skeleton, TableSkeleton } from "../../../components/ui";
 import { useResults } from "../hooks/useResults";
 import { ResultRow } from "../types/result.types";
 import { showToast } from "../../../utils/toast";
 
-export function ResultListPage() {
-  const { state, updateResult, deleteResult } = useResults();
+export function ResultListPage({ filters }: { filters?: { exam_id?: string; student_id?: string } }) {
+  const pathname = usePathname();
+  const { state, updateResult, deleteResult } = useResults(filters);
 
   const columns: DataTableColumn<ResultRow>[] = [
     {
@@ -148,13 +150,15 @@ export function ResultListPage() {
           <h2 className="text-lg font-bold text-gray-900">Exam Results</h2>
           <p className="text-sm text-gray-500">View and manage student exam results</p>
         </div>
-        <Link
-          href="/admin/results/create"
-          className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all hover:shadow-lg hover:shadow-blue-600/25 active:scale-[0.98]"
-        >
-          <span className="material-symbols-outlined text-lg">add</span>
-          Record Result
-        </Link>
+        {!pathname.includes("/parent") && (
+          <Link
+            href={pathname.includes("/teacher") ? "/teacher/results/create" : "/admin/results/create"}
+            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all hover:shadow-lg hover:shadow-blue-600/25 active:scale-[0.98]"
+          >
+            <span className="material-symbols-outlined text-lg">add</span>
+            Record Result
+          </Link>
+        )}
       </div>
 
       <DataTable
@@ -165,11 +169,11 @@ export function ResultListPage() {
         searchKeys={["exam_title", "exam_subject", "student_name", "admission_no", "class_name", "grade"]}
         sortable
         paginated={10}
-        rowActions={rowActions}
+        rowActions={pathname.includes("/parent") ? rowActions.filter(a => a.label === "View Details") : rowActions}
         emptyState={{
           title: "No results available",
           description: "Enter exam results for students.",
-          action: { label: "Record Result", href: "/admin/results/create" },
+          action: { label: "Record Result", href: pathname.includes("/teacher") ? "/teacher/results/create" : "/admin/results/create" },
         }}
       />
     </div>

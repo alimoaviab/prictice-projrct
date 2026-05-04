@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Card } from "../../../components/ui";
 import EventForm from "../components/EventForm";
 import { useEvents } from "../hooks/useEvents";
@@ -10,13 +10,15 @@ import { showToast } from "../../../utils/toast";
 
 export function EventCreatePage() {
   const router = useRouter();
+  const pathname = usePathname();
   const { addEvent } = useEvents();
 
   async function handleCreate(input: EventFormInput) {
     const result = await addEvent(input);
     if (result.ok) {
       showToast("Event created successfully", "success");
-      router.push("/admin/events");
+      const basePath = pathname.includes("/teacher") ? "/teacher/events" : "/admin/events";
+      router.push(basePath);
       router.refresh();
     } else {
       showToast(result.error.message || "Failed to create event", "error");
@@ -27,7 +29,7 @@ export function EventCreatePage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <Link
-        href="/admin/events"
+        href={pathname.includes("/teacher") ? "/teacher/events" : "/admin/events"}
         className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition-colors"
       >
         <span className="material-symbols-outlined text-lg">arrow_back</span>
@@ -44,7 +46,7 @@ export function EventCreatePage() {
 
         <EventForm
           onSubmit={handleCreate}
-          onCancel={() => router.push("/admin/events")}
+          onCancel={() => router.push(pathname.includes("/teacher") ? "/teacher/events" : "/admin/events")}
         />
       </Card>
     </div>

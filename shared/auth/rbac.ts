@@ -47,7 +47,7 @@ export const roleAccessMatrix: Record<Role, RoleAccess> = {
     leave: ["view", "create"],
     events: ["view"]
   },
-  student: {
+  parent: {
     settings: ["view"],
     subjects: ["view"],
     classes: ["view"],
@@ -61,7 +61,6 @@ export const roleAccessMatrix: Record<Role, RoleAccess> = {
     announcements: ["view"],
     timetable: ["view"],
     behavior: ["view"],
-    leave: ["view", "create"],
     events: ["view"]
   }
 };

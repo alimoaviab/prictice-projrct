@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { DataTable, DataTableColumn, RowAction, Badge, DataState, Skeleton, TableSkeleton } from "../../../components/ui";
 import { useExams } from "../hooks/useExams";
 import { ExamRow } from "../types/exam.types";
 import { showToast } from "../../../utils/toast";
 
-export function ExamListPage() {
-  const { state, updateExam, deleteExam } = useExams();
+export function ExamListPage({ filters }: { filters?: { class_id?: string; subject?: string } }) {
+  const pathname = usePathname();
+  const { state, updateExam, deleteExam } = useExams(filters);
 
   const columns: DataTableColumn<ExamRow>[] = [
     {
@@ -121,13 +123,15 @@ export function ExamListPage() {
           <h2 className="text-lg font-bold text-gray-900">Scheduled Exams</h2>
           <p className="text-sm text-gray-500">Manage all examination schedules</p>
         </div>
-        <Link
-          href="/admin/exams/create"
-          className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all hover:shadow-lg hover:shadow-blue-600/25 active:scale-[0.98]"
-        >
-          <span className="material-symbols-outlined text-lg">add</span>
-          Schedule Exam
-        </Link>
+        {!pathname.includes("/parent") && (
+          <Link
+            href={pathname.includes("/teacher") ? "/teacher/exams/create" : "/admin/exams/create"}
+            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all hover:shadow-lg hover:shadow-blue-600/25 active:scale-[0.98]"
+          >
+            <span className="material-symbols-outlined text-lg">add</span>
+            Schedule Exam
+          </Link>
+        )}
       </div>
 
       <DataTable
@@ -138,11 +142,11 @@ export function ExamListPage() {
         searchKeys={["title", "subject", "class_name", "class_id"]}
         sortable
         paginated={10}
-        rowActions={rowActions}
+        rowActions={pathname.includes("/parent") ? rowActions.filter(a => a.label === "View Details") : rowActions}
         emptyState={{
           title: "No exams scheduled",
           description: "Get started by creating your first examination schedule.",
-          action: { label: "Schedule Exam", href: "/admin/exams/create" },
+          action: { label: "Schedule Exam", href: pathname.includes("/teacher") ? "/teacher/exams/create" : "/admin/exams/create" },
         }}
       />
     </div>

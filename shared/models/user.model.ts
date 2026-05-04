@@ -8,7 +8,7 @@ const userSchema = new Schema(
     password_hash: requiredString,
     role: {
       type: String,
-      enum: ["super_admin", "admin", "teacher", "student"],
+      enum: ["super_admin", "admin", "teacher", "parent"],
       required: true,
       index: true
     },

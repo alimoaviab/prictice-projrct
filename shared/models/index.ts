@@ -11,6 +11,7 @@ export * from "./homework.model";
 export * from "./leave.model";
 export * from "./notification.model";
 export * from "./school.model";
+export * from "./parent.model";
 export * from "./result.model";
 export * from "./student.model";
 export * from "./subject.model";

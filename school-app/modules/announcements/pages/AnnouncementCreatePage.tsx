@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Card } from "../../../components/ui";
 import { AnnouncementForm } from "../components/AnnouncementForm";
 import { useAnnouncements } from "../hooks/useAnnouncements";
@@ -8,13 +8,15 @@ import { showToast } from "../../../utils/toast";
 
 export function AnnouncementCreatePage() {
   const router = useRouter();
+  const pathname = usePathname();
   const { addAnnouncement } = useAnnouncements();
 
   async function handleCreate(input: any) {
     const result = await addAnnouncement(input);
     if (result.success) {
       showToast("Announcement published successfully", "success");
-      router.push("/admin/announcements");
+      const basePath = pathname.includes("/teacher") ? "/teacher/announcements" : "/admin/announcements";
+      router.push(basePath);
     } else {
       showToast(result.message || "Failed to publish announcement", "error");
     }

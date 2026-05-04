@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { DataTable, DataTableColumn, RowAction, Badge, DataState, Skeleton, TableSkeleton } from "../../../components/ui";
 import { useAnnouncements } from "../hooks/useAnnouncements";
 import { AnnouncementRecordRow } from "../types/announcement.types";
 import { showToast } from "../../../utils/toast";
 
 export function AnnouncementListPage() {
+  const pathname = usePathname();
   const { state, updateAnnouncement, deleteAnnouncement } = useAnnouncements();
 
   const columns: DataTableColumn<AnnouncementRecordRow>[] = [
@@ -136,13 +138,15 @@ export function AnnouncementListPage() {
           <h2 className="text-lg font-bold text-gray-900">Announcements</h2>
           <p className="text-sm text-gray-500">School-wide announcements and notices</p>
         </div>
-        <Link
-          href="/admin/announcements/create"
-          className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all hover:shadow-lg hover:shadow-blue-600/25 active:scale-[0.98]"
-        >
-          <span className="material-symbols-outlined text-lg">add</span>
-          New Announcement
-        </Link>
+        {!pathname.includes("/parent") && (
+          <Link
+            href={pathname.includes("/teacher") ? "/teacher/announcements/create" : "/admin/announcements/create"}
+            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all hover:shadow-lg hover:shadow-blue-600/25 active:scale-[0.98]"
+          >
+            <span className="material-symbols-outlined text-lg">add</span>
+            New Announcement
+          </Link>
+        )}
       </div>
 
       <DataTable
@@ -153,11 +157,11 @@ export function AnnouncementListPage() {
         searchKeys={["title", "content", "target_type", "status", "priority"]}
         sortable
         paginated={10}
-        rowActions={rowActions}
+        rowActions={pathname.includes("/parent") ? rowActions.filter(a => a.label === "View Details") : rowActions}
         emptyState={{
           title: "No announcements",
           description: "Create your first announcement.",
-          action: { label: "New Announcement", href: "/admin/announcements/create" },
+          action: { label: "New Announcement", href: pathname.includes("/teacher") ? "/teacher/announcements/create" : "/admin/announcements/create" },
         }}
       />
     </div>

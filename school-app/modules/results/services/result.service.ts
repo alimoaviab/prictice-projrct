@@ -2,8 +2,13 @@ import { serviceRequest } from "../../../services/service-client";
 import { getAcademyCareQuery } from "../../../services/academy-care-context";
 import { ResultFormInput, ResultRow } from "../types/result.types";
 
-export function listResults() {
-  return serviceRequest<ResultRow[]>(`/api/results${getAcademyCareQuery()}`);
+export function listResults(filters?: { exam_id?: string; student_id?: string }) {
+  const baseQuery = getAcademyCareQuery();
+  let filterQuery = "";
+  if (filters?.exam_id) filterQuery += `&exam_id=${filters.exam_id}`;
+  if (filters?.student_id) filterQuery += `&student_id=${filters.student_id}`;
+  
+  return serviceRequest<ResultRow[]>(`/api/results${baseQuery}${filterQuery}`);
 }
 
 export function saveResult(input: ResultFormInput) {

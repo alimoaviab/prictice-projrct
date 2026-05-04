@@ -12,6 +12,30 @@ import { HomeworkCreateInput, HomeworkUpdateInput, homeworkCreateSchema, homewor
 import { resolveClassIdsForAcademyCare } from "./_academy-care-filter";
 import { writeAuditLog } from "./audit.service";
 
+export async function getHomework(
+  ctx: RequestContext,
+  id: string
+): Promise<ServiceResult<unknown>> {
+  return serviceTry(async () => {
+    await connectDb();
+    assertPermission(ctx, "homework", "view");
+
+    const row = await HomeworkModel.findOne(tenantFilter(ctx, { _id: id }))
+      .populate("class_id", "name")
+      .populate("teacher_id", "first_name last_name")
+      .populate({ path: "subject_id", select: "name", strictPopulate: false })
+      .lean();
+
+    if (!row) throw new Error("Homework not found.");
+
+    return {
+      ...row,
+      _id: String(row._id),
+      due_at: row.due_at instanceof Date ? row.due_at.toISOString().split("T")[0] : row.due_at
+    };
+  });
+}
+
 export async function listHomework(
   ctx: RequestContext,
   filter: { academy_care_id?: string } = {}
