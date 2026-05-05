@@ -1,14 +1,115 @@
 import { Types } from "mongoose";
-import { ClassModel, StudentModel, AttendanceModel, ExamModel, ResultModel } from "../models";
+import { ClassModel, StudentModel, AttendanceModel, ExamModel, ResultModel, FeeModel, AcademicYearModel, TeacherModel, SubjectModel } from "../models";
 import { tenantFilter } from "../db/tenant-query";
-import { ok, fail, serviceTry } from "../utils/result";
-import { RequestContext, ServiceResult } from "../types/core";
+import { serviceTry } from "../utils/result";
+import { ControlledError, RequestContext, ServiceResult } from "../types/core";
+
+function toClassName(classRow: any): string {
+  const section = classRow.section ? `-${classRow.section}` : "";
+  return `${classRow.name ?? ""}${section}`.trim();
+}
+
+function toClassSummary(classRow: any) {
+  const classTeacher = Array.isArray(classRow.teacher_ids) && classRow.teacher_ids.length > 0
+    ? classRow.teacher_ids[0]
+    : classRow.class_teacher_id;
+
+  return {
+    id: String(classRow._id),
+    _id: String(classRow._id),
+    name: classRow.name,
+    section: classRow.section ?? "",
+    capacity: Number(classRow.capacity ?? 0),
+    enrolled_students: Number(classRow.enrolled_students ?? 0),
+    academy_care_id: String(classRow.academy_care_id ?? ""),
+    academy_care_year: classRow.academic_year ?? classRow.academy_care_year ?? "",
+    academic_year: classRow.academic_year ?? classRow.academy_care_year ?? "",
+    class_teacher_id: classTeacher ? String(classTeacher) : "",
+    teacher_ids: (classRow.teacher_ids ?? []).map((value: unknown) => String(value)),
+    subjects: (classRow.subjects ?? []).map((subject: unknown) =>
+      typeof subject === "string" ? subject : String(subject)
+    ),
+    room_number: classRow.room_number ?? "",
+    description: classRow.description ?? "",
+    status: classRow.status ?? "active"
+  };
+}
+
+async function hydrateClassRows(ctx: RequestContext, rows: any[]) {
+  const academicYearIds = rows.map((row) => String(row.academy_care_id || row.academic_year_id || "")).filter(Boolean);
+  const teacherIds = rows.flatMap((row) => (row.teacher_ids ?? []).map((value: unknown) => String(value))).filter(Boolean);
+
+  const [academicYears, teachers] = await Promise.all([
+    academicYearIds.length > 0
+      ? AcademicYearModel.find(tenantFilter(ctx, { _id: { $in: academicYearIds } })).lean()
+      : Promise.resolve([]),
+    teacherIds.length > 0
+      ? TeacherModel.find(tenantFilter(ctx, { _id: { $in: teacherIds } })).lean()
+      : Promise.resolve([])
+  ]);
+
+  const academicYearMap = new Map(academicYears.map((year: any) => [String(year._id), year]));
+  const teacherMap = new Map(teachers.map((teacher: any) => [String(teacher._id), teacher]));
+
+  return rows.map((row) => {
+    const academicYear = academicYearMap.get(String(row.academy_care_id || row.academic_year_id || ""));
+    const teacherId = row.class_teacher_id || (row.teacher_ids ?? [])[0];
+    const teacher = teacherId ? teacherMap.get(String(teacherId)) : null;
+
+    return {
+      ...toClassSummary(row),
+      academic_year: academicYear?.year ?? row.academic_year ?? row.academy_care_year ?? "",
+      academy_care_year: academicYear?.year ?? row.academic_year ?? row.academy_care_year ?? "",
+      class_teacher: teacher
+        ? {
+          id: String(teacher._id),
+          name: `${teacher.first_name || ""} ${teacher.last_name || ""}`.trim(),
+          phone: teacher.phone ?? ""
+        }
+        : null,
+      subjects: (row.subject_ids ?? []).length > 0
+        ? row.subjects ?? []
+        : row.subjects ?? []
+    };
+  });
+}
 
 export async function listClasses(ctx: RequestContext, query: any = {}): Promise<ServiceResult<any[]>> {
   return serviceTry(async () => {
     const filter = tenantFilter(ctx);
     Object.assign(filter, query);
-    return await ClassModel.find(filter).sort({ name: 1 });
+
+    const rows = await ClassModel.find(filter)
+      .populate("academy_care_id", "year start_date end_date is_active")
+      .populate("teacher_ids", "first_name last_name phone")
+      .populate("class_teacher_id", "first_name last_name phone")
+      .populate("subject_ids", "name code")
+      .sort({ name: 1 })
+      .lean();
+
+    const studentCounts = await StudentModel.aggregate([
+      { $match: tenantFilter(ctx, query as any) },
+      { $group: { _id: "$class_id", count: { $sum: 1 } } }
+    ]);
+    const countMap = new Map(studentCounts.map((item) => [String(item._id), Number(item.count || 0)]));
+
+    return rows.map((row: any) => ({
+      ...toClassSummary({ ...row, enrolled_students: countMap.get(String(row._id)) ?? 0 }),
+      academic_year: row.academy_care_id?.year ?? row.academic_year ?? "",
+      academy_care_year: row.academy_care_id?.year ?? row.academic_year ?? "",
+      class_teacher: row.class_teacher_id
+        ? {
+          id: String(row.class_teacher_id._id ?? row.class_teacher_id),
+          name: `${row.class_teacher_id.first_name || ""} ${row.class_teacher_id.last_name || ""}`.trim(),
+          phone: row.class_teacher_id.phone ?? ""
+        }
+        : null,
+      subjects: (row.subject_ids ?? []).map((subject: any) => ({
+        id: String(subject._id),
+        name: subject.name,
+        code: subject.code ?? ""
+      }))
+    }));
   });
 }
 
@@ -16,19 +117,93 @@ export async function getClass(ctx: RequestContext, id: string): Promise<Service
   return serviceTry(async () => {
     const filter = tenantFilter(ctx);
     Object.assign(filter, { _id: new Types.ObjectId(id) });
-    const cls = await ClassModel.findOne(filter);
+    const cls = await ClassModel.findOne(filter)
+      .populate("academy_care_id", "year start_date end_date is_active")
+      .populate("teacher_ids", "first_name last_name phone")
+      .populate("class_teacher_id", "first_name last_name phone")
+      .populate("subject_ids", "name code")
+      .lean();
     if (!cls) throw new Error("Class not found");
-    return cls;
+
+    const [students, feeRecords, examCount, resultCount] = await Promise.all([
+      StudentModel.find(tenantFilter(ctx, { class_id: id, status: "active" }))
+        .sort({ last_name: 1, first_name: 1 })
+        .lean(),
+      FeeModel.countDocuments(tenantFilter(ctx, { class_id: id } as any)).catch(() => 0),
+      ExamModel.countDocuments(tenantFilter(ctx, { class_id: id } as any)).catch(() => 0),
+      ResultModel.countDocuments(tenantFilter(ctx, { class_id: id } as any)).catch(() => 0)
+    ]);
+
+    const enrolledStudents = students.map((student: any) => ({
+      id: String(student._id),
+      name: `${student.first_name || ""} ${student.last_name || ""}`.trim(),
+      roll_no: student.admission_no ?? student.roll_no ?? "",
+      enrollment_status: student.status ?? "active"
+    }));
+
+    return {
+      ...toClassSummary({ ...cls, enrolled_students: students.length }),
+      academic_year: (cls as any).academy_care_id?.year ?? (cls as any).academic_year ?? "",
+      academy_care_year: (cls as any).academy_care_id?.year ?? (cls as any).academic_year ?? "",
+      class_teacher: (cls as any).class_teacher_id
+        ? {
+          id: String((cls as any).class_teacher_id._id ?? (cls as any).class_teacher_id),
+          name: `${(cls as any).class_teacher_id.first_name || ""} ${(cls as any).class_teacher_id.last_name || ""}`.trim(),
+          phone: (cls as any).class_teacher_id.phone ?? ""
+        }
+        : null,
+      subjects: ((cls as any).subject_ids ?? []).map((subject: any) => ({
+        id: String(subject._id),
+        name: subject.name,
+        code: subject.code ?? "",
+        teacher: (cls as any).class_teacher_id ? `${(cls as any).class_teacher_id.first_name || ""} ${(cls as any).class_teacher_id.last_name || ""}`.trim() : ""
+      })),
+      students: enrolledStudents,
+      fee_structure: (cls as any).fee_structure ?? {
+        total_annual: 0,
+        monthly_recurring: 0,
+        fees_configured: feeRecords > 0
+      },
+      grade_thresholds: (cls as any).grade_thresholds ?? {},
+      exam_count: examCount,
+      result_count: resultCount
+    };
   });
 }
 
 export async function createClass(ctx: RequestContext, data: any): Promise<ServiceResult<any>> {
   return serviceTry(async () => {
-    const newClass = new ClassModel({
-      school_id: ctx.school_id,
-      ...data,
-    });
-    return await newClass.save();
+    try {
+      const classTeacherId = data.class_teacher_id ? new Types.ObjectId(data.class_teacher_id) : undefined;
+      const newClass = new ClassModel({
+        school_id: ctx.school_id,
+        ...data,
+        academy_care_id: data.academy_care_id ?? data.academic_year_id,
+        capacity: Number(data.capacity ?? 0),
+        class_teacher_id: classTeacherId,
+        teacher_ids: Array.isArray(data.teacher_ids)
+          ? data.teacher_ids.map((value: string) => new Types.ObjectId(value))
+          : classTeacherId
+            ? [classTeacherId]
+            : [],
+        subject_ids: Array.isArray(data.subject_ids) ? data.subject_ids.map((value: string) => new Types.ObjectId(value)) : [],
+        subjects: Array.isArray(data.subjects) ? data.subjects : [],
+        grade_thresholds: data.grade_thresholds ?? {},
+        fee_structure: data.fee_structure ?? undefined
+      });
+      const saved = await newClass.save();
+      return saved;
+    } catch (error: any) {
+      if (error?.code === 11000) {
+        throw new ControlledError(
+          "DUPLICATE_CLASS",
+          "This class already exists for the selected academic year.",
+          409,
+          error?.keyValue
+        );
+      }
+      throw error;
+    }
   });
 }
 
@@ -36,7 +211,20 @@ export async function updateClass(ctx: RequestContext, id: string, data: any): P
   return serviceTry(async () => {
     const filter = tenantFilter(ctx);
     Object.assign(filter, { _id: new Types.ObjectId(id) });
-    const updated = await ClassModel.findOneAndUpdate(filter, data, { new: true });
+    const patch: any = { ...data };
+    if (data.academic_year_id && !data.academy_care_id) {
+      patch.academy_care_id = data.academic_year_id;
+    }
+    if (data.class_teacher_id) {
+      patch.class_teacher_id = new Types.ObjectId(data.class_teacher_id);
+      patch.teacher_ids = Array.isArray(data.teacher_ids)
+        ? data.teacher_ids.map((value: string) => new Types.ObjectId(value))
+        : [patch.class_teacher_id];
+    }
+    if (Array.isArray(data.subject_ids)) {
+      patch.subject_ids = data.subject_ids.map((value: string) => new Types.ObjectId(value));
+    }
+    const updated = await ClassModel.findOneAndUpdate(filter, patch, { new: true, runValidators: true });
     if (!updated) throw new Error("Class not found");
     return updated;
   });
@@ -46,15 +234,25 @@ export async function deleteClass(ctx: RequestContext, id: string): Promise<Serv
   return serviceTry(async () => {
     const filter = tenantFilter(ctx);
     Object.assign(filter, { _id: new Types.ObjectId(id) });
+
+    const [studentCount, feeCount, examCount, resultCount] = await Promise.all([
+      StudentModel.countDocuments(tenantFilter(ctx, { class_id: id } as any)),
+      FeeModel.countDocuments(tenantFilter(ctx, { class_id: id } as any)).catch(() => 0),
+      ExamModel.countDocuments(tenantFilter(ctx, { class_id: id } as any)),
+      ResultModel.countDocuments(tenantFilter(ctx, { class_id: id } as any))
+    ]);
+
+    if (studentCount > 0) throw new ControlledError("CLASS_HAS_STUDENTS", "Cannot delete a class with enrolled students.", 400);
+    if (feeCount > 0) throw new ControlledError("CLASS_HAS_FEES", "Cannot delete a class with generated fees.", 400);
+    if (examCount > 0 || resultCount > 0) {
+      throw new ControlledError("CLASS_HAS_EXAMS", "Cannot delete a class with exams or results.", 400);
+    }
+
     const deleted = await ClassModel.findOneAndDelete(filter);
     if (!deleted) throw new Error("Class not found");
-    
-    // Cascade deletes
+
     await Promise.all([
-      StudentModel.deleteMany({ school_id: ctx.school_id, class_id: id }),
-      AttendanceModel.deleteMany({ school_id: ctx.school_id, class_id: id }),
-      ExamModel.deleteMany({ school_id: ctx.school_id, class_id: id }),
-      ResultModel.deleteMany({ school_id: ctx.school_id, class_id: id }),
+      AttendanceModel.deleteMany({ school_id: ctx.school_id, class_id: id })
     ]);
 
     return null;

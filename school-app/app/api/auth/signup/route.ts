@@ -6,7 +6,7 @@ import { connectDb } from "@edu/shared/db/connect";
 export async function POST(request: NextRequest) {
     try {
         await connectDb();
-        
+
         const body = await request.json();
         const { schoolName, email, password, confirmPassword } = body;
 
@@ -48,17 +48,25 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        const schoolCodeBase = schoolName.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 8) || "SCHOOL";
+        const suffix = Date.now().toString().slice(-4);
+        const schoolCode = `${schoolCodeBase}${suffix}`;
+        const schoolId = `school-${Date.now()}`;
+        const schoolDomain = `${schoolName.toLowerCase().replace(/[^a-z0-9]/g, "") || "school"}.eduplexo.com`;
+
         // Create Tenant (School)
         const newSchool = new SchoolModel({
+            school_id: schoolId,
             name: schoolName,
-            domain: schoolName.toLowerCase().replace(/[^a-z0-9]/g, "") + ".eduplexo.com",
+            code: schoolCode,
+            domains: [schoolDomain],
             status: "active",
         });
         await newSchool.save();
 
         // Create Admin User
         const newUser = new UserModel({
-            school_id: newSchool._id.toString(),
+            school_id: schoolId,
             email: email.toLowerCase(),
             password_hash: hashPassword(password),
             role: "admin",

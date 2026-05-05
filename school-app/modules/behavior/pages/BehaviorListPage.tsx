@@ -54,9 +54,9 @@ export function BehaviorListPage({ filters }: { filters?: { student_id?: string;
         <Badge
           variant={
             row.severity === "critical" ? "error" :
-            row.severity === "major" ? "warning" :
-            row.severity === "moderate" ? "primary" :
-            "success"
+              row.severity === "major" ? "warning" :
+                row.severity === "moderate" ? "primary" :
+                  "success"
           }
           className="capitalize"
         >
@@ -72,9 +72,9 @@ export function BehaviorListPage({ filters }: { filters?: { student_id?: string;
         <Badge
           variant={
             row.status === "resolved" ? "success" :
-            row.status === "open" ? "warning" :
-            row.status === "under_review" ? "primary" :
-            "error"
+              row.status === "open" ? "warning" :
+                row.status === "under_review" ? "primary" :
+                  "error"
           }
           className="capitalize"
         >
@@ -106,7 +106,7 @@ export function BehaviorListPage({ filters }: { filters?: { student_id?: string;
       label: "View Details",
       variant: "primary",
       onClick: (row) => {
-        alert(`Record: ${row.title}\nType: ${row.incident_type}\nSeverity: ${row.severity}\nDate: ${row.date}\n\nDescription: ${row.description || "N/A"}`);
+        alert(`Student: ${row.student_name}\nType: ${row.incident_type}\nSeverity: ${row.severity}\nStatus: ${row.status}\n\nDescription: ${row.description || "N/A"}`);
       },
     },
     {

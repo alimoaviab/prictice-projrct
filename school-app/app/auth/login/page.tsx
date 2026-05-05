@@ -85,7 +85,7 @@ export default function LoginPage() {
         <div className="md:w-5/12 bg-[#1E3A8A] p-10 flex flex-col justify-between text-white relative overflow-hidden">
           {/* Decorative background circle */}
           <div className="absolute top-[-10%] right-[-10%] w-[300px] h-[300px] bg-white opacity-5 rounded-full blur-3xl"></div>
-          
+
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-10">
               <span className="material-symbols-outlined text-4xl text-[#3B82F6]">school</span>
@@ -121,11 +121,10 @@ export default function LoginPage() {
                   key={role.key}
                   type="button"
                   onClick={() => setSelectedRole(role.key)}
-                  className={`flex-1 py-3 px-2 rounded-xl text-sm font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${
-                    selectedRole === role.key
+                  className={`flex-1 py-3 px-2 rounded-xl text-sm font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${selectedRole === role.key
                       ? "bg-white text-[#1E3A8A] shadow-lg"
                       : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"
-                  }`}
+                    }`}
                 >
                   <span className="material-symbols-outlined text-[20px]">{role.icon}</span>
                   <span className="hidden sm:inline">{role.label}</span>
@@ -202,7 +201,7 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-8 pt-8 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <Link href="/auth/forgot-password" size="sm" className="text-sm font-semibold text-blue-600 hover:text-blue-700">
+            <Link href="/auth/forgot-password" className="text-sm font-semibold text-blue-600 hover:text-blue-700">
               Forgot password?
             </Link>
             <div className="flex items-center gap-2">

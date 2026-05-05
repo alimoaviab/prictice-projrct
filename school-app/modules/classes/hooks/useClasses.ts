@@ -3,6 +3,7 @@
 import { useCallback, useEffect } from "react";
 import { useSafeAsync } from "../../../hooks/useSafeAsync";
 import { showToast } from "../../../utils/toast";
+import { setSelectedAcademyCareId } from "../../../services/academy-care-context";
 import { ClassFormInput, ClassRow } from "../types/class.types";
 import * as service from "../services/class.service";
 
@@ -26,6 +27,11 @@ export function useClasses() {
             if (!result.success) {
                 showToast(result.message || "Failed to create class", "error");
                 return result;
+            }
+
+            // Keep list filter aligned with the just-created class year so it appears immediately.
+            if (input.academy_care_id) {
+                setSelectedAcademyCareId(input.academy_care_id);
             }
 
             showToast("Class created.", "success");

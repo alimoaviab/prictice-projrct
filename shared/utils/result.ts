@@ -1,3 +1,4 @@
+import { ZodError } from "zod";
 import { ControlledError, ServiceResult } from "../types/core";
 
 export function ok<T>(data: T, meta?: Record<string, unknown>, message?: string): ServiceResult<T> {
@@ -23,6 +24,12 @@ export async function serviceTry<T>(operation: () => Promise<T>): Promise<Servic
   try {
     return ok(await operation());
   } catch (error: any) {
+    if (error instanceof ZodError || error?.name === "ZodError" || Array.isArray(error?.issues)) {
+      const firstIssueMessage = error?.issues?.[0]?.message ?? error?.message ?? "Validation failed.";
+
+      return fail("VALIDATION_ERROR", firstIssueMessage, 400, error?.issues ?? error);
+    }
+
     console.error("[serviceTry] Caught error:", {
       message: error?.message,
       code: error?.code,

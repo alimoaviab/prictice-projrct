@@ -21,7 +21,7 @@ export function HomeworkTable({ rows }: { rows: HomeworkRecordRow[] }) {
             render: (row: HomeworkRecordRow) => (
                 <div className="flex flex-col">
                     <span className="font-semibold text-gray-900">{row.title}</span>
-                    <span className="text-xs text-primary">{row.subject}</span>
+                    <span className="text-xs text-primary">{row.subject_name}</span>
                 </div>
             )
         },

@@ -1,4 +1,4 @@
-export type DayOfWeek = "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "Sunday" | "Everyday";
+export type DayOfWeek = "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "Sunday";
 
 export const DAY_OPTIONS: Array<{ label: string; value: DayOfWeek }> = [
   { label: "Monday", value: "Monday" },
@@ -8,7 +8,6 @@ export const DAY_OPTIONS: Array<{ label: string; value: DayOfWeek }> = [
   { label: "Friday", value: "Friday" },
   { label: "Saturday", value: "Saturday" },
   { label: "Sunday", value: "Sunday" },
-  { label: "Everyday", value: "Everyday" },
 ];
 
 export interface TimetableRecord {
@@ -30,7 +29,6 @@ export interface TimetableRecord {
 }
 
 export const DAY_LABEL_BY_NUMBER: Record<number, string> = {
-  0: "Everyday",
   1: "Monday",
   2: "Tuesday",
   3: "Wednesday",

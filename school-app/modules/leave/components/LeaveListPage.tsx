@@ -13,8 +13,8 @@ export default function LeaveListPage() {
   const handleEdit = (record: LeaveRecordRow) => {
     // allow editing existing leave requests
     // open a simple prompt flow for quick edits
-    const notes = window.prompt("Notes/Reason", record.notes || "")?.trim() || "";
-    updateLeave(record._id, { notes });
+    const reason = window.prompt("Notes/Reason", record.reason || "")?.trim() || "";
+    updateLeave(record._id, { reason });
   };
 
   const handleDelete = async (id: string) => {
@@ -76,9 +76,9 @@ export default function LeaveListPage() {
                 <td className="px-4 py-3">{record.end_date}</td>
                 <td className="px-4 py-3">
                   <span className={`px-2 py-1 rounded text-xs ${record.status === "approved" ? "bg-green-100 text-green-800" :
-                      record.status === "rejected" ? "bg-red-100 text-red-800" :
-                        record.status === "cancelled" ? "bg-gray-100 text-gray-800" :
-                          "bg-yellow-100 text-yellow-800"
+                    record.status === "rejected" ? "bg-red-100 text-red-800" :
+                      record.status === "cancelled" ? "bg-gray-100 text-gray-800" :
+                        "bg-yellow-100 text-yellow-800"
                     }`}>
                     {record.status}
                   </span>

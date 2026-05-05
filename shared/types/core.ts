@@ -1,4 +1,4 @@
-export type Role = "super_admin" | "admin" | "teacher" | "parent";
+export type Role = "super_admin" | "admin" | "teacher" | "parent" | "student";
 
 export type AppName = "school" | "super_admin";
 
@@ -30,6 +30,7 @@ export type Feature =
   | "settings"
   | "students"
   | "teachers"
+  | "subjects"
   | "classes"
   | "attendance"
   | "homework"
@@ -79,19 +80,19 @@ export interface ServiceError {
 
 export type ServiceResult<T> =
   | {
-      ok: true;
-      success: true;
-      data: T;
-      message?: string;
-      meta?: Record<string, unknown>;
-    }
+    ok: true;
+    success: true;
+    data: T;
+    message?: string;
+    meta?: Record<string, unknown>;
+  }
   | {
-      ok: false;
-      success: false;
-      error: ServiceError;
-      message: string;
-      errorCode?: string;
-    };
+    ok: false;
+    success: false;
+    error: ServiceError;
+    message: string;
+    errorCode?: string;
+  };
 
 export interface BaseEntity {
   id: string;

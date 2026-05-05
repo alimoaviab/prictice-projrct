@@ -53,8 +53,8 @@ export function TimetableListPage() {
       confirmTitle: "Delete Timetable Entry",
       confirmMessage: (row) => `Delete ${row.class_name} - ${row.subject_name} on ${getDayLabel(row.day_of_week)}?`,
       onClick: async (row) => {
-        const result = await deleteTimetable(row._id);
-        if (!result.success) showToast(result.message || "Failed to delete", "error");
+        const result: any = await deleteTimetable(row._id);
+        if (!result.ok) showToast(result.message || result.error?.message || "Failed to delete", "error");
       },
     },
   ], [deleteTimetable]);

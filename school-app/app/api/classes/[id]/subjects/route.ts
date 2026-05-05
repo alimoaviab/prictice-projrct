@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sessionRequest } from "../../_utils";
-import { authenticateRequest } from "@/shared/auth/middleware";
-import { assertPermission } from "@/shared/auth/rbac";
-import { connectDb } from "@/shared/db/connect";
-import { ClassModel } from "@/shared/models/class.model";
-import { SubjectModel } from "@/shared/models/subject.model";
+import { sessionRequest } from "../../../_utils";
+import { authenticateRequest } from "@edu/shared/auth/middleware";
+import { assertPermission } from "@edu/shared/auth/rbac";
+import { connectDb } from "@edu/shared/db/connect";
+import { ClassModel } from "@edu/shared/models/class.model";
+import { SubjectModel } from "@edu/shared/models/subject.model";
 import { Types } from "mongoose";
 
 /**
@@ -13,21 +13,22 @@ import { Types } from "mongoose";
  */
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const session = authenticateRequest(sessionRequest(request), "school");
         assertPermission(session, "classes", "view");
 
         await connectDb();
+        const { id } = await params;
 
-        const classData = await ClassModel.findById(params.id)
+        const classData = (await ClassModel.findById(id)
             .populate({
                 path: "subject_ids",
                 select: "_id name code description status",
-                match: { school_id: session.schoolId }
+                match: { school_id: session.school_id }
             })
-            .lean();
+            .lean()) as { subject_ids?: unknown[] } | null;
 
         if (!classData) {
             return NextResponse.json(
@@ -54,13 +55,14 @@ export async function GET(
  */
 export async function POST(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const session = authenticateRequest(sessionRequest(request), "school");
         assertPermission(session, "classes", "update");
 
         await connectDb();
+        const { id } = await params;
 
         const body = await request.json();
         const { subject_ids } = body;
@@ -75,7 +77,7 @@ export async function POST(
         // Validate all subject IDs exist and are active
         const subjects = await SubjectModel.find({
             _id: { $in: subject_ids.map((id: string) => new Types.ObjectId(id)) },
-            school_id: session.schoolId,
+            school_id: session.school_id,
             status: "active"
         });
 
@@ -87,8 +89,8 @@ export async function POST(
         }
 
         // Update class with subject IDs
-        const classData = await ClassModel.findByIdAndUpdate(
-            params.id,
+        const classData = (await ClassModel.findByIdAndUpdate(
+            id,
             { subject_ids },
             { new: true }
         )
@@ -96,7 +98,7 @@ export async function POST(
                 path: "subject_ids",
                 select: "_id name code description status"
             })
-            .lean();
+            .lean()) as { subject_ids?: unknown[] } | null;
 
         if (!classData) {
             return NextResponse.json(
@@ -124,13 +126,14 @@ export async function POST(
  */
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const session = authenticateRequest(sessionRequest(request), "school");
         assertPermission(session, "classes", "update");
 
         await connectDb();
+        const { id } = await params;
 
         const url = new URL(request.url);
         const subjectId = url.pathname.split("/").pop();
@@ -143,8 +146,8 @@ export async function DELETE(
         }
 
         // Remove subject from class
-        const classData = await ClassModel.findByIdAndUpdate(
-            params.id,
+        const classData = (await ClassModel.findByIdAndUpdate(
+            id,
             { $pull: { subject_ids: new Types.ObjectId(subjectId) } },
             { new: true }
         )
@@ -152,7 +155,7 @@ export async function DELETE(
                 path: "subject_ids",
                 select: "_id name code description status"
             })
-            .lean();
+            .lean()) as { subject_ids?: unknown[] } | null;
 
         if (!classData) {
             return NextResponse.json(

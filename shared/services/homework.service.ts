@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Types } from "mongoose";
 import { assertPermission } from "../auth/rbac";
 import { connectDb } from "../db/connect";

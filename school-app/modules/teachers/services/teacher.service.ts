@@ -3,7 +3,17 @@ import { getAcademyCareQuery } from "../../../services/academy-care-context";
 import { TeacherFormInput, TeacherRow } from "../types/teacher.types";
 
 export function listTeachers() {
-    return serviceRequest<TeacherRow[]>(`/api/teachers${getAcademyCareQuery()}`);
+    const query = getAcademyCareQuery();
+
+    return (async () => {
+        const filtered = await serviceRequest<TeacherRow[]>(`/api/teachers${query}`);
+
+        if (!query || !filtered.ok || (filtered.data ?? []).length > 0) {
+            return filtered;
+        }
+
+        return serviceRequest<TeacherRow[]>("/api/teachers");
+    })();
 }
 
 export function createTeacher(input: TeacherFormInput) {

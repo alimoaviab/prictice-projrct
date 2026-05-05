@@ -1,5 +1,6 @@
 export interface BehaviorRecordRow {
   _id: string;
+  id?: string;
   student_id: string;
   student_name: string;
   class_id: string;
@@ -11,6 +12,7 @@ export interface BehaviorRecordRow {
   status: "open" | "under_review" | "resolved" | "escalated";
   warning_count: number;
   parent_notified: boolean;
+  notes?: string;
   created_at?: string;
 }
 

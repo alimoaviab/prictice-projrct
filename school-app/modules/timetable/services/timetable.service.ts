@@ -45,3 +45,31 @@ export function deleteTimetable(id: string) {
     method: "DELETE"
   });
 }
+
+export function generateTimetable(config?: {
+  daysPerWeek?: string[];
+  startTime?: string;
+  endTime?: string;
+  slotDuration?: number;
+}) {
+  return serviceRequest<{
+    generated: number;
+    total: number;
+    entries: TimetableRecord[];
+  }>("/api/timetable/generate", {
+    method: "POST",
+    body: JSON.stringify(config || {})
+  });
+}
+
+export function validateTimetable() {
+  return serviceRequest<{
+    total: number;
+    conflicts: number;
+    details: Array<{
+      type: string;
+      message: string;
+      entry_id?: string;
+    }>;
+  }>("/api/timetable/validate");
+}

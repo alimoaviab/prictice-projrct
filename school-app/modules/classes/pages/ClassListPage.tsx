@@ -9,6 +9,8 @@ import { useTeachers } from "../../teachers/hooks/useTeachers";
 import { ClassRow, ClassFormInput } from "../types/class.types";
 import { showToast } from "../../../utils/toast";
 import { ClassEditSidebar } from "../components/ClassEditSidebar";
+import { generateTimetable } from "../../timetable/services/timetable.service";
+import { useSafeAsync } from "../../../hooks/useSafeAsync";
 
 export function ClassListPage() {
   const { state, updateClass, deleteClass } = useClasses();
@@ -16,6 +18,8 @@ export function ClassListPage() {
   const { state: teachersState } = useTeachers();
   const [editingClass, setEditingClass] = useState<ClassRow | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const { state: generateState, run: runGenerate } = useSafeAsync<void>();
+  const [selectedClassForTimetable, setSelectedClassForTimetable] = useState<ClassRow | null>(null);
 
   const academyCareOptions = (academyCareState.data || []).map((ac) => ({
     id: ac._id,
@@ -36,6 +40,22 @@ export function ClassListPage() {
     { id: "sanskrit", label: "Sanskrit" },
     { id: "physical_education", label: "Physical Education" },
   ];
+
+  const handleGenerateTimetable = async () => {
+    await runGenerate(async () => {
+      const result = await generateTimetable({
+        startTime: "08:00",
+        endTime: "16:00",
+        slotDuration: 45,
+      });
+
+      if (!result.ok) {
+        throw new Error(result.error.message || "Failed to generate timetable");
+      }
+
+      showToast(`Successfully generated ${result.data.generated} timetable entries`, "success");
+    });
+  };
 
   const columns: DataTableColumn<ClassRow>[] = [
     {
@@ -152,13 +172,25 @@ export function ClassListPage() {
           <h2 className="text-lg font-bold text-gray-900">Classes</h2>
           <p className="text-sm text-gray-500">Manage all classrooms and sections</p>
         </div>
-        <Link
-          href="/admin/classes/create"
-          className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all hover:shadow-lg hover:shadow-blue-600/25 active:scale-[0.98]"
-        >
-          <span className="material-symbols-outlined text-lg">add</span>
-          Add Class
-        </Link>
+        <div className="flex gap-3">
+          <button
+            onClick={handleGenerateTimetable}
+            disabled={generateState.status === "loading" || (state.data || []).length === 0}
+            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-400 rounded-xl transition-all hover:shadow-lg hover:shadow-green-600/25 active:scale-[0.98]"
+          >
+            <span className="material-symbols-outlined text-lg">
+              {generateState.status === "loading" ? "hourglass_empty" : "auto_awesome"}
+            </span>
+            {generateState.status === "loading" ? "Generating..." : "Generate Timetables"}
+          </button>
+          <Link
+            href="/admin/classes/create"
+            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all hover:shadow-lg hover:shadow-blue-600/25 active:scale-[0.98]"
+          >
+            <span className="material-symbols-outlined text-lg">add</span>
+            Add Class
+          </Link>
+        </div>
       </div>
 
       {(state.data || []).length === 0 ? (
@@ -204,6 +236,13 @@ export function ClassListPage() {
               </div>
 
               <div className="flex gap-3">
+                <Link
+                  href={`/admin/timetable?class_id=${row._id}`}
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-green-600 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+                >
+                  <span className="material-symbols-outlined text-base">schedule</span>
+                  Timetable
+                </Link>
                 <button
                   onClick={() => setEditingClass(row)}
                   className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"

@@ -16,15 +16,15 @@ const initialForm: ClassFormInput = {
 export function ClassForm({
     onCreate,
     academyCareOptions,
-    teacherOptions
+    teacherOptions,
+    subjectOptions
 }: {
     onCreate: (input: ClassFormInput) => Promise<unknown>;
     academyCareOptions: Array<{ id: string; label: string }>;
     teacherOptions: Array<{ id: string; label: string }>;
+    subjectOptions: Array<{ id: string; label: string }>;
 }) {
-    const [form, setForm] = useState<ClassFormInput>({
-        ...initialForm
-    });
+    const [form, setForm] = useState<ClassFormInput>({ ...initialForm, subjects: [] });
     const [saving, setSaving] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -45,7 +45,7 @@ export function ClassForm({
             ...form,
             subjects: form.subjects.map((subject) => subject.trim()).filter(Boolean)
         });
-        setForm({ ...initialForm });
+        setForm({ ...initialForm, subjects: [] });
         setSaving(false);
     }
 
@@ -110,49 +110,31 @@ export function ClassForm({
 
             <div className="space-y-4">
                 <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Subjects</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {form.subjects.map((subject, index) => (
-                        <div key={index} className="flex gap-2">
-                            <Input
-                                placeholder={`Subject ${index + 1}`}
-                                value={subject}
-                                onChange={(event) =>
-                                    setForm({
-                                        ...form,
-                                        subjects: form.subjects.map((value, subjectIndex) =>
-                                            subjectIndex === index ? event.target.value : value
-                                        )
-                                    })
-                                }
-                            />
-                            {form.subjects.length > 1 && (
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    onClick={() =>
-                                        setForm({
-                                            ...form,
-                                            subjects: form.subjects.filter((_, subjectIndex) => subjectIndex !== index)
-                                        })
-                                    }
-                                    className="text-error hover:bg-error/5"
-                                >
-                                    <span className="material-symbols-outlined">delete</span>
-                                </Button>
-                            )}
-                        </div>
-                    ))}
+                <div className="space-y-2 max-h-44 overflow-y-auto rounded-lg border border-border p-3">
+                    {subjectOptions.length === 0 ? (
+                        <p className="text-sm text-gray-500">No subjects found. Please add subjects first.</p>
+                    ) : (
+                        subjectOptions.map((subject) => {
+                            const checked = form.subjects.includes(subject.label);
+                            return (
+                                <label key={subject.id} className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={checked}
+                                        onChange={(event) => {
+                                            const nextSubjects = event.target.checked
+                                                ? [...form.subjects, subject.label]
+                                                : form.subjects.filter((name) => name !== subject.label);
+                                            setForm({ ...form, subjects: nextSubjects });
+                                        }}
+                                        className="rounded border-gray-300"
+                                    />
+                                    <span className="text-sm text-gray-700">{subject.label}</span>
+                                </label>
+                            );
+                        })
+                    )}
                 </div>
-                <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setForm({ ...form, subjects: [...form.subjects, ""] })}
-                    className="flex items-center gap-2"
-                >
-                    <span className="material-symbols-outlined text-sm">add</span>
-                    Add another subject
-                </Button>
                 {errors.subjects ? <span className="text-xs text-error block">{errors.subjects}</span> : null}
             </div>
 

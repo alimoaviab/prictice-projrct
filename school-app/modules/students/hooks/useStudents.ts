@@ -12,12 +12,26 @@ export function useStudents() {
 
   const loadStudents = useCallback(() => {
     return run(async () => {
-      const result = await serviceRequest<StudentRow[]>(`/api/students${getAcademyCareQuery()}`);
-      if (!result.ok) {
-        throw new Error(result.error.message || "Failed to load students");
+      const query = getAcademyCareQuery();
+
+      const filtered = await serviceRequest<StudentRow[]>(`/api/students${query}`);
+
+      // If no query selected, or the filtered request errored, or it returned results,
+      // just return that result (or throw on error). Otherwise retry without the filter.
+      if (!query || !filtered.ok || (filtered.data ?? []).length > 0) {
+        if (!filtered.ok) {
+          throw new Error(filtered.error.message || "Failed to load students");
+        }
+
+        return filtered.data;
       }
 
-      return result.data;
+      const unfiltered = await serviceRequest<StudentRow[]>("/api/students");
+      if (!unfiltered.ok) {
+        throw new Error(unfiltered.error.message || "Failed to load students");
+      }
+
+      return unfiltered.data;
     });
   }, [run]);
 

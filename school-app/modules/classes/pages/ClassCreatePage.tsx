@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card, Skeleton, DataState } from "../../../components/ui";
 import { useAcademicYears } from "../../academicYear/hooks/useAcademicYears";
 import { useTeachers } from "../../teachers/hooks/useTeachers";
+import { useSubjects } from "../../subjects/hooks/useSubjects";
 import { ClassForm } from "../components/ClassForm";
 import { useClasses } from "../hooks/useClasses";
 import { ClassFormInput } from "../types/class.types";
@@ -15,12 +16,14 @@ export function ClassCreatePage() {
   const { addClass } = useClasses();
   const { state: academicYearState } = useAcademicYears();
   const { state: teacherState } = useTeachers();
+  const { data: subjects, isLoading: subjectsLoading, error: subjectsError } = useSubjects();
 
   const isDependencyLoading =
     academicYearState.status === "idle" ||
     academicYearState.status === "loading" ||
     teacherState.status === "idle" ||
-    teacherState.status === "loading";
+    teacherState.status === "loading" ||
+    subjectsLoading;
 
   const hasAcademicYears = (academicYearState.data ?? []).length > 0;
 
@@ -66,6 +69,8 @@ export function ClassCreatePage() {
           <DataState variant="error" title="Academic years unavailable" message={academicYearState.error} />
         ) : teacherState.status === "error" ? (
           <DataState variant="error" title="Teachers unavailable" message={teacherState.error} />
+        ) : subjectsError ? (
+          <DataState variant="error" title="Subjects unavailable" message={subjectsError} />
         ) : !isDependencyLoading && !hasAcademicYears ? (
           <DataState
             variant="empty"
@@ -85,6 +90,9 @@ export function ClassCreatePage() {
             onCreate={handleCreate}
             academyCareOptions={academyCareOptions}
             teacherOptions={teacherOptions}
+            subjectOptions={(subjects ?? [])
+              .filter((item) => item.status === "active")
+              .map((item) => ({ id: item._id, label: item.name }))}
           />
         )}
       </Card>

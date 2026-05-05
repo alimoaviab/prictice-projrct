@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-export type Role = "admin" | "super_admin" | "teacher" | "parent";
+export type Role = "admin" | "super_admin" | "teacher" | "parent" | "student";
 
 interface User {
   id: string;
@@ -10,6 +10,17 @@ interface User {
   profileId?: string;
   classId?: string;
   studentId?: string;
+}
+
+function decodeJwtPayload(token: string): any {
+  const payloadPart = token.split(".")[1];
+  if (!payloadPart) {
+    throw new Error("Invalid token format");
+  }
+
+  const normalized = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+  return JSON.parse(atob(padded));
 }
 
 export function useAuth() {
@@ -22,14 +33,14 @@ export function useAuth() {
     const profileId = localStorage.getItem("profile_id") || undefined;
     const classId = localStorage.getItem("class_id") || undefined;
     const studentId = localStorage.getItem("student_id") || undefined;
-    
+
     if (!token) {
       setLoading(false);
       return;
     }
 
     try {
-      const payload = JSON.parse(atob(token.split(".")[1]));
+      const payload = decodeJwtPayload(token);
       setUser({
         id: payload.sub,
         email: payload.actor_email,

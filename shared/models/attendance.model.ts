@@ -6,6 +6,7 @@ const attendanceSchema = new Schema(
     school_id: tenantField,
     student_id: { type: Types.ObjectId, ref: "Student", required: true, index: true },
     class_id: { type: Types.ObjectId, ref: "Class", required: true, index: true },
+    teacher_id: { type: Types.ObjectId, ref: "Teacher", default: null, index: true },
     date: { type: Date, required: true, index: true },
     status: {
       type: String,

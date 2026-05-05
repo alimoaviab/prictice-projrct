@@ -58,7 +58,7 @@ export function TimetableCreatePage() {
       if (conflicts.length > 0) {
         return {
           ok: false,
-          error: { message: "Conflict detected! This class, subject, or room is already occupied during this time." }
+          error: { message: "Conflict detected! Same class or same teacher cannot be assigned in the same time slot." }
         };
       }
 

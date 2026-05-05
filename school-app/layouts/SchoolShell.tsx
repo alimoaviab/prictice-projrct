@@ -66,7 +66,10 @@ const adminNavGroups: NavGroup[] = [
 const teacherNavGroups: NavGroup[] = [
   {
     label: "Reports",
-    items: [{ label: "Dashboard", href: "/teacher/dashboard", icon: "dashboard" }],
+    items: [
+      { label: "Dashboard", href: "/teacher/dashboard", icon: "dashboard" },
+      { label: "My Classes", href: "/teacher/classes", icon: "groups" },
+    ],
   },
   {
     label: "Academic",
@@ -116,6 +119,37 @@ const parentNavGroups: NavGroup[] = [
   },
 ];
 
+const studentNavGroups: NavGroup[] = [
+  {
+    label: "Overview",
+    items: [
+      { label: "Dashboard", href: "/student/dashboard", icon: "dashboard" },
+      { label: "Profile", href: "/student/profile", icon: "person" },
+    ],
+  },
+  {
+    label: "Academic",
+    items: [
+      { label: "Timetable", href: "/student/timetable", icon: "schedule" },
+      { label: "Exams", href: "/student/exams", icon: "quiz" },
+      { label: "Results", href: "/student/results", icon: "leaderboard" },
+      { label: "Attendance", href: "/student/attendance", icon: "fact_check" },
+      { label: "Homework", href: "/student/homework", icon: "assignment" },
+    ],
+  },
+  {
+    label: "Finance",
+    items: [{ label: "Fees", href: "/student/fees", icon: "payments" }],
+  },
+  {
+    label: "School",
+    items: [
+      { label: "Announcements", href: "/student/announcements", icon: "campaign" },
+      { label: "Events", href: "/student/events", icon: "event" },
+    ],
+  },
+];
+
 function Tooltip({ children, text }: { children: React.ReactNode; text: string }) {
   const [show, setShow] = useState(false);
   return (
@@ -158,6 +192,7 @@ export function SchoolShell({
     if (user.role === "admin" || user.role === "super_admin") return adminNavGroups;
     if (user.role === "teacher") return teacherNavGroups;
     if (user.role === "parent") return parentNavGroups;
+    if (user.role === "student") return studentNavGroups;
     return [];
   }, [user]);
 
@@ -182,9 +217,6 @@ export function SchoolShell({
       } else if (path.startsWith("/teacher") && user.role !== "teacher") {
         router.replace(`/${user.role}/dashboard`);
       } else if (path.startsWith("/parent") && user.role !== "parent") {
-        router.replace(`/${user.role}/dashboard`);
-      } else if (path.startsWith("/student")) {
-        // Student portal is removed, redirect to dashboard
         router.replace(`/${user.role}/dashboard`);
       }
     }
@@ -312,7 +344,7 @@ export function SchoolShell({
 
         {/* User Profile */}
         <div className={`p-4 border-t border-white/10 mt-auto ${isCollapsed ? "flex justify-center" : ""}`}>
-          <button 
+          <button
             onClick={logout}
             className={`flex items-center gap-3 w-full p-2 rounded-lg hover:bg-white/5 transition-colors group ${isCollapsed ? "justify-center" : ""}`}
           >
@@ -343,7 +375,7 @@ export function SchoolShell({
               <span className="material-symbols-outlined">notifications</span>
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
             </button>
-            <button 
+            <button
               onClick={logout}
               className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-2 font-medium text-sm"
               title="Logout"

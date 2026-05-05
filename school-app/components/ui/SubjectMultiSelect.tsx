@@ -43,10 +43,23 @@ export function SubjectMultiSelect({
             try {
                 setIsLoading(true);
                 setError(null);
-                const data = await subjectService.listSubjects();
+                const result = await subjectService.listSubjects();
+
+                if (!result.ok) {
+                    throw new Error(result.error.message || "Failed to load subjects");
+                }
+
+                const data = result.data;
 
                 // Filter by status if needed
-                const filtered = allowInactive ? data : data.filter(s => s.status === "active");
+                const normalized = data.map((subject) => ({
+                    _id: subject._id,
+                    name: subject.name,
+                    code: subject.code || "",
+                    description: subject.description,
+                    status: subject.status
+                }));
+                const filtered = allowInactive ? normalized : normalized.filter(s => s.status === "active");
                 setSubjects(filtered);
             } catch (err: any) {
                 console.error("[SubjectMultiSelect] Error loading subjects:", err);
@@ -141,8 +154,8 @@ export function SubjectMultiSelect({
                 onClick={() => setIsExpanded(!isExpanded)}
                 disabled={disabled || isLoading}
                 className={`w-full px-4 py-2 rounded-lg border transition-all text-left flex items-center justify-between ${disabled || isLoading
-                        ? "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed"
-                        : "bg-white border-gray-300 text-gray-700 hover:border-gray-400 cursor-pointer"
+                    ? "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-white border-gray-300 text-gray-700 hover:border-gray-400 cursor-pointer"
                     } ${isExpanded ? "border-blue-500 ring-1 ring-blue-200" : ""}`}
             >
                 <span className="text-sm">

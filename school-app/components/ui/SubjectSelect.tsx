@@ -40,10 +40,23 @@ export function SubjectSelect({
             try {
                 setIsLoading(true);
                 setError(null);
-                const data = await subjectService.listSubjects();
+                const result = await subjectService.listSubjects();
+
+                if (!result.ok) {
+                    throw new Error(result.error.message || "Failed to load subjects");
+                }
+
+                const data = result.data;
 
                 // Filter by status if needed
-                const filtered = allowInactive ? data : data.filter(s => s.status === "active");
+                const normalized = data.map((subject) => ({
+                    _id: subject._id,
+                    name: subject.name,
+                    code: subject.code || "",
+                    description: subject.description,
+                    status: subject.status
+                }));
+                const filtered = allowInactive ? normalized : normalized.filter(s => s.status === "active");
                 setSubjects(filtered);
             } catch (err: any) {
                 console.error("[SubjectSelect] Error loading subjects:", err);
@@ -76,10 +89,10 @@ export function SubjectSelect({
                 onChange={(e) => onChange(e.target.value || null)}
                 disabled={disabled || isLoading || subjects.length === 0}
                 className={`w-full px-4 py-2 rounded-lg border transition-all ${disabled || isLoading
-                        ? "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed"
-                        : error || subjects.length === 0
-                            ? "bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed"
-                            : "bg-white border-gray-300 text-gray-900 hover:border-gray-400 cursor-pointer focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                    ? "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed"
+                    : error || subjects.length === 0
+                        ? "bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed"
+                        : "bg-white border-gray-300 text-gray-900 hover:border-gray-400 cursor-pointer focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
                     }`}
             >
                 <option value="">{placeholder}</option>

@@ -3,6 +3,7 @@
 import { Card, DataState, Skeleton, TableSkeleton } from "../../../components/ui";
 import { useAcademicYears } from "../../academicYear/hooks/useAcademicYears";
 import { useTeachers } from "../../teachers/hooks/useTeachers";
+import { useSubjects } from "../../subjects/hooks/useSubjects";
 import { ClassForm } from "../components/ClassForm";
 import { ClassTable } from "../components/ClassTable";
 import { useClasses } from "../hooks/useClasses";
@@ -11,12 +12,14 @@ export function ClassPage() {
     const { state, addClass } = useClasses();
     const { state: academicYearState } = useAcademicYears();
     const { state: teacherState } = useTeachers();
+    const { data: subjects, isLoading: subjectsLoading, error: subjectsError } = useSubjects();
 
     const isDependencyLoading =
         academicYearState.status === "idle" ||
         academicYearState.status === "loading" ||
         teacherState.status === "idle" ||
-        teacherState.status === "loading";
+        teacherState.status === "loading" ||
+        subjectsLoading;
 
     const hasAcademicYears = (academicYearState.data ?? []).length > 0;
 
@@ -39,6 +42,10 @@ export function ClassPage() {
 
             {teacherState.status === "error" ? (
                 <DataState variant="error" title="Teachers unavailable" message={teacherState.error} />
+            ) : null}
+
+            {subjectsError ? (
+                <DataState variant="error" title="Subjects unavailable" message={subjectsError} />
             ) : null}
 
             {!isDependencyLoading && !hasAcademicYears ? (
@@ -65,14 +72,17 @@ export function ClassPage() {
                             id: item._id,
                             label: `${item.first_name} ${item.last_name}`.trim()
                         }))}
+                        subjectOptions={(subjects ?? [])
+                            .filter((item) => item.status === "active")
+                            .map((item) => ({ id: item._id, label: item.name }))}
                     />
                 </Card>
             ) : null}
 
             {state.status === "loading" || state.status === "idle" ? (
                 <div className="space-y-4">
-                   <Skeleton className="h-8 w-48" />
-                   <TableSkeleton />
+                    <Skeleton className="h-8 w-48" />
+                    <TableSkeleton />
                 </div>
             ) : null}
 
@@ -89,7 +99,7 @@ export function ClassPage() {
                     <div className="flex items-center justify-between">
                         <h3 className="text-lg font-bold text-gray-900">Classes List</h3>
                         <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                           {state.data.length} Total
+                            {state.data.length} Total
                         </span>
                     </div>
                     <ClassTable rows={state.data} />

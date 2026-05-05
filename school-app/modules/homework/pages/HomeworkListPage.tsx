@@ -77,7 +77,7 @@ export function HomeworkListPage({ filters }: { filters?: { class_id?: string; t
       label: "View Details",
       variant: "primary",
       onClick: (row) => {
-        alert(`Title: ${row.title}\nSubject: ${row.subject}\nInstructions: ${row.instructions || "No instructions"}\nDue: ${row.due_at}`);
+        alert(`Title: ${row.title}\nSubject: ${row.subject_name}\nInstructions: ${row.instructions || "No instructions"}\nDue: ${row.due_at}`);
       },
     },
     {

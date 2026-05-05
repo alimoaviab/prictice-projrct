@@ -11,6 +11,7 @@ interface TimetableFormProps {
   teacherOptions?: Array<{ id: string; label: string }>;
   subjectOptions?: Array<{ id: string; label: string }>;
   isLoading?: boolean;
+  initialClassId?: string;
 }
 
 export function TimetableForm({
@@ -18,10 +19,11 @@ export function TimetableForm({
   classOptions = [],
   teacherOptions = [],
   subjectOptions = [],
-  isLoading = false
+  isLoading = false,
+  initialClassId = ""
 }: TimetableFormProps) {
   const [form, setForm] = useState<TimetableFormInput>({
-    class_id: "",
+    class_id: initialClassId,
     teacher_id: "",
     subject_id: "",
     day_of_week: "Monday",
@@ -33,6 +35,12 @@ export function TimetableForm({
 
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (initialClassId) {
+      setForm((current) => ({ ...current, class_id: initialClassId }));
+    }
+  }, [initialClassId]);
 
   // academic year removed from form inputs
 
@@ -78,7 +86,7 @@ export function TimetableForm({
       if (result && typeof result === "object" && "ok" in result && (result as any).ok) {
         showToast("Timetable entry created successfully", "success");
         setForm({
-          class_id: "",
+          class_id: initialClassId,
           teacher_id: "",
           subject_id: "",
           day_of_week: "Monday",
