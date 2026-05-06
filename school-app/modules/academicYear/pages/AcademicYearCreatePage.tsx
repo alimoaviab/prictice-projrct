@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Card } from "../../../components/ui";
 import { AcademicYearForm } from "../components/AcademicYearForm";
 import { useAcademicYears } from "../hooks/useAcademicYears";
 import { AcademicYearFormInput } from "../types/academicYear.types";
@@ -23,24 +22,28 @@ export function AcademicYearCreatePage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <Link
-        href="/admin/academic-years"
-        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition-colors"
-      >
-        <span className="material-symbols-outlined text-lg">arrow_back</span>
-        Back to Academic Years
-      </Link>
+    <div className="max-w-3xl mx-auto animate-fade-in-up">
+      <div className="mb-3">
+        <Link
+          href="/admin/academic-years"
+          className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-slate-500 uppercase tracking-[0.12em] hover:text-blue-700 transition-all group"
+        >
+          <span className="material-symbols-outlined text-[18px] group-hover:-translate-x-0.5 transition-transform">arrow_back</span>
+          Back to Sessions
+        </Link>
+      </div>
 
-      <Card>
-        <div className="mb-6">
-          <h2 className="text-xl font-bold text-gray-900">Create Academic Year</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Define a new academic session for the school.
+      <div className="bg-white border border-blue-100 rounded-xl shadow-sm overflow-hidden">
+        <div className="px-5 py-4 md:px-6 md:py-5 border-b border-blue-100 bg-blue-50/30">
+          <h2 className="text-lg font-bold text-black tracking-tight">New Academic Session</h2>
+          <p className="text-xs text-slate-600 mt-0.5 font-medium">
+            Configure the start and end dates for a new school year.
           </p>
         </div>
-        <AcademicYearForm onCreate={handleCreate} />
-      </Card>
+        <div className="px-5 py-4 md:px-6 md:py-5">
+          <AcademicYearForm onCreate={handleCreate} />
+        </div>
+      </div>
     </div>
   );
 }

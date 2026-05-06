@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from "react";
 import { AcademicYearRow, AcademicYearUpdateInput } from "../types/academicYear.types";
+import { Button, Input } from "../../../components/ui";
 
 export function AcademicYearEditSidebar({
     academicYear,
@@ -38,8 +39,8 @@ export function AcademicYearEditSidebar({
         return Object.keys(newErrors).length === 0;
     }
 
-    async function handleSubmit(e: FormEvent) {
-        e.preventDefault();
+    async function handleSubmit(e?: FormEvent) {
+        e?.preventDefault();
         if (!validate() || !academicYear) return;
         await onSave(academicYear._id, {
             year: currentForm.year,
@@ -57,146 +58,153 @@ export function AcademicYearEditSidebar({
         onClose();
     }
 
-    if (!isOpen) return null;
-
     return (
         <>
+            {/* Overlay */}
             <div
-                className="fixed inset-0 bg-white/10 backdrop-blur-sm z-40 transition-opacity"
+                className={`fixed inset-0 bg-slate-900/30 backdrop-blur-[1px] z-40 transition-opacity duration-300 ${
+                    isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+                }`}
                 onClick={handleClose}
             />
 
-            <div className="fixed right-0 top-0 h-screen w-96 bg-white shadow-2xl z-50 flex flex-col overflow-hidden animate-in slide-in-from-right-96">
-                <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gray-50">
-                    <h2 className="text-lg font-bold text-gray-900">Edit Academic Year</h2>
+            {/* Drawer */}
+            <aside
+                className={`fixed top-0 right-0 h-screen w-full max-w-md bg-white border-l border-blue-100 shadow-xl z-50 transition-transform duration-300 ease-out transform flex flex-col ${
+                    isOpen ? "translate-x-0" : "translate-x-full"
+                }`}
+            >
+                {/* Header */}
+                <div className="px-5 py-4 border-b border-blue-100 flex items-center justify-between bg-blue-50/30">
+                    <div>
+                        <h2 className="text-lg font-bold text-black tracking-tight">Edit Academic Year</h2>
+                        <p className="text-xs text-slate-600 mt-0.5 font-medium">Update session details and status</p>
+                    </div>
                     <button
                         onClick={handleClose}
-                        className="p-1.5 text-gray-500 hover:bg-gray-200 rounded-lg transition-colors"
+                        className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-blue-50 rounded-lg transition-all"
                     >
-                        <span className="material-symbols-outlined">close</span>
+                        <span className="material-symbols-outlined text-lg">close</span>
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
-                    <div>
-                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
-                            Academic Year Details
-                        </h3>
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto px-5 py-4 custom-scrollbar">
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Basic Info */}
                         <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Year Name <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
+                            <div className="flex items-center gap-2 pb-2 border-b border-blue-100">
+                                <div className="w-7 h-7 rounded-md bg-blue-50 text-blue-700 flex items-center justify-center">
+                                    <span className="material-symbols-outlined text-base">info</span>
+                                </div>
+                                <h3 className="text-[10px] font-semibold text-slate-600 uppercase tracking-[0.14em]">General Information</h3>
+                            </div>
+                            
+                            <div className="space-y-4">
+                                <Input
+                                    label="Academic Year"
                                     value={currentForm.year}
                                     onChange={(e) => setForm({ ...form, year: e.target.value })}
-                                    placeholder="e.g., 2024-2025"
-                                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.year ? "border-red-500" : "border-gray-300"
-                                        }`}
+                                    required
+                                    placeholder="e.g. 2024-2025"
+                                    error={errors.year}
+                                    className="bg-white border-blue-100 focus:bg-white transition-all px-3 py-2"
                                 />
-                                {errors.year && (
-                                    <p className="text-sm text-red-600 mt-1">{errors.year}</p>
-                                )}
-                            </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Description
-                                </label>
-                                <textarea
-                                    value={currentForm.description}
-                                    onChange={(e) =>
-                                        setForm({ ...form, description: e.target.value })
-                                    }
-                                    rows={3}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
+                                <div className="flex flex-col gap-2">
+                                    <span className="text-[11px] font-semibold text-slate-600 uppercase tracking-[0.1em]">Session Status</span>
+                                    <label className={`flex items-center gap-3 h-[40px] px-3 border rounded-lg cursor-pointer transition-all duration-200 ${currentForm.is_active ? 'bg-blue-600 border-blue-600 shadow-sm text-white' : 'bg-blue-50/20 border-blue-100 hover:border-blue-300 text-slate-700'}`}>
+                                        <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${currentForm.is_active ? 'border-white bg-white/20' : 'border-slate-300 bg-white'}`}>
+                                            {currentForm.is_active && <span className="material-symbols-outlined text-white text-base font-black">check</span>}
+                                        </div>
+                                        <input
+                                            type="checkbox"
+                                            checked={currentForm.is_active}
+                                            onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+                                            className="hidden"
+                                        />
+                                        <span className="text-xs font-semibold">Set as Active Academic Year</span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div>
-                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
-                            Duration
-                        </h3>
+                        {/* Dates */}
                         <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Start Date <span className="text-red-500">*</span>
-                                </label>
-                                <input
+                            <div className="flex items-center gap-2 pb-2 border-b border-blue-100">
+                                <div className="w-7 h-7 rounded-md bg-blue-50 text-blue-700 flex items-center justify-center">
+                                    <span className="material-symbols-outlined text-base">calendar_today</span>
+                                </div>
+                                <h3 className="text-[10px] font-semibold text-slate-600 uppercase tracking-[0.14em]">Duration</h3>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <Input
+                                    label="Start Date"
                                     type="date"
                                     value={currentForm.start_date}
-                                    onChange={(e) =>
-                                        setForm({ ...form, start_date: e.target.value })
-                                    }
-                                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.start_date ? "border-red-500" : "border-gray-300"
-                                        }`}
+                                    onChange={(e) => setForm({ ...form, start_date: e.target.value })}
+                                    error={errors.start_date}
+                                    required
+                                    className="bg-white border-blue-100 focus:bg-white transition-all px-3 py-2"
                                 />
-                                {errors.start_date && (
-                                    <p className="text-sm text-red-600 mt-1">{errors.start_date}</p>
-                                )}
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    End Date <span className="text-red-500">*</span>
-                                </label>
-                                <input
+                                <Input
+                                    label="End Date"
                                     type="date"
                                     value={currentForm.end_date}
                                     onChange={(e) => setForm({ ...form, end_date: e.target.value })}
-                                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.end_date ? "border-red-500" : "border-gray-300"
-                                        }`}
+                                    error={errors.end_date}
+                                    required
+                                    className="bg-white border-blue-100 focus:bg-white transition-all px-3 py-2"
                                 />
-                                {errors.end_date && (
-                                    <p className="text-sm text-red-600 mt-1">{errors.end_date}</p>
-                                )}
                             </div>
                         </div>
-                    </div>
 
-                    <div>
-                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
-                            Status
-                        </h3>
-                        <label className="flex items-center gap-3 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={currentForm.is_active}
-                                onChange={(e) =>
-                                    setForm({ ...form, is_active: e.target.checked })
-                                }
-                                className="rounded border-gray-300 w-4 h-4"
+                        {/* Notes */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2 pb-2 border-b border-blue-100">
+                                <div className="w-7 h-7 rounded-md bg-blue-50 text-blue-700 flex items-center justify-center">
+                                    <span className="material-symbols-outlined text-base">notes</span>
+                                </div>
+                                <h3 className="text-[10px] font-semibold text-slate-600 uppercase tracking-[0.14em]">Additional Notes</h3>
+                            </div>
+                            <Input
+                                label="Description"
+                                value={currentForm.description || ""}
+                                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                                placeholder="Notes about this session..."
+                                className="bg-white border-blue-100 focus:bg-white transition-all px-3 py-2"
                             />
-                            <span className="text-sm font-medium text-gray-700">
-                                Mark as Active Year
-                            </span>
-                        </label>
-                    </div>
-                </form>
+                        </div>
+                    </form>
+                </div>
 
-                <div className="flex gap-3 p-6 border-t border-gray-200 bg-gray-50">
+                {/* Footer */}
+                <div className="px-5 py-4 border-t border-blue-100 bg-white/95 backdrop-blur-sm flex items-center gap-3">
                     <button
-                        type="button"
                         onClick={handleClose}
-                        disabled={isSaving}
-                        className="flex-1 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                        className="flex-1 px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors uppercase tracking-[0.12em]"
                     >
                         Cancel
                     </button>
-                    <button
-                        type="submit"
-                        disabled={isSaving}
-                        onClick={handleSubmit}
-                        className="flex-1 px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    <Button
+                        onClick={() => void handleSubmit()}
+                        disabled={isSaving || !currentForm.year || !currentForm.start_date || !currentForm.end_date}
+                        className="flex-[2] py-2.5 h-auto text-xs font-semibold rounded-lg shadow-sm active:scale-[0.98] transition-all"
                     >
-                        <span className="material-symbols-outlined text-lg">save</span>
-                        {isSaving ? "Saving..." : "Save Changes"}
-                    </button>
+                        {isSaving ? (
+                            <div className="flex items-center gap-2">
+                                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                <span>Saving Changes...</span>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                <span className="material-symbols-outlined text-base font-black">save</span>
+                                <span>Save Changes</span>
+                            </div>
+                        )}
+                    </Button>
                 </div>
-            </div>
+            </aside>
         </>
     );
 }

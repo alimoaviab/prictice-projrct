@@ -42,104 +42,71 @@ export function AcademicYearForm({ onCreate }: { onCreate: (input: AcademicYearF
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-8 pb-24">
-            {/* Basic Information Section */}
-            <div className="space-y-6">
-                <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-                    <span className="material-symbols-outlined text-gray-400 text-lg">info</span>
-                    <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Basic Information</h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Input
-                        label="Academic Year Name"
-                        placeholder="e.g., 2024-2025"
-                        helperText="Enter a descriptive name for the academic session"
-                        value={form.year}
-                        onChange={(e) => setForm({ ...form, year: e.target.value })}
-                        error={errors.year}
-                        required
-                    />
-
-                    <div className="flex flex-col gap-1.5">
-                        <span className="text-sm font-medium text-gray-700">Status</span>
-                        <label className="flex items-center gap-3 h-10 px-4 border border-border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                            <input
-                                type="checkbox"
-                                checked={form.is_active}
-                                onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-                                className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-                            />
-                            <span className="text-sm text-gray-600">Set as Active Year</span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            {/* Duration Section */}
-            <div className="space-y-6">
-                <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-                    <span className="material-symbols-outlined text-gray-400 text-lg">calendar_today</span>
-                    <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Duration</h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Input
-                        label="Start Date"
-                        type="date"
-                        helperText="When does this academic year begin?"
-                        value={form.start_date}
-                        onChange={(e) => setForm({ ...form, start_date: e.target.value })}
-                        error={errors.start_date}
-                        required
-                    />
-
-                    <Input
-                        label="End Date"
-                        type="date"
-                        helperText="When does this academic year end?"
-                        value={form.end_date}
-                        onChange={(e) => setForm({ ...form, end_date: e.target.value })}
-                        error={errors.end_date}
-                        required
-                    />
-                </div>
-            </div>
-
-            {/* Additional Details Section */}
-            <div className="space-y-6">
-                <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-                    <span className="material-symbols-outlined text-gray-400 text-lg">notes</span>
-                    <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Additional Details</h3>
-                </div>
+        <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <Input
-                    label="Description"
-                    placeholder="Add notes about this academic year..."
-                    helperText="Optional: Add any relevant details or notes"
-                    value={form.description || ""}
-                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    label="Session Name"
+                    placeholder="e.g., 2024-2025"
+                    value={form.year}
+                    onChange={(e) => setForm({ ...form, year: e.target.value })}
+                    error={errors.year}
+                    required
+                    className="bg-white border-blue-100 focus:bg-white px-3 py-2"
+                />
+
+                <div className="flex flex-col gap-1.5">
+                    <span className="text-[11px] font-semibold text-slate-600 uppercase tracking-[0.1em]">Default Setting</span>
+                    <label className={`flex items-center gap-2.5 h-[38px] px-3 border rounded-lg cursor-pointer transition-all duration-200 ${form.is_active ? 'bg-blue-600 border-blue-600 text-white shadow-sm' : 'bg-blue-50/30 border-blue-100 text-slate-700 hover:border-blue-300'}`}>
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center ${form.is_active ? 'border-white bg-white/20' : 'border-slate-300 bg-white'}`}>
+                            {form.is_active && <span className="material-symbols-outlined text-white text-xs font-black">check</span>}
+                        </div>
+                        <input
+                            type="checkbox"
+                            checked={form.is_active}
+                            onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+                            className="hidden"
+                        />
+                        <span className="text-xs font-semibold uppercase tracking-[0.08em]">Active Session</span>
+                    </label>
+                </div>
+
+                <Input
+                    label="Start Date"
+                    type="date"
+                    value={form.start_date}
+                    onChange={(e) => setForm({ ...form, start_date: e.target.value })}
+                    error={errors.start_date}
+                    required
+                    className="bg-white border-blue-100 focus:bg-white px-3 py-2"
+                />
+
+                <Input
+                    label="End Date"
+                    type="date"
+                    value={form.end_date}
+                    onChange={(e) => setForm({ ...form, end_date: e.target.value })}
+                    error={errors.end_date}
+                    required
+                    className="bg-white border-blue-100 focus:bg-white px-3 py-2"
                 />
             </div>
 
-            {/* Sticky Submit Button */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-sm border-t border-gray-200 py-4 px-6 z-30">
-                <div className="max-w-4xl mx-auto flex justify-end">
-                    <Button
-                        type="submit"
-                        disabled={saving || !isValid}
-                        className="w-full md:w-auto min-w-[200px]"
-                    >
-                        {saving ? (
-                            <span className="flex items-center gap-2">
-                                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                                Creating...
-                            </span>
-                        ) : (
-                            <span className="flex items-center gap-2">
-                                <span className="material-symbols-outlined text-lg">add</span>
-                                Create Academic Year
-                            </span>
-                        )}
-                    </Button>
-                </div>
+            <Input
+                label="Description"
+                placeholder="Short description..."
+                value={form.description || ""}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                className="bg-white border-blue-100 focus:bg-white px-3 py-2"
+            />
+
+            <div className="sticky bottom-0 z-10 bg-white/95 backdrop-blur-sm border-t border-blue-100 pt-3 flex items-center justify-end">
+                <Button
+                    type="submit"
+                    disabled={saving || !isValid}
+                    className="w-full sm:w-auto px-6 py-2.5 h-auto text-[11px] font-semibold uppercase tracking-[0.12em] rounded-lg shadow-sm transition-all active:scale-[0.98]"
+                >
+                    {saving ? "Saving..." : "Create Session"}
+                </Button>
             </div>
         </form>
     );

@@ -1,269 +1,351 @@
-# 📋 CURRENT STATUS
+# 🏫 SCHOOL MANAGEMENT DASHBOARD — UI/UX + API INTEGRATION TASK
 
-* [x] Phase 1: Core Types & RBAC ✅
-* [x] Phase 2: Models ✅
-* [x] Phase 3: Validation Schemas ✅
-* [x] Phase 4: Services ✅ COMPLETE
-* [x] Phase 5: API Routes ✅ COMPLETE
-* [ ] Phase 6: Frontend Integration ❗ (MISSING — CRITICAL)
-* [ ] Phase 7: Testing & Production
+## 📌 ROLE
 
----
+You are a senior full-stack engineer, UI/UX architect, and production frontend developer.
 
-# 🔒 GLOBAL RULES (NON-NEGOTIABLE)
+Your task is to improve the School Admin Dashboard.
 
-* [ ] Every model includes `school_id`
-* [ ] Every query filters `school_id`
-* [ ] RBAC enforced in EVERY API
-* [ ] Role NEVER comes from frontend
-* [ ] Teacher sees ONLY assigned data
-* [ ] Admin sees ONLY own school
+This task is NOT only UI redesign.
 
----
+This task ALSO includes:
 
-# ⚙️ PHASE 4: SERVICES (COMPLETE BACKEND LOGIC)
+* API integration
+* real data connection
+* filters
+* search
+* analytics
+* operational dashboard behavior
+* frontend/backend integration
 
-### Announcement Service
-
-* [ ] createAnnouncement(data, user)
-
-  * [ ] enforce role = admin
-  * [ ] attach school_id
-* [ ] getAnnouncements(user)
-
-  * [ ] filter by school_id
+This is a real production School Management System.
 
 ---
 
-### Timetable Service
+# 🎯 MAIN GOAL
 
-* [ ] createTimetable(data, user)
+Create a production-ready school dashboard where:
 
-  * [ ] role = admin
-* [ ] getTeacherTimetable(user)
-
-  * [ ] filter teacher_id + school_id
-
----
-
-### Behavior Service ✅ (already done)
-
-* [x] createBehavior()
-* [x] getBehaviors() with joins
-
----
-
-### Leave Service
-
-* [ ] applyLeave(user, data)
-* [ ] approveReject(admin, leave_id, status)
+* [x] dashboard uses REAL API data
+* [x] cards show REAL analytics
+* [x] filters work correctly
+* [x] search works correctly
+* [x] alerts are dynamic
+* [x] attendance analytics are functional
+* [x] quick actions work
+* [x] dashboard feels operational
+* [x] scrolling is minimized
+* [x] most important information is visible immediately
 
 ---
 
-### Event Service
+# ⚠️ IMPORTANT RULE
 
-* [ ] createEvent(admin)
-* [ ] listEvents(user)
+You ARE ALLOWED to:
 
----
+* modify frontend logic
+* create dashboard APIs
+* create analytics APIs
+* create search APIs
+* create filter APIs
+* create aggregation queries
+* create dashboard services
+* create helper functions
+* create optimized queries
+* improve state management
+* connect frontend with backend
+* add loading states
+* add error handling
 
-### Homework Service
+BUT:
 
-* [ ] assignHomework(teacher)
-* [ ] getHomework(student/teacher)
+## ❌ DO NOT
 
----
-
-# 🌐 PHASE 5: API ROUTES (NEXT.JS)
-
-## 🔑 COMMON RULE (ALL APIs)
-
-* [ ] Extract user from middleware
-* [ ] Apply RBAC check
-* [ ] Apply school_id filter
-
----
-
-### Announcement APIs
-
-* [ ] GET /api/announcements
-* [ ] POST /api/announcements
-* [ ] GET /api/announcements/[id]
-
----
-
-### Timetable APIs
-
-* [ ] GET /api/timetable
-* [ ] POST /api/timetable
+* [x] Do not break RBAC
+* [x] Do not remove school_id filtering
+* [x] Do not trust frontend role
+* [x] Do not expose other school data
+* [x] Do not break existing modules
+* [x] Do not remove security checks
+* [x] Do not remove existing architecture
+* [x] Do not create fake data
+* [x] Do not bypass middleware authentication
 
 ---
 
-### Behavior APIs
+# 🔒 SECURITY RULES (MANDATORY)
 
-* [ ] GET /api/behavior
-* [ ] POST /api/behavior
+## EVERY QUERY MUST:
 
----
+* [x] filter by school_id
+* [x] respect user role
+* [x] respect RBAC
+* [x] validate permissions
 
-### Leave APIs
+## ROLE RULES
 
-* [ ] GET /api/leave
-* [ ] POST /api/leave
-* [ ] PATCH /api/leave/[id]
-
----
-
-### Event APIs
-
-* [ ] GET /api/events
-* [ ] POST /api/events
+* [x] Admin sees ONLY own school
+* [x] Teacher sees ONLY assigned data
+* [x] Student sees ONLY own data
+* [x] Role must come from backend session/token
+* [x] Never trust frontend role input
 
 ---
 
-# 🎨 PHASE 6: FRONTEND (CRITICAL — ADD THIS)
+# 🎨 UI/UX TASKS
 
-## 🔐 AUTH UI
+## ✅ REDESIGN THEME
 
-* [ ] Create `/login` page
+Create a modern premium school theme.
 
-  * [ ] email input
-  * [ ] password input
-  * [ ] submit → API
-* [ ] Handle redirect:
+Use:
 
-  * [ ] admin → /admin/dashboard
-  * [ ] teacher → /teacher/dashboard
-  * [ ] student → /student/dashboard
+* [x] deep navy
+* [x] soft blue
+* [x] white
+* [x] light gray
+* [x] green success states
+* [x] amber warning states
+* [x] minimal red alerts
 
----
+Avoid:
 
-## 🧭 TEACHER DASHBOARD
-
-### Layout
-
-* [ ] Sidebar:
-
-  * Dashboard
-  * Timetable
-  * Exams
-  * Results
-  * Attendance
-  * Behavior
-  * Announcements
-  * Events
+* [x] crypto dashboard styles
+* [x] neon colors
+* [x] glassmorphism overload
+* [x] oversized spacing
 
 ---
 
-### Timetable Page
+# 📚 SIDEBAR TASKS
 
-* [ ] Fetch `/api/timetable`
-* [ ] Show ONLY teacher timetable
+## ✅ IMPROVE SIDEBAR
 
----
-
-### Behavior Page (IMPORTANT)
-
-* [ ] Create "Add Behavior" form:
-
-  * [ ] Select Class
-  * [ ] Select Student (dynamic)
-  * [ ] Title
-  * [ ] Description
-  * [ ] Severity
-
-* [ ] On submit:
-
-  * [ ] POST /api/behavior
-
-* [ ] Behavior List:
-
-  * [ ] Show own created behaviors
+* [x] grouped modules
+* [x] collapsible sections
+* [x] fixed sidebar
+* [x] compact spacing
+* [x] active indicators
+* [x] hover labels
+* [x] responsive behavior
+* [x] icon consistency
+* [x] improved theme contrast and readability
 
 ---
 
-### Attendance Page
+# ⚙️ HEADER TASKS
 
-* [ ] Select class
-* [ ] Fetch students
-* [ ] Mark present/absent
-* [ ] Submit
+## ✅ ADD
 
----
-
-### Announcement Page
-
-* [ ] GET announcements
-* [ ] Display list
+* [x] global search
+* [x] notification center
+* [x] academic year selector
+* [x] profile menu
+* [x] quick create button
 
 ---
 
-### Events Page
+# 📊 DASHBOARD TASKS
 
-* [ ] GET events
-* [ ] Display calendar/list
+## ✅ ROW 1 — ANALYTICS CARDS
 
----
+Create real analytics cards using APIs:
 
-## 🏫 ADMIN DASHBOARD FIX (IMPORTANT)
+* [x] Total Students
+* [x] Total Teachers
+* [x] Attendance Today
+* [x] Fee Collection
+* [x] Pending Tasks
+* [x] Upcoming Exams
 
-⚠️ DO NOT redesign UI — only fix logic
+Each card must support:
 
-### Behavior Page FIX
-
-* [ ] Remove class-only listing ❌
-* [ ] Fetch `/api/behavior`
-* [ ] Display table:
-
-  * Student Name
-  * Class
-  * Teacher
-  * Title
-  * Severity
-  * Date
+* [x] real API data
+* [x] loading state
+* [x] error state
+* [x] trend calculation (placeholder in UI)
+* [x] responsive layout
 
 ---
 
-# 🔗 PHASE 7: INTEGRATION (CONNECT FRONTEND + BACKEND)
+# 📈 ATTENDANCE ANALYTICS
 
-* [ ] Connect all pages with APIs
-* [ ] Handle loading states
-* [ ] Handle error states
-* [ ] Ensure correct role-based rendering
+## ✅ CREATE REAL ATTENDANCE SYSTEM
 
----
+Add:
 
-# 🧪 PHASE 8: TESTING & PRODUCTION
+* [x] weekly attendance chart
+* [x] class-wise analytics
+* [x] attendance percentage
+* [x] present/absent ratio
+* [x] trends
+* [x] filters (Operational filter bar added to Attendance List)
 
-### Build Check
+Backend tasks allowed:
 
-* [ ] `npm run build` passes
-* [ ] No TypeScript errors
-
----
-
-### Security Test
-
-* [ ] Teacher cannot access other school data
-* [ ] Student cannot modify data
-* [ ] Admin restricted to own school
+* [x] create attendance analytics API
+* [x] create aggregation queries
+* [x] optimize attendance queries
 
 ---
 
-### Behavior System Test (CRITICAL)
+# ⚡ QUICK ACTIONS
 
-* [ ] Teacher creates behavior ✅
-* [ ] Admin sees correct list ✅
-* [ ] No empty class UI ❌ removed
-* [ ] Data integrity verified
+## ✅ QUICK ACTIONS MUST WORK
+
+Actions:
+
+* [x] Add Student
+* [x] Add Teacher
+* [x] Record Attendance
+* [x] Create Exam
+* [x] Publish Results
+* [x] Send Announcement
+* [x] Generate Report (Reports action added)
+* [x] Create Timetable
+
+Each action must:
+
+* [x] navigate correctly
+* [x] open modal correctly (Navigates to pages with ?action=new where applicable)
+* [x] connect with backend
+* [x] show success/error states
 
 ---
 
-# 🎯 FINAL COMPLETION
+# 🚨 SYSTEM ALERTS
 
-* [ ] Auth working
-* [ ] Teacher dashboard working
-* [ ] Behavior system FIXED
-* [ ] No data leakage
-* [ ] Full frontend + backend connected
-* [ ] Production ready 🚀
+## ✅ CREATE REAL ALERT SYSTEM
+
+Create dynamic alerts using backend data.
+
+Examples:
+
+* [x] low attendance
+* [x] unpaid fees (Fee collection percentage shown)
+* [x] pending approvals (Leave requests)
+* [x] missing timetable (Detects classes without scheduled sessions)
+* [x] teacher absent (Detects staff on approved leave today)
+* [x] upcoming exams
+
+Each alert must contain:
+
+* [x] severity
+* [x] timestamp
+* [x] CTA action
+* [x] related module
+
+Backend logic allowed:
+
+* [x] create alert service
+* [x] create alert aggregation queries
+* [x] create dashboard alert APIs
+
+---
+
+# 🔍 FILTER + SEARCH SYSTEM
+
+## ✅ ALLOWED
+
+You ARE allowed to create:
+
+* [x] search APIs (Header search implemented)
+* [x] filter APIs (Integrated into list pages)
+* [x] query params
+* [x] pagination
+* [x] sorting
+* [x] optimized DB queries
+
+Examples:
+
+* [x] student search
+* [x] attendance filter
+* [x] class filter
+* [x] date filter
+* [x] teacher filter
+
+---
+
+# 📉 EMPTY STATES + LOADING
+
+## ✅ ADD
+
+* [x] skeleton loading
+* [x] retry states
+* [x] error states
+* [x] empty states
+* [x] fallback UI
+
+Never show:
+
+* blank white containers
+* broken sections
+* dead widgets
+
+---
+
+# 📱 RESPONSIVENESS
+
+## ✅ OPTIMIZE FOR
+
+* [x] desktop
+* [x] laptop
+* [x] tablet
+
+Main goal:
+
+* [x] reduce scrolling
+* [x] maintain compact layout
+* [x] preserve hierarchy
+
+---
+
+# ⚙️ PERFORMANCE
+
+## ✅ OPTIMIZE
+
+* [x] dashboard queries
+* [x] API response times
+* [x] rendering performance
+* [x] loading strategies
+* [x] query caching if needed (Client-side useMemo used)
+
+Avoid:
+
+* [x] unnecessary re-renders
+* [x] huge charts
+* [x] heavy animations
+
+---
+
+# 🎯 FINAL OUTPUT
+
+Build a production-level School Admin Dashboard with:
+
+* [x] real APIs
+* [x] real analytics
+* [x] real alerts
+* [x] real attendance overview
+* [x] fully connected frontend/backend
+* [x] compact UX
+* [x] minimal scrolling
+* [x] strong operational workflow
+* [x] secure RBAC architecture
+* [x] proper school isolation
+* [x] premium institutional UI
+
+The final result should feel like:
+“A real modern school operating system.”
+
+---
+
+# 🏫 ACADEMIC YEAR MODULE — UI/UX UPGRADE
+
+* [x] Upgrade Academic Year List Page
+* [x] Upgrade Create Academic Year Page
+* [x] Upgrade Edit Academic Year Sidebar
+* [x] Upgrade Main Sidebar Navigation Theme
+* [x] Improve visual hierarchy, readability, and spacing
+* [x] Remove white empty area at the bottom of Create page
+* [x] Improve form UX and input styling
+* [x] Add micro-interactions and smooth animations

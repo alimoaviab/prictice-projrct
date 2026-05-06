@@ -160,9 +160,9 @@ function Tooltip({ children, text }: { children: React.ReactNode; text: string }
     >
       {children}
       {show && (
-        <div className="absolute left-full ml-3 px-3 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-lg whitespace-nowrap z-50 shadow-xl">
+        <div className="absolute left-full ml-2 px-2.5 py-1.5 bg-slate-900 text-white text-[11px] font-medium rounded-md whitespace-nowrap z-50 shadow-lg">
           {text}
-          <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45" />
+          <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 w-2 h-2 bg-slate-900 rotate-45" />
         </div>
       )}
     </div>
@@ -186,6 +186,7 @@ export function SchoolShell({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [academyYears, setAcademyYears] = useState<Array<{ _id: string; year: string; is_active: boolean }>>([]);
   const [selectedAcademyCareId, setSelectedAcademyCareIdState] = useState<string>("");
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
   const navGroups = useMemo(() => {
     if (!user) return [];
@@ -199,11 +200,27 @@ export function SchoolShell({
   useEffect(() => {
     const saved = localStorage.getItem("sidebar-collapsed");
     if (saved) setIsCollapsed(saved === "true");
-  }, []);
+
+    const savedGroups = localStorage.getItem("sidebar-expanded-groups");
+    if (savedGroups) {
+      setExpandedGroups(JSON.parse(savedGroups));
+    } else {
+      // Default all groups to expanded
+      const initial: Record<string, boolean> = {};
+      navGroups.forEach(g => initial[g.label] = true);
+      setExpandedGroups(initial);
+    }
+  }, [navGroups]);
 
   useEffect(() => {
     localStorage.setItem("sidebar-collapsed", String(isCollapsed));
   }, [isCollapsed]);
+
+  useEffect(() => {
+    if (Object.keys(expandedGroups).length > 0) {
+      localStorage.setItem("sidebar-expanded-groups", JSON.stringify(expandedGroups));
+    }
+  }, [expandedGroups]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -261,151 +278,195 @@ export function SchoolShell({
     );
   }
 
-  const sidebarWidth = isCollapsed ? "w-20" : "w-72";
+  const sidebarWidth = isCollapsed ? "w-16" : "w-60";
+
+  const toggleGroup = (label: string) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [label]: !prev[label]
+    }));
+  };
 
   return (
-    <div className="flex min-h-screen bg-[#F8FAFC]">
+    <div className="flex min-h-screen bg-[#F5F8FF]">
       {/* Sidebar */}
       <aside
-        className={`${sidebarWidth} bg-[#0F172A] text-white flex flex-col sticky top-0 h-screen overflow-y-auto transition-all duration-300 ease-in-out flex-shrink-0`}
+        className={`${sidebarWidth} bg-white/95 border-r border-blue-100 flex flex-col sticky top-0 h-screen transition-all duration-300 ease-in-out flex-shrink-0 z-20 shadow-[0_1px_8px_rgba(15,23,42,0.06)]`}
       >
         {/* Logo */}
-        <div className={`p-5 flex items-center gap-3 ${isCollapsed ? "justify-center" : "justify-between"}`}>
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-600/20">
-              <span className="material-symbols-outlined text-white text-lg">school</span>
+        <div className={`px-3 h-14 flex items-center gap-2 ${isCollapsed ? "justify-center" : "justify-between"}`}>
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 bg-blue-600 rounded-md flex items-center justify-center flex-shrink-0 shadow-sm shadow-blue-600/25">
+              <span className="material-symbols-outlined text-white text-base font-black">school</span>
             </div>
             {!isCollapsed && (
-              <span className="text-lg font-bold tracking-tight">Eduplexo</span>
+              <span className="text-base font-black tracking-tight text-gray-900">Eduplexo</span>
             )}
           </div>
 
-          {!isCollapsed && (
-            <button
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
-            >
-              <span className="material-symbols-outlined text-white/70 text-lg">
-                {isCollapsed ? "chevron_right" : "chevron_left"}
-              </span>
-            </button>
-          )}
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="p-1 rounded-md text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <span className="material-symbols-outlined text-base">
+              {isCollapsed ? "chevron_right" : "chevron_left"}
+            </span>
+          </button>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 space-y-6 overflow-y-auto">
-          {navGroups.map((group) => (
-            <div key={group.label} className="space-y-2">
-              {!isCollapsed && (
-                <h3 className="px-3 text-[10px] font-bold text-white/40 uppercase tracking-widest">
-                  {group.label}
-                </h3>
-              )}
-              <div className="space-y-0.5">
-                {group.items.map((item) => {
-                  const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-                  return isCollapsed ? (
-                    <Tooltip key={item.href} text={item.label}>
+        <nav className="flex-1 px-2.5 py-2 space-y-2 overflow-y-auto custom-scrollbar">
+          {navGroups.map((group) => {
+            const isExpanded = expandedGroups[group.label] !== false;
+            return (
+              <div key={group.label} className="space-y-0.5">
+                {!isCollapsed && (
+                  <button
+                    onClick={() => toggleGroup(group.label)}
+                    className="w-full flex items-center justify-between px-2 py-1 text-[10px] font-bold text-slate-500 uppercase tracking-[0.14em] hover:text-blue-700 transition-colors group"
+                  >
+                    <span>{group.label}</span>
+                    <span className={`material-symbols-outlined text-xs transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
+                      expand_more
+                    </span>
+                  </button>
+                )}
+                <div className={`space-y-0.5 transition-all duration-300 overflow-hidden ${!isCollapsed && !isExpanded ? 'max-h-0 opacity-0' : 'max-h-[500px] opacity-100'}`}>
+                  {group.items.map((item) => {
+                    const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                    return isCollapsed ? (
+                      <Tooltip key={item.href} text={item.label}>
+                        <Link
+                          href={item.href}
+                          className={`flex items-center justify-center w-9 h-9 mx-auto rounded-lg transition-all duration-200 ${isActive
+                            ? "bg-blue-600 text-white shadow-sm"
+                            : "text-slate-500 hover:bg-blue-50 hover:text-blue-700"
+                            }`}
+                        >
+                          <span className={`material-symbols-outlined text-[19px] ${isActive ? "font-black" : ""}`}>
+                            {item.icon}
+                          </span>
+                        </Link>
+                      </Tooltip>
+                    ) : (
                       <Link
+                        key={item.href}
                         href={item.href}
-                        className={`flex items-center justify-center p-3 rounded-xl transition-all duration-200 ${isActive
-                          ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
-                          : "text-gray-400 hover:bg-white/5 hover:text-white"
+                        className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[13px] transition-all duration-200 group relative ${isActive
+                          ? "bg-blue-600 text-white font-semibold shadow-sm"
+                          : "text-slate-700 font-medium hover:bg-blue-50 hover:text-blue-700"
                           }`}
                       >
-                        <span className={`material-symbols-outlined text-xl ${isActive ? "font-bold" : ""}`}>
+                        <span className={`material-symbols-outlined text-[18px] ${isActive ? "font-black" : "text-slate-400 group-hover:text-blue-600 transition-colors"}`}>
                           {item.icon}
                         </span>
+                        <span className="truncate">{item.label}</span>
                       </Link>
-                    </Tooltip>
-                  ) : (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200 group relative ${isActive
-                        ? "bg-blue-600 text-white font-bold shadow-lg shadow-blue-600/20"
-                        : "text-gray-300 hover:bg-white/5 hover:text-white"
-                        }`}
-                    >
-                      {isActive && (
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-r-full" />
-                      )}
-                      <span className={`material-symbols-outlined text-xl ${isActive ? "font-bold" : ""}`}>
-                        {item.icon}
-                      </span>
-                      {item.label}
-                    </Link>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </nav>
 
         {/* User Profile */}
-        <div className={`p-4 border-t border-white/10 mt-auto ${isCollapsed ? "flex justify-center" : ""}`}>
-          <button
-            onClick={logout}
-            className={`flex items-center gap-3 w-full p-2 rounded-lg hover:bg-white/5 transition-colors group ${isCollapsed ? "justify-center" : ""}`}
+        <div className={`p-2.5 border-t border-blue-100 mt-auto ${isCollapsed ? "flex justify-center" : ""}`}>
+          <div
+            className={`flex items-center gap-2.5 w-full p-2 rounded-lg bg-blue-50/40 border border-blue-100/60 transition-colors group ${isCollapsed ? "justify-center" : ""}`}
           >
-            <div className="w-10 h-10 rounded-full bg-blue-800 flex items-center justify-center flex-shrink-0">
-              <span className="text-sm font-bold">{user.email.substring(0, 2).toUpperCase()}</span>
+            <div className="w-7 h-7 rounded-md bg-blue-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+              <span className="text-[10px] font-black text-white">{user.email.substring(0, 2).toUpperCase()}</span>
             </div>
             {!isCollapsed && (
               <>
                 <div className="flex flex-col min-w-0 text-left flex-1">
-                  <span className="text-sm font-semibold text-white truncate">{user.email.split('@')[0]}</span>
-                  <span className="text-xs text-gray-400 capitalize">{user.role.replace('_', ' ')}</span>
+                  <span className="text-xs font-semibold text-gray-900 truncate">{user.email.split('@')[0]}</span>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.12em]">{user.role.replace('_', ' ')}</span>
                 </div>
-                <span className="material-symbols-outlined text-gray-400 text-lg group-hover:text-red-400 transition-colors">
-                  logout
-                </span>
+                <button 
+                  onClick={logout}
+                  className="p-1.5 rounded-md hover:bg-red-50 text-slate-500 hover:text-red-500 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-base">logout</span>
+                </button>
               </>
             )}
-          </button>
+          </div>
         </div>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 min-w-0 flex flex-col">
-        <header className="h-16 border-b border-gray-200 bg-white flex items-center justify-between px-6 sticky top-0 z-10">
-          <Breadcrumb />
-          <div className="flex items-center gap-4">
-            <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-xl transition-colors relative">
-              <span className="material-symbols-outlined">notifications</span>
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
-            </button>
+        <header className="h-14 border-b border-blue-100 bg-white/95 backdrop-blur flex items-center justify-between px-4 md:px-5 sticky top-0 z-10">
+          <div className="flex items-center gap-4 flex-1">
             <button
-              onClick={logout}
-              className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-2 font-medium text-sm"
-              title="Logout"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="p-2 rounded-md hover:bg-blue-50 transition-colors lg:hidden"
             >
-              <span className="material-symbols-outlined">logout</span>
-              <span className="hidden sm:inline">Logout</span>
+              <span className="material-symbols-outlined text-slate-700">menu</span>
             </button>
-            <div className="w-px h-6 bg-gray-200" />
-            <label className="text-sm font-medium text-gray-600">Year</label>
-            <select
-              value={selectedAcademyCareId}
-              onChange={(event) => {
-                const nextId = event.target.value;
-                setSelectedAcademyCareIdState(nextId);
-                setSelectedAcademyCareId(nextId);
-                window.location.reload();
-              }}
-              className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700"
-            >
-              {academyYears.map((row) => (
-                <option key={row._id} value={row._id}>
-                  {row.year}{row.is_active ? " (Active)" : ""}
-                </option>
-              ))}
-            </select>
+            <div className="relative max-w-md w-full hidden md:block">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+              <input 
+                type="text" 
+                placeholder="Global search (Students, Classes, Teachers...)" 
+                className="w-full bg-white border border-blue-100 rounded-lg py-1.5 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/15 focus:border-blue-300 transition-all"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+             <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 bg-white rounded-lg border border-blue-100">
+                <span className="material-symbols-outlined text-slate-500 text-base">calendar_today</span>
+                <select
+                  value={selectedAcademyCareId}
+                  onChange={(event) => {
+                    const nextId = event.target.value;
+                    setSelectedAcademyCareIdState(nextId);
+                    setSelectedAcademyCareId(nextId);
+                    window.location.reload();
+                  }}
+                  className="bg-transparent text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
+                >
+                  {academyYears.map((row) => (
+                    <option key={row._id} value={row._id}>
+                      {row.year}{row.is_active ? " (Active)" : ""}
+                    </option>
+                  ))}
+                </select>
+            </div>
+
+            <div className="w-px h-5 bg-blue-100 mx-1 hidden sm:block" />
+
+            <button className="p-1.5 text-slate-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all relative group">
+              <span className="material-symbols-outlined">notifications</span>
+              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white animate-pulse" />
+            </button>
+            
+            <button className="p-1.5 text-slate-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all">
+              <span className="material-symbols-outlined">help</span>
+            </button>
+
+            <div className="w-8 h-8 rounded-full bg-white border border-blue-100 flex items-center justify-center overflow-hidden cursor-pointer hover:border-blue-300 transition-colors">
+               <span className="text-[10px] font-bold text-slate-700">{user.email.substring(0, 2).toUpperCase()}</span>
+            </div>
           </div>
         </header>
 
-        <div key={pathname} className="p-6 max-w-7xl mx-auto w-full animate-fade-in-up">
-          <PageHeader title={title} eyebrow={eyebrow} actions={actions} />
+        <div key={pathname} className="p-4 md:p-5 max-w-[1200px] mx-auto w-full animate-fade-in-up">
+          <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-semibold text-blue-700 uppercase tracking-[0.12em] mb-0.5">{eyebrow}</p>
+              <h1 className="text-[26px] leading-tight font-bold text-black">{title}</h1>
+            </div>
+            {actions && (
+              <div className="flex items-center gap-2">
+                {actions}
+              </div>
+            )}
+          </div>
           {children}
         </div>
       </main>
