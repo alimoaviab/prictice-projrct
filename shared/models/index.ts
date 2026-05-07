@@ -23,3 +23,7 @@ export * from "./sync-job.model";
 export * from "./teacher.model";
 export * from "./timetable.model";
 export * from "./user.model";
+export * from "./exams/live-exam.model";
+export * from "./exams/exam-question.model";
+export * from "./exams/exam-submission.model";
+export * from "./exams/exam-violation.model";

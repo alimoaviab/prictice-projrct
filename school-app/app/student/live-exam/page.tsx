@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { SchoolShell } from "../../../layouts/SchoolShell";
+import { useState, useEffect } from "react";
 
 const stats = [
   { title: "Upcoming Exams", value: "0", detail: "Ready to join", icon: "schedule", tone: "text-sky-700" },
@@ -10,6 +11,19 @@ const stats = [
 ];
 
 export default function StudentLiveExamPage() {
+  const [exams, setExams] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/live-exams?status=active")
+      .then(res => res.json())
+      .then(data => {
+        if (data.ok) setExams(data.data || []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
   return (
     <SchoolShell title="Live Exams" eyebrow="Student">
       <div className="space-y-8">
@@ -54,16 +68,18 @@ export default function StudentLiveExamPage() {
                 <h2 className="text-xl font-bold text-slate-900">Next exam sessions</h2>
                 <p className="mt-1 text-sm text-slate-500">Choose the exam you want to enter and review details.</p>
               </div>
-              <Link
-                href="/student/live-exam"
+              <button
+                onClick={() => window.location.reload()}
                 className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
               >
                 Refresh
-              </Link>
+              </button>
             </div>
             <div className="mt-6 space-y-4">
-              {Array.from({ length: 3 }).map((_, index) => (
-                <div key={index} className="rounded-3xl border border-slate-200 p-4 shadow-sm">
+              {loading ? (
+                 <p className="text-sm text-slate-500">Loading exams...</p>
+              ) : exams.length === 0 ? (
+                <div className="rounded-3xl border border-slate-200 p-4 shadow-sm">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="font-semibold text-slate-900">No exam session yet</p>
@@ -72,7 +88,24 @@ export default function StudentLiveExamPage() {
                     <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase text-slate-600">Waiting</span>
                   </div>
                 </div>
-              ))}
+              ) : (
+                exams.map((exam) => (
+                  <div key={exam._id} className="rounded-3xl border border-violet-200 bg-violet-50 p-4 shadow-sm">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="font-bold text-slate-900">{exam.title}</p>
+                        <p className="text-sm text-slate-600">Duration: {exam.duration} mins | Marks: {exam.total_marks}</p>
+                      </div>
+                      <Link
+                        href={`/student/live-exam/${exam._id}`}
+                        className="rounded-full bg-violet-600 px-6 py-2 text-sm font-semibold text-white transition hover:bg-violet-700"
+                      >
+                        Join Now
+                      </Link>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -99,7 +132,7 @@ export default function StudentLiveExamPage() {
 
             <div className="rounded-[2rem] border border-slate-200/70 bg-white p-6 shadow-sm">
               <h2 className="text-xl font-bold text-slate-900">Exam advice</h2>
-              <p className="mt-3 text-sm text-slate-500">Make sure your device is charged and your internet connection is stable before exam start.</p>
+              <p className="mt-3 text-sm text-slate-500">Make sure your device is charged and your internet connection is stable before exam start. Do not switch tabs during an active exam.</p>
             </div>
           </div>
         </div>
