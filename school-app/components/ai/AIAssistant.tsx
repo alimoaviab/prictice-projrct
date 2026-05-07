@@ -1,14 +1,16 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Send, Bot, X, RefreshCcw, User } from "lucide-react";
+import { Send, Bot, X, RefreshCcw, User, Maximize2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { useRouter } from "next/navigation";
 
 export function AIAssistant({ onClose }: { onClose: () => void }) {
   const [messages, setMessages] = useState<{ role: "user" | "ai" | "tool"; content: string }[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [threadId, setThreadId] = useState<string | null>(null);
+  const router = useRouter();
 
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
 
@@ -114,9 +116,21 @@ export function AIAssistant({ onClose }: { onClose: () => void }) {
           <Bot className="h-5 w-5" />
           <h3 className="font-bold">ERP Assistant</h3>
         </div>
-        <button onClick={onClose} className="rounded-md p-1 hover:bg-white/20 transition">
-          <X className="h-5 w-5" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button 
+            onClick={() => {
+              onClose();
+              router.push("/admin/ai");
+            }} 
+            className="rounded-md p-1 hover:bg-white/20 transition"
+            title="Expand to Full Page"
+          >
+            <Maximize2 className="h-4 w-4" />
+          </button>
+          <button onClick={onClose} className="rounded-md p-1 hover:bg-white/20 transition">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
       </div>
 
       {/* Messages */}

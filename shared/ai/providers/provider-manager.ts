@@ -18,7 +18,7 @@ export class ProviderManager {
         new ChatGoogleGenerativeAI({
           model: process.env.GEMINI_MODEL || "gemini-3.1-flash-lite",
           temperature: 0.2,
-          maxRetries: 3,
+          maxRetries: 0,
           apiKey: process.env.GEMINI_API_KEY,
           apiVersion: "v1beta",
         })
@@ -29,7 +29,7 @@ export class ProviderManager {
         new ChatGoogleGenerativeAI({
           model: "gemini-3.1-pro",
           temperature: 0.2,
-          maxRetries: 2,
+          maxRetries: 1,
           apiKey: process.env.GEMINI_API_KEY,
           apiVersion: "v1beta",
         })
@@ -64,7 +64,7 @@ export class ProviderManager {
     }
   }
 
-  public async getModelWithFallback(complexity: TaskComplexity = "moderate"): Promise<any> {
+  public async getModelWithFallback(complexity: TaskComplexity = "moderate", tools?: any[]): Promise<any> {
     const preferences: AIProviderName[] = [];
 
     if (complexity === "complex") {
@@ -79,10 +79,14 @@ export class ProviderManager {
     // For simplicity with Langchain's native error handling, we return the best model
     // LangChain has native fallbacks that we can set up, so we can bind them.
 
-    const available = preferences.filter(p => this.providers.has(p)).map(p => this.providers.get(p));
+    let available = preferences.filter(p => this.providers.has(p)).map(p => this.providers.get(p));
 
     if (available.length === 0) {
       throw new Error("No AI providers available. Check API keys.");
+    }
+
+    if (tools && tools.length > 0) {
+      available = available.map((model: any) => model.bindTools(tools));
     }
 
     if (available.length > 1) {

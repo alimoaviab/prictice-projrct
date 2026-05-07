@@ -127,10 +127,15 @@ export function ClassListPage() {
       label: "Subjects",
       render: (row) => (
         <div className="flex flex-wrap gap-1">
+<<<<<<< HEAD
           {(row.subjects || []).slice(0, 2).map((s, i) => (
             <Badge key={getSubjectKey(s, i)} variant="secondary" className="text-[10px]">
               {getSubjectLabel(s)}
             </Badge>
+=======
+          {row.subjects.slice(0, 2).map((s: any) => (
+            <Badge key={s.id || (typeof s === 'string' ? s : JSON.stringify(s))} variant="secondary" className="text-[10px]">{s.name || s}</Badge>
+>>>>>>> 998195d (feat: implement system prompt, update supervisor logic, and add admin AI interface for enhanced chatbot capabilities.)
           ))}
           {(row.subjects || []).length > 2 && (
             <Badge variant="secondary" className="text-[10px]">+{(row.subjects || []).length - 2}</Badge>
@@ -302,10 +307,15 @@ export function ClassListPage() {
                   <div>
                     <span className="text-slate-500">Subjects:</span>
                     <div className="flex flex-wrap gap-1 mt-1">
+<<<<<<< HEAD
                       {(row.subjects || []).slice(0, 2).map((s, i) => (
                         <Badge key={getSubjectKey(s, i)} variant="secondary" className="text-[10px]">
                           {getSubjectLabel(s)}
                         </Badge>
+=======
+                      {row.subjects.slice(0, 2).map((s: any) => (
+                        <Badge key={s.id || (typeof s === 'string' ? s : JSON.stringify(s))} variant="secondary" className="text-[10px]">{s.name || s}</Badge>
+>>>>>>> 998195d (feat: implement system prompt, update supervisor logic, and add admin AI interface for enhanced chatbot capabilities.)
                       ))}
                       {row.subjects.length > 2 && (
                         <Badge variant="secondary" className="text-[10px]">+{row.subjects.length - 2}</Badge>

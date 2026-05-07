@@ -62,8 +62,8 @@ export async function POST(request: Request) {
                 const text = typeof chunk.content === "string" ? chunk.content : JSON.stringify(chunk.content);
                 controller.enqueue(encoder.encode(`{"type": "chunk", "content": ${JSON.stringify(text)}}\n`));
               }
-            } else if (event.event === "on_tool_start") {
-               controller.enqueue(encoder.encode(`{"type": "tool", "content": "Running tool ${event.name}..."}\n`));
+            // } else if (event.event === "on_tool_start") {
+            //    controller.enqueue(encoder.encode(`{"type": "tool", "content": "Running tool ${event.name}..."}\n`));
             }
           }
         } catch (err: any) {
