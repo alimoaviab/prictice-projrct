@@ -13,52 +13,57 @@ export function AcademicYearTable({ years }: { years: AcademicYearRow[] }) {
     const columns = [
         {
             key: "year",
-            label: "Academic Year",
+            label: "Session",
             render: (row: AcademicYearRow) => (
-                <div className="font-semibold text-slate-950">{row.year}</div>
+                <div className="flex items-center gap-2">
+                    <div className={`h-1.5 w-1.5 rounded-full ${row.is_active ? 'bg-blue-600 animate-pulse' : 'bg-slate-200'}`} />
+                    <span className="font-black text-slate-900 tracking-tight">{row.year}</span>
+                </div>
             )
         },
         {
-            key: "start_date",
-            label: "Start Date",
+            key: "duration",
+            label: "Timeline",
             render: (row: AcademicYearRow) => (
-                <div className="text-slate-600">{formatDate(row.start_date)}</div>
-            )
-        },
-        {
-            key: "end_date",
-            label: "End Date",
-            render: (row: AcademicYearRow) => (
-                <div className="text-slate-600">{formatDate(row.end_date)}</div>
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500">
+                    <span className="material-symbols-outlined text-sm">event</span>
+                    {formatDate(row.start_date)}
+                    <span className="text-slate-300">→</span>
+                    {formatDate(row.end_date)}
+                </div>
             )
         },
         {
             key: "status",
-            label: "Status",
+            label: "State",
             render: (row: AcademicYearRow) => {
-                const variant = row.status === "active" ? "success" : row.status === "completed" ? "secondary" : row.status === "cancelled" ? "error" : "gray";
-                return <Badge variant={variant} className="capitalize">{row.status}</Badge>;
+                const colors = row.status === "active" ? "text-emerald-700 bg-emerald-50 border-emerald-100" : row.status === "completed" ? "text-blue-700 bg-blue-50 border-blue-100" : "text-slate-400 bg-slate-50 border-slate-100";
+                return (
+                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${colors}`}>
+                        {row.status}
+                    </span>
+                );
             }
         },
         {
-            key: "is_active",
-            label: "Current",
-            render: (row: AcademicYearRow) => (
-                row.is_active ? (
-                    <div className="flex items-center gap-1.5 font-semibold text-emerald-700">
-                        <span className="material-symbols-outlined text-[18px]">check_circle</span>
-                        Active
-                    </div>
-                ) : <span className="text-slate-400">—</span>
+            key: "sync",
+            label: "Sync",
+            render: () => (
+                <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400">
+                    <span className="material-symbols-outlined text-sm">sync</span>
+                    Healthy
+                </div>
             )
         },
         {
             key: "actions",
-            label: "Actions",
+            label: "",
             render: () => (
-                <Button variant="ghost" size="sm" className="text-blue-700 hover:bg-blue-50">
-                    Edit
-                </Button>
+                <div className="flex justify-end">
+                    <button className="h-7 px-2 rounded border border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
+                        Details
+                    </button>
+                </div>
             )
         }
     ];

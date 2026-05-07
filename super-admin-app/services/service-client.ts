@@ -24,6 +24,8 @@ export async function serviceRequest<T>(
 
   return {
     ok: false,
+    success: false,
+    message: "The request could not be completed. Check your connection and retry.",
     error: {
       code: "NETWORK_ERROR",
       message: "The request could not be completed. Check your connection and retry.",

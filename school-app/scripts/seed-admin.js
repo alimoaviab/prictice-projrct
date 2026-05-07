@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import crypto from 'node:crypto';
 
 // Configuration
-const MONGODB_URI = 'mongodb+srv://abdul:12345454545@cluster0.dglgx3f.mongodb.net/?appName=Cluster0';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/eduplexo';
 const ADMIN_EMAIL = 'admin@school.com';
 const ADMIN_PASSWORD = 'admin123';
 const SCHOOL_ID = 'default-school';

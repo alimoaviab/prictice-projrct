@@ -4,8 +4,8 @@ import crypto from "node:crypto";
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/eduplexo";
 const SCHOOL_ID = process.env.SCHOOL_ID || "default-school";
 const ACADEMIC_YEAR_LABEL = process.env.ACADEMIC_YEAR || "2025-2026";
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "school@gmail.com";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "Test@123";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@gmail.com";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
 
 const CLASS_COUNT = 10;
 const TEACHER_COUNT = 20;
