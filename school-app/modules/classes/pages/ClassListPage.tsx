@@ -43,6 +43,20 @@ export function ClassListPage() {
     { id: "physical_education", label: "Physical Education" },
   ];
 
+  const getSubjectLabel = (subject: unknown) => {
+    if (typeof subject === "string") return subject;
+    if (subject && typeof subject === "object") return (subject as any).name ?? String(subject);
+    return "";
+  };
+
+  const getSubjectKey = (subject: unknown, index: number) => {
+    if (typeof subject === "string") return subject;
+    if (subject && typeof subject === "object") {
+      return String((subject as any).id ?? (subject as any)._id ?? (subject as any).name ?? index);
+    }
+    return String(index);
+  };
+
   const handleGenerateTimetable = async () => {
     await runGenerate(async () => {
       const result = await generateTimetable({
@@ -113,11 +127,13 @@ export function ClassListPage() {
       label: "Subjects",
       render: (row) => (
         <div className="flex flex-wrap gap-1">
-          {row.subjects.slice(0, 2).map((s) => (
-            <Badge key={s} variant="secondary" className="text-[10px]">{s}</Badge>
+          {(row.subjects || []).slice(0, 2).map((s, i) => (
+            <Badge key={getSubjectKey(s, i)} variant="secondary" className="text-[10px]">
+              {getSubjectLabel(s)}
+            </Badge>
           ))}
-          {row.subjects.length > 2 && (
-            <Badge variant="secondary" className="text-[10px]">+{row.subjects.length - 2}</Badge>
+          {(row.subjects || []).length > 2 && (
+            <Badge variant="secondary" className="text-[10px]">+{(row.subjects || []).length - 2}</Badge>
           )}
         </div>
       ),
@@ -286,8 +302,10 @@ export function ClassListPage() {
                   <div>
                     <span className="text-slate-500">Subjects:</span>
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {row.subjects.slice(0, 2).map((s) => (
-                        <Badge key={s} variant="secondary" className="text-[10px]">{s}</Badge>
+                      {(row.subjects || []).slice(0, 2).map((s, i) => (
+                        <Badge key={getSubjectKey(s, i)} variant="secondary" className="text-[10px]">
+                          {getSubjectLabel(s)}
+                        </Badge>
                       ))}
                       {row.subjects.length > 2 && (
                         <Badge variant="secondary" className="text-[10px]">+{row.subjects.length - 2}</Badge>

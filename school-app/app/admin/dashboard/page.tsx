@@ -84,41 +84,6 @@ export default function AdminDashboardPage() {
 
   return (
     <SchoolShell eyebrow="System Overview" title="Dashboard">
-      {/* Header Section */}
-      <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between bg-white p-6 rounded-3xl border border-slate-200/60 shadow-sm shadow-blue-900/5">
-        <div>
-           <div className="flex items-center gap-2 mb-1">
-              <div className="flex h-5 w-5 items-center justify-center rounded-md bg-blue-50 text-blue-600">
-                <span className="material-symbols-outlined text-[14px] font-black">waving_hand</span>
-              </div>
-              <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">Institutional Cockpit</p>
-           </div>
-           <h2 className="text-3xl font-black tracking-tight text-slate-900 leading-tight">Good Day, Administrator</h2>
-           <p className="text-sm font-medium text-slate-500 mt-1 flex items-center gap-2">
-             <span className="material-symbols-outlined text-[14px]">event</span>
-             Operational overview for {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-           </p>
-        </div>
-        <div className="flex items-center gap-3">
-           <div className="flex flex-col items-end pr-4 border-r border-slate-100">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Health</span>
-              <div className="flex items-center gap-2 mt-1">
-                 <div className="relative h-2 w-2">
-                    <span className="absolute inset-0 h-full w-full rounded-full bg-emerald-500 animate-ping opacity-25" />
-                    <span className="relative block h-full w-full rounded-full bg-emerald-500" />
-                 </div>
-                 <span className="text-xs font-bold text-slate-700">Live Infrastructure</span>
-              </div>
-           </div>
-           <div className="flex flex-col items-end">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Data Integrity</span>
-              <div className="flex items-center gap-1.5 mt-1 text-emerald-600">
-                 <span className="material-symbols-outlined text-sm">verified_user</span>
-                 <span className="text-xs font-bold uppercase tracking-tight">Verified</span>
-              </div>
-           </div>
-        </div>
-      </div>
 
       {/* Main Stats Grid */}
       <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">

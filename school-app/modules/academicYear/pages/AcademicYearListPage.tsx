@@ -66,40 +66,28 @@ export function AcademicYearListPage() {
 
   return (
     <div className="space-y-4">
-      {/* Stats Section - More Compact */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <div className="premium-card p-3 flex flex-col justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Sessions</span>
-          <div className="flex items-end justify-between mt-1">
-            <span className="text-xl font-bold text-slate-900">{years.length}</span>
-            <span className="material-symbols-outlined text-slate-200">calendar_month</span>
-          </div>
-        </div>
-        <div className="premium-card p-3 flex flex-col justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Active Year</span>
-          <div className="flex items-end justify-between mt-1">
-            <span className="text-xl font-bold text-blue-600">{activeYear?.year || "None"}</span>
-            <span className="material-symbols-outlined text-blue-100">verified</span>
-          </div>
-        </div>
-        <div className="premium-card p-3 flex flex-col justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Completed</span>
-          <div className="flex items-end justify-between mt-1">
-            <span className="text-xl font-bold text-emerald-600">{years.filter(y => y.status === "completed").length}</span>
-            <span className="material-symbols-outlined text-emerald-100">check_circle</span>
-          </div>
-        </div>
-        <div className="md:flex hidden premium-card p-3 flex-col justify-between border-blue-100 bg-blue-50/30">
-          <Link href="/admin/academic-years/create" className="flex items-center justify-between h-full group">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600">Quick Action</span>
-              <span className="text-[13px] font-bold text-blue-700 mt-1">Create New Session</span>
+      {/* Stats Section - High Density Enterprise Style */}
+      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+        {[
+          { label: "Total Sessions", value: years.length, icon: "calendar_month", color: "text-slate-500" },
+          { label: "Active Year", value: activeYear?.year || "None", icon: "verified", color: "text-blue-600" },
+          { label: "Completed", value: years.filter(y => y.status === "completed").length, icon: "check_circle", color: "text-emerald-600" },
+        ].map((stat) => (
+          <div key={stat.label} className="premium-card p-2.5 flex items-center justify-between bg-white/40 border-slate-200/50">
+            <div>
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block">{stat.label}</span>
+              <span className={`text-lg font-black tracking-tight mt-0.5 block ${stat.color}`}>{stat.value}</span>
             </div>
-            <div className="h-8 w-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-600/20 group-hover:scale-110 transition-transform">
-              <span className="material-symbols-outlined text-lg">add</span>
-            </div>
-          </Link>
-        </div>
+            <span className={`material-symbols-outlined text-lg opacity-20 ${stat.color}`}>{stat.icon}</span>
+          </div>
+        ))}
+        <Link href="/admin/academic-years/create" className="premium-card p-2.5 flex items-center justify-between bg-blue-600 border-blue-700 group hover:bg-blue-700 transition-all shadow-sm">
+          <div>
+            <span className="text-[9px] font-black uppercase text-blue-100 tracking-widest block opacity-80">Quick Action</span>
+            <span className="text-xs font-black text-white mt-0.5 block">Create Session</span>
+          </div>
+          <span className="material-symbols-outlined text-lg text-white group-hover:rotate-90 transition-transform">add</span>
+        </Link>
       </div>
 
       {/* Operational Toolbar */}
@@ -175,106 +163,94 @@ export function AcademicYearListPage() {
             {filteredYears.map((row) => {
               const days = durationInDays(row.start_date, row.end_date);
               const isActive = row.is_active;
-              const statusColor = row.status === "active" ? "text-emerald-600 bg-emerald-50 border-emerald-100" : row.status === "completed" ? "text-blue-600 bg-blue-50 border-blue-100" : "text-slate-500 bg-slate-50 border-slate-100";
+              const statusColor = row.status === "active" ? "text-emerald-600 bg-emerald-50 border-emerald-100/50" : row.status === "completed" ? "text-blue-600 bg-blue-50 border-blue-100/50" : "text-slate-500 bg-slate-50 border-slate-100/50";
               
               return (
                 <div
                   key={row._id}
-                  className={`premium-card group relative flex flex-col p-0 overflow-hidden transition-all hover:border-blue-300 hover:shadow-xl hover:shadow-blue-900/5 ${isActive ? "border-blue-200 ring-1 ring-blue-100 shadow-lg shadow-blue-900/5" : ""}`}
+                  className={`premium-card group relative flex flex-col p-0 overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-0.5 border-slate-200/60 bg-white ${isActive ? "ring-1 ring-blue-500/30 bg-blue-50/20" : ""}`}
                 >
-                  {/* Status Strip */}
-                  <div className={`h-1.5 w-full ${isActive ? 'bg-blue-600' : 'bg-slate-100'}`} />
+                  {/* Activity Indicator removed as per user request */}
                   
-                  <div className="p-5">
-                    <div className="flex items-start justify-between mb-5">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                           <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${statusColor}`}>
+                  <div className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                           <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${statusColor}`}>
                              {row.status}
                            </span>
                            {isActive && (
                              <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-blue-600">
                                <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
-                               Primary Session
+                               Active
                              </span>
                            )}
                         </div>
-                        <h3 className="text-xl font-black text-slate-900 tracking-tight">{row.year}</h3>
+                        <h3 className="text-lg font-black text-slate-900 tracking-tight leading-tight">{row.year}</h3>
                       </div>
                       
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg p-1 transition-all shadow-sm">
                         <button 
                           onClick={() => setEditingYear(row)}
-                          className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all border border-slate-100 bg-white shadow-sm"
+                          className="h-6 w-6 flex items-center justify-center rounded text-slate-500 hover:bg-white hover:text-blue-600 transition-all hover:shadow-sm"
                         >
-                          <span className="material-symbols-outlined text-[18px]">edit_square</span>
+                          <span className="material-symbols-outlined text-base">edit</span>
                         </button>
                         <button 
                           onClick={async () => {
-                            if (window.confirm(`Terminate ${row.year}?`)) {
+                            if (window.confirm(`Delete ${row.year}?`)) {
                               const result = await deleteAcademicYear(row._id);
                               if (result.ok) showToast(`${row.year} deleted`, "success");
                             }
                           }}
-                          className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all border border-slate-100 bg-white shadow-sm"
+                          className="h-6 w-6 flex items-center justify-center rounded text-slate-500 hover:bg-white hover:text-red-500 transition-all hover:shadow-sm"
                         >
-                          <span className="material-symbols-outlined text-[18px]">delete</span>
+                          <span className="material-symbols-outlined text-base">delete</span>
                         </button>
                       </div>
                     </div>
 
-                    <div className="space-y-4">
-                       {/* Timeline Component */}
-                       <div className="relative flex items-center justify-between">
-                          <div className="absolute left-0 right-0 h-0.5 bg-slate-100 top-1/2 -translate-y-1/2" />
-                          <div className="relative z-10 bg-white pr-2">
-                             <div className="h-6 w-6 rounded-full border-2 border-slate-100 bg-white flex items-center justify-center">
-                                <div className="h-2 w-2 rounded-full bg-slate-300" />
-                             </div>
-                             <p className="mt-1 text-[9px] font-black text-slate-400 uppercase">{formatDate(row.start_date)}</p>
-                          </div>
-                          {days && (
-                             <div className="relative z-10 bg-white px-2 py-0.5 rounded-full border border-slate-100 shadow-sm">
-                                <p className="text-[10px] font-black text-slate-900">{days}d</p>
-                             </div>
-                          )}
-                          <div className="relative z-10 bg-white pl-2 text-right">
-                             <div className="h-6 w-6 rounded-full border-2 border-slate-100 bg-white flex items-center justify-center ml-auto">
-                                <div className="h-2 w-2 rounded-full bg-slate-300" />
-                             </div>
-                             <p className="mt-1 text-[9px] font-black text-slate-400 uppercase">{formatDate(row.end_date)}</p>
+                    <div className="mt-4 space-y-4">
+                       {/* Timeline Component - Increased Scale */}
+                       <div className="relative py-2">
+                          <div className="absolute left-0 right-0 h-[1px] bg-slate-100 top-1/2 -translate-y-1/2" />
+                          <div className="flex items-center justify-between relative z-10">
+                            <div className="bg-white group-hover:bg-slate-50/50 transition-colors pr-2 text-left">
+                               <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter leading-none mb-1">Start</p>
+                               <p className="text-[11px] font-bold text-slate-700 tracking-tight leading-none">{formatDate(row.start_date)}</p>
+                            </div>
+                            {days && (
+                               <div className="bg-white group-hover:bg-slate-50/50 transition-colors px-2 py-0.5 rounded border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                                  <p className="text-[10px] font-black text-slate-900 leading-none">{days}d</p>
+                               </div>
+                            )}
+                            <div className="bg-white group-hover:bg-slate-50/50 transition-colors pl-2 text-right">
+                               <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter leading-none mb-1">End</p>
+                               <p className="text-[11px] font-bold text-slate-700 tracking-tight leading-none">{formatDate(row.end_date)}</p>
+                            </div>
                           </div>
                        </div>
 
-                       <div className="flex items-center justify-between py-3 px-4 rounded-2xl bg-slate-50 border border-slate-100/50">
-                          <div className="flex items-center gap-2">
-                             <span className="material-symbols-outlined text-slate-400 text-lg">description</span>
-                             <span className="text-[11px] font-bold text-slate-600 truncate max-w-[120px]">
-                               {row.description || "No session notes"}
-                             </span>
-                          </div>
-                          <div className="flex -space-x-2">
-                             {[1,2,3].map(i => (
-                               <div key={i} className="h-6 w-6 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center">
-                                  <span className="text-[8px] font-bold text-slate-400">{i}</span>
-                               </div>
-                             ))}
-                          </div>
+                       <div className="flex items-center gap-2.5 p-2 rounded-lg bg-slate-50/50 border border-slate-100/50">
+                          <span className="material-symbols-outlined text-slate-400 text-base">description</span>
+                          <span className="text-[11px] font-bold text-slate-500 truncate">
+                            {row.description || "No specific session notes"}
+                          </span>
                        </div>
                     </div>
                   </div>
 
-                  <div className="mt-auto p-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
-                     <div className="flex items-center gap-2 text-emerald-600">
-                        <span className="material-symbols-outlined text-[16px] font-black">sync_saved_locally</span>
-                        <span className="text-[10px] font-black uppercase tracking-wider">Synchronized</span>
+                  <div className="mt-auto px-4 py-3 bg-slate-50/30 border-t border-slate-100/60 flex items-center justify-between">
+                     <div className="flex items-center gap-2 text-slate-400 group-hover:text-emerald-600 transition-colors">
+                        <span className="material-symbols-outlined text-base font-black">sync</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">Synchronized</span>
                      </div>
                      <button 
                         onClick={() => setEditingYear(row)}
-                        className="text-[11px] font-black text-blue-600 uppercase tracking-widest hover:underline flex items-center gap-1"
+                        className="h-7 px-3 rounded bg-white border border-slate-200 text-[10px] font-black text-slate-600 uppercase tracking-widest hover:border-blue-200 hover:text-blue-600 transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
                      >
-                        Configuration
-                        <span className="material-symbols-outlined text-sm">chevron_right</span>
+                        Configure
+                        <span className="material-symbols-outlined text-sm">arrow_forward</span>
                      </button>
                   </div>
                 </div>

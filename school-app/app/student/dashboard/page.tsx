@@ -278,6 +278,8 @@ export default function StudentDashboardPage() {
                         <div className="mt-6 grid gap-3 sm:grid-cols-2">
                             {[
                                 ["Profile", "/student/profile", "person"],
+                                ["Live Classes", "/student/live-class", "videocam"],
+                                ["Live Exams", "/student/live-exam", "live_tv"],
                                 ["Results", "/student/results", "leaderboard"],
                                 ["Attendance", "/student/attendance", "fact_check"],
                                 ["Fees", "/student/fees", "payments"],

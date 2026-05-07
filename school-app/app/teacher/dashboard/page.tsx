@@ -127,6 +127,8 @@ export default function TeacherDashboardPage() {
             <p className="text-sm text-slate-500">Jump directly to the daily teaching workflows.</p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               {[
+                ["Live Class", "/teacher/live-class", "videocam"],
+                ["Live Exam", "/teacher/live-exam", "live_tv"],
                 ["Mark Attendance", "/teacher/attendance/create", "fact_check"],
                 ["Create Homework", "/teacher/homework/create", "assignment"],
                 ["Schedule Exam", "/teacher/exams/create", "quiz"],
