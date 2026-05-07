@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
 import { PageHeader, Breadcrumb } from "../components/ui";
+import { AIAssistant } from "../components/ai/AIAssistant";
 import { getSelectedAcademyCareId, setSelectedAcademyCareId } from "../services/academy-care-context";
 import { useAuth, Role } from "../hooks/useAuth";
 
@@ -291,6 +292,8 @@ export function SchoolShell({
 
   const sidebarWidth = isCollapsed ? "w-16" : "w-60";
 
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
+
   const toggleGroup = (label: string) => {
     setExpandedGroups(prev => ({
       ...prev,
@@ -300,6 +303,13 @@ export function SchoolShell({
 
   return (
     <div className="flex min-h-screen bg-background text-slate-900">
+      {showAIAssistant && (
+        <div className="fixed inset-0 z-40 pointer-events-none">
+           <div className="pointer-events-auto">
+             <AIAssistant onClose={() => setShowAIAssistant(false)} />
+           </div>
+        </div>
+      )}
       {/* Sidebar */}
       <aside
         className={`${sidebarWidth} sticky top-0 z-20 flex h-screen flex-shrink-0 flex-col border-r border-slate-200/80 bg-white/95 shadow-[0_1px_8px_rgba(15,23,42,0.05)] backdrop-blur-sm transition-all duration-300 ease-in-out`}
@@ -453,6 +463,14 @@ export function SchoolShell({
 
             <button className="rounded-lg p-1.5 text-slate-400 transition-all hover:bg-blue-50 hover:text-blue-600">
               <span className="material-symbols-outlined text-[20px]">help</span>
+            </button>
+
+            <button
+              onClick={() => setShowAIAssistant(!showAIAssistant)}
+              className="rounded-lg p-1.5 text-blue-600 bg-blue-50 transition-all hover:bg-blue-100 shadow-sm flex items-center justify-center gap-1 group"
+              aria-label="AI Assistant"
+            >
+              <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">smart_toy</span>
             </button>
 
             <div className="flex h-7 w-7 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white transition-all hover:border-blue-400">
