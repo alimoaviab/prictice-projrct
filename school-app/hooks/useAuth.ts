@@ -41,6 +41,12 @@ export function useAuth() {
 
     try {
       const payload = decodeJwtPayload(token);
+      
+      // Check if token is expired
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        throw new Error("Token expired");
+      }
+      
       setUser({
         id: payload.sub,
         email: payload.actor_email,

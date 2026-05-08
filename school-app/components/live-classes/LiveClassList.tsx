@@ -11,6 +11,21 @@ export const LiveClassList: React.FC<LiveClassListProps> = ({ role }) => {
   const [classes, setClasses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const getTeacherName = (teacher: any) => {
+    if (!teacher) return "Teacher";
+
+    const user = teacher.user ?? teacher.user_id ?? null;
+    if (user?.profile?.first_name || user?.profile?.last_name) {
+      return `${user.profile.first_name || ""} ${user.profile.last_name || ""}`.trim();
+    }
+
+    if (teacher.first_name || teacher.last_name) {
+      return `${teacher.first_name || ""} ${teacher.last_name || ""}`.trim();
+    }
+
+    return teacher.name || teacher.email || "Teacher";
+  };
+
   const fetchClasses = async () => {
     try {
       const res = await fetch("/api/live/classes");
@@ -78,7 +93,7 @@ export const LiveClassList: React.FC<LiveClassListProps> = ({ role }) => {
           startTime={cls.startTime}
           endTime={cls.endTime}
           subjectName={cls.subjectId?.name || "Subject"}
-          teacherName={cls.teacherId?.user?.firstName ? `${cls.teacherId.user.firstName} ${cls.teacherId.user.lastName}` : "Teacher"}
+          teacherName={getTeacherName(cls.teacherId)}
           status={cls.status}
           meetingLink={cls.meetingLink}
           role={role}

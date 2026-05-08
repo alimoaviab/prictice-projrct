@@ -8,13 +8,24 @@ interface CreateLiveClassModalProps {
   onSuccess: () => void;
   classes: any[];
   subjects: any[];
+  teachers?: any[];
+  showTeacherField?: boolean;
+  defaultTeacherId?: string;
 }
 
 export const CreateLiveClassModal: React.FC<CreateLiveClassModalProps> = ({
-  isOpen, onClose, onSuccess, classes, subjects
+  isOpen,
+  onClose,
+  onSuccess,
+  classes,
+  subjects,
+  teachers = [],
+  showTeacherField = false,
+  defaultTeacherId = ""
 }) => {
   const [formData, setFormData] = useState({
     title: "",
+    teacherId: defaultTeacherId,
     classId: "",
     subjectId: "",
     startTime: "",
@@ -26,6 +37,12 @@ export const CreateLiveClassModal: React.FC<CreateLiveClassModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (showTeacherField && !formData.teacherId) {
+      alert("Please select a teacher.");
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch("/api/live/classes", {
@@ -70,6 +87,29 @@ export const CreateLiveClassModal: React.FC<CreateLiveClassModalProps> = ({
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
             />
           </div>
+
+          {showTeacherField && (
+            <div>
+              <label className="block text-sm font-semibold text-slate-700" htmlFor="teacherId">Teacher</label>
+              <select
+                id="teacherId"
+                required
+                className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-2"
+                value={formData.teacherId}
+                onChange={(e) => setFormData({ ...formData, teacherId: e.target.value })}
+              >
+                <option value="">Select...</option>
+                {teachers.map((teacher) => {
+                  const fullName = `${teacher.first_name || ""} ${teacher.last_name || ""}`.trim() || teacher.name || teacher.email || "Teacher";
+                  return (
+                    <option key={teacher._id} value={teacher._id}>
+                      {fullName}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>

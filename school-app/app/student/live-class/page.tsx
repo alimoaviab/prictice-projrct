@@ -15,6 +15,7 @@ export default function StudentLiveClassPage() {
               <h1 className="mt-3 text-3xl font-black tracking-tight md:text-5xl">My Live Classes</h1>
               <p className="mt-3 max-w-2xl text-sm text-sky-100 md:text-base">
                 Join your scheduled online sessions, view upcoming classes, and participate in interactive learning.
+                Only classes for your enrolled section are shown here.
               </p>
             </div>
           </div>

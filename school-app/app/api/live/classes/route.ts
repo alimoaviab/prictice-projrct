@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { StudentModel } from "@edu/shared/models";
 import { LiveClassService } from "@edu/shared/services/live/live-class.service";
 import { authenticateRequest, SessionRequest } from "@edu/shared/auth/middleware";
 
@@ -18,8 +19,20 @@ export async function GET(req: Request) {
     const filters: any = {};
     if (role === "teacher") filters.teacherId = ctx.user_id;
     else if (role === "student") {
-       const classId = searchParams.get("classId");
-       if (classId) filters.classId = classId;
+      const classId = searchParams.get("classId");
+      if (classId) {
+        filters.classId = classId;
+      } else {
+        const student = await StudentModel.findOne({
+          school_id: ctx.school_id,
+          user_id: ctx.user_id,
+          status: "active"
+        }).lean();
+
+        if (student?.class_id) {
+          filters.classId = String(student.class_id);
+        }
+      }
     }
 
     if (searchParams.has("status")) filters.status = searchParams.get("status");
@@ -43,6 +56,8 @@ export async function POST(req: Request) {
 
     if (ctx.role === "teacher") {
       body.teacherId = ctx.user_id;
+    } else if (!body.teacherId) {
+      return NextResponse.json({ success: false, error: "teacherId is required" }, { status: 400 });
     }
 
     const liveClass = await LiveClassService.createClass(ctx, body);

@@ -5,6 +5,7 @@ import { SchoolShell } from "../../../layouts/SchoolShell";
 import { LiveClassList } from "../../../components/live-classes/LiveClassList";
 import { CreateLiveClassModal } from "../../../components/live-classes/CreateLiveClassModal";
 import { useState, useEffect } from "react";
+import { useSession, signIn } from "next-auth/react";
 
 const stats = [
   { title: "My Live Classes", value: "-", detail: "Classes scheduled", icon: "video_camera_back", tone: "text-sky-700" },
@@ -13,6 +14,7 @@ const stats = [
 ];
 
 export default function TeacherLiveClassPage() {
+  const { status } = useSession();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [listKey, setListKey] = useState(0); // To force refresh list
   const [classesData, setClassesData] = useState([]);
@@ -115,12 +117,27 @@ export default function TeacherLiveClassPage() {
                     <span>View Timetable</span>
                     <span className="material-symbols-outlined text-slate-400">schedule</span>
                 </Link>
+                {status === "unauthenticated" && (
+                  <button
+                    onClick={() => signIn("google")}
+                    className="w-full flex items-center justify-between rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
+                  >
+                    <span>Connect Google Calendar</span>
+                    <span className="material-symbols-outlined text-blue-500">calendar_month</span>
+                  </button>
+                )}
+                {status === "authenticated" && (
+                  <div className="w-full flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm font-semibold text-emerald-700">
+                    <span>Google Calendar Linked</span>
+                    <span className="material-symbols-outlined text-emerald-500">check_circle</span>
+                  </div>
+                )}
               </div>
             </div>
 
             <div className="rounded-[2rem] border border-slate-200/70 bg-white p-6 shadow-sm">
               <h2 className="text-xl font-bold text-slate-900">Notes</h2>
-              <p className="mt-3 text-sm text-slate-500">Live classes are automatically integrated with Google Meet. Links are generated for you and your students upon creation.</p>
+              <p className="mt-3 text-sm text-slate-500">Live classes are automatically integrated with Google Meet. Connect your Google Calendar to automatically generate meeting links.</p>
             </div>
           </div>
         </div>

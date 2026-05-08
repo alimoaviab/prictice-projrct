@@ -50,9 +50,9 @@ export function verifyAuthToken(
     return decoded;
   } catch (error: any) {
     if (error.name === "JsonWebTokenError") {
-      throw new Error(`JWT verification failed: ${error.message}. Token: ${token.substring(0, 50)}...`);
+      throw { name: "JsonWebTokenError", message: `JWT verification failed: ${error.message}. Token: ${token.substring(0, 50)}...` };
     } else if (error.name === "TokenExpiredError") {
-      throw new Error("Token has expired. Please log in again.");
+      throw { name: "TokenExpiredError", message: "Token has expired. Please log in again." };
     }
     throw error;
   }
