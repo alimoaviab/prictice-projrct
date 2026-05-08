@@ -1,0 +1,4 @@
+
+> school-app@0.1.0 check
+> tsc -p tsconfig.json --noEmit
+

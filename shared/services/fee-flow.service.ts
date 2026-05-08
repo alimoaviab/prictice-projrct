@@ -98,6 +98,15 @@ type MonthlyFeeDoc = {
     }>;
 };
 
+type AllocatePaymentInput = {
+    studentId: string;
+    amount: number;
+    paymentMethod: string;
+    referenceNo: string;
+    notes: string;
+    paymentDate: Date;
+};
+
 type FeePaymentDoc = {
     _id: unknown;
     receipt_no: string;
@@ -968,7 +977,9 @@ export async function getFeeBreakdown(ctx: RequestContext, filters: Record<strin
     });
 }
 
-async function allocatePayment(ctx: RequestContext, studentId: string, amount: number, paymentMethod: string, referenceNo: string, notes: string, paymentDate: Date) {
+async function allocatePayment(ctx: RequestContext, input: AllocatePaymentInput) {
+    const { studentId, amount, paymentMethod, referenceNo, notes, paymentDate } = input;
+
     const student = await StudentModel.findOne(tenantFilter(ctx, { _id: studentId }))
         .populate("class_id", "name section academy_care_id")
         .lean();
@@ -1076,15 +1087,14 @@ export async function recordPayment(ctx: RequestContext, input: unknown): Promis
         const student = await StudentModel.findOne(tenantFilter(ctx, { _id: parsed.student_id })).lean();
         if (!student) throw new ControlledError("NOT_FOUND", "Student not found.", 404);
 
-        const payment = await allocatePayment(
-            ctx,
-            parsed.student_id,
-            parsed.amount,
-            parsed.payment_method,
-            parsed.reference_no ?? "",
-            parsed.notes ?? "",
-            parsed.payment_date
-        );
+        const payment = await allocatePayment(ctx, {
+            studentId: parsed.student_id,
+            amount: parsed.amount,
+            paymentMethod: parsed.payment_method,
+            referenceNo: parsed.reference_no ?? "",
+            notes: parsed.notes ?? "",
+            paymentDate: parsed.payment_date,
+        });
 
         await writeAuditLog(ctx, {
             action: "create",
@@ -1119,15 +1129,14 @@ export async function recordBulkPayments(ctx: RequestContext, input: unknown): P
 
         for (const payment of parsed.payments) {
             try {
-                const saved = await allocatePayment(
-                    ctx,
+                const saved = await allocatePayment(ctx, {
                     studentId,
-                    payment.amount,
-                    payment.payment_method,
-                    payment.reference_no ?? "",
-                    payment.notes ?? "",
-                    payment.payment_date
-                );
+                    amount: payment.amount,
+                    paymentMethod: payment.payment_method,
+                    referenceNo: payment.reference_no ?? "",
+                    notes: payment.notes ?? "",
+                    paymentDate: payment.payment_date,
+                });
                 receipts.push(saved.receipt_no);
                 processed += 1;
                 totalAmount += payment.amount;
