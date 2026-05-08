@@ -83,12 +83,37 @@ function deriveStatus(startDate: Date, endDate: Date, isActive: boolean) {
   return "cancelled" as const;
 }
 
-export async function listAcademicYears(ctx: RequestContext): Promise<ServiceResult<unknown[]>> {
+export async function listAcademicYears(
+  ctx: RequestContext,
+  options?: { page?: number; limit?: number }
+): Promise<ServiceResult<{ items: AcademicYearResponse[]; total: number; page: number; limit: number; pages: number }>> {
   return serviceTry(async () => {
     await connectDb();
     assertPermission(ctx, "settings", "view");
-    const records = (await AcademicYearModel.find(tenantFilter(ctx)).sort({ start_date: -1 }).lean()) as unknown as AcademicYearRecord[];
-    return records.map(toAcademicYearResponse);
+    
+    const page = options?.page ?? 1;
+    const limit = options?.limit ?? 1000;
+    const skip = (page - 1) * limit;
+
+    const query = tenantFilter(ctx);
+    const [records, total] = await Promise.all([
+      AcademicYearModel.find(query)
+        .sort({ start_date: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      AcademicYearModel.countDocuments(query)
+    ]);
+
+    const items = (records as unknown as (AcademicYearRecord & { created_at?: Date; updated_at?: Date })[]).map(toAcademicYearResponse);
+    
+    return {
+      items,
+      total,
+      page,
+      limit,
+      pages: Math.ceil(total / limit)
+    };
   });
 }
 

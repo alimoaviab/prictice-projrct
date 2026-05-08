@@ -3,7 +3,7 @@ import { AcademicYearListPage } from "../../../modules/academicYear/pages/Academ
 
 export default function AdminAcademicYearPage() {
     return (
-        <SchoolShell eyebrow="Academic" title="Academic Years">
+        <SchoolShell eyebrow="" title="">
             <AcademicYearListPage />
         </SchoolShell>
     );

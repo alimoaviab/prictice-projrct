@@ -1,67 +1,104 @@
 "use client";
 
-import { Badge, Button, DataTable } from "../../../components/ui";
+import { Badge, Button, DataTable, type DataTableColumn } from "../../../components/ui";
 import { AcademicYearRow } from "../types/academicYear.types";
 
-export function AcademicYearTable({ years }: { years: AcademicYearRow[] }) {
+export function AcademicYearTable({ 
+    years, 
+    onEdit, 
+    onDelete 
+}: { 
+    years: AcademicYearRow[]; 
+    onEdit: (row: AcademicYearRow) => void;
+    onDelete: (row: AcademicYearRow) => void;
+}) {
     const formatDate = (value: string) => new Date(value).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
         year: "numeric",
     });
 
-    const columns = [
+    const columns: DataTableColumn<AcademicYearRow>[] = [
         {
             key: "year",
             label: "Session",
+            width: "25%",
             render: (row: AcademicYearRow) => (
-                <div className="flex items-center gap-2">
-                    <div className={`h-1.5 w-1.5 rounded-full ${row.is_active ? 'bg-blue-600 animate-pulse' : 'bg-slate-200'}`} />
-                    <span className="font-black text-slate-900 tracking-tight">{row.year}</span>
+                <div className="flex items-center gap-3">
+                    <div className={`h-2 w-2 rounded-full ${row.is_active ? 'bg-blue-600 animate-pulse' : 'bg-slate-200'}`} />
+                    <span className="font-black text-slate-900 tracking-tight text-sm">{row.year}</span>
                 </div>
             )
         },
         {
             key: "duration",
-            label: "Timeline",
+            label: "Academic Timeline",
+            width: "25%",
             render: (row: AcademicYearRow) => (
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500">
-                    <span className="material-symbols-outlined text-sm">event</span>
-                    {formatDate(row.start_date)}
+                <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500">
+                    <span className="bg-slate-50 px-2 py-1 rounded border border-slate-100">{formatDate(row.start_date)}</span>
                     <span className="text-slate-300">→</span>
-                    {formatDate(row.end_date)}
+                    <span className="bg-slate-50 px-2 py-1 rounded border border-slate-100">{formatDate(row.end_date)}</span>
                 </div>
             )
         },
         {
+            key: "days",
+            label: "Total Days",
+            width: "20%",
+            render: (row: AcademicYearRow) => {
+                const start = new Date(row.start_date);
+                const end = new Date(row.end_date);
+                const diffTime = Math.abs(end.getTime() - start.getTime());
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                return (
+                    <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-slate-300 text-sm">date_range</span>
+                        <span className="text-xs font-black text-slate-600">{diffDays} Days</span>
+                    </div>
+                );
+            }
+        },
+        {
             key: "status",
-            label: "State",
+            label: "Status",
+            width: "25%",
             render: (row: AcademicYearRow) => {
                 const colors = row.status === "active" ? "text-emerald-700 bg-emerald-50 border-emerald-100" : row.status === "completed" ? "text-blue-700 bg-blue-50 border-blue-100" : "text-slate-400 bg-slate-50 border-slate-100";
                 return (
-                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${colors}`}>
+                    <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${colors}`}>
                         {row.status}
                     </span>
                 );
             }
         },
         {
-            key: "sync",
-            label: "Sync",
-            render: () => (
-                <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400">
-                    <span className="material-symbols-outlined text-sm">sync</span>
-                    Healthy
-                </div>
-            )
-        },
-        {
             key: "actions",
-            label: "",
-            render: () => (
-                <div className="flex justify-end">
-                    <button className="h-7 px-2 rounded border border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
-                        Details
+            label: "Actions",
+            width: "15%",
+            align: "right",
+            render: (row: AcademicYearRow) => (
+                <div className="flex justify-end items-center gap-1.5 py-1">
+                    <button 
+                        onClick={() => onEdit(row)}
+                        className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                        title="Edit"
+                    >
+                        <span className="material-symbols-outlined text-[20px]">edit_note</span>
+                    </button>
+                    <button 
+                        onClick={() => onDelete(row)}
+                        className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                        title="Delete"
+                    >
+                        <span className="material-symbols-outlined text-[20px]">delete</span>
+                    </button>
+                    <div className="w-px h-4 bg-slate-100 mx-1" />
+                    <button 
+                        onClick={() => onEdit(row)}
+                        className="h-8 px-4 rounded-lg bg-blue-600 text-[11px] font-bold text-white hover:bg-blue-700 transition-all shadow-sm shadow-blue-200 active:scale-95"
+                    >
+                        Open
                     </button>
                 </div>
             )

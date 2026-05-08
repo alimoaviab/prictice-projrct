@@ -16,6 +16,7 @@ export function AttendanceListPage({ filters: initialFilters }: { filters?: { cl
     status: "",
     search: "",
   });
+  const [viewMode, setViewMode] = React.useState<"grid" | "list">("list");
 
   const { state, updateAttendance, deleteAttendance } = useAttendance({
     class_id: activeFilters.class_id || undefined,
@@ -135,114 +136,193 @@ export function AttendanceListPage({ filters: initialFilters }: { filters?: { cl
   ];
 
   return (
-    <div className="space-y-5 animate-fade-in-up">
-      {/* Header & Stats */}
-      <div className="flex flex-col lg:flex-row justify-between gap-6">
-        <div>
-          <h2 className="text-2xl font-black text-gray-900 tracking-tight">Attendance Explorer</h2>
-          <p className="text-sm text-gray-500 font-medium">Analyze and manage student attendance records.</p>
-        </div>
-        
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            { label: "Total", value: stats.total, color: "text-gray-900" },
-            { label: "Present", value: stats.present, color: "text-green-600" },
-            { label: "Absent", value: stats.absent, color: "text-red-600" },
-            { label: "Late", value: stats.late, color: "text-orange-600" },
-          ].map((stat) => (
-            <div key={stat.label} className="bg-white border border-gray-100 rounded-2xl p-3 shadow-sm min-w-[100px]">
-              <span className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">{stat.label}</span>
-              <span className={`text-lg font-black ${stat.color}`}>{stat.value}</span>
+    <div className="space-y-8 relative min-h-[80vh] pb-10">
+      {/* Stats Section - Premium ERP Style */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: "Total Strength", value: stats.total, icon: "groups", color: "text-slate-600", bg: "bg-slate-600/5" },
+          { label: "Present Today", value: stats.present, icon: "check_circle", color: "text-emerald-600", bg: "bg-emerald-600/5" },
+          { label: "Absent Records", value: stats.absent, icon: "cancel", color: "text-red-600", bg: "bg-red-600/5" },
+          { label: "Late Arrivals", value: stats.late, icon: "schedule", color: "text-amber-600", bg: "bg-amber-600/5" },
+        ].map((stat, i) => (
+          <div key={i} className="premium-card bg-white p-3.5 border-slate-200/60 shadow-sm flex items-center justify-between group hover:border-blue-200 transition-all cursor-default">
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
+              <h3 className="text-xl font-black text-slate-900 tracking-tighter leading-none">{stat.value}</h3>
             </div>
-          ))}
-        </div>
+            <div className={`h-8 w-8 rounded-lg ${stat.bg} ${stat.color} flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm`}>
+               <span className="material-symbols-outlined text-lg font-black">{stat.icon}</span>
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Filter Bar */}
-      <div className="bg-white border border-gray-100 rounded-2xl p-3 shadow-sm flex flex-wrap items-end gap-3">
-        <div className="flex-1 min-w-[220px]">
-          <span className="block text-[10px] font-semibold text-slate-500 uppercase tracking-[0.12em] mb-1.5 ml-1">Search</span>
-          <div className="relative">
-            <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[16px] text-slate-400">search</span>
+      {/* Toolbar Section - Unified & Sticky */}
+      <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md sticky top-[72px] z-20 border-slate-200/60 shadow-sm rounded-xl">
+        <div className="flex flex-1 items-center gap-2 max-w-4xl">
+          <div className="relative flex-1">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
             <input
               value={activeFilters.search}
               onChange={(e) => setActiveFilters(prev => ({ ...prev, search: e.target.value }))}
-              placeholder="Student, admission, class, note"
-              className="w-full bg-gray-50 border border-gray-100 rounded-xl pl-9 pr-3 py-2 text-sm font-semibold text-gray-700 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all"
+              placeholder="Search student, admission no..."
+              className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-xs font-medium text-slate-700 outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-600/5 placeholder:text-slate-400"
             />
           </div>
-        </div>
-
-        <div className="flex-1 min-w-[200px]">
-          <span className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Classroom</span>
-          <select 
+          <div className="h-6 w-px bg-slate-200" />
+          <select
             value={activeFilters.class_id}
             onChange={(e) => setActiveFilters(prev => ({ ...prev, class_id: e.target.value }))}
-            className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 text-sm font-bold text-gray-700 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all"
+            className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none cursor-pointer transition-all hover:border-slate-300 focus:border-blue-400"
           >
-            <option value="">All Classes</option>
+            <option value="">Class: All</option>
             {classOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
           </select>
-        </div>
-
-        <div className="w-full sm:w-48">
-          <span className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Date</span>
           <input 
             type="date"
             value={activeFilters.date}
             onChange={(e) => setActiveFilters(prev => ({ ...prev, date: e.target.value }))}
-            className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 text-sm font-bold text-gray-700 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all"
+            className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none transition-all hover:border-slate-300 focus:border-blue-400"
           />
-        </div>
-
-        <div className="w-full sm:w-40">
-          <span className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Status</span>
           <select 
             value={activeFilters.status}
             onChange={(e) => setActiveFilters(prev => ({ ...prev, status: e.target.value }))}
-            className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 text-sm font-bold text-gray-700 outline-none focus:ring-2 focus:ring-blue-600/10 transition-all"
+            className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none transition-all hover:border-slate-300 focus:border-blue-400"
           >
-            <option value="">All Status</option>
+            <option value="">Status: All</option>
             <option value="present">Present</option>
             <option value="absent">Absent</option>
             <option value="late">Late</option>
-            <option value="excused">Excused</option>
           </select>
         </div>
 
-        <button 
-           onClick={() => {
-              const basePath = pathname.includes("/teacher") ? "/teacher/attendance" : "/admin/attendance";
-              router.push(`${basePath}/create?class_id=${activeFilters.class_id}`);
-           }}
-           disabled={!activeFilters.class_id}
-           className="h-[46px] px-6 bg-blue-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:shadow-none whitespace-nowrap"
-        >
-          Mark Attendance
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center rounded-lg bg-slate-100 p-1 shadow-inner">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`flex h-7 items-center gap-2 rounded-md px-3 text-[11px] font-bold transition-all ${
+                viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              <span className="material-symbols-outlined text-base">grid_view</span>
+              Grid
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={`flex h-7 items-center gap-2 rounded-md px-3 text-[11px] font-bold transition-all ${
+                viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              <span className="material-symbols-outlined text-base">view_list</span>
+              List
+            </button>
+          </div>
+          <div className="h-6 w-px bg-slate-200" />
+          <button 
+             onClick={() => {
+                const basePath = pathname.includes("/teacher") ? "/teacher/attendance" : "/admin/attendance";
+                router.push(`${basePath}/create?class_id=${activeFilters.class_id}`);
+             }}
+             disabled={!activeFilters.class_id}
+             className="inline-flex h-9 items-center gap-2 px-5 text-[11px] font-black uppercase tracking-widest text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95 disabled:opacity-50 disabled:shadow-none whitespace-nowrap"
+          >
+            <span className="material-symbols-outlined text-lg font-black">fact_check</span>
+            Mark Attendance
+          </button>
+        </div>
       </div>
 
-      {/* Data Table */}
-      <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+      {/* Main Workspace Area */}
+      <div>
         {state.status === "loading" ? (
-          <div className="p-8"><TableSkeleton /></div>
-        ) : (
-          <DataTable
-            columns={columns}
-            rows={filteredData}
-            rowKey={(row) => row._id}
-            searchable
-            searchKeys={["student_name", "admission_no", "note"]}
-            sortable
-            paginated={10}
-            rowActions={pathname.includes("/parent") ? rowActions.filter(a => a.label === "View Details") : rowActions}
-            emptyState={{
-              title: "No attendance found",
-              description: "Adjust your filters or mark attendance for this session.",
-              action: { label: "Record New Attendance", href: pathname.includes("/teacher") ? "/teacher/attendance/create" : "/admin/attendance/create" },
-            }}
+          <TableSkeleton />
+        ) : filteredData.length === 0 ? (
+          <DataState 
+            variant="empty" 
+            title="No Attendance Records" 
+            message={activeFilters.search ? "Adjust your filters to see more results." : "Start tracking attendance for your active classes today."} 
           />
+        ) : (
+          viewMode === "grid" ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredData.map((row) => (
+                <div key={row._id} className="premium-card group relative flex flex-col p-0 overflow-hidden transition-all duration-500 bg-white border-slate-200/60 hover:shadow-2xl hover:shadow-slate-200/80 hover:-translate-y-1">
+                  <div className="p-5">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="h-10 w-10 rounded-xl bg-slate-900 text-white flex items-center justify-center text-xs font-black uppercase shadow-sm group-hover:scale-110 transition-transform">
+                        {row.student_name.substring(0, 1)}
+                      </div>
+                      <Badge
+                        variant={
+                          row.status === "present" ? "success" :
+                          row.status === "absent" ? "error" :
+                          row.status === "late" ? "warning" : "gray"
+                        }
+                        className="uppercase text-[9px] font-black tracking-widest px-2 py-0.5"
+                      >
+                        {row.status}
+                      </Badge>
+                    </div>
+
+                    <div className="mb-6">
+                      <h3 className="text-lg font-black text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors truncate">{row.student_name}</h3>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{row.admission_no} • {row.class_name}</p>
+                    </div>
+
+                    <div className="flex items-center gap-3 pt-4 border-t border-slate-50">
+                      <div className="flex items-center gap-1.5 text-slate-400">
+                         <span className="material-symbols-outlined text-[16px]">calendar_today</span>
+                         <span className="text-[10px] font-black uppercase tracking-widest">{new Date(row.date).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-auto px-5 py-3 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between group-hover:bg-white transition-all">
+                     <button className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm">history</span>
+                        Log
+                     </button>
+                     <button className="text-[10px] font-black text-blue-600 hover:underline uppercase tracking-widest flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm">edit</span>
+                        Adjust
+                     </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="premium-card overflow-hidden border-slate-200/60 shadow-sm bg-white rounded-2xl">
+              <DataTable
+                columns={columns}
+                rows={filteredData}
+                rowKey={(row) => row._id}
+                sortable
+                paginated={10}
+                rowActions={pathname.includes("/parent") ? rowActions.filter(a => a.label === "View Details") : rowActions}
+              />
+            </div>
+          )
         )}
+      </div>
+
+      {/* Pagination Footer - Premium ERP Style */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100">
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+          Showing <span className="text-blue-600">1</span> to <span className="text-slate-900">{filteredData.length}</span> of <span className="text-slate-900">{stats.total}</span> Attendance Records
+        </p>
+        <div className="flex items-center gap-2">
+          <button className="h-9 px-4 rounded-xl border border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-400 cursor-not-allowed flex items-center gap-2">
+            <span className="material-symbols-outlined text-base">chevron_left</span>
+            Previous
+          </button>
+          <div className="flex items-center gap-1">
+            <button className="h-9 w-9 rounded-xl bg-blue-600 text-[10px] font-black text-white shadow-lg shadow-blue-600/20">1</button>
+          </div>
+          <button className="h-9 px-4 rounded-xl border border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-400 cursor-not-allowed flex items-center gap-2">
+            Next
+            <span className="material-symbols-outlined text-base">chevron_right</span>
+          </button>
+        </div>
       </div>
     </div>
   );

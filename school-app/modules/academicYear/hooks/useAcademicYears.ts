@@ -1,23 +1,31 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSafeAsync } from "../../../hooks/useSafeAsync";
 import { showToast } from "../../../utils/toast";
 import { AcademicYearRow, AcademicYearFormInput } from "../types/academicYear.types";
 import * as service from "../services/academicYear.service";
 
-export function useAcademicYears() {
-    const { state, run } = useSafeAsync<AcademicYearRow[]>();
+export function useAcademicYears(initialPage = 1, limit = 9) {
+    const { state, run } = useSafeAsync<{ data: AcademicYearRow[]; meta?: { total: number; pages: number } }>();
+    const [page, setPage] = useState(initialPage);
 
-    const loadAcademicYears = useCallback(() => {
+    const loadAcademicYears = useCallback((targetPage?: number) => {
+        const activePage = targetPage ?? page;
         return run(async () => {
-            const result = await service.listAcademicYears();
+            const result = await service.listAcademicYears({ page: activePage, limit });
             if (!result.ok) {
                 throw new Error(result.error.message || "Failed to load academic years");
             }
-            return result.data as AcademicYearRow[];
+            return {
+                data: result.data.items,
+                meta: {
+                    total: result.data.total,
+                    pages: result.data.pages
+                }
+            };
         });
-    }, [run]);
+    }, [run, page, limit]);
 
     const addAcademicYear = useCallback(
         async (input: AcademicYearFormInput) => {
@@ -63,9 +71,9 @@ export function useAcademicYears() {
 
     useEffect(() => {
         void loadAcademicYears().catch(() => {
-            // Error state is already managed by useSafeAsync.
+            // Error state managed by useSafeAsync
         });
     }, [loadAcademicYears]);
 
-    return { state, addAcademicYear, updateAcademicYear, deleteAcademicYear };
+    return { state, page, setPage, addAcademicYear, updateAcademicYear, deleteAcademicYear, refresh: loadAcademicYears };
 }

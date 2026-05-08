@@ -3,7 +3,7 @@ import { BehaviorListPage } from "../../../modules/behavior/pages/BehaviorListPa
 
 export default function BehaviorPage() {
   return (
-    <SchoolShell eyebrow="Students" title="Behavior">
+    <SchoolShell eyebrow="Academic" title="Behavior">
       <BehaviorListPage />
     </SchoolShell>
   );

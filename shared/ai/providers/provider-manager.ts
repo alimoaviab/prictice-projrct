@@ -1,7 +1,7 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 
-export type AIProviderName = "gemini" | "openai" | "grok";
+export type AIProviderName = "gemini" | "gemini-pro" | "openai" | "grok";
 export type TaskComplexity = "simple" | "moderate" | "complex";
 
 export class ProviderManager {

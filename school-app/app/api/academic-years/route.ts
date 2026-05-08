@@ -7,7 +7,11 @@ import { sessionRequest } from "../_utils";
 export async function GET(request: NextRequest) {
   try {
     const ctx = authenticateRequest(sessionRequest(request), "school");
-    const result = await listAcademicYears(ctx);
+    const { searchParams } = request.nextUrl;
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "1000");
+    
+    const result = await listAcademicYears(ctx, { page, limit });
     return NextResponse.json(result, { status: result.ok ? 200 : result.error.status ?? 400 });
   } catch (error) {
     console.error("[GET /api/academic-years] Authentication error:", error);

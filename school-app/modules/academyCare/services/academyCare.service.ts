@@ -2,7 +2,13 @@ import { serviceRequest } from "../../../services/service-client";
 import { AcademyYear, AcademyYearFormInput } from "../types/academyCare.types";
 
 export function listAcademyYears() {
-    return serviceRequest<AcademyYear[]>("/api/academic-years");
+    return serviceRequest<{
+        items: AcademyYear[];
+        total: number;
+        page: number;
+        limit: number;
+        pages: number;
+    }>("/api/academic-years");
 }
 
 export function createAcademyYear(input: AcademyYearFormInput) {

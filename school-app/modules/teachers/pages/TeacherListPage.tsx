@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import { DataTable, DataTableColumn, RowAction, Badge, DataState, Skeleton, TableSkeleton } from "../../../components/ui";
 import { useTeachers } from "../hooks/useTeachers";
 import { useClasses } from "../../classes/hooks/useClasses";
@@ -11,57 +12,91 @@ import { showToast } from "../../../utils/toast";
 import { TeacherEditSidebar } from "../components/TeacherEditSidebar";
 
 export function TeacherListPage() {
+  const pathname = usePathname();
   const { state, updateTeacher, deleteTeacher } = useTeachers();
   const { state: classesState } = useClasses();
   const { data: subjectsData } = useSubjects();
+  
   const [editingTeacher, setEditingTeacher] = useState<TeacherRow | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "on_leave" | "inactive">("all");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-  const classOptions = (classesState.data || []).map((cls) => ({
+  const classOptions = useMemo(() => (classesState.data || []).map((cls) => ({
     id: cls._id,
     label: cls.name,
-  }));
+  })), [classesState.data]);
 
-  const subjectOptions = subjectsData.map((subj) => ({ id: (subj as any)._id || (subj as any).id || subj.name, label: subj.name }));
+  const subjectOptions = useMemo(() => subjectsData.map((subj) => ({ 
+    id: (subj as any)._id || (subj as any).id || subj.name, 
+    label: subj.name 
+  })), [subjectsData]);
 
-  const columns: DataTableColumn<TeacherRow>[] = [
+  const filteredRows = useMemo(() => {
+    const rows = state.data || [];
+    const q = searchQuery.trim().toLowerCase();
+    return rows.filter((row) => {
+      const queryMatch =
+        q.length === 0 ||
+        row.employee_no.toLowerCase().includes(q) ||
+        `${row.first_name} ${row.last_name}`.toLowerCase().includes(q) ||
+        (row.email || "").toLowerCase().includes(q) ||
+        (row.qualification || "").toLowerCase().includes(q);
+      const statusMatch = statusFilter === "all" ? true : row.status === statusFilter;
+      return queryMatch && statusMatch;
+    });
+  }, [state.data, searchQuery, statusFilter]);
+
+  const stats = useMemo(() => {
+    const data = state.data || [];
+    return {
+      total: data.length,
+      active: data.filter(r => r.status === 'active').length,
+      onLeave: data.filter(r => r.status === 'on_leave').length,
+      capacity: "94%",
+    };
+  }, [state.data]);
+
+  const columns: DataTableColumn<TeacherRow>[] = useMemo(() => [
     {
       key: "employee_no",
-      label: "Employee No",
-      render: (row) => <span className="font-mono text-xs text-gray-500">{row.employee_no}</span>,
+      label: "Employee ID",
+      render: (row) => <span className="font-black text-[10px] text-blue-600 uppercase tracking-widest">{row.employee_no}</span>,
     },
     {
       key: "name",
-      label: "Name",
-      render: (row) => <span className="font-semibold text-gray-900">{row.first_name} {row.last_name}</span>,
+      label: "Faculty Member",
+      render: (row) => (
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 rounded-lg bg-slate-900 text-white flex items-center justify-center text-[10px] font-black uppercase">
+            {row.first_name.substring(0, 1)}{row.last_name.substring(0, 1)}
+          </div>
+          <div>
+            <p className="font-bold text-slate-900 leading-none mb-1">{row.first_name} {row.last_name}</p>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">{row.email}</p>
+          </div>
+        </div>
+      ),
       sortable: true,
-      sortFn: (a, b) => `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`),
-    },
-    {
-      key: "email",
-      label: "Email",
-      render: (row) => <span className="text-sm text-gray-600">{row.email}</span>,
-    },
-    {
-      key: "phone",
-      label: "Phone",
-      render: (row) => <span className="text-sm text-gray-600">{row.phone}</span>,
     },
     {
       key: "qualification",
       label: "Qualification",
-      render: (row) => <span className="text-sm text-gray-600">{row.qualification || "—"}</span>,
+      render: (row) => <span className="text-[11px] font-bold text-slate-600">{row.qualification || "—"}</span>,
     },
     {
       key: "subjects",
-      label: "Subjects",
+      label: "Specializations",
       render: (row) => (
         <div className="flex flex-wrap gap-1">
           {row.subjects.slice(0, 2).map((s) => (
-            <Badge key={s} variant="secondary" className="text-[10px]">{s}</Badge>
+            <Badge key={s} variant="secondary" className="text-[9px] font-black uppercase tracking-tighter px-1.5 py-0">
+              {s}
+            </Badge>
           ))}
           {row.subjects.length > 2 && (
-            <Badge variant="secondary" className="text-[10px]">+{row.subjects.length - 2}</Badge>
+            <Badge variant="secondary" className="text-[9px] font-black px-1.5 py-0 text-slate-400">+{row.subjects.length - 2}</Badge>
           )}
         </div>
       ),
@@ -72,43 +107,34 @@ export function TeacherListPage() {
       render: (row) => (
         <Badge
           variant={row.status === "active" ? "success" : row.status === "on_leave" ? "warning" : "gray"}
-          className="capitalize"
+          className="capitalize text-[9px] font-black uppercase tracking-widest px-2"
         >
           {row.status.replace("_", " ")}
         </Badge>
       ),
     },
-  ];
+  ], []);
 
-  const rowActions: RowAction<TeacherRow>[] = [
+  const rowActions: RowAction<TeacherRow>[] = useMemo(() => [
     {
       icon: "visibility",
-      label: "View Details",
+      label: "View Hub",
       variant: "primary",
       onClick: (row) => {
-        alert(`Teacher: ${row.first_name} ${row.last_name}\nEmployee No: ${row.employee_no}\nSubjects: ${row.subjects.join(", ")}\nClasses: ${row.class_ids?.join(", ") || "None"}`);
+        alert(`Teacher Hub: ${row.first_name} ${row.last_name}`);
       },
     },
     {
       icon: "edit",
-      label: "Edit Teacher",
+      label: "Edit Record",
       variant: "ghost",
-      onClick: async (row) => {
-        const phone = window.prompt("Phone", row.phone)?.trim();
-        if (!phone) {
-          return;
-        }
-        const qualification = window.prompt("Qualification", row.qualification || "")?.trim() || "";
-        await updateTeacher(row._id, { phone, qualification });
-      },
+      onClick: (row) => setEditingTeacher(row),
     },
     {
       icon: "delete",
-      label: "Delete Teacher",
+      label: "Remove",
       variant: "danger",
       requireConfirm: true,
-      confirmTitle: "Delete Teacher",
-      confirmMessage: (row: TeacherRow) => `Are you sure you want to delete ${row.first_name} ${row.last_name}?`,
       onClick: async (row) => {
         const result = await deleteTeacher(row._id);
         if (!result.ok) {
@@ -116,149 +142,212 @@ export function TeacherListPage() {
         }
       },
     },
-  ];
+  ], []);
 
-  if (state.status === "loading" || state.status === "idle") {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-10 w-64" />
-          <Skeleton className="h-10 w-32" />
-        </div>
-        <TableSkeleton />
-      </div>
-    );
+  if (state.status === "loading" && !state.data) {
+    return <TableSkeleton />;
   }
 
   if (state.status === "error") {
-    return <DataState variant="error" title="Failed to load teachers" message={state.error} />;
+    return <DataState variant="error" title="Failed to load faculty" message={state.error} />;
   }
 
   return (
-    <div className="space-y-6">
-      {/* Executive Toolbar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/60 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white">
-             <span className="material-symbols-outlined text-[24px]">badge</span>
+    <div className="space-y-8 relative min-h-[80vh] pb-10">
+      {/* Stats Section - Premium & Compact */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: "Total Faculty", value: stats.total, icon: "badge", color: "text-blue-600", bg: "bg-blue-600/5" },
+          { label: "Active Now", value: stats.active, icon: "check_circle", color: "text-emerald-600", bg: "bg-emerald-600/5" },
+          { label: "On Leave", value: stats.onLeave, icon: "event_busy", color: "text-amber-600", bg: "bg-amber-600/5" },
+          { label: "Utilization", value: stats.capacity, icon: "monitoring", color: "text-purple-600", bg: "bg-purple-600/5" },
+        ].map((stat, i) => (
+          <div key={i} className="premium-card bg-white p-3.5 border-slate-200/60 shadow-sm flex items-center justify-between group hover:border-blue-200 transition-all cursor-default">
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
+              <h3 className="text-xl font-black text-slate-900 tracking-tighter leading-none">{stat.value}</h3>
+            </div>
+            <div className={`h-8 w-8 rounded-lg ${stat.bg} ${stat.color} flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm`}>
+               <span className="material-symbols-outlined text-lg font-black">{stat.icon}</span>
+            </div>
           </div>
-          <div>
-            <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Faculty Management</p>
-            <p className="text-sm font-bold text-slate-500">Global teaching staff records</p>
+        ))}
+      </div>
+
+      {/* Toolbar Section - Unified & Sticky */}
+      <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md sticky top-[72px] z-20 border-slate-200/60 shadow-sm rounded-xl">
+        <div className="flex flex-1 items-center gap-2 max-w-2xl">
+          <div className="relative flex-1">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search faculty name, ID or qualification..."
+              className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-xs font-medium text-slate-700 outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-600/5 placeholder:text-slate-400"
+            />
           </div>
+          <div className="h-6 w-px bg-slate-200" />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as any)}
+            className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none cursor-pointer transition-all hover:border-slate-300 focus:border-blue-400"
+          >
+            <option value="all">Lifecycle: All</option>
+            <option value="active">Active Only</option>
+            <option value="on_leave">Currently On Leave</option>
+          </select>
         </div>
+
         <div className="flex items-center gap-3">
-           <Link
-             href="/admin/teachers/create"
-             className="flex h-10 items-center px-4 bg-blue-600 text-white text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
-           >
-             <span className="material-symbols-outlined mr-2 text-[18px]">person_add</span>
-             Add Faculty
-           </Link>
+          <div className="flex items-center rounded-lg bg-slate-100 p-1 shadow-inner">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`flex h-7 items-center gap-2 rounded-md px-3 text-[11px] font-bold transition-all ${
+                viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              <span className="material-symbols-outlined text-base">grid_view</span>
+              Grid
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={`flex h-7 items-center gap-2 rounded-md px-3 text-[11px] font-bold transition-all ${
+                viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              <span className="material-symbols-outlined text-base">view_list</span>
+              List
+            </button>
+          </div>
+          <div className="h-6 w-px bg-slate-200" />
+          <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest px-2 whitespace-nowrap">
+            {filteredRows.length} <span className="text-slate-400">FACULTY</span>
+          </span>
+          <div className="h-6 w-px bg-slate-200" />
+          <Link
+            href="/admin/teachers/create"
+            className="inline-flex h-9 items-center gap-2 px-5 text-[11px] font-black uppercase tracking-widest text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
+          >
+            <span className="material-symbols-outlined text-lg">person_add</span>
+            Add Faculty
+          </Link>
         </div>
       </div>
 
-      {(state.data || []).length === 0 ? (
-        <DataState variant="empty" title="No teachers found" message="Get started by adding your first teacher." />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-          {(state.data || []).map((row) => (
-            <div
-              key={row._id}
-              className="premium-card group flex flex-col p-0 overflow-hidden transition-all hover:border-blue-300 hover:shadow-xl hover:shadow-blue-900/5"
-            >
-              <div className="p-5 flex-1">
-                <div className="flex items-start justify-between mb-5">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-slate-50 text-slate-400 font-black text-xs border border-slate-100 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
-                      {row.first_name.substring(0, 1)}{row.last_name.substring(0, 1)}
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="text-base font-black text-slate-900 tracking-tight truncate leading-tight">{row.first_name} {row.last_name}</h3>
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none">#{row.employee_no}</span>
-                        <div className="h-1 w-1 rounded-full bg-slate-200" />
-                        <span className={`text-[10px] font-black uppercase tracking-widest leading-none ${row.status === 'active' ? 'text-emerald-600' : 'text-slate-400'}`}>
-                          {row.status.replace("_", " ")}
-                        </span>
+      {/* Main Content Area */}
+      <div>
+        {filteredRows.length === 0 ? (
+          <DataState 
+            variant="empty" 
+            title="No Faculty Found" 
+            message={searchQuery ? "Try refining your search parameters." : "Start by adding your first faculty member to the directory."} 
+          />
+        ) : (
+          viewMode === "grid" ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredRows.map((row) => (
+                <div key={row._id} className="premium-card group relative flex flex-col p-0 overflow-hidden transition-all duration-500 bg-white border-slate-200/60 hover:shadow-2xl hover:shadow-slate-200/80 hover:-translate-y-1">
+                  <div className="p-5">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="h-12 w-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center text-sm font-black uppercase shadow-lg group-hover:scale-110 transition-transform">
+                        {row.first_name.substring(0, 1)}{row.last_name.substring(0, 1)}
                       </div>
+                      <div className="flex items-center gap-1 bg-slate-50/50 rounded-lg p-1 border border-slate-100">
+                        <button 
+                          onClick={() => setEditingTeacher(row)}
+                          className="h-7 w-7 flex items-center justify-center rounded text-slate-400 hover:bg-white hover:text-blue-600 hover:shadow-sm transition-all"
+                        >
+                          <span className="material-symbols-outlined text-base">edit</span>
+                        </button>
+                        <button 
+                          onClick={async () => {
+                            if (window.confirm(`Delete ${row.first_name}?`)) {
+                              await deleteTeacher(row._id);
+                            }
+                          }}
+                          className="h-7 w-7 flex items-center justify-center rounded text-slate-400 hover:bg-white hover:text-red-500 hover:shadow-sm transition-all"
+                        >
+                          <span className="material-symbols-outlined text-base">delete</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="mb-6">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-lg font-black text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors truncate">{row.first_name} {row.last_name}</h3>
+                        <Badge variant={row.status === "active" ? "success" : row.status === "on_leave" ? "warning" : "gray"} className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0">
+                          {row.status}
+                        </Badge>
+                      </div>
+                      <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{row.employee_no}</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 mb-6">
+                      <div className="bg-slate-50/50 rounded-xl p-2.5 border border-slate-100/50">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Qualification</p>
+                        <p className="text-[10px] font-bold text-slate-700 truncate">{row.qualification || "B.Ed"}</p>
+                      </div>
+                      <div className="bg-slate-50/50 rounded-xl p-2.5 border border-slate-100/50">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Specialization</p>
+                        <p className="text-[10px] font-bold text-slate-700 truncate">{row.subjects[0] || "—"}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+                       <div className="flex items-center gap-2 text-slate-400">
+                          <span className="material-symbols-outlined text-sm">mail</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest truncate max-w-[120px]">{row.email}</span>
+                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex flex-col items-end gap-1">
-                     <button 
-                        onClick={() => setEditingTeacher(row)}
-                        className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all border border-slate-100 bg-white"
-                     >
-                        <span className="material-symbols-outlined text-[16px]">edit_square</span>
+                  <div className="mt-auto px-5 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between group-hover:bg-white transition-all">
+                     <button className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 flex items-center gap-1 transition-colors">
+                        <span className="material-symbols-outlined text-sm">calendar_month</span>
+                        Schedule
                      </button>
-                     <button 
-                        onClick={async () => {
-                           if (window.confirm(`Delete ${row.first_name}?`)) {
-                              await deleteTeacher(row._id);
-                           }
-                        }}
-                        className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all border border-slate-100 bg-white"
-                     >
-                        <span className="material-symbols-outlined text-[16px]">delete</span>
-                     </button>
+                     <Link href={`/admin/teachers/${row._id}`} className="group/btn h-8 px-4 rounded-lg bg-blue-600 text-[10px] font-black text-white uppercase tracking-widest hover:bg-blue-700 transition-all flex items-center gap-2 shadow-sm active:scale-95">
+                        Hub
+                        <span className="material-symbols-outlined text-sm transition-transform group-hover/btn:translate-x-1">arrow_forward</span>
+                     </Link>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-2 gap-3 mb-5">
-                   <div className="bg-slate-50/50 border border-slate-100 rounded-xl p-2.5">
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Workload</span>
-                      <div className="flex items-center gap-2">
-                         <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                            <div className="h-full bg-blue-500" style={{ width: '75%' }} />
-                         </div>
-                         <span className="text-[10px] font-black text-slate-900">75%</span>
-                      </div>
-                   </div>
-                   <div className="bg-slate-50/50 border border-slate-100 rounded-xl p-2.5">
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Capacity</span>
-                      <p className="text-[11px] font-black text-slate-900">{(row.class_ids || []).length} / 12 Classes</p>
-                   </div>
-                </div>
-
-                <div className="space-y-2">
-                   <div className="flex items-center justify-between px-1">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Specialization</span>
-                      <span className="text-[9px] font-black text-blue-600 uppercase">{row.qualification || "B.Ed"}</span>
-                   </div>
-                   <div className="flex flex-wrap gap-1.5">
-                      {(row.subjects || []).slice(0, 4).map((s) => (
-                        <span key={s} className="px-2 py-0.5 rounded-lg bg-blue-50/50 text-blue-700 text-[9px] font-black uppercase tracking-tighter border border-blue-100/50">
-                          {s}
-                        </span>
-                      ))}
-                      {(row.subjects || []).length > 4 && (
-                        <span className="px-2 py-0.5 rounded-lg bg-white text-slate-400 text-[9px] font-bold border border-slate-100">
-                          +{(row.subjects || []).length - 4}
-                        </span>
-                      )}
-                   </div>
-                </div>
-              </div>
-
-              <div className="mt-auto p-4 bg-slate-50/30 border-t border-slate-100 flex items-center justify-between">
-                 <div className="flex items-center gap-3">
-                    <div className="flex -space-x-1.5">
-                       {[1, 2, 3].map(i => (
-                         <div key={i} className="h-6 w-6 rounded-full border-2 border-white bg-slate-200" />
-                       ))}
-                    </div>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Schedule</span>
-                 </div>
-                 <Link href={`/admin/teachers/${row._id}`} className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline flex items-center gap-1">
-                    Faculty Hub
-                    <span className="material-symbols-outlined text-sm">chevron_right</span>
-                 </Link>
-              </div>
+              ))}
             </div>
-          ))}
+          ) : (
+            <div className="premium-card overflow-hidden border-slate-200/60 shadow-sm bg-white rounded-2xl">
+              <DataTable
+                columns={columns}
+                rows={filteredRows}
+                rowKey={(row) => row._id}
+                sortable
+                paginated={10}
+                rowActions={rowActions}
+              />
+            </div>
+          )
+        )}
+      </div>
+
+      {/* Pagination Footer - Premium ERP Style */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100">
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+          Showing <span className="text-blue-600">1</span> to <span className="text-slate-900">{filteredRows.length}</span> of <span className="text-slate-900">{state.data?.length}</span> Faculty Records
+        </p>
+        <div className="flex items-center gap-2">
+          <button className="h-9 px-4 rounded-xl border border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-400 cursor-not-allowed flex items-center gap-2">
+            <span className="material-symbols-outlined text-base">chevron_left</span>
+            Previous
+          </button>
+          <div className="flex items-center gap-1">
+            <button className="h-9 w-9 rounded-xl bg-blue-600 text-[10px] font-black text-white shadow-lg shadow-blue-600/20">1</button>
+          </div>
+          <button className="h-9 px-4 rounded-xl border border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-400 cursor-not-allowed flex items-center gap-2">
+            Next
+            <span className="material-symbols-outlined text-base">chevron_right</span>
+          </button>
         </div>
-      )}
+      </div>
 
       <TeacherEditSidebar
         teacher={editingTeacher}

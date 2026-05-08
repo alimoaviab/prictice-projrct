@@ -1,30 +1,123 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useLeave } from "../hooks/useLeave";
 import { LeaveRecordRow } from "../types/leave.types";
 import { showToast } from "../../../utils/toast";
+import { DataTable, DataTableColumn, RowAction, Badge, DataState, TableSkeleton, Skeleton } from "../../../components/ui";
 
 export default function LeaveListPage() {
+  const pathname = usePathname();
   const { state, addLeave, updateLeave, deleteLeave, approveLeave, rejectLeave } = useLeave();
+  
   const [rejectReason, setRejectReason] = useState("");
   const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
 
-  const handleEdit = (record: LeaveRecordRow) => {
-    // allow editing existing leave requests
-    // open a simple prompt flow for quick edits
-    const reason = window.prompt("Notes/Reason", record.reason || "")?.trim() || "";
-    updateLeave(record._id, { reason });
-  };
+  const filteredRows = useMemo(() => {
+    const rows = state.data || [];
+    const q = searchQuery.trim().toLowerCase();
+    return rows.filter((row) => {
+      const queryMatch =
+        q.length === 0 ||
+        row.requester_name.toLowerCase().includes(q) ||
+        row.leave_type.toLowerCase().includes(q) ||
+        (row.reason || "").toLowerCase().includes(q);
+      const statusMatch = statusFilter === "all" ? true : row.status === statusFilter;
+      return queryMatch && statusMatch;
+    });
+  }, [state.data, searchQuery, statusFilter]);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this leave request?")) return;
-    await deleteLeave(id);
-  };
+  const stats = useMemo(() => {
+    const data = state.data || [];
+    return {
+      total: data.length,
+      pending: data.filter(r => r.status === 'pending').length,
+      approved: data.filter(r => r.status === 'approved').length,
+      sickLeaves: data.filter(r => r.leave_type === 'sick').length,
+    };
+  }, [state.data]);
 
-  const handleApprove = async (id: string) => {
-    await approveLeave(id);
-  };
+  const columns: DataTableColumn<LeaveRecordRow>[] = useMemo(() => [
+    {
+      key: "requester",
+      label: "Requester",
+      render: (row) => (
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-[10px] font-black uppercase">
+            {row.requester_name.substring(0, 1)}
+          </div>
+          <div>
+            <p className="font-bold text-slate-900 leading-none mb-1">{row.requester_name}</p>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter capitalize">{row.requester_type}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "type",
+      label: "Leave Category",
+      render: (row) => (
+        <Badge variant="secondary" className="capitalize text-[10px] font-black tracking-widest px-1.5 bg-slate-50 border-slate-100 text-slate-600">
+          {row.leave_type.replace("_", " ")}
+        </Badge>
+      ),
+    },
+    {
+      key: "dates",
+      label: "Schedule",
+      render: (row) => (
+        <div className="flex flex-col">
+          <p className="text-[11px] font-bold text-slate-700">{row.start_date}</p>
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">to {row.end_date}</p>
+        </div>
+      ),
+    },
+    {
+      key: "status",
+      label: "Decision",
+      render: (row) => (
+        <Badge
+          variant={
+            row.status === "approved" ? "success" :
+            row.status === "rejected" ? "error" :
+            row.status === "pending" ? "warning" : "gray"
+          }
+          className="capitalize text-[9px] font-black uppercase tracking-widest px-2"
+        >
+          {row.status}
+        </Badge>
+      ),
+    },
+  ], []);
+
+  const rowActions: RowAction<LeaveRecordRow>[] = useMemo(() => [
+    {
+      icon: "check_circle",
+      label: "Approve",
+      variant: "primary",
+      showIf: (row: LeaveRecordRow) => row.status === "pending",
+      onClick: (row: LeaveRecordRow) => approveLeave(row._id),
+    },
+    {
+      icon: "cancel",
+      label: "Reject",
+      variant: "danger",
+      showIf: (row: LeaveRecordRow) => row.status === "pending",
+      onClick: (row: LeaveRecordRow) => setRejectingId(row._id),
+    },
+    {
+       icon: "delete",
+       label: "Archive",
+       variant: "ghost",
+       requireConfirm: true,
+       onClick: (row) => deleteLeave(row._id),
+    }
+  ], []);
 
   const handleReject = async (id: string) => {
     if (!rejectReason.trim()) {
@@ -36,94 +129,231 @@ export default function LeaveListPage() {
     setRejectReason("");
   };
 
-  const requesters = [
-    { _id: "1", name: "Student 1" },
-    { _id: "2", name: "Student 2" },
-    { _id: "3", name: "Teacher 1" },
-    { _id: "4", name: "Teacher 2" }
-  ];
+  if (state.status === "loading" && !state.data) {
+    return <TableSkeleton />;
+  }
+
+  if (state.status === "error") {
+    return <DataState variant="error" title="Error Loading Leave Requests" message={state.error} />;
+  }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Leave Requests</h1>
-        <div className="text-sm text-gray-500">Showing submitted leave requests. Admins can approve/reject.</div>
+    <div className="space-y-8 relative min-h-[80vh] pb-10">
+      {/* Stats Section - Premium & Compact */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: "Active Requests", value: stats.total, icon: "assignment", color: "text-blue-600", bg: "bg-blue-600/5" },
+          { label: "Pending Review", value: stats.pending, icon: "hourglass_empty", color: "text-amber-600", bg: "bg-amber-600/5" },
+          { label: "Approved Records", value: stats.approved, icon: "verified", color: "text-emerald-600", bg: "bg-emerald-600/5" },
+          { label: "Sick Cycle", value: stats.sickLeaves, icon: "medical_services", color: "text-red-600", bg: "bg-red-600/5" },
+        ].map((stat, i) => (
+          <div key={i} className="premium-card bg-white p-3.5 border-slate-200/60 shadow-sm flex items-center justify-between group hover:border-blue-200 transition-all cursor-default">
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
+              <h3 className="text-xl font-black text-slate-900 tracking-tighter leading-none">{stat.value}</h3>
+            </div>
+            <div className={`h-8 w-8 rounded-lg ${stat.bg} ${stat.color} flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm`}>
+               <span className="material-symbols-outlined text-lg font-black">{stat.icon}</span>
+            </div>
+          </div>
+        ))}
       </div>
 
-      {state.status === "loading" && <p>Loading...</p>}
-      {state.error && <p className="text-red-600">{state.error}</p>}
+      {/* Toolbar Section - Unified & Sticky */}
+      <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md sticky top-[72px] z-20 border-slate-200/60 shadow-sm rounded-xl">
+        <div className="flex flex-1 items-center gap-2 max-w-2xl">
+          <div className="relative flex-1">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search requester name, leave type or reason..."
+              className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-xs font-medium text-slate-700 outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-600/5 placeholder:text-slate-400"
+            />
+          </div>
+          <div className="h-6 w-px bg-slate-200" />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as any)}
+            className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none cursor-pointer transition-all hover:border-slate-300 focus:border-blue-400"
+          >
+            <option value="all">Lifecycle: All</option>
+            <option value="pending">Awaiting Review</option>
+            <option value="approved">Approved Cycle</option>
+            <option value="rejected">Rejected Records</option>
+          </select>
+        </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-4 py-3 text-left">Requester</th>
-              <th className="px-4 py-3 text-left">Type</th>
-              <th className="px-4 py-3 text-left">Leave Type</th>
-              <th className="px-4 py-3 text-left">Start Date</th>
-              <th className="px-4 py-3 text-left">End Date</th>
-              <th className="px-4 py-3 text-left">Status</th>
-              <th className="px-4 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {state.data?.map((record: LeaveRecordRow) => (
-              <tr key={record._id} className="border-t">
-                <td className="px-4 py-3">{record.requester_name}</td>
-                <td className="px-4 py-3 capitalize">{record.requester_type}</td>
-                <td className="px-4 py-3 capitalize">{record.leave_type}</td>
-                <td className="px-4 py-3">{record.start_date}</td>
-                <td className="px-4 py-3">{record.end_date}</td>
-                <td className="px-4 py-3">
-                  <span className={`px-2 py-1 rounded text-xs ${record.status === "approved" ? "bg-green-100 text-green-800" :
-                    record.status === "rejected" ? "bg-red-100 text-red-800" :
-                      record.status === "cancelled" ? "bg-gray-100 text-gray-800" :
-                        "bg-yellow-100 text-yellow-800"
-                    }`}>
-                    {record.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-right space-x-2">
-                  {record.status === "pending" && (
-                    <>
-                      <button onClick={() => handleApprove(record._id)} className="text-green-600 hover:underline">
-                        Approve
-                      </button>
-                      <button onClick={() => setRejectingId(record._id)} className="text-red-600 hover:underline">
-                        Reject
-                      </button>
-                    </>
-                  )}
-                  <button onClick={() => handleEdit(record)} className="text-blue-600 hover:underline">
-                    Edit
-                  </button>
-                  <button onClick={() => handleDelete(record._id)} className="text-red-600 hover:underline">
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center rounded-lg bg-slate-100 p-1 shadow-inner">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`flex h-7 items-center gap-2 rounded-md px-3 text-[11px] font-bold transition-all ${
+                viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              <span className="material-symbols-outlined text-base">grid_view</span>
+              Grid
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={`flex h-7 items-center gap-2 rounded-md px-3 text-[11px] font-bold transition-all ${
+                viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              <span className="material-symbols-outlined text-base">view_list</span>
+              List
+            </button>
+          </div>
+          <div className="h-6 w-px bg-slate-200" />
+          <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest px-2 whitespace-nowrap">
+            {filteredRows.length} <span className="text-slate-400">REQUESTS</span>
+          </span>
+          <div className="h-6 w-px bg-slate-200" />
+          <Link
+            href="/admin/leave/create"
+            className="inline-flex h-9 items-center gap-2 px-5 text-[11px] font-black uppercase tracking-widest text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
+          >
+            <span className="material-symbols-outlined text-lg">add_circle</span>
+            Submit Leave
+          </Link>
+        </div>
       </div>
 
+      {/* Main Content Area */}
+      <div>
+        {filteredRows.length === 0 ? (
+          <DataState 
+            variant="empty" 
+            title="No Leave Records Found" 
+            message={searchQuery ? "Try refining your search parameters." : "Start by submitting your first leave request or review pending ones."} 
+          />
+        ) : (
+          viewMode === "grid" ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredRows.map((row) => (
+                <div key={row._id} className="premium-card group relative flex flex-col p-0 overflow-hidden transition-all duration-500 bg-white border-slate-200/60 hover:shadow-2xl hover:shadow-slate-200/80 hover:-translate-y-1">
+                  <div className="p-5">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="h-10 w-10 rounded-xl bg-slate-900 text-white flex items-center justify-center text-[11px] font-black uppercase shadow-lg group-hover:scale-110 transition-transform">
+                        {row.requester_name.substring(0, 1)}
+                      </div>
+                      <Badge
+                        variant={
+                          row.status === "approved" ? "success" :
+                          row.status === "rejected" ? "error" : "warning"
+                        }
+                        className="uppercase text-[9px] font-black tracking-widest px-2 py-0.5"
+                      >
+                        {row.status}
+                      </Badge>
+                    </div>
+
+                    <div className="mb-6">
+                      <h3 className="text-lg font-black text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors truncate">{row.requester_name}</h3>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1 capitalize">{row.requester_type} &bull; {row.leave_type}</p>
+                    </div>
+
+                    <div className="bg-slate-50/50 rounded-xl p-3 border border-slate-100/50 mb-6">
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Time Period</p>
+                      <p className="text-[11px] font-bold text-slate-700 truncate">{row.start_date} <span className="text-slate-400 font-normal">to</span> {row.end_date}</p>
+                    </div>
+
+                    <div className="space-y-1 min-h-[40px]">
+                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Reason / Note</p>
+                       <p className="text-[11px] text-slate-600 line-clamp-2 italic">"{row.reason || "No reason specified"}"</p>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-auto px-5 py-3 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between group-hover:bg-white transition-all">
+                     {row.status === 'pending' ? (
+                        <>
+                           <button 
+                             onClick={() => approveLeave(row._id)}
+                             className="text-[10px] font-black text-emerald-600 uppercase tracking-widest hover:text-emerald-700 flex items-center gap-1"
+                           >
+                              <span className="material-symbols-outlined text-sm">check_circle</span>
+                              Approve
+                           </button>
+                           <button 
+                             onClick={() => setRejectingId(row._id)}
+                             className="text-[10px] font-black text-red-400 uppercase tracking-widest hover:text-red-500 flex items-center gap-1"
+                           >
+                              <span className="material-symbols-outlined text-sm">cancel</span>
+                              Reject
+                           </button>
+                        </>
+                     ) : (
+                        <div className="flex items-center gap-2 text-slate-400">
+                           <span className="material-symbols-outlined text-sm">history</span>
+                           <span className="text-[9px] font-black uppercase tracking-widest">Decision Finalized</span>
+                        </div>
+                     )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="premium-card overflow-hidden border-slate-200/60 shadow-sm bg-white rounded-2xl">
+              <DataTable
+                columns={columns}
+                rows={filteredRows}
+                rowKey={(row) => row._id}
+                sortable
+                paginated={10}
+                rowActions={rowActions}
+              />
+            </div>
+          )
+        )}
+      </div>
+
+      {/* Pagination Footer - Premium ERP Style */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100">
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+          Showing <span className="text-blue-600">1</span> to <span className="text-slate-900">{filteredRows.length}</span> of <span className="text-slate-900">{state.data?.length}</span> Leave Records
+        </p>
+        <div className="flex items-center gap-2">
+          <button className="h-9 px-4 rounded-xl border border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-400 cursor-not-allowed flex items-center gap-2">
+            <span className="material-symbols-outlined text-base">chevron_left</span>
+            Previous
+          </button>
+          <div className="flex items-center gap-1">
+            <button className="h-9 w-9 rounded-xl bg-blue-600 text-[10px] font-black text-white shadow-lg shadow-blue-600/20">1</button>
+          </div>
+          <button className="h-9 px-4 rounded-xl border border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-400 cursor-not-allowed flex items-center gap-2">
+            Next
+            <span className="material-symbols-outlined text-base">chevron_right</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Rejection Modal - Standardized Premium Style */}
       {rejectingId && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg shadow max-w-md w-full">
-            <h3 className="text-lg font-semibold mb-4">Reject Leave Request</h3>
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[100] animate-in fade-in duration-300">
+          <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full border border-slate-100 animate-in zoom-in-95 duration-300">
+            <div className="mb-6">
+              <h3 className="text-lg font-black text-slate-900 tracking-tight">Reject Leave Request</h3>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">Official justification required</p>
+            </div>
             <textarea
               value={rejectReason}
               onChange={e => setRejectReason(e.target.value)}
-              className="w-full border rounded px-3 py-2 mb-4"
-              rows={3}
-              placeholder="Enter rejection reason..."
+              className="w-full border border-slate-200 rounded-xl px-4 py-3 mb-6 text-sm font-medium text-slate-700 outline-none focus:border-red-400 focus:ring-4 focus:ring-red-600/5 placeholder:text-slate-300 min-h-[120px]"
+              placeholder="Why is this request being declined?"
             />
-            <div className="flex justify-end space-x-2">
-              <button onClick={() => setRejectingId(null)} className="px-4 py-2 border rounded">
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => setRejectingId(null)} 
+                className="h-10 px-6 rounded-xl border border-slate-200 text-[11px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 transition-all"
+              >
                 Cancel
               </button>
-              <button onClick={() => handleReject(rejectingId)} className="px-4 py-2 bg-red-600 text-white rounded">
-                Reject
+              <button 
+                onClick={() => handleReject(rejectingId)} 
+                className="h-10 px-8 bg-red-600 text-white rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-600/20 active:scale-95"
+              >
+                Reject Request
               </button>
             </div>
           </div>

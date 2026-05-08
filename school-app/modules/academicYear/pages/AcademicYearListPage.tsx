@@ -8,17 +8,22 @@ import { AcademicYearRow, AcademicYearUpdateInput } from "../types/academicYear.
 import { showToast } from "../../../utils/toast";
 import { AcademicYearEditSidebar } from "../components/AcademicYearEditSidebar";
 import { AcademicYearTable } from "../components/AcademicYearTable";
+import { ConfirmModal } from "../../../components/ui/ConfirmModal";
 
 type ViewMode = "grid" | "list";
 
 export function AcademicYearListPage() {
-  const { state, updateAcademicYear, deleteAcademicYear } = useAcademicYears();
+  const { state, page, setPage, updateAcademicYear, deleteAcademicYear } = useAcademicYears();
   const [editingYear, setEditingYear] = useState<AcademicYearRow | null>(null);
+  const [deletingYear, setDeletingYear] = useState<AcademicYearRow | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "completed" | "cancelled">("all");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const years = state.data ?? [];
+  
+  const years = state.data?.data ?? [];
+  const meta = state.data?.meta;
   const activeYear = years.find((year) => year.is_active);
 
   const filteredYears = years.filter((row) => {
@@ -48,12 +53,29 @@ export function AcademicYearListPage() {
     return Math.max(1, Math.round(diff / (1000 * 60 * 60 * 24)));
   };
 
+  const handleDelete = async () => {
+    if (!deletingYear) return;
+    setIsDeleting(true);
+    try {
+      const result = await deleteAcademicYear(deletingYear._id);
+      if (result.ok) {
+        showToast(`${deletingYear.year} deleted successfully`, "success");
+        setDeletingYear(null);
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (state.status === "loading" || state.status === "idle") {
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <Skeleton className="h-10 w-64" />
-          <Skeleton className="h-10 w-32" />
+          <Skeleton className="h-10 w-64 rounded-xl" />
+          <Skeleton className="h-10 w-32 rounded-xl" />
+        </div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-32 rounded-2xl" />)}
         </div>
         <TableSkeleton />
       </div>
@@ -64,205 +86,254 @@ export function AcademicYearListPage() {
     return <DataState variant="error" title="Failed to load academic years" message={state.error} />;
   }
 
+  const isDrawerOpen = editingYear !== null;
+
   return (
-    <div className="space-y-4">
-      {/* Stats Section - High Density Enterprise Style */}
-      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
-        {[
-          { label: "Total Sessions", value: years.length, icon: "calendar_month", color: "text-slate-500" },
-          { label: "Active Year", value: activeYear?.year || "None", icon: "verified", color: "text-blue-600" },
-          { label: "Completed", value: years.filter(y => y.status === "completed").length, icon: "check_circle", color: "text-emerald-600" },
-        ].map((stat) => (
-          <div key={stat.label} className="premium-card p-2.5 flex items-center justify-between bg-white/40 border-slate-200/50">
-            <div>
-              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block">{stat.label}</span>
-              <span className={`text-lg font-black tracking-tight mt-0.5 block ${stat.color}`}>{stat.value}</span>
+    <>
+      <div className="space-y-8 relative min-h-[87vh] pb-20">
+        {/* Stats Section - Premium SaaS Style */}
+        <div className={`grid gap-4 transition-all duration-500 ease-in-out ${isDrawerOpen ? "grid-cols-1 md:grid-cols-2" : "grid-cols-2 md:grid-cols-4"}`}>
+          {[
+            { label: "Total Sessions", value: years.length, icon: "calendar_today", color: "text-slate-500", bg: "bg-slate-500/5" },
+            { label: "Active Year", value: activeYear?.year || "None", icon: "auto_awesome", color: "text-blue-600", bg: "bg-blue-600/5" },
+            { label: "Completed", value: years.filter(y => y.status === "completed").length, icon: "verified", color: "text-emerald-600", bg: "bg-emerald-600/5" },
+          ].map((stat) => (
+            <div key={stat.label} className="group premium-card p-4 flex items-center justify-between bg-white border-slate-200/60 hover:border-blue-200 transition-all shadow-sm">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-1">{stat.label}</span>
+                <span className={`text-xl font-bold tracking-tight block ${stat.color}`}>{stat.value}</span>
+              </div>
+              <div className={`h-10 w-10 rounded-xl ${stat.bg} flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                <span className={`material-symbols-outlined text-xl ${stat.color}`}>{stat.icon}</span>
+              </div>
             </div>
-            <span className={`material-symbols-outlined text-lg opacity-20 ${stat.color}`}>{stat.icon}</span>
-          </div>
-        ))}
-        <Link href="/admin/academic-years/create" className="premium-card p-2.5 flex items-center justify-between bg-blue-600 border-blue-700 group hover:bg-blue-700 transition-all shadow-sm">
-          <div>
-            <span className="text-[9px] font-black uppercase text-blue-100 tracking-widest block opacity-80">Quick Action</span>
-            <span className="text-xs font-black text-white mt-0.5 block">Create Session</span>
-          </div>
-          <span className="material-symbols-outlined text-lg text-white group-hover:rotate-90 transition-transform">add</span>
-        </Link>
-      </div>
-
-      {/* Operational Toolbar */}
-      <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/50 backdrop-blur-sm sticky top-14 z-10 border-slate-200/60 shadow-sm">
-        <div className="flex flex-1 items-center gap-2 max-w-md">
-          <div className="relative flex-1">
-            <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-base text-slate-400">search</span>
-            <input
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Search academic years..."
-              className="h-8 w-full rounded-md border border-slate-200 bg-white pl-8 pr-2.5 text-xs text-slate-700 outline-none transition-all focus:border-blue-300 focus:ring-4 focus:ring-blue-600/5"
-            />
-          </div>
-          <select
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value as any)}
-            className="h-8 rounded-md border border-slate-200 bg-white px-2 text-xs font-bold text-slate-600 outline-none transition-all focus:border-blue-300"
+          ))}
+          <Link 
+            href="/admin/academic-years/create" 
+            className={`premium-card p-4 flex items-center justify-between bg-white border-slate-200 group hover:bg-blue-600 hover:border-blue-600 transition-all shadow-sm ${isDrawerOpen ? "hidden md:flex" : ""}`}
           >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="completed">Completed</option>
-          </select>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div className="flex items-center rounded-md border border-slate-200 bg-white p-0.5 shadow-sm">
-            <button
-              onClick={() => setViewMode("grid")}
-              className={`flex h-7 items-center gap-1.5 rounded px-2.5 text-[11px] font-bold transition-all ${
-                viewMode === "grid" ? "bg-blue-600 text-white shadow-sm shadow-blue-600/20" : "text-slate-500 hover:bg-slate-50"
-              }`}
-            >
-              <span className="material-symbols-outlined text-sm">grid_view</span>
-              Grid
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              className={`flex h-7 items-center gap-1.5 rounded px-2.5 text-[11px] font-bold transition-all ${
-                viewMode === "list" ? "bg-blue-600 text-white shadow-sm shadow-blue-600/20" : "text-slate-500 hover:bg-slate-50"
-              }`}
-            >
-              <span className="material-symbols-outlined text-sm">view_list</span>
-              List
-            </button>
-          </div>
-          <div className="h-4 w-px bg-slate-200 mx-1" />
-          <Link
-            href="/admin/academic-years/create"
-            className="md:hidden flex h-8 items-center gap-1.5 rounded-md bg-blue-600 px-3 text-[11px] font-bold text-white shadow-sm shadow-blue-600/20 transition-all hover:bg-blue-700"
-          >
-            <span className="material-symbols-outlined text-sm">add</span>
-            New
+            <div>
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] block mb-1 group-hover:text-blue-100 transition-colors">Setup Control</span>
+              <span className="text-sm font-black text-slate-900 block group-hover:text-white transition-colors tracking-tight">Add New Year</span>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-white/20 group-hover:rotate-90 transition-all border border-slate-100 group-hover:border-transparent">
+              <span className="material-symbols-outlined text-xl text-slate-400 group-hover:text-white">add</span>
+            </div>
           </Link>
         </div>
-      </div>
 
-      {years.length === 0 ? (
-        <DataState
-          variant="empty"
-          title="No academic years found"
-          message="Get started by creating the first academic year for your school."
-        />
-      ) : filteredYears.length === 0 ? (
-        <DataState
-          variant="empty"
-          title="No matching sessions"
-          message="Try changing your search or status filter."
-        />
-      ) : (
-        viewMode === "grid" ? (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-            {filteredYears.map((row) => {
-              const days = durationInDays(row.start_date, row.end_date);
-              const isActive = row.is_active;
-              const statusColor = row.status === "active" ? "text-emerald-600 bg-emerald-50 border-emerald-100/50" : row.status === "completed" ? "text-blue-600 bg-blue-50 border-blue-100/50" : "text-slate-500 bg-slate-50 border-slate-100/50";
-              
-              return (
-                <div
-                  key={row._id}
-                  className={`premium-card group relative flex flex-col p-0 overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-0.5 border-slate-200/60 bg-white ${isActive ? "ring-1 ring-blue-500/30 bg-blue-50/20" : ""}`}
-                >
-                  {/* Activity Indicator removed as per user request */}
-                  
-                  <div className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2">
-                           <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${statusColor}`}>
-                             {row.status}
-                           </span>
-                           {isActive && (
-                             <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-blue-600">
-                               <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
-                               Active
-                             </span>
-                           )}
-                        </div>
-                        <h3 className="text-lg font-black text-slate-900 tracking-tight leading-tight">{row.year}</h3>
-                      </div>
-                      
-                      <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg p-1 transition-all shadow-sm">
-                        <button 
-                          onClick={() => setEditingYear(row)}
-                          className="h-6 w-6 flex items-center justify-center rounded text-slate-500 hover:bg-white hover:text-blue-600 transition-all hover:shadow-sm"
-                        >
-                          <span className="material-symbols-outlined text-base">edit</span>
-                        </button>
-                        <button 
-                          onClick={async () => {
-                            if (window.confirm(`Delete ${row.year}?`)) {
-                              const result = await deleteAcademicYear(row._id);
-                              if (result.ok) showToast(`${row.year} deleted`, "success");
-                            }
-                          }}
-                          className="h-6 w-6 flex items-center justify-center rounded text-slate-500 hover:bg-white hover:text-red-500 transition-all hover:shadow-sm"
-                        >
-                          <span className="material-symbols-outlined text-base">delete</span>
-                        </button>
-                      </div>
-                    </div>
+        {/* Operational Toolbar */}
+        <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md sticky top-[72px] z-20 border-slate-200/60 shadow-sm rounded-xl">
+          <div className="flex flex-1 items-center gap-2 max-w-2xl">
+            <div className="relative flex-1">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
+              <input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Filter by year or notes..."
+                className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-xs font-medium text-slate-700 outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-600/5 placeholder:text-slate-400"
+              />
+            </div>
+            <div className="h-6 w-px bg-slate-200" />
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value as any)}
+              className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none cursor-pointer transition-all hover:border-slate-300 focus:border-blue-400"
+            >
+              <option value="all">Status: All</option>
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
 
-                    <div className="mt-4 space-y-4">
-                       {/* Timeline Component - Increased Scale */}
-                       <div className="relative py-2">
-                          <div className="absolute left-0 right-0 h-[1px] bg-slate-100 top-1/2 -translate-y-1/2" />
-                          <div className="flex items-center justify-between relative z-10">
-                            <div className="bg-white group-hover:bg-slate-50/50 transition-colors pr-2 text-left">
-                               <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter leading-none mb-1">Start</p>
-                               <p className="text-[11px] font-bold text-slate-700 tracking-tight leading-none">{formatDate(row.start_date)}</p>
-                            </div>
-                            {days && (
-                               <div className="bg-white group-hover:bg-slate-50/50 transition-colors px-2 py-0.5 rounded border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-                                  <p className="text-[10px] font-black text-slate-900 leading-none">{days}d</p>
-                               </div>
-                            )}
-                            <div className="bg-white group-hover:bg-slate-50/50 transition-colors pl-2 text-right">
-                               <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter leading-none mb-1">End</p>
-                               <p className="text-[11px] font-bold text-slate-700 tracking-tight leading-none">{formatDate(row.end_date)}</p>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center rounded-lg bg-slate-100 p-1 shadow-inner">
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`flex h-7 items-center gap-2 rounded-md px-3 text-[11px] font-bold transition-all ${
+                  viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                <span className="material-symbols-outlined text-base">grid_view</span>
+                Grid
+              </button>
+              <button
+                onClick={() => setViewMode("list")}
+                className={`flex h-7 items-center gap-2 rounded-md px-3 text-[11px] font-bold transition-all ${
+                  viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                <span className="material-symbols-outlined text-base">view_list</span>
+                List
+              </button>
+            </div>
+            <div className="h-6 w-px bg-slate-200" />
+            <Link
+              href="/admin/academic-years/create"
+              className="flex h-9 items-center gap-2 rounded-lg bg-blue-600 px-4 text-[11px] font-bold text-white shadow-lg shadow-blue-600/10 transition-all hover:bg-blue-700 active:scale-95"
+            >
+              <span className="material-symbols-outlined text-base">add</span>
+              New Session
+            </Link>
+          </div>
+        </div>
+
+        <div className="flex">
+          {/* Main Content Area */}
+          <div className="flex-1 min-w-0">
+            {years.length === 0 ? (
+              <DataState
+                variant="empty"
+                title="No academic years found"
+                message="Get started by creating the first academic year for your school."
+              />
+            ) : filteredYears.length === 0 ? (
+              <DataState
+                variant="empty"
+                title="No matching sessions"
+                message="Try changing your search or status filter."
+              />
+            ) : (
+              viewMode === "grid" ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+                  {filteredYears.map((row) => {
+                    const days = durationInDays(row.start_date, row.end_date);
+                    const isActive = row.is_active;
+                    const isEditing = editingYear?._id === row._id;
+                    
+                    const statusConfig = {
+                      active: "text-emerald-600 bg-emerald-50 border-emerald-100",
+                      completed: "text-blue-600 bg-blue-50 border-blue-100",
+                      cancelled: "text-red-600 bg-red-50 border-red-100",
+                      draft: "text-slate-500 bg-slate-50 border-slate-100",
+                      all: ""
+                    }[row.status] || "text-slate-500 bg-slate-50 border-slate-100";
+                    
+                    return (
+                      <div
+                        key={row._id}
+                        className={`premium-card group relative flex flex-col p-6 transition-all duration-300 bg-white border-slate-200/60 hover:shadow-2xl hover:shadow-slate-200/40 hover:-translate-y-1.5 ${
+                          isActive ? "ring-2 ring-blue-600/30" : ""
+                        } ${isEditing ? "border-blue-400 bg-blue-50/5" : ""}`}
+                      >
+                        <div className="flex items-start justify-between gap-6 mb-6">
+                          <div className="space-y-1.5">
+                            <h3 className="text-xl font-black text-slate-900 tracking-tight leading-none">{row.year}</h3>
+                            <div className="flex items-center gap-2">
+                               <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border ${statusConfig}`}>
+                                 {row.status}
+                               </span>
+                               {isActive && (
+                                 <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-100">
+                                   <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
+                                   Live Session
+                                 </span>
+                               )}
                             </div>
                           </div>
-                       </div>
+                          
+                          <div className="flex items-center gap-1">
+                            <button 
+                              onClick={(e) => { e.preventDefault(); setEditingYear(row); }}
+                              className="h-9 w-9 flex items-center justify-center rounded-xl text-slate-400 hover:bg-slate-50 hover:text-blue-600 transition-all border border-transparent hover:border-slate-100"
+                              title="Edit"
+                            >
+                              <span className="material-symbols-outlined text-[20px]">edit</span>
+                            </button>
+                            <button 
+                              onClick={(e) => { e.preventDefault(); setDeletingYear(row); }}
+                              className="h-9 w-9 flex items-center justify-center rounded-xl text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all border border-transparent hover:border-slate-100"
+                              title="Delete"
+                            >
+                              <span className="material-symbols-outlined text-[20px]">delete</span>
+                            </button>
+                          </div>
+                        </div>
 
-                       <div className="flex items-center gap-2.5 p-2 rounded-lg bg-slate-50/50 border border-slate-100/50">
-                          <span className="material-symbols-outlined text-slate-400 text-base">description</span>
-                          <span className="text-[11px] font-bold text-slate-500 truncate">
-                            {row.description || "No specific session notes"}
-                          </span>
-                       </div>
-                    </div>
-                  </div>
+                        <div className="space-y-5 mb-6">
+                          <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50/50 border border-slate-100/50">
+                            <div className="flex-1">
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">Academic Timeline</p>
+                              <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                                <span className="bg-white px-2 py-1 rounded-md border border-slate-100">{formatDate(row.start_date)}</span>
+                                <span className="text-slate-300 mx-1">→</span>
+                                <span className="bg-white px-2 py-1 rounded-md border border-slate-100">{formatDate(row.end_date)}</span>
+                              </div>
+                            </div>
+                            <div className="h-10 w-px bg-slate-200/50" />
+                            <div className="text-right min-w-[50px]">
+                               <p className="text-base font-black text-slate-900 leading-none">{days || 0}</p>
+                               <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Total Days</p>
+                            </div>
+                          </div>
 
-                  <div className="mt-auto px-4 py-3 bg-slate-50/30 border-t border-slate-100/60 flex items-center justify-between">
-                     <div className="flex items-center gap-2 text-slate-400 group-hover:text-emerald-600 transition-colors">
-                        <span className="material-symbols-outlined text-base font-black">sync</span>
-                        <span className="text-[10px] font-black uppercase tracking-widest">Synchronized</span>
-                     </div>
-                     <button 
-                        onClick={() => setEditingYear(row)}
-                        className="h-7 px-3 rounded bg-white border border-slate-200 text-[10px] font-black text-slate-600 uppercase tracking-widest hover:border-blue-200 hover:text-blue-600 transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
-                     >
-                        Configure
-                        <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                     </button>
-                  </div>
+                          <div className="px-1">
+                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Internal Notes</p>
+                             <p className="text-xs font-medium text-slate-600 line-clamp-2 leading-relaxed">
+                               {row.description || "Administrative session cycle for " + row.year}
+                             </p>
+                          </div>
+                        </div>
+
+                        <button 
+                          onClick={() => setEditingYear(row)}
+                          className="w-full h-10 flex items-center justify-center gap-2 rounded-xl bg-blue-600 text-[11px] font-black text-white uppercase tracking-[0.15em] hover:bg-blue-600 transition-all active:scale-[0.98] shadow-lg shadow-slate-900/10 hover:shadow-blue-600/20"
+                        >
+                          Manage Session
+                          <span className="material-symbols-outlined text-[16px]">arrow_right_alt</span>
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
+              ) : (
+                <div className="premium-card overflow-hidden border-slate-200/60 shadow-sm bg-white rounded-2xl">
+                  <AcademicYearTable 
+                    years={filteredYears} 
+                    onEdit={setEditingYear}
+                    onDelete={setDeletingYear}
+                  />
+                </div>
+              )
+            )}
+
+            {/* Pagination - Standard ERP Style */}
+            <div className="mt-10 flex items-center justify-between border-t border-slate-100 pt-8">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-slate-500">
+                  Showing <span className="font-bold text-slate-900">{years.length}</span> of <span className="font-bold text-slate-900">{meta?.total || years.length}</span> sessions
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  disabled={page === 1}
+                  onClick={() => setPage(page - 1)}
+                  className="flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-600 transition-all hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <span className="material-symbols-outlined text-lg">chevron_left</span>
+                  Previous
+                </button>
+                
+                <div className="flex items-center gap-1.5 px-3">
+                   <span className="text-xs font-bold text-slate-900">{page}</span>
+                   <span className="text-xs font-medium text-slate-300">/</span>
+                   <span className="text-xs font-medium text-slate-500">{meta?.pages || 1}</span>
+                </div>
+
+                <button
+                  disabled={!meta || page === meta.pages}
+                  onClick={() => setPage(page + 1)}
+                  className="flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-600 transition-all hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Next
+                  <span className="material-symbols-outlined text-lg">chevron_right</span>
+                </button>
+              </div>
+            </div>
           </div>
-        ) : (
-          <div className="premium-card overflow-hidden">
-            <AcademicYearTable years={filteredYears} />
-          </div>
-        )
-      )}
+        </div>
+      </div>
 
       <AcademicYearEditSidebar
         academicYear={editingYear}
@@ -273,13 +344,24 @@ export function AcademicYearListPage() {
           try {
             await updateAcademicYear(id, data as AcademicYearUpdateInput);
             setEditingYear(null);
-            showToast("Academic year updated", "success");
+            showToast("Academic year updated successfully", "success");
           } finally {
             setIsSaving(false);
           }
         }}
         isSaving={isSaving}
       />
-    </div>
+
+      <ConfirmModal
+        isOpen={deletingYear !== null}
+        title="Delete Academic Session"
+        message={`Are you sure you want to permanently delete the "${deletingYear?.year}" session? This action will remove all associated data and cannot be undone.`}
+        confirmLabel="Delete Permanently"
+        confirmVariant="danger"
+        isLoading={isDeleting}
+        onConfirm={handleDelete}
+        onCancel={() => setDeletingYear(null)}
+      />
+    </>
   );
 }

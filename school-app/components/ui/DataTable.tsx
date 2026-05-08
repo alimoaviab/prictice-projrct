@@ -11,6 +11,8 @@ export interface DataTableColumn<T> {
   render: (row: T) => React.ReactNode;
   sortable?: boolean;
   sortFn?: (a: T, b: T) => number;
+  align?: "left" | "center" | "right";
+  width?: string;
 }
 
 export interface RowAction<T> {
@@ -283,11 +285,12 @@ export function DataTable<T>({
                 <th
                   key={column.key}
                   onClick={() => handleSort(column.key)}
+                  style={column.width ? { width: column.width } : undefined}
                   className={`whitespace-nowrap border-b border-slate-200 px-4 py-3.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 ${
                     sortable && column.sortable !== false ? "cursor-pointer select-none hover:text-slate-700" : ""
-                  }`}
+                  } ${column.align === "right" ? "text-right" : column.align === "center" ? "text-center" : "text-left"}`}
                 >
-                  <div className="flex items-center gap-1">
+                  <div className={`flex items-center gap-1 ${column.align === "right" ? "justify-end" : column.align === "center" ? "justify-center" : "justify-start"}`}>
                     {column.label}
                     {sortable && column.sortable !== false && sort.key === column.key && (
                       <span className="material-symbols-outlined text-base">
@@ -323,13 +326,17 @@ export function DataTable<T>({
                     </td>
                   )}
                   {columns.map((column) => (
-                    <td key={column.key} className="px-4 py-3.5 text-sm text-slate-700">
+                    <td 
+                      key={column.key} 
+                      style={column.width ? { width: column.width } : undefined}
+                      className={`px-4 py-3.5 text-sm text-slate-700 ${column.align === "right" ? "text-right" : column.align === "center" ? "text-center" : "text-left"}`}
+                    >
                       {column.render(row)}
                     </td>
                   ))}
                   {rowActions && (
                     <td className="px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1">
                         {rowActions.map((action, i) => (
                           <button
                             key={i}

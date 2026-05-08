@@ -15,7 +15,8 @@ export function useAcademyCare() {
             if (!result.ok) {
                 throw new Error(result.error.message || "Failed to load academic years");
             }
-            return result.data as AcademyYear[];
+            // Extract items from the paginated response
+            return result.data.items;
         });
     }, [run]);
 

@@ -143,136 +143,202 @@ export function StudentListPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-base font-semibold tracking-tight text-slate-950">Student Directory</h2>
-          <p className="text-sm text-slate-600">Manage all student records</p>
-        </div>
-        <Link
-          href="/admin/students/create"
-          className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all hover:shadow-lg hover:shadow-blue-600/25 active:scale-[0.98]"
-        >
-          <span className="material-symbols-outlined text-lg">add</span>
-          Add Student
-        </Link>
-      </div>
-
-      <ListToolbar
-        searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
-        searchPlaceholder="Search by name, admission no, class, guardian"
-        filterValue={statusFilter}
-        onFilterChange={(value) => setStatusFilter(value as "all" | "active" | "inactive")}
-        filterOptions={[
-          { value: "all", label: "All statuses" },
-          { value: "active", label: "Active" },
-          { value: "inactive", label: "Inactive" },
-        ]}
-        rightSlot={
-          <div className="flex items-center gap-2">
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-600">
-              {filteredRows.length} visible
-            </span>
-            <div className="inline-flex items-center rounded-lg border border-slate-200 bg-white p-0.5">
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-semibold transition-all ${
-                  viewMode === "grid" ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-50"
-                }`}
-              >
-                <span className="material-symbols-outlined text-[14px]">grid_view</span>
-                Grid
-              </button>
-              <button
-                onClick={() => setViewMode("list")}
-                className={`inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-semibold transition-all ${
-                  viewMode === "list" ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-50"
-                }`}
-              >
-                <span className="material-symbols-outlined text-[14px]">view_list</span>
-                List
-              </button>
+    <div className="space-y-8 relative min-h-[80vh] pb-10">
+      {/* Stats Section - Premium ERP Style */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: "Total Students", value: (state.data || []).length, icon: "groups", color: "text-blue-600", bg: "bg-blue-600/5" },
+          { label: "Active Enrollment", value: (state.data || []).filter(s => s.status === 'active').length, icon: "how_to_reg", color: "text-emerald-600", bg: "bg-emerald-600/5" },
+          { label: "New Admissions", value: "24", icon: "person_add", color: "text-amber-600", bg: "bg-amber-600/5" },
+          { label: "Diversity Index", value: "0.85", icon: "diversity_3", color: "text-purple-600", bg: "bg-purple-600/5" },
+        ].map((stat, i) => (
+          <div key={i} className="premium-card bg-white p-3.5 border-slate-200/60 shadow-sm flex items-center justify-between group hover:border-blue-200 transition-all cursor-default">
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
+              <h3 className="text-xl font-black text-slate-900 tracking-tighter leading-none">{stat.value}</h3>
+            </div>
+            <div className={`h-8 w-8 rounded-lg ${stat.bg} ${stat.color} flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm`}>
+               <span className="material-symbols-outlined text-lg font-black">{stat.icon}</span>
             </div>
           </div>
-        }
-      />
+        ))}
+      </div>
 
-      {(state.data || []).length === 0 ? (
-        <DataState variant="empty" title="No students found" message="Get started by adding your first student record." />
-      ) : filteredRows.length === 0 ? (
-        <DataState variant="empty" title="No matching students" message="Try adjusting search or status filters." />
-      ) : (
-        viewMode === "grid" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredRows.map((row) => (
-            <div
-              key={row._id}
-              className="premium-card p-3.5"
-            >
-              <div className="mb-3">
-                <h3 className="text-base font-semibold tracking-tight text-slate-950">{row.first_name} {row.last_name}</h3>
-                <p className="mt-1 font-mono text-xs text-slate-500">Admission: {row.admission_no}</p>
-              </div>
-
-              <div className="mb-4 space-y-2.5 text-sm">
-                <div>
-                  <span className="text-slate-500">Class/Section:</span>
-                  <p className="font-medium text-slate-900">{row.class_id} / {row.section}</p>
-                </div>
-                <div>
-                  <span className="text-slate-500">Guardian:</span>
-                  <p className="font-medium text-slate-900">{row.guardian?.name || "—"}</p>
-                  <p className="text-xs text-slate-500">{row.guardian?.phone || ""}</p>
-                </div>
-                <div>
-                  <span className="text-slate-500">Status:</span>
-                  <p className="font-medium capitalize text-slate-900">{row.status}</p>
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setEditingStudent(row)}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-50 px-2.5 py-1.5 text-xs font-semibold text-blue-600 transition-colors hover:bg-blue-100"
-                >
-                  <span className="material-symbols-outlined text-base">edit</span>
-                  Edit
-                </button>
-                <button
-                  onClick={async () => {
-                    if (window.confirm(`Delete ${row.first_name} ${row.last_name}?`)) {
-                      const result = await deleteStudent(row._id);
-                      if (!result.ok) {
-                        showToast(result.error.message || "Failed to delete", "error");
-                      }
-                    }
-                  }}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100"
-                >
-                  <span className="material-symbols-outlined text-base">delete</span>
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))}
+      {/* Toolbar Section - Unified & Sticky */}
+      <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md sticky top-[72px] z-20 border-slate-200/60 shadow-sm rounded-xl">
+        <div className="flex flex-1 items-center gap-2 max-w-2xl">
+          <div className="relative flex-1">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search name, admission no or class..."
+              className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-xs font-medium text-slate-700 outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-600/5 placeholder:text-slate-400"
+            />
+          </div>
+          <div className="h-6 w-px bg-slate-200" />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as any)}
+            className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none cursor-pointer transition-all hover:border-slate-300 focus:border-blue-400"
+          >
+            <option value="all">Lifecycle: All</option>
+            <option value="active">Active Only</option>
+            <option value="inactive">Archived / Withdrawn</option>
+          </select>
         </div>
-        ) : (
-          <DataTable
-            columns={columns}
-            rows={filteredRows}
-            rowKey={(row) => row._id}
-            sortable
-            paginated={10}
-            rowActions={rowActions}
-            emptyState={{
-              title: "No students found",
-              description: "Adjust filters or add a student.",
-              action: { label: "Add Student", href: "/admin/students/create" },
-            }}
+
+        <div className="flex items-center gap-3">
+          <div className="flex items-center rounded-lg bg-slate-100 p-1 shadow-inner">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`flex h-7 items-center gap-2 rounded-md px-3 text-[11px] font-bold transition-all ${
+                viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              <span className="material-symbols-outlined text-base">grid_view</span>
+              Grid
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={`flex h-7 items-center gap-2 rounded-md px-3 text-[11px] font-bold transition-all ${
+                viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              <span className="material-symbols-outlined text-base">view_list</span>
+              List
+            </button>
+          </div>
+          <div className="h-6 w-px bg-slate-200" />
+          <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest px-2 whitespace-nowrap">
+            {filteredRows.length} <span className="text-slate-400">STUDENTS</span>
+          </span>
+          <div className="h-6 w-px bg-slate-200" />
+          <Link
+            href="/admin/students/create"
+            className="inline-flex h-9 items-center gap-2 px-5 text-[11px] font-black uppercase tracking-widest text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
+          >
+            <span className="material-symbols-outlined text-lg">person_add</span>
+            Add Student
+          </Link>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div>
+        {filteredRows.length === 0 ? (
+          <DataState 
+            variant="empty" 
+            title="No Students Found" 
+            message={searchQuery ? "Try refining your search parameters." : "Start by admitting your first student to the academy."} 
           />
-        )
-      )}
+        ) : (
+          viewMode === "grid" ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredRows.map((row) => (
+                <div key={row._id} className="premium-card group relative flex flex-col p-0 overflow-hidden transition-all duration-500 bg-white border-slate-200/60 hover:shadow-2xl hover:shadow-slate-200/80 hover:-translate-y-1">
+                  <div className="p-5">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="h-12 w-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center text-sm font-black uppercase shadow-lg group-hover:scale-110 transition-transform">
+                        {row.first_name.substring(0, 1)}{row.last_name.substring(0, 1)}
+                      </div>
+                      <div className="flex items-center gap-1 bg-slate-50/50 rounded-lg p-1 border border-slate-100">
+                        <button 
+                          onClick={() => setEditingStudent(row)}
+                          className="h-7 w-7 flex items-center justify-center rounded text-slate-400 hover:bg-white hover:text-blue-600 hover:shadow-sm transition-all"
+                        >
+                          <span className="material-symbols-outlined text-base">edit</span>
+                        </button>
+                        <button 
+                          onClick={async () => {
+                            if (window.confirm(`Delete ${row.first_name}?`)) {
+                              await deleteStudent(row._id);
+                            }
+                          }}
+                          className="h-7 w-7 flex items-center justify-center rounded text-slate-400 hover:bg-white hover:text-red-500 hover:shadow-sm transition-all"
+                        >
+                          <span className="material-symbols-outlined text-base">delete</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="mb-6">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-lg font-black text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors truncate">{row.first_name} {row.last_name}</h3>
+                        <Badge variant={row.status === "active" ? "success" : "gray"} className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0">
+                          {row.status}
+                        </Badge>
+                      </div>
+                      <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{row.admission_no}</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 mb-6">
+                      <div className="bg-slate-50/50 rounded-xl p-2.5 border border-slate-100/50">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Academic Unit</p>
+                        <p className="text-[10px] font-bold text-slate-700 truncate">{row.class_id} / {row.section}</p>
+                      </div>
+                      <div className="bg-slate-50/50 rounded-xl p-2.5 border border-slate-100/50">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Guardian</p>
+                        <p className="text-[10px] font-bold text-slate-700 truncate">{row.guardian?.name || "—"}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+                       <div className="flex items-center gap-2 text-slate-400">
+                          <span className="material-symbols-outlined text-sm">call</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest">{row.guardian?.phone || "No Contact"}</span>
+                       </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-auto px-5 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between group-hover:bg-white transition-all">
+                     <button className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 flex items-center gap-1 transition-colors">
+                        <span className="material-symbols-outlined text-sm">assignment_ind</span>
+                        Dossier
+                     </button>
+                     <button className="group/btn h-8 px-4 rounded-lg bg-blue-600 text-[10px] font-black text-white uppercase tracking-widest hover:bg-blue-700 transition-all flex items-center gap-2 shadow-sm active:scale-95">
+                        Profile
+                        <span className="material-symbols-outlined text-sm transition-transform group-hover/btn:translate-x-1">arrow_forward</span>
+                     </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="premium-card overflow-hidden border-slate-200/60 shadow-sm bg-white rounded-2xl">
+              <DataTable
+                columns={columns}
+                rows={filteredRows}
+                rowKey={(row) => row._id}
+                sortable
+                paginated={10}
+                rowActions={rowActions}
+              />
+            </div>
+          )
+        )}
+      </div>
+
+      {/* Pagination Footer - Premium ERP Style */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100">
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+          Showing <span className="text-blue-600">1</span> to <span className="text-slate-900">{filteredRows.length}</span> of <span className="text-slate-900">{state.data?.length}</span> Student Records
+        </p>
+        <div className="flex items-center gap-2">
+          <button className="h-9 px-4 rounded-xl border border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-400 cursor-not-allowed flex items-center gap-2">
+            <span className="material-symbols-outlined text-base">chevron_left</span>
+            Previous
+          </button>
+          <div className="flex items-center gap-1">
+            <button className="h-9 w-9 rounded-xl bg-blue-600 text-[10px] font-black text-white shadow-lg shadow-blue-600/20">1</button>
+          </div>
+          <button className="h-9 px-4 rounded-xl border border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-400 cursor-not-allowed flex items-center gap-2">
+            Next
+            <span className="material-symbols-outlined text-base">chevron_right</span>
+          </button>
+        </div>
+      </div>
+
 
       <StudentEditSidebar
         student={editingStudent}
