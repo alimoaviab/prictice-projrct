@@ -1,0 +1,35 @@
+
+> dev:school
+> npm --workspace school-app run dev
+
+
+> school-app@0.1.0 dev
+> next dev --hostname 0.0.0.0 --port ${PORT:-3000}
+
+   ▲ Next.js 15.5.15
+   - Local:        http://localhost:3000
+   - Network:      http://0.0.0.0:3000
+
+ ✓ Starting...
+ ✓ Ready in 2.3s
+ ○ Compiling /auth/login ...
+ ✓ Compiled /auth/login in 4.5s (614 modules)
+ GET /auth/login 200 in 6077ms
+ ○ Compiling /api/auth/login ...
+ ✓ Compiled /api/auth/login in 1791ms (718 modules)
+Login error: Error: MONGODB_URI environment variable is required. Set it in .env.local
+    at connectDb (../shared/db/connect.ts:10:11)
+    at POST (app/api/auth/login/route.ts:24:24)
+   8 | export async function connectDb(uri = process.env.MONGODB_URI): Promise<typeof mongoose> {
+   9 |   if (!uri) {
+> 10 |     throw new Error("MONGODB_URI environment variable is required. Set it in .env.local");
+     |           ^
+  11 |   }
+  12 |
+  13 |   if (!global.__edu_mongoose_connection) {
+ POST /api/auth/login 500 in 2997ms
+ ○ Compiling /admin/live-exam ...
+ ✓ Compiled /admin/live-exam in 1111ms (717 modules)
+ GET /auth/login 200 in 3014ms
+ GET /admin/live-exam 200 in 1876ms
+ GET /auth/login 200 in 150ms
