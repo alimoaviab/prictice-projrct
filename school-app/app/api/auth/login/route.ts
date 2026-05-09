@@ -26,9 +26,9 @@ export async function POST(request: NextRequest) {
         const { email, password } = body;
 
         // Validation
-        if (!email || !password) {
+        if (!email || !password || typeof email !== 'string' || typeof password !== 'string') {
             return NextResponse.json(
-                { message: "Email and password are required" },
+                { message: "Invalid email or password format" },
                 { status: 400 }
             );
         }
@@ -46,7 +46,10 @@ export async function POST(request: NextRequest) {
             .select("_id school_id role permissions email password_hash status")
             .lean()) as LoginUser | null;
 
-        if (!user || !verifyPassword(password, user.password_hash)) {
+        const dummyHash = "89184454f31b3dcb8caca08c705dae23:28a6cdf717180a808f9f69dd44e8de3fccf11b524d5df6865a3781a1d7b663a48af8dc1379cc44b95c639c11a73f1a6646b864d743fc29ad49135c9186626623";
+        const isPasswordValid = user ? verifyPassword(password, user.password_hash) : verifyPassword(password, dummyHash) && false;
+
+        if (!user || !isPasswordValid) {
             return NextResponse.json(
                 { message: "Invalid email or password" },
                 { status: 401 }
