@@ -1,0 +1,22 @@
+$ next dev --hostname 0.0.0.0 --port ${PORT:-3000}
+   ▲ Next.js 15.5.15
+   - Local:        http://localhost:3004
+   - Network:      http://0.0.0.0:3004
+
+ ✓ Starting...
+ ✓ Ready in 2.2s
+ ○ Compiling / ...
+ ✓ Compiled / in 10.9s (1654 modules)
+ ✓ Compiled in 1675ms (756 modules)
+ GET / 200 in 12603ms
+ ○ Compiling /api/auth/[...nextauth] ...
+ ✓ Compiled /api/auth/[...nextauth] in 4s (1876 modules)
+[next-auth][warn][NEXTAUTH_URL]
+https://next-auth.js.org/warnings#nextauth_url
+[next-auth][warn][NO_SECRET]
+https://next-auth.js.org/warnings#no_secret
+ GET /api/auth/session 200 in 5327ms
+ ✓ Compiled in 595ms (757 modules)
+ ✓ Compiled in 608ms (757 modules)
+ ✓ Compiled in 538ms (757 modules)
+ ✓ Compiled in 535ms (757 modules)

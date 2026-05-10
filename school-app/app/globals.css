@@ -1,9 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
 
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
+:root {
   --color-primary: #1D4ED8;
   --color-secondary: #2563EB;
   --color-background: #F5F7FB;
@@ -81,14 +83,14 @@ html {
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-slate-200;
   }
   html {
     background: linear-gradient(180deg, #F8FAFF 0%, #F5F7FB 100%);
     color: #0F172A;
   }
   body {
-    @apply bg-background text-slate-900 font-sans antialiased;
+    @apply bg-slate-50 text-slate-900 font-sans antialiased;
     min-height: 100vh;
   }
   h1 {

@@ -1,82 +1,94 @@
 "use client";
 
-import React from "react";
-import { motion } from "framer-motion";
-import { Star } from "lucide-react";
-
-const testimonials = [
-  {
-    content: "EduManage completely transformed how we run our daily operations. Attendance takes seconds, and parent communication has never been easier.",
-    author: "Sarah Jenkins",
-    role: "School Principal, Oakridge Academy",
-    avatar: "SJ"
-  },
-  {
-    content: "Finally, a school management system that doesn't feel like it was built in the 90s. The UI is gorgeous and incredibly intuitive for our staff.",
-    author: "David Chen",
-    role: "IT Director, Summit Prep",
-    avatar: "DC"
-  },
-  {
-    content: "As a teacher, I save at least 5 hours a week on administrative tasks. The automated grading and report card generation is a lifesaver.",
-    author: "Elena Rodriguez",
-    role: "Senior Educator, Global Heights",
-    avatar: "ER"
-  }
-];
+import React, { useRef } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { Star, Quote } from "lucide-react";
 
 export const TestimonialSection = () => {
+  const containerRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start end", "end start"]
+  });
+
+  const y = useTransform(scrollYProgress, [0, 1], [50, -50]);
+
+  const testimonials = [
+    {
+      name: "Dr. Robert Smith",
+      role: "Principal, Oakwood Academy",
+      content: "EduManage didn't just digitize our school; it transformed how we operate. The AI analytics alone have saved us hundreds of hours and identified critical trends we were missing.",
+      rating: 5,
+      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150&h=150"
+    },
+    {
+      name: "Sarah Jenkins",
+      role: "Parent & PTA President",
+      content: "As a parent, the native app is a game-changer. I get instant notifications if my child is late, can pay fees with Apple Pay, and direct message teachers without relying on paper notes.",
+      rating: 5,
+      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=150&h=150"
+    },
+    {
+      name: "Marcus Johnson",
+      role: "Head of IT, Springfield District",
+      content: "We migrated 15 campuses to EduManage over a single weekend. The multi-branch control and role-based permissions are robust enough for enterprise, yet simple enough for our staff to adopt immediately.",
+      rating: 5,
+      image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150&h=150"
+    }
+  ];
+
   return (
-    <section id="testimonials" className="py-24 bg-slate-50 border-y border-slate-200/60">
+    <section ref={containerRef} className="py-32 bg-white relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center max-w-2xl mx-auto mb-16">
+        <div className="text-center max-w-3xl mx-auto mb-20">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-4xl font-bold text-slate-900 mb-4 tracking-tight"
+            className="text-4xl md:text-5xl font-bold text-slate-900 mb-6 tracking-tight"
           >
-            Loved by educators worldwide
+            Loved by <span className="text-blue-600">educators</span> everywhere
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-lg text-slate-600"
+            className="text-xl text-slate-600"
           >
-            Don't just take our word for it. Hear from the administrators and teachers who use EduManage every day.
+            Don't just take our word for it. Hear from the people who use EduManage every day.
           </motion.p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {testimonials.map((t, index) => (
+          {testimonials.map((test, i) => (
             <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
+              key={i}
+              style={{ y: i % 2 !== 0 ? y : 0 }}
+              initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200/60 hover:shadow-xl transition-shadow duration-300 flex flex-col justify-between"
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6, delay: i * 0.1 }}
+              className="bg-slate-50 rounded-[2rem] p-8 relative group hover:bg-white hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border border-slate-100"
             >
-              <div>
-                <div className="flex gap-1 mb-6">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star key={star} className="w-5 h-5 fill-amber-400 text-amber-400" />
-                  ))}
-                </div>
-                <p className="text-slate-700 text-lg leading-relaxed mb-8">
-                  "{t.content}"
-                </p>
+              <Quote className="absolute top-6 right-6 w-10 h-10 text-slate-200 group-hover:text-blue-100 transition-colors" />
+
+              <div className="flex gap-1 mb-6">
+                 {[...Array(test.rating)].map((_, j) => (
+                    <Star key={j} className="w-5 h-5 fill-amber-400 text-amber-400" />
+                 ))}
               </div>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 border border-blue-200 flex items-center justify-center text-blue-700 font-bold">
-                  {t.avatar}
-                </div>
-                <div>
-                  <div className="font-semibold text-slate-900">{t.author}</div>
-                  <div className="text-sm text-slate-500">{t.role}</div>
-                </div>
+
+              <p className="text-slate-700 text-lg leading-relaxed mb-8 relative z-10">
+                "{test.content}"
+              </p>
+
+              <div className="flex items-center gap-4 mt-auto">
+                 <img src={test.image} alt={test.name} className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm" />
+                 <div>
+                    <div className="font-bold text-slate-900">{test.name}</div>
+                    <div className="text-sm text-slate-500">{test.role}</div>
+                 </div>
               </div>
             </motion.div>
           ))}

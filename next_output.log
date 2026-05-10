@@ -12,15 +12,201 @@ This information is used to shape Next.js' roadmap and prioritize features.
 You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
 https://nextjs.org/telemetry
 
- ✓ Ready in 2.3s
+ ✓ Ready in 2.2s
  ○ Compiling / ...
- ✓ Compiled / in 9.2s (1603 modules)
- GET / 200 in 10513ms
- ○ Compiling /api/auth/[...nextauth] ...
- ✓ Compiled /api/auth/[...nextauth] in 3s (1839 modules)
- GET / 200 in 624ms
-[next-auth][warn][NEXTAUTH_URL]
-https://next-auth.js.org/warnings#nextauth_url
-[next-auth][warn][NO_SECRET]
-https://next-auth.js.org/warnings#no_secret
- GET /api/auth/session 200 in 4296ms
+[Error: Can't resolve 'tailwindcss' in '/app/school-app/app'] {
+  details: "resolve 'tailwindcss' in '/app/school-app/app'\n" +
+    '  Parsed request is a module\n' +
+    '  using description file: /app/school-app/package.json (relative path: ./app)\n' +
+    '    resolve as module\n' +
+    "      /app/school-app/app/node_modules doesn't exist or is not a directory\n" +
+    "      /app/school-app/node_modules doesn't exist or is not a directory\n" +
+    '      looking for modules in /app/node_modules\n' +
+    '        single file module\n' +
+    '          using description file: /app/package.json (relative path: ./node_modules/tailwindcss)\n' +
+    '            no extension\n' +
+    '              /app/node_modules/tailwindcss is not a file\n' +
+    '            .css\n' +
+    "              /app/node_modules/tailwindcss.css doesn't exist\n" +
+    '        existing directory /app/node_modules/tailwindcss\n' +
+    '          using description file: /app/node_modules/tailwindcss/package.json (relative path: .)\n' +
+    '            using description file: /app/package.json (relative path: ./node_modules/tailwindcss)\n' +
+    '              no extension\n' +
+    '                /app/node_modules/tailwindcss is not a file\n' +
+    '              .css\n' +
+    "                /app/node_modules/tailwindcss.css doesn't exist\n" +
+    '              as directory\n' +
+    '                existing directory /app/node_modules/tailwindcss\n' +
+    '                  using description file: /app/node_modules/tailwindcss/package.json (relative path: .)\n' +
+    '                    using path: /app/node_modules/tailwindcss/index\n' +
+    '                      using description file: /app/node_modules/tailwindcss/package.json (relative path: ./index)\n' +
+    '                        no extension\n' +
+    "                          /app/node_modules/tailwindcss/index doesn't exist\n" +
+    '                        .css\n' +
+    "                          /app/node_modules/tailwindcss/index.css doesn't exist\n" +
+    "      /node_modules doesn't exist or is not a directory"
+}
+ ⨯ ./app/globals.css:1:1
+Syntax error: tailwindcss: /app/school-app/app/globals.css Can't resolve 'tailwindcss' in '/app/school-app/app'
+
+> 1 | @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    | ^
+  2 | @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+  3 |
+<w> [webpack.cache.PackFileCacheStrategy] Skipped not serializable cache item 'Compilation/modules|/app/node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[10].use[2]!/app/node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[10].use[3]!/app/school-app/app/globals.css': No serializer registered for PostCSSSyntaxError
+<w> while serializing webpack/lib/cache/PackFileCacheStrategy.PackContentItems -> webpack/lib/NormalModule -> webpack/lib/ModuleBuildError -> PostCSSSyntaxError
+[Error: Can't resolve 'tailwindcss' in '/app/school-app/app'] {
+  details: "resolve 'tailwindcss' in '/app/school-app/app'\n" +
+    '  Parsed request is a module\n' +
+    '  using description file: /app/school-app/package.json (relative path: ./app)\n' +
+    '    resolve as module\n' +
+    "      /app/school-app/app/node_modules doesn't exist or is not a directory\n" +
+    "      /app/school-app/node_modules doesn't exist or is not a directory\n" +
+    '      looking for modules in /app/node_modules\n' +
+    '        single file module\n' +
+    '          using description file: /app/package.json (relative path: ./node_modules/tailwindcss)\n' +
+    '            no extension\n' +
+    '              /app/node_modules/tailwindcss is not a file\n' +
+    '            .css\n' +
+    "              /app/node_modules/tailwindcss.css doesn't exist\n" +
+    '        existing directory /app/node_modules/tailwindcss\n' +
+    '          using description file: /app/node_modules/tailwindcss/package.json (relative path: .)\n' +
+    '            using description file: /app/package.json (relative path: ./node_modules/tailwindcss)\n' +
+    '              no extension\n' +
+    '                /app/node_modules/tailwindcss is not a file\n' +
+    '              .css\n' +
+    "                /app/node_modules/tailwindcss.css doesn't exist\n" +
+    '              as directory\n' +
+    '                existing directory /app/node_modules/tailwindcss\n' +
+    '                  using description file: /app/node_modules/tailwindcss/package.json (relative path: .)\n' +
+    '                    using path: /app/node_modules/tailwindcss/index\n' +
+    '                      using description file: /app/node_modules/tailwindcss/package.json (relative path: ./index)\n' +
+    '                        no extension\n' +
+    "                          /app/node_modules/tailwindcss/index doesn't exist\n" +
+    '                        .css\n' +
+    "                          /app/node_modules/tailwindcss/index.css doesn't exist\n" +
+    "      /node_modules doesn't exist or is not a directory"
+}
+ ⨯ ./app/globals.css:1:1
+Syntax error: tailwindcss: /app/school-app/app/globals.css Can't resolve 'tailwindcss' in '/app/school-app/app'
+
+> 1 | @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    | ^
+  2 | @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+  3 |
+ GET / 500 in 17406ms
+<w> [webpack.cache.PackFileCacheStrategy] Skipped not serializable cache item 'Compilation/modules|/app/node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[10].use[2]!/app/node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[10].use[3]!/app/school-app/app/globals.css': No serializer registered for PostCSSSyntaxError
+<w> while serializing webpack/lib/cache/PackFileCacheStrategy.PackContentItems -> webpack/lib/NormalModule -> webpack/lib/ModuleBuildError -> PostCSSSyntaxError
+ GET / 500 in 58ms
+ ✓ Compiled /_error in 1854ms (1111 modules)
+[Error: ENOENT: no such file or directory, stat '/app/school-app/.next/cache/webpack/client-development-fallback/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/app/school-app/.next/cache/webpack/client-development-fallback/0.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/app/school-app/.next/cache/webpack/client-development-fallback/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/app/school-app/.next/cache/webpack/client-development-fallback/0.pack.gz'
+}
+ ⨯ unhandledRejection:  [Error: ENOENT: no such file or directory, stat '/app/school-app/.next/cache/webpack/client-development-fallback/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/app/school-app/.next/cache/webpack/client-development-fallback/0.pack.gz'
+}
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/app/school-app/.next/cache/webpack/client-development-fallback/0.pack.gz'
+[Error: ENOENT: no such file or directory, stat '/app/school-app/.next/cache/webpack/client-development/1.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/app/school-app/.next/cache/webpack/client-development/1.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/app/school-app/.next/cache/webpack/client-development/1.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/app/school-app/.next/cache/webpack/client-development/1.pack.gz'
+}
+ ⨯ unhandledRejection:  [Error: ENOENT: no such file or directory, stat '/app/school-app/.next/cache/webpack/client-development/1.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/app/school-app/.next/cache/webpack/client-development/1.pack.gz'
+}
+[Error: ENOENT: no such file or directory, stat '/app/school-app/.next/cache/webpack/client-development/2.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/app/school-app/.next/cache/webpack/client-development/2.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/app/school-app/.next/cache/webpack/client-development/2.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/app/school-app/.next/cache/webpack/client-development/2.pack.gz'
+}
+ ⨯ unhandledRejection:  [Error: ENOENT: no such file or directory, stat '/app/school-app/.next/cache/webpack/client-development/2.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/app/school-app/.next/cache/webpack/client-development/2.pack.gz'
+}
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/app/school-app/.next/cache/webpack/client-development/1.pack.gz'
+[Error: ENOENT: no such file or directory, stat '/app/school-app/.next/cache/webpack/server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/app/school-app/.next/cache/webpack/server-development/0.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/app/school-app/.next/cache/webpack/server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/app/school-app/.next/cache/webpack/server-development/0.pack.gz'
+}
+ ⨯ unhandledRejection:  [Error: ENOENT: no such file or directory, stat '/app/school-app/.next/cache/webpack/server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/app/school-app/.next/cache/webpack/server-development/0.pack.gz'
+}
+[Error: ENOENT: no such file or directory, stat '/app/school-app/.next/cache/webpack/server-development/1.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/app/school-app/.next/cache/webpack/server-development/1.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/app/school-app/.next/cache/webpack/server-development/1.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/app/school-app/.next/cache/webpack/server-development/1.pack.gz'
+}
+ ⨯ unhandledRejection:  [Error: ENOENT: no such file or directory, stat '/app/school-app/.next/cache/webpack/server-development/1.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/app/school-app/.next/cache/webpack/server-development/1.pack.gz'
+}
+[Error: ENOENT: no such file or directory, stat '/app/school-app/.next/cache/webpack/server-development/2.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/app/school-app/.next/cache/webpack/server-development/2.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/app/school-app/.next/cache/webpack/server-development/2.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/app/school-app/.next/cache/webpack/server-development/2.pack.gz'
+}
+ ⨯ unhandledRejection:  [Error: ENOENT: no such file or directory, stat '/app/school-app/.next/cache/webpack/server-development/2.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/app/school-app/.next/cache/webpack/server-development/2.pack.gz'
+}
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/app/school-app/.next/cache/webpack/server-development/0.pack.gz'

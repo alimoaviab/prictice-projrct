@@ -36,7 +36,7 @@ export function ClassForm({
         if (!newSubject.trim() || !onAddSubject) return;
         setAddingSubject(true);
         try {
-            await onAddSubject(newSubject.trim());
+            await onAddSubject?.(newSubject.trim());
             // After successful add, check the checkbox automatically
             setForm(prev => ({
                 ...prev,

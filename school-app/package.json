@@ -33,7 +33,6 @@
     "vfile": "^6.0.3"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.2.4",
     "@types/node": "^22.14.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

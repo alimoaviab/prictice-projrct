@@ -12,6 +12,7 @@ export function ClassEditSidebar({
     onClose,
     onSave,
     isSaving,
+    onAddSubject,
 }: {
     classItem: ClassRow | null;
     isOpen: boolean;
@@ -216,7 +217,7 @@ export function ClassEditSidebar({
                                             if (!newSubject.trim() || !onAddSubject) return;
                                             try {
                                                 setAddingSubject(true);
-                                                await onAddSubject(newSubject.trim());
+                                                await onAddSubject?.(newSubject.trim());
                                                 setForm(f => ({ ...f, subjects: [...(f.subjects || classItem.subjects || []), newSubject.trim()] }));
                                                 setNewSubject("");
                                             } finally {
