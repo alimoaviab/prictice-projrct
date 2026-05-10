@@ -3,26 +3,31 @@
 import React from "react";
 import { motion } from "framer-motion";
 
+const stats = [
+  { value: "500+", label: "Schools Worldwide" },
+  { value: "2M+", label: "Active Students" },
+  { value: "99.9%", label: "System Uptime" },
+  { value: "24/7", label: "Priority Support" }
+];
+
 export const TrustSection = () => {
-  const stats = [
-    { value: "500+", label: "Schools Worldwide" },
-    { value: "2M+", label: "Students Managed" },
-    { value: "99.9%", label: "Uptime SLA" },
-    { value: "24/7", label: "Expert Support" },
-  ];
-
   return (
-    <section className="py-20 bg-white border-y border-slate-100">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-12">
-          <p className="text-sm font-semibold tracking-wider text-slate-500 uppercase mb-8">
-            Trusted by innovative educational institutions globally
-          </p>
+    <section className="py-20 bg-white border-y border-slate-200/60 relative overflow-hidden">
+      <div className="max-w-7xl mx-auto px-6 relative z-10">
+        <div className="text-center mb-16">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            className="text-2xl md:text-3xl font-extrabold text-slate-400 mb-8 tracking-tight"
+          >
+            TRUSTED BY FORWARD-THINKING INSTITUTIONS
+          </motion.h2>
 
-          {/* Fake Logos */}
-          <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
-             {["Global Academy", "Pioneer High", "Future Minds", "Summit Prep", "Nova School"].map((name, i) => (
-                <div key={i} className="text-xl md:text-2xl font-bold text-slate-400 flex items-center gap-2">
+          {/* School Logos Mock */}
+          <div className="flex flex-wrap justify-center items-center gap-12 md:gap-20 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+             {["Oakridge Academy", "Summit Prep", "Global Heights", "Pioneer Valley", "Crestwood High"].map((name, i) => (
+                <div key={i} className="text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-2">
                    <div className="w-8 h-8 rounded-full bg-slate-200" />
                    {name}
                 </div>
@@ -36,14 +41,14 @@ export const TrustSection = () => {
               key={index}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className="text-center"
             >
-              <div className="text-4xl md:text-5xl font-bold text-slate-900 mb-2 tracking-tight">
+              <div className="text-4xl md:text-6xl font-extrabold text-slate-900 mb-2 tracking-tight">
                 {stat.value}
               </div>
-              <div className="text-sm md:text-base text-slate-500 font-medium">
+              <div className="text-sm md:text-lg text-slate-500 font-semibold uppercase tracking-wider">
                 {stat.label}
               </div>
             </motion.div>

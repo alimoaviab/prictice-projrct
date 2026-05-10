@@ -72,17 +72,17 @@ export const FeaturesSection = () => {
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-4xl md:text-5xl font-bold text-slate-900 mb-6 tracking-tight"
+            viewport={{ once: true, margin: "-50px" }}
+            className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight"
           >
-            Everything you need to run a <span className="text-blue-600">modern school</span>
+            Everything you need to run a <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">modern school</span>
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            viewport={{ once: true, margin: "-50px" }}
             transition={{ delay: 0.1 }}
-            className="text-lg text-slate-600"
+            className="text-lg text-slate-600 font-medium"
           >
             Say goodbye to fragmented systems. EduManage brings all your core operations into one beautifully designed platform.
           </motion.p>
@@ -94,17 +94,17 @@ export const FeaturesSection = () => {
               key={index}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.05 }}
-              className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm hover:shadow-xl transition-all duration-300 group"
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.4, delay: index * 0.05 }}
+              className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm hover:shadow-2xl hover:-translate-y-2 group-hover:bg-gradient-to-br group-hover:from-white group-hover:to-slate-50 transition-all duration-300 group"
             >
               <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform duration-300`}>
                 <feature.icon className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-3">
+              <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-blue-600 transition-colors">
                 {feature.title}
               </h3>
-              <p className="text-slate-500 text-sm leading-relaxed">
+              <p className="text-slate-500 text-sm leading-relaxed font-medium">
                 {feature.description}
               </p>
             </motion.div>
