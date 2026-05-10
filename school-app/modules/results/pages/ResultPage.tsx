@@ -237,8 +237,8 @@ export function ResultPage() {
                         <ResultForm 
                             examOptions={examOptions} 
                             studentOptions={studentOptions} 
-                            onCreate={(data) => {
-                                addResult(data);
+                            onCreate={async (data) => {
+                                await addResult(data);
                                 setIsAdding(false);
                             }} 
                         />

@@ -233,12 +233,12 @@ export function ClassForm({
                                 <span className="material-symbols-outlined text-sm">add</span>
                                 Add Subject
                             </Button>
-                            <Button type="button" variant="outline" className="h-9 px-4 rounded-lg text-[11px] font-bold">Template</Button>
+                            <Button type="button" variant="ghost" className="h-9 px-4 border border-slate-200 rounded-lg text-[11px] font-bold">Template</Button>
                             <Button 
                                 type="button" 
-                                variant="outline" 
+                                variant="ghost" 
                                 onClick={applyPassPercentage}
-                                className="h-9 px-4 rounded-lg text-[11px] font-bold"
+                                className="h-9 px-4 border border-slate-200 rounded-lg text-[11px] font-bold"
                             >
                                 Apply Pass %
                             </Button>
@@ -303,9 +303,9 @@ export function ClassForm({
                             </Button>
                             <Button 
                                 type="button" 
-                                variant="outline" 
+                                variant="ghost" 
                                 onClick={resetGrades}
-                                className="h-9 px-4 rounded-lg text-[11px] font-bold gap-2"
+                                className="h-9 px-4 border border-slate-200 rounded-lg text-[11px] font-bold gap-2"
                             >
                                 <span className="material-symbols-outlined text-sm">refresh</span>
                                 Reset

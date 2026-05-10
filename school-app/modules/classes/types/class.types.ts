@@ -24,6 +24,7 @@ export interface ClassRow {
     teacher_names: string[];
     room_number?: string;
     description?: string;
+    grade_thresholds?: GradeThreshold[];
     status: "active" | "archived";
     student_count?: number;
     attendance_percentage?: number;

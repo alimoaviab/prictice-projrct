@@ -10,27 +10,30 @@ import { useExams } from "../hooks/useExams";
 
 export function ExamPage() {
     const { state, addExam } = useExams();
-    const { state: classState, run: runClasses } = useSafeAsync<Array<{ _id: string; name: string }>>();
+    const { state: classState, run: runClasses } = useSafeAsync<any[]>();
+    const { state: subjectState, run: runSubjects } = useSafeAsync<any[]>();
 
-    const loadClasses = useCallback(() => {
-        return runClasses(async () => {
-            const result = await serviceRequest<Array<{ _id: string; name: string }>>("/api/classes");
-            if (!result.ok) {
-                throw new Error(result.error.message || "Failed to load classes");
-            }
-
+    const loadData = useCallback(() => {
+        const p1 = runClasses(async () => {
+            const result = await serviceRequest<any[]>("/api/classes");
+            if (!result.ok) throw new Error(result.error.message || "Failed to load classes");
             return result.data;
         });
-    }, [runClasses]);
+        const p2 = runSubjects(async () => {
+            const result = await serviceRequest<any[]>("/api/subjects");
+            if (!result.ok) throw new Error(result.error.message || "Failed to load subjects");
+            return result.data;
+        });
+        return Promise.all([p1, p2]);
+    }, [runClasses, runSubjects]);
 
     useEffect(() => {
-        void loadClasses().catch(() => {
-            // Error state is already managed by useSafeAsync.
-        });
-    }, [loadClasses]);
+        void loadData().catch(() => {});
+    }, [loadData]);
 
-    const isDependencyLoading = classState.status === "idle" || classState.status === "loading";
-    const classOptions = (classState.data ?? []).map((item) => ({ id: item._id, label: item.name }));
+    const isDependencyLoading = 
+        classState.status === "idle" || classState.status === "loading" ||
+        subjectState.status === "idle" || subjectState.status === "loading";
 
     return (
         <div className="flex flex-col gap-8">
@@ -48,7 +51,11 @@ export function ExamPage() {
                         </div>
                     </div>
                 ) : (
-                    <ExamForm classOptions={classOptions} onCreate={addExam} />
+                    <ExamForm 
+                        classes={classState.data ?? []} 
+                        allSubjects={subjectState.data ?? []} 
+                        onCreate={addExam} 
+                    />
                 )}
             </Card>
 

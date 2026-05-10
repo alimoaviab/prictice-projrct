@@ -35,7 +35,7 @@ export function ClassListPage() {
     label: `${teacher.first_name} ${teacher.last_name}`,
   }));
 
-  const { data: subjectsData } = useSubjects();
+  const { data: subjectsData, createSubject } = useSubjects();
 
   const subjectOptions = (subjectsData || [])
     .filter(s => s.status === "active")

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import { ClassRow, ClassFormInput } from "../types/class.types";
+import { ClassRow, ClassFormInput, ClassSubject, GradeThreshold } from "../types/class.types";
 
 export function ClassEditSidebar({
     classItem,
@@ -11,6 +11,7 @@ export function ClassEditSidebar({
     subjectOptions,
     onClose,
     onSave,
+    onAddSubject,
     isSaving,
 }: {
     classItem: ClassRow | null;
@@ -37,8 +38,10 @@ export function ClassEditSidebar({
         passing_percentage: form.passing_percentage ?? classItem.passing_percentage ?? 33,
         academy_care_id: form.academy_care_id ?? classItem.academy_care_id ?? "",
         teacher_ids: form.teacher_ids ?? classItem.teacher_ids ?? [],
-        subjects: form.subjects ?? classItem.subjects ?? [],
-        grade_thresholds: form.grade_thresholds ?? classItem.grade_thresholds ?? [],
+        subjects: (form.subjects ?? (Array.isArray(classItem.subjects) && typeof classItem.subjects[0] === "string" 
+            ? (classItem.subjects as string[]).map(s => ({ name: s, total_marks: 100, passing_marks: 33 }))
+            : (classItem.subjects as ClassSubject[]) ?? [])) as ClassSubject[],
+        grade_thresholds: (form.grade_thresholds ?? classItem.grade_thresholds ?? []) as GradeThreshold[],
         room_number: form.room_number ?? classItem.room_number ?? "",
         description: form.description ?? classItem.description ?? "",
     };
@@ -225,7 +228,7 @@ export function ClassEditSidebar({
                                             try {
                                                 setAddingSubject(true);
                                                 await onAddSubject(newSubject.trim());
-                                                setForm(f => ({ ...f, subjects: [...(f.subjects || classItem.subjects || []), newSubject.trim()] }));
+                                                setForm(f => ({ ...f, subjects: [...(f.subjects || []), { name: newSubject.trim(), total_marks: 100, passing_marks: 33 }] }));
                                                 setNewSubject("");
                                             } finally {
                                                 setAddingSubject(false);
@@ -241,10 +244,14 @@ export function ClassEditSidebar({
                             <div className="pl-1">
                                 <select
                                     multiple
-                                    value={currentForm.subjects}
+                                    value={currentForm.subjects.map(s => s.name)}
                                     onChange={(e) => {
-                                        const values = Array.from(e.target.selectedOptions, option => option.value);
-                                        setForm({ ...form, subjects: values });
+                                        const selectedNames = Array.from(e.target.selectedOptions, option => option.value);
+                                        const updatedSubjects = selectedNames.map(name => {
+                                            const existing = currentForm.subjects.find(s => s.name === name);
+                                            return existing || { name, total_marks: 100, passing_marks: 33 };
+                                        });
+                                        setForm({ ...form, subjects: updatedSubjects });
                                     }}
                                     className={`w-full min-h-[120px] rounded-xl border ${errors.subjects ? 'border-red-300 bg-red-50/10' : 'border-slate-200'} bg-white p-2 text-[11px] font-bold text-slate-800 outline-none focus:border-purple-300 transition-all shadow-sm`}
                                 >
