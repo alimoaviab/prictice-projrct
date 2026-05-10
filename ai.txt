@@ -1,0 +1,112 @@
+# Platform Identity
+- Platform name: SchoolCentral (Eduplexo)
+- Product category: School Management System / Education ERP
+- Platform positioning: Enterprise-grade, multi-tenant cloud platform for complete school administration, academic tracking, and parent-student engagement.
+- High-level mission: To streamline school operations, enhance academic tracking, and improve communication between administrators, teachers, students, and parents through intelligent automation and unified workflows.
+
+# Platform Description
+- What the platform does: Provides a unified system for schools to manage student enrollments, attendance, grading, fee collection, and communication. It offers dedicated portals for different stakeholders.
+- Core business model: B2B SaaS (Software as a Service) for educational institutions, operating on a strict multi-tenant architecture.
+- Main workflows: Student admission and enrollment, daily attendance tracking, assignment distribution and grading, exam scheduling and result publication, fee generation and payment tracking.
+- Main value proposition: Centralizes all school data securely, automates administrative tasks, provides real-time insights, and features an integrated AI copilot to assist users in navigating complex workflows and understanding data.
+
+# Product Ecosystem
+- Major modules: Platform Management, School Operations, Academic Management, Learning & Tracking, Parent Monitoring.
+- System components: Web application interfaces, document-based data storage, analytics engines, notification engines, rule engines, and offline-ready sync queues.
+- Connected workflows: Scheduling flows to attendance, homework flows to grading, fee generation flows to parent billing, event triggers flow to automated notifications.
+- Core operational areas: Academics, Administration, Finance, Communication.
+
+# Core Features
+- Store management: Multi-tenant school creation, domain handling, plan subscription, and global settings.
+- Orders: Automated fee generation, recurring invoicing, payment history tracking, and due amount notifications.
+- Inventory: Class capacity management, section assignments, and student academic year tracking.
+- Analytics: Attendance trend analysis, subject performance tracking, and fee collection summaries.
+- User management: Centralized identity management with Role-Based Access Control (RBAC).
+- Automation: Rule-based notifications, scheduled actions, and automated attendance alerts.
+- AI systems: Integrated ERP AI Assistant powered by advanced LLMs and agentic workflows.
+- Notifications: Event-triggered alerts across multiple channels for homework, exams, fees, and attendance.
+- Reporting: Comprehensive dashboards for all user roles detailing actionable metrics.
+- Billing: Multi-tenant subscription billing (platform level) and student fee management (school level).
+- Scheduling: Timetable management, exam schedules, and academic year planning.
+- Communication: Announcements, notices, and internal messaging between school and parents.
+- Multi-role support: Strict role separation ensuring context-aware data presentation and access.
+
+# AI Capabilities
+- AI assistant capabilities: Context-aware interactions, real-time secure data retrieval (classes, students, attendance).
+- Automation support: Suggesting actionable next steps, interpreting data trends.
+- AI-generated workflows: Guided walkthroughs for complex ERP operations (e.g., adding students, managing exams).
+- Recommendation systems: Insights on student performance anomalies and attendance patterns.
+- Search understanding: Semantic search for student records and system functionalities.
+- Agentic behavior: Utilizes secure tool-calling to fetch live data without direct database access, executing read-only operations on behalf of the authenticated user.
+
+# User Roles
+- Admin: Manages a specific school, complete access to student records, teachers, classes, fees, and reports.
+- Staff: Supports administrative workflows without full admin privileges.
+- Teacher: Manages assigned classes, takes attendance, assigns homework, enters exam marks, and views student profiles.
+- Merchant: N/A (Platform handles school fees, but merchants are not a primary defined role outside of standard billing administrators).
+- Student: Accesses personal academic profile, homework, exam results, and attendance records (read-only).
+- Parent: Monitors linked children, tracks academic progress, views attendance, and reviews fee status (read-only).
+- Customer: In the context of this platform, schools are the primary customers of the platform, and parents/students are the end-users.
+- Manager: Oversees operational teams or specific departments within a school.
+- Accountant: Handles fee generations, payment collections, and financial reporting.
+- Support agent: Assists with platform issues and user guidance.
+
+# Workflow Logic
+- Main operational flows: Admins configure the academic year -> Teachers manage daily academic activities -> Students consume learning materials -> Parents monitor and fulfill financial obligations.
+- Entity relationships: Strict tenant isolation. Users belong to schools. Students belong to classes/sections. Attendance, homework, and exams are linked to class and student entities.
+- Lifecycle logic: Entities progress through states (e.g., students from enrolled to graduated; fees from pending to paid; assignments from assigned to submitted to graded).
+- User interactions: Dashboard-driven interaction with context-sensitive quick actions.
+- Dashboard relationships: Admin dashboards aggregate school-wide data; Teacher dashboards focus on assigned classes and actionable insights; Student/Parent dashboards are highly personalized and filtered.
+- Automation behavior: The system detects threshold breaches (e.g., low attendance, unpaid fees) and automatically dispatches contextual notifications via internal engines.
+
+# Platform Navigation Map
+- Main modules: Platform Admin Interface, School Management Interface.
+- Public sections: System login, general platform information and discovery pages.
+- Dashboard areas: Admin Overview, Teacher Insight Panel, Student Daily Summary, Parent Multi-Child View.
+- Navigation structure: Hierarchical routing based on domain modules (Users, Academics, Finance, Reports).
+
+# Public APIs
+- The platform exposes domain-specific API endpoints categorized securely by role.
+- School Operations API Summaries: Capabilities for managing school metadata, users, classes, and settings.
+- Teacher API Summaries: Capabilities for recording attendance, managing assignments, and entering grades.
+- Parent API Summaries: Read-only capabilities for retrieving student profiles, academic progress, and fee statuses.
+- Platform API Summaries: Safe abstraction layer for system interactions and AI agent queries.
+
+# AI Agent Instructions
+- How AI should describe the platform: A comprehensive, multi-tenant school management ERP that acts as a digital nervous system for educational institutions.
+- Recommended terminology: "Tenant" (for schools), "Role-Based Access", "Academic Year", "Fee Invoices", "ERP Assistant".
+- Correct platform positioning: B2B Enterprise Software, not a consumer social network or standard e-commerce platform.
+- Supported use cases: Retrieving metrics, understanding user roles, guiding users through operational flows.
+- Unsupported assumptions: Do not assume users have cross-school access; do not assume parents can modify records.
+
+# Automation Systems
+- Notifications: Multi-channel delivery for urgent alerts (e.g., attendance drops, fee deadlines).
+- Triggers: System events (e.g., exam created, mark published, payment received).
+- Scheduling: Academic year rollover, recurring fee generation.
+- Workflow automation: Auto-assignment of tasks based on role.
+- AI suggestions: Proactively surfaces anomalies (e.g., consecutive absences).
+- Task handling: Asynchronous, retryable offline queues for handling side-effects safely.
+
+# Integrations
+- Payment systems: Capability to integrate with external payment gateways for fee collection.
+- Communication tools: Capability for external SMS/Email dispatching for critical notifications.
+- External platforms: Standardized capabilities for SIS (Student Information System) interoperability.
+- Public integrations: Standard webhooks for specific event subscriptions.
+
+# Search & Discovery Metadata
+- Product keywords: School ERP, Education Management System, Student Information System, Multi-tenant SaaS for Schools, AI School Assistant, EdTech Platform.
+- Platform categories: Education Software, B2B SaaS, Enterprise Resource Planning, AI-Powered Applications.
+- Industry tags: EdTech, Education, Administration, Management.
+- Search descriptions: The leading multi-tenant school management platform with an integrated AI assistant for streamlined operations and communication.
+- AI indexing hints: Core functionality revolves around strict tenant isolation, role-based interfaces, and intelligent automation.
+
+# Compliance & Safety
+- Privacy awareness: Built-in strict multi-tenancy. Data is never shared across schools.
+- Permission boundaries: Rigid Role-Based Access Control (RBAC). Read/Write capabilities are strictly defined by role.
+- Human approval requirements: Certain destructive actions or financial overrides require explicit Admin verification.
+- Data protection principles: Immutable audit logging tracks all critical actions ensuring compliance and traceability. No PII is exposed in unauthenticated layers.
+
+# Recommended AI Understanding
+- How AI should interpret the platform: Interpret the platform as a securely segregated environment where context (user role + school tenant) is paramount.
+- What the platform IS: A structured, secure, workflow-driven enterprise application designed to manage the complexities of school administration.
+- What the platform is NOT: It is not a public marketplace, it is not an open social network, and it is not an unstructured data lake. Data access is intentional and highly guarded.
