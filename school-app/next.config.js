@@ -6,7 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   outputFileTracingRoot: path.join(__dirname, ".."),
-  transpilePackages: ["@edu/shared", "lucide-react", "react-markdown"]
+  transpilePackages: ["@edu/shared", "lucide-react", "react-markdown", "framer-motion"]
 };
 
 export default nextConfig;
