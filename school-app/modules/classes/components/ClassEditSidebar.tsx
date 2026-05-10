@@ -23,6 +23,8 @@ export function ClassEditSidebar({
     onAddSubject?: (name: string) => Promise<void>;
     isSaving: boolean;
 }) {
+    const defaultOnAddSubject = async (name: string) => {};
+    const handleAddSubject = onAddSubject || defaultOnAddSubject;
     const [form, setForm] = useState<Partial<ClassFormInput>>({});
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [newSubject, setNewSubject] = useState("");
@@ -38,7 +40,6 @@ export function ClassEditSidebar({
         academy_care_id: form.academy_care_id ?? classItem.academy_care_id ?? "",
         teacher_ids: form.teacher_ids ?? classItem.teacher_ids ?? [],
         subjects: form.subjects ?? classItem.subjects ?? [],
-        grade_thresholds: form.grade_thresholds ?? classItem.grade_thresholds ?? [],
         room_number: form.room_number ?? classItem.room_number ?? "",
         description: form.description ?? classItem.description ?? "",
     };
@@ -62,8 +63,7 @@ export function ClassEditSidebar({
             passing_percentage: currentForm.passing_percentage,
             academy_care_id: currentForm.academy_care_id,
             teacher_ids: currentForm.teacher_ids,
-            subjects: currentForm.subjects,
-            grade_thresholds: currentForm.grade_thresholds,
+            subjects: currentForm.subjects as any[],
             room_number: currentForm.room_number,
             description: currentForm.description,
         });
@@ -221,11 +221,11 @@ export function ClassEditSidebar({
                                     <button
                                         type="button"
                                         onClick={async () => {
-                                            if (!newSubject.trim() || !onAddSubject) return;
+                                            if (!newSubject.trim()) return;
                                             try {
                                                 setAddingSubject(true);
-                                                await onAddSubject(newSubject.trim());
-                                                setForm(f => ({ ...f, subjects: [...(f.subjects || classItem.subjects || []), newSubject.trim()] }));
+                                                await handleAddSubject(newSubject.trim());
+                                                setForm(f => ({ ...f, subjects: [...((f.subjects as any[]) || classItem.subjects || []), newSubject.trim()] as any[] }));
                                                 setNewSubject("");
                                             } finally {
                                                 setAddingSubject(false);

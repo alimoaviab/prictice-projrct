@@ -3,102 +3,152 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { SchoolShell } from "../../../layouts/SchoolShell";
-import { LiveExamList } from "../../../components/live-exams/LiveExamList";
+import { LiveExamWorkspace } from "../../../components/live-exams/LiveExamWorkspace";
 import { CreateLiveExamModal } from "../../../components/live-exams/CreateLiveExamModal";
 
 export default function LiveExamPage() {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [listKey, setListKey] = useState(0);
-    const [classesData, setClassesData] = useState([]);
-    const [subjectsData, setSubjectsData] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [listKey, setListKey] = useState(0);
+  const [classesData, setClassesData] = useState([]);
+  const [subjectsData, setSubjectsData] = useState([]);
 
-    useEffect(() => {
-        const fetchFormData = async () => {
-            try {
-                const [classesRes, subjectsRes] = await Promise.all([
-                    fetch("/api/school/my-classes"),
-                    fetch("/api/school/subjects")
-                ]);
+  useEffect(() => {
+    const fetchFormData = async () => {
+      try {
+        const [classesRes, subjectsRes] = await Promise.all([
+          fetch("/api/school/my-classes"),
+          fetch("/api/school/subjects"),
+        ]);
 
-                if (classesRes.ok) {
-                    const data = await classesRes.json();
-                    setClassesData(data.classes || []);
-                }
-                if (subjectsRes.ok) {
-                    const data = await subjectsRes.json();
-                    setSubjectsData(data.data || []);
-                }
-            } catch (e) {
-                console.error("Failed to load form data", e);
-            }
-        };
-        fetchFormData();
-    }, []);
+        if (classesRes.ok) {
+          const data = await classesRes.json();
+          setClassesData(data.classes || []);
+        }
+        if (subjectsRes.ok) {
+          const data = await subjectsRes.json();
+          setSubjectsData(data.data || []);
+        }
+      } catch (e) {
+        console.error("Failed to load form data", e);
+      }
+    };
+    fetchFormData();
+  }, []);
 
-    return (
-        <SchoolShell title="Live Exams" eyebrow="Admin">
-            <div className="space-y-8">
-                <section className="rounded-[2rem] bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-900 p-8 text-white shadow-2xl shadow-slate-950/20">
-                    <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-                        <div>
-                            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-sky-200/80">School-wide exam management</p>
-                            <h1 className="mt-3 text-3xl font-black tracking-tight md:text-5xl">Admin Live Exam Console</h1>
-                            <p className="mt-3 max-w-2xl text-sm text-slate-200 md:text-base">
-                                Monitor all ongoing examinations across the school, manage schedules, and review student performance in real-time.
-                            </p>
-                        </div>
-                        <button
-                            onClick={() => setIsModalOpen(true)}
-                            className="rounded-2xl bg-white px-6 py-4 text-sm font-bold text-slate-950 shadow-lg shadow-white/10 transition hover:bg-slate-100"
-                        >
-                            Schedule New Exam
-                        </button>
-                    </div>
-                </section>
-
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    <div className="rounded-[2rem] border border-slate-200/70 bg-white p-6 shadow-sm">
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Active Exams</h3>
-                        <p className="mt-3 text-3xl font-black text-sky-700">-</p>
-                        <p className="mt-4 text-sm text-slate-500">Exams currently in progress.</p>
-                    </div>
-                    <div className="rounded-[2rem] border border-slate-200/70 bg-white p-6 shadow-sm">
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Scheduled Today</h3>
-                        <p className="mt-3 text-3xl font-black text-emerald-700">-</p>
-                        <p className="mt-4 text-sm text-slate-500">Exams set for today's sessions.</p>
-                    </div>
-                    <div className="rounded-[2rem] border border-slate-200/70 bg-white p-6 shadow-sm">
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Total Participants</h3>
-                        <p className="mt-3 text-3xl font-black text-violet-700">-</p>
-                        <p className="mt-4 text-sm text-slate-500">Students registered for exams.</p>
-                    </div>
-                </div>
-
-                <div className="rounded-[2rem] border border-slate-200/70 bg-white p-6 shadow-sm">
-                    <div className="mb-6 flex items-center justify-between gap-3">
-                        <div>
-                            <h2 className="text-xl font-bold text-slate-900">All live exams</h2>
-                            <p className="mt-1 text-sm text-slate-500">Manage all examination sessions from one place.</p>
-                        </div>
-                        <button
-                            onClick={() => setListKey((prev) => prev + 1)}
-                            className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-                        >
-                            Refresh
-                        </button>
-                    </div>
-
-                    <LiveExamList key={listKey} role="ADMIN" />
-                </div>
+  return (
+    <SchoolShell title="Live Exams" eyebrow="Admin">
+      <div className="space-y-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-slate-200 pb-6">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-black text-slate-900">
+                Live Exam Operations
+              </h1>
+              <span className="flex h-2.5 w-2.5 items-center justify-center rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.15)] animate-pulse"></span>
             </div>
+            <p className="mt-1 text-sm text-slate-500">
+              Real-time monitoring and examination management
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-600">
+              <span className="material-symbols-outlined text-[18px]">
+                calendar_today
+              </span>
+              {new Date().toLocaleDateString("en-US", {
+                weekday: "short",
+                month: "short",
+                day: "numeric",
+              })}
+            </div>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 focus:ring-2 focus:ring-slate-900/20"
+            >
+              <span className="material-symbols-outlined text-[18px]">add</span>
+              Schedule Exam
+            </button>
+          </div>
+        </div>
 
-            <CreateLiveExamModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onSuccess={() => setListKey((prev) => prev + 1)}
-                classes={classesData}
-                subjects={subjectsData}
-            />
-        </SchoolShell>
-    );
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+          <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Live Now
+            </p>
+            <div className="mt-1 flex items-baseline gap-2">
+              <p className="text-2xl font-black text-emerald-600">-</p>
+              <span className="text-xs font-semibold text-emerald-600/70 flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                Active
+              </span>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Scheduled Today
+            </p>
+            <div className="mt-1 flex items-baseline gap-2">
+              <p className="text-2xl font-black text-slate-700">-</p>
+              <span className="text-xs font-semibold text-slate-400">
+                Sessions
+              </span>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Total Participants
+            </p>
+            <div className="mt-1 flex items-baseline gap-2">
+              <p className="text-2xl font-black text-slate-700">-</p>
+              <span className="text-xs font-semibold text-slate-400">
+                Students
+              </span>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Completed
+            </p>
+            <div className="mt-1 flex items-baseline gap-2">
+              <p className="text-2xl font-black text-slate-700">-</p>
+              <span className="text-xs font-semibold text-slate-400">
+                Today
+              </span>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Avg. Attendance
+            </p>
+            <div className="mt-1 flex items-baseline gap-2">
+              <p className="text-2xl font-black text-slate-700">-</p>
+              <span className="text-xs font-semibold text-slate-400">%</span>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-red-100 bg-red-50 p-4 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-red-500">
+              Flagged Issues
+            </p>
+            <div className="mt-1 flex items-baseline gap-2">
+              <p className="text-2xl font-black text-red-700">-</p>
+              <span className="text-xs font-semibold text-red-500">Alerts</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-[2rem] border border-slate-200/70 bg-white p-6 shadow-sm">
+          <LiveExamWorkspace key={listKey} role="ADMIN" />
+        </div>
+      </div>
+
+      <CreateLiveExamModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={() => setListKey((prev) => prev + 1)}
+        classes={classesData}
+        subjects={subjectsData}
+      />
+    </SchoolShell>
+  );
 }

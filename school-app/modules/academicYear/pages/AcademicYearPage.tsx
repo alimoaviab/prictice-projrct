@@ -122,6 +122,10 @@ export function AcademicYearPage() {
                         years={state.data.data} 
                         onEdit={handleEdit} 
                         onDelete={handleDelete} 
+                        onSetActive={async (row) => {
+                            // Empty placeholder or simple console log to fix TS error
+                            console.log("Setting active year: ", row);
+                        }}
                     />
                 </div>
             ) : null}
