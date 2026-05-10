@@ -123,8 +123,8 @@ export function TimetablePage() {
 
       {isAdding && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl border border-white/20 animate-in zoom-in-95 duration-300">
-            <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border border-white/20 animate-in zoom-in-95 duration-300">
+            <div className="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 shrink-0">
               <div className="flex items-center gap-4">
                 <div className="h-12 w-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/20">
                    <span className="material-symbols-outlined text-[24px]">
@@ -142,12 +142,12 @@ export function TimetablePage() {
               </div>
               <button 
                 onClick={() => setIsAdding(false)} 
-                className="h-10 w-10 flex items-center justify-center rounded-xl bg-white text-slate-400 hover:text-slate-600 border border-slate-200 transition-all active:scale-95 shadow-sm"
+                className="h-10 w-10 flex items-center justify-center rounded-xl bg-white text-slate-400 hover:text-slate-600 border border-slate-200 transition-all active:scale-95 shadow-sm shrink-0"
               >
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
-            <div className="p-8">
+            <div className="p-6 md:p-8 overflow-y-auto">
               <TimetableForm
                 onCreate={handleSave}
                 classOptions={classOptions}
