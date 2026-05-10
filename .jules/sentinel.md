@@ -1,0 +1,4 @@
+## 2025-05-10 - NoSQL Object Injection and Timing Attack Mitigation in Login
+**Vulnerability:** The login API route was vulnerable to NoSQL object injection via unvalidated input types and susceptible to user enumeration via timing attacks.
+**Learning:** In Next.js API routes handling JSON payloads, inputs might not always be strings. By failing to validate the type, MongoDB/Mongoose can misinterpret object queries (e.g. `{"$ne": null}`). Additionally, exiting early when a user isn't found creates a discernible time difference compared to a successful lookup, enabling attackers to verify email existence.
+**Prevention:** Always enforce strict `typeof value === 'string'` checks on user input before database interactions. Implement dummy hash verifications (`verifyPassword(password, dummyHash)`) when a user isn't found to ensure consistent execution times and prevent timing side-channels.
