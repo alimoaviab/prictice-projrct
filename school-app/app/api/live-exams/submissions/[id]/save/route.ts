@@ -4,9 +4,9 @@ import { fail, ok } from "@edu/shared/utils/result";
 import { sessionRequest } from "../../../../_utils";
 import { LiveExamService } from "@edu/shared/services/exams/live-exam.service";
 
-export async function POST(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = await props.params;
+    const { id } = await params;
     const ctx = authenticateRequest(sessionRequest(request), "school");
     const { answers, remainingTime } = await request.json();
 
