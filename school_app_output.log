@@ -1,0 +1,56 @@
+
+> school-app@0.1.0 dev
+> next dev --hostname 0.0.0.0 --port ${PORT:-3000}
+
+   ▲ Next.js 15.5.15
+   - Local:        http://localhost:3000
+   - Network:      http://0.0.0.0:3000
+
+ ✓ Starting...
+ ✓ Ready in 2.2s
+ ○ Compiling /auth/login ...
+ ✓ Compiled /auth/login in 2.4s (1477 modules)
+ GET /auth/login 200 in 3634ms
+ ○ Compiling /api/auth/[...nextauth] ...
+ ✓ Compiled /api/auth/[...nextauth] in 1796ms (1710 modules)
+[next-auth][warn][NEXTAUTH_URL]
+https://next-auth.js.org/warnings#nextauth_url
+[next-auth][warn][NO_SECRET]
+https://next-auth.js.org/warnings#no_secret
+ GET /api/auth/session 200 in 4161ms
+ ○ Compiling /auth/signup ...
+ ✓ Compiled /auth/signup in 846ms (1717 modules)
+ GET /auth/signup 200 in 1447ms
+ ○ Compiling /admin/dashboard ...
+ ✓ Compiled /admin/dashboard in 1919ms (2290 modules)
+[next-auth][warn][NEXTAUTH_URL]
+https://next-auth.js.org/warnings#nextauth_url
+[next-auth][warn][NO_SECRET]
+https://next-auth.js.org/warnings#no_secret
+ GET /api/auth/session 200 in 2113ms
+ GET /admin/dashboard 200 in 2348ms
+ ○ Compiling /api/analytics/dashboard ...
+ ✓ Compiled /api/analytics/dashboard in 1910ms (2411 modules)
+[DashboardAPI] Error: Error: MONGODB_URI environment variable is required. Set it in .env.local
+    at connectDb (../shared/db/connect.ts:10:11)
+    at GET (app/api/analytics/dashboard/route.ts:20:20)
+   8 | export async function connectDb(uri = process.env.MONGODB_URI): Promise<typeof mongoose> {
+   9 |   if (!uri) {
+> 10 |     throw new Error("MONGODB_URI environment variable is required. Set it in .env.local");
+     |           ^
+  11 |   }
+  12 |
+  13 |   if (!global.__edu_mongoose_connection) {
+ GET /api/analytics/dashboard 500 in 2662ms
+ GET /auth/login 200 in 2816ms
+[DashboardAPI] Error: Error: MONGODB_URI environment variable is required. Set it in .env.local
+    at connectDb (../shared/db/connect.ts:10:11)
+    at GET (app/api/analytics/dashboard/route.ts:20:20)
+   8 | export async function connectDb(uri = process.env.MONGODB_URI): Promise<typeof mongoose> {
+   9 |   if (!uri) {
+> 10 |     throw new Error("MONGODB_URI environment variable is required. Set it in .env.local");
+     |           ^
+  11 |   }
+  12 |
+  13 |   if (!global.__edu_mongoose_connection) {
+ GET /api/analytics/dashboard 500 in 272ms
