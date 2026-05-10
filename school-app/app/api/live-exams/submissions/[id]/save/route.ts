@@ -6,6 +6,7 @@ import { LiveExamService } from "@edu/shared/services/exams/live-exam.service";
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const ctx = authenticateRequest(sessionRequest(request), "school");
     const { id } = await params;
     const { answers, remainingTime } = await request.json();

@@ -33,17 +33,17 @@ export const TestimonialSection = () => {
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-4xl font-bold text-slate-900 mb-4 tracking-tight"
+            viewport={{ once: true, margin: "-50px" }}
+            className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight"
           >
             Loved by educators worldwide
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            viewport={{ once: true, margin: "-50px" }}
             transition={{ delay: 0.1 }}
-            className="text-lg text-slate-600"
+            className="text-lg text-slate-600 font-medium"
           >
             Don't just take our word for it. Hear from the administrators and teachers who use EduManage every day.
           </motion.p>
@@ -55,9 +55,9 @@ export const TestimonialSection = () => {
               key={index}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200/60 hover:shadow-xl transition-shadow duration-300 flex flex-col justify-between"
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.4, delay: index * 0.1 }}
+              className="relative z-10 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-200 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 flex flex-col justify-between"
             >
               <div>
                 <div className="flex gap-1 mb-6">
@@ -65,17 +65,17 @@ export const TestimonialSection = () => {
                     <Star key={star} className="w-5 h-5 fill-amber-400 text-amber-400" />
                   ))}
                 </div>
-                <p className="text-slate-700 text-lg leading-relaxed mb-8">
+                <p className="text-slate-700 text-lg leading-relaxed mb-8 font-medium">
                   "{t.content}"
                 </p>
               </div>
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 border border-blue-200 flex items-center justify-center text-blue-700 font-bold">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 border border-blue-200 flex items-center justify-center text-blue-700 font-bold shadow-sm">
                   {t.avatar}
                 </div>
                 <div>
-                  <div className="font-semibold text-slate-900">{t.author}</div>
-                  <div className="text-sm text-slate-500">{t.role}</div>
+                  <div className="font-bold text-slate-900">{t.author}</div>
+                  <div className="text-sm text-slate-500 font-medium">{t.role}</div>
                 </div>
               </div>
             </motion.div>

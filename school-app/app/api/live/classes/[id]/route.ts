@@ -11,6 +11,7 @@ const sessionRequest = (req: Request): SessionRequest => ({
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const ctx = authenticateRequest(sessionRequest(req), "school");
     if (ctx.role !== "admin" && ctx.role !== "teacher") {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 403 });
@@ -27,6 +28,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const ctx = authenticateRequest(sessionRequest(req), "school");
     if (ctx.role !== "admin" && ctx.role !== "teacher") {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 403 });

@@ -123,7 +123,6 @@ export function ExamForm({
                         disabled={!form.class_id}
                         error={errors.subject}
                         required
-                        placeholder={!form.class_id ? "Select class first" : "Choose subject"}
                     />
                 </div>
 

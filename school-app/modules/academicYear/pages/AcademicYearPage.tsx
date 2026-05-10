@@ -23,6 +23,13 @@ export function AcademicYearPage() {
         }
     };
 
+    const handleSetActive = async (row: AcademicYearRow) => {
+        if (row.is_active) return;
+        if (confirm(`Set ${row.year} as the active academic year?`)) {
+            await updateAcademicYear(row._id, { is_active: true } as any);
+        }
+    };
+
     return (
         <div className="flex flex-col gap-4">
             <PageHeader
@@ -122,10 +129,9 @@ export function AcademicYearPage() {
                         years={state.data.data} 
                         onEdit={handleEdit} 
                         onDelete={handleDelete} 
-                        onSetActive={async (row) => {
-                            // Empty placeholder or simple console log to fix TS error
-                            console.log("Setting active year: ", row);
-                        }}
+
+                        onSetActive={handleSetActive}
+
                     />
                 </div>
             ) : null}

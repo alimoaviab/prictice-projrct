@@ -20,9 +20,10 @@ export function ClassTable({ rows }: { rows: ClassRow[] }) {
             label: "Subjects",
             render: (row: ClassRow) => (
                 <div className="flex flex-wrap gap-1">
-                    {row.subjects.map(s => (
-                        <Badge key={s} variant="gray" className="text-[10px]">{s}</Badge>
-                    ))}
+                    {row.subjects.map(s => {
+                        const name = typeof s === "string" ? s : s.name;
+                        return <Badge key={name} variant="gray" className="text-[10px]">{name}</Badge>;
+                    })}
                 </div>
             )
         },

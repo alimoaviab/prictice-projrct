@@ -478,17 +478,11 @@ export function SchoolShell({
         </header>
 
         <div key={pathname} className="mx-auto w-full max-w-[1600px] animate-fade-in-up px-4 py-4 md:px-6">
-          <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="mb-0.5 text-[10px] font-black uppercase tracking-[0.15em] text-blue-600">{eyebrow}</p>
-              <h1 className="text-xl font-bold tracking-tight text-slate-900 leading-none">{title}</h1>
+          {actions && (
+            <div className="mb-4 flex items-center justify-end gap-2">
+              {actions}
             </div>
-            {actions && (
-              <div className="flex items-center gap-2">
-                {actions}
-              </div>
-            )}
-          </div>
+          )}
           {children}
         </div>
       </main>
