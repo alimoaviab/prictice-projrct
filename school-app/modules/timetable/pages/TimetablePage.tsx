@@ -2,7 +2,7 @@
 
 import { useTimetable } from "../hooks/useTimetable";
 import { TimetableGrid } from "../components/TimetableGrid";
-import { TimetableRecord, TimetableFormInput } from "../types/timetable.types";
+import { TimetableRecord, TimetableFormInput, getDayLabel } from "../types/timetable.types";
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { DataState, TableSkeleton, Badge } from "../../../components/ui";
@@ -12,12 +12,16 @@ import { useSubjects } from "../../subjects/hooks/useSubjects";
 import { TimetableForm } from "../components/TimetableForm";
 import { useSearchParams, useRouter } from "next/navigation";
 
+import { TimetableToolbar } from "../components/TimetableToolbar";
+import { findTimetableConflicts } from "../utils/conflicts";
+
 export function TimetablePage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const urlClassId = searchParams.get("class_id") || "";
   const [classId, setClassId] = useState<string>(urlClassId);
   const [isAdding, setIsAdding] = useState(false);
+  const [isCompact, setIsCompact] = useState(false);
   const [editingRecord, setEditingRecord] = useState<TimetableRecord | null>(null);
   const [selectedClassId, setSelectedClassId] = useState<string>(urlClassId);
 
@@ -48,6 +52,17 @@ export function TimetablePage() {
   const selectedClass = classesState.data?.find(c => c._id === classId);
   const selectedClassForForm = classesState.data?.find(c => c._id === selectedClassId);
 
+  const conflictsCount = useMemo(() => {
+    if (!state.data) return 0;
+    let count = 0;
+    state.data.forEach(record => {
+      if (findTimetableConflicts(state.data!, record).length > 0) {
+        count++;
+      }
+    });
+    return count;
+  }, [state.data]);
+
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this timetable entry?")) {
       await deleteTimetable(id);
@@ -59,12 +74,14 @@ export function TimetablePage() {
     setIsAdding(true);
   };
 
-  const handleWatchClass = (classItemId: string) => {
-    setClassId(classItemId);
-    setSelectedClassId(classItemId);
-    setEditingRecord(null);
-    setIsAdding(true);
-    router.push(`/admin/timetable?class_id=${classItemId}`);
+  const handleClassChange = (newId: string) => {
+    setClassId(newId);
+    setSelectedClassId(newId);
+    if (newId) {
+      router.push(`/admin/timetable?class_id=${newId}`);
+    } else {
+      router.push("/admin/timetable");
+    }
   };
 
   const handleSave = async (data: TimetableFormInput) => {
@@ -77,90 +94,77 @@ export function TimetablePage() {
     setEditingRecord(null);
   };
 
-  const handleBack = () => {
-    router.push("/admin/classes");
-  };
-
   return (
-    <div className="space-y-6">
-      {/* Premium Toolbar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/60 shadow-sm sticky top-0 z-30 backdrop-blur-md bg-white/90">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-             <span className="material-symbols-outlined text-[24px]">calendar_view_week</span>
-          </div>
-          <div className="min-w-[200px]">
-             <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Active Schedule</p>
-             <select
-                value={classId}
-                onChange={(e) => {
-                  setClassId(e.target.value);
-                  if (e.target.value) {
-                    router.push(`/admin/timetable?class_id=${e.target.value}`);
-                  } else {
-                    router.push("/admin/timetable");
-                  }
-                }}
-                className="w-full bg-transparent border-none p-0 text-lg font-black text-slate-900 focus:ring-0 cursor-pointer hover:text-blue-600 transition-colors"
-              >
-                <option value="">Select Class Section</option>
-                {classOptions.map(opt => (
-                  <option key={opt.id} value={opt.id}>{opt.label}</option>
-                ))}
-              </select>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-           <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-100">
-              <span className="material-symbols-outlined text-slate-400 text-sm">info</span>
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">
-                {selectedClass ? `${selectedClass.room_number || 'No Room'} • ${selectedClass.subjects.length} Subjects` : "Choose class to view timeline"}
-              </span>
-           </div>
-           <button
-              onClick={() => { setEditingRecord(null); setIsAdding(true); }}
-              className="flex h-10 items-center gap-2 px-4 bg-blue-600 text-white text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
-           >
-              <span className="material-symbols-outlined text-lg">add_circle</span>
-              New Entry
-           </button>
-        </div>
-      </div>
+    <div className="space-y-8 pb-10">
+      <TimetableToolbar 
+        classId={classId}
+        onClassChange={handleClassChange}
+        classOptions={classOptions}
+        onNewEntry={() => { setEditingRecord(null); setIsAdding(true); }}
+        selectedClass={selectedClass}
+        conflictsCount={conflictsCount}
+        isCompact={isCompact}
+        onCompactToggle={() => setIsCompact(!isCompact)}
+      />
 
       {state.status === "loading" && <TableSkeleton />}
       {state.status === "error" && <DataState variant="error" title="Error" message={state.error} />}
 
       {state.status === "success" && (
-        <TimetableGrid
-          records={state.data || []}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <TimetableGrid
+            records={state.data || []}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            isCompact={isCompact}
+          />
+        </div>
       )}
 
       {isAdding && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
-            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-xl font-bold text-gray-900">
-                {editingRecord
-                  ? "Edit Timetable Entry"
-                  : selectedClassForForm
-                    ? `Add Timetable Entry for ${selectedClassForForm.name}`
-                    : "Add Timetable Entry"}
-              </h3>
-              <button onClick={() => setIsAdding(false)} className="text-gray-400 hover:text-gray-600">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl border border-white/20 animate-in zoom-in-95 duration-300">
+            <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/20">
+                   <span className="material-symbols-outlined text-[24px]">
+                     {editingRecord ? "edit_calendar" : "add_task"}
+                   </span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">
+                    {editingRecord ? "Edit Entry" : "New Schedule Entry"}
+                  </h3>
+                  <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">
+                    {selectedClassForForm ? selectedClassForForm.name : "Academic Scheduling"}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsAdding(false)} 
+                className="h-10 w-10 flex items-center justify-center rounded-xl bg-white text-slate-400 hover:text-slate-600 border border-slate-200 transition-all active:scale-95 shadow-sm"
+              >
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
-            <div className="p-6">
+            <div className="p-8">
               <TimetableForm
                 onCreate={handleSave}
                 classOptions={classOptions}
                 teacherOptions={teacherOptions}
                 subjectOptions={subjectOptions}
                 initialClassId={selectedClassId}
+                initialValues={editingRecord ? {
+                   class_id: editingRecord.class_id,
+                   subject_id: editingRecord.subject_id,
+                   teacher_id: editingRecord.teacher_id,
+                   day_of_week: getDayLabel(editingRecord.day_of_week) as any,
+                   period_number: editingRecord.period_number,
+                   start_time: editingRecord.start_time,
+                   end_time: editingRecord.end_time,
+                   room: editingRecord.room,
+                   section: editingRecord.section
+                } : undefined}
               />
             </div>
           </div>

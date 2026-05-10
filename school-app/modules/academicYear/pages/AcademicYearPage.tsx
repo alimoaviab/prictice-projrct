@@ -3,13 +3,25 @@
 import { Badge, Button, Card, DataState, PageHeader, Skeleton, TableSkeleton } from "../../../components/ui";
 import { AcademicYearForm } from "../components/AcademicYearForm";
 import { AcademicYearTable } from "../components/AcademicYearTable";
+import { AcademicYearRow } from "../types/academicYear.types";
 import { useAcademicYears } from "../hooks/useAcademicYears";
 
 export function AcademicYearPage() {
-    const { state, addAcademicYear } = useAcademicYears();
-    const years = state.data ?? [];
-    const activeYear = years.find((year) => year.is_active);
-    const completedYears = years.filter((year) => year.status === "completed").length;
+    const { state, addAcademicYear, updateAcademicYear, deleteAcademicYear } = useAcademicYears();
+    const years = state.data?.data ?? [];
+    const activeYear = years.find((year: AcademicYearRow) => year.is_active);
+    const completedYears = years.filter((year: AcademicYearRow) => year.status === "completed").length;
+
+    const handleEdit = (row: AcademicYearRow) => {
+        // Implementation for editing (e.g., opening a modal or populating form)
+        console.log("Edit academic year:", row);
+    };
+
+    const handleDelete = async (row: AcademicYearRow) => {
+        if (confirm(`Are you sure you want to delete academic year ${row.year}?`)) {
+            await deleteAcademicYear(row._id);
+        }
+    };
 
     return (
         <div className="flex flex-col gap-4">
@@ -98,15 +110,19 @@ export function AcademicYearPage() {
                 <DataState variant="empty" title="No academic years found" message="Create the first academic year for this school." />
             ) : null}
 
-            {state.status === "success" && state.data && state.data.length > 0 ? (
+            {state.status === "success" && state.data && state.data.data.length > 0 ? (
                 <div className="space-y-3.5">
                     <div className="flex items-center justify-between">
                         <h3 className="text-base font-semibold tracking-tight text-slate-950">Academic Years List</h3>
                         <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-600">
-                           {state.data.length} total
+                           {state.data.data.length} total
                         </span>
                     </div>
-                    <AcademicYearTable years={state.data} />
+                    <AcademicYearTable 
+                        years={state.data.data} 
+                        onEdit={handleEdit} 
+                        onDelete={handleDelete} 
+                    />
                 </div>
             ) : null}
         </div>

@@ -103,12 +103,11 @@ export function ClassPage() {
                     </div>
                     <ClassForm
                         onCreate={addClass}
-                        onAddSubject={handleQuickAddSubject}
-                        academyCareOptions={(academicYearState.data?.data ?? []).map((item) => ({
+                        academyCareOptions={(academicYearState.data?.data ?? []).map((item: any) => ({
                             id: item._id,
                             label: item.year
                         }))}
-                        teacherOptions={(teacherState.data ?? []).map((item) => ({
+                        teacherOptions={(teacherState.data ?? []).map((item: any) => ({
                             id: item._id,
                             label: `${item.first_name} ${item.last_name}`.trim()
                         }))}

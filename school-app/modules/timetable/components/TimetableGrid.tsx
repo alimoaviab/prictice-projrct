@@ -1,56 +1,80 @@
 "use client";
 
-import { TimetableRecord, DayOfWeek, getDayLabel } from "../types/timetable.types";
-import { Card } from "../../../components/ui";
+import { TimetableRecord, DayOfWeek } from "../types/timetable.types";
+import { PeriodCard } from "./PeriodCard";
+import { findTimetableConflicts } from "../utils/conflicts";
+import { useMemo, useState, useEffect } from "react";
 
 const DAYS: DayOfWeek[] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const TIME_SLOTS = [
-  "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"
+  "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"
 ];
-
-// Curated palette for subjects
-const SUBJECT_COLORS: Record<string, { bg: string; text: string; border: string; dot: string }> = {
-  Mathematics: { bg: "bg-blue-50/50", text: "text-blue-700", border: "border-blue-100", dot: "bg-blue-500" },
-  English: { bg: "bg-purple-50/50", text: "text-purple-700", border: "border-purple-100", dot: "bg-purple-500" },
-  Science: { bg: "bg-emerald-50/50", text: "text-emerald-700", border: "border-emerald-100", dot: "bg-emerald-500" },
-  History: { bg: "bg-amber-50/50", text: "text-amber-700", border: "border-amber-100", dot: "bg-amber-500" },
-  Geography: { bg: "bg-indigo-50/50", text: "text-indigo-700", border: "border-indigo-100", dot: "bg-indigo-500" },
-  Physics: { bg: "bg-cyan-50/50", text: "text-cyan-700", border: "border-cyan-100", dot: "bg-cyan-500" },
-  Chemistry: { bg: "bg-rose-50/50", text: "text-rose-700", border: "border-rose-100", dot: "bg-rose-500" },
-  Default: { bg: "bg-slate-50/50", text: "text-slate-700", border: "border-slate-100", dot: "bg-slate-500" }
-};
 
 interface TimetableGridProps {
   records: TimetableRecord[];
   onEdit?: (record: TimetableRecord) => void;
   onDelete?: (id: string) => void;
+  isCompact?: boolean;
 }
 
-export function TimetableGrid({ records, onEdit, onDelete }: TimetableGridProps) {
+export function TimetableGrid({ records, onEdit, onDelete, isCompact }: TimetableGridProps) {
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const currentDayIndex = currentTime.getDay(); // 0 is Sunday, 1 is Monday
+  const currentHour = currentTime.getHours();
+  const currentMinutes = currentTime.getMinutes();
+  const timeInMinutes = currentHour * 60 + currentMinutes;
+
+  const isCurrentPeriod = (startTime: string, endTime: string, dayIdx: number) => {
+    const dayNumber = dayIdx + 1;
+    if (currentDayIndex !== dayNumber) return false;
+
+    const start = parseInt(startTime.split(':')[0]) * 60 + parseInt(startTime.split(':')[1]);
+    const end = parseInt(endTime.split(':')[0]) * 60 + parseInt(endTime.split(':')[1]);
+
+    return timeInMinutes >= start && timeInMinutes < end;
+  };
+
+  const isCurrentTimeRow = (time: string) => {
+    const rowHour = parseInt(time.split(':')[0]);
+    return currentHour === rowHour;
+  };
+
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+    <div className="relative bg-white rounded-3xl border border-slate-200/60 overflow-hidden shadow-2xl shadow-slate-200/50">
       <div className="overflow-x-auto">
-        <div className="min-w-[1000px]">
+        <div className="min-w-[1200px]">
           {/* Header */}
-          <div className="grid grid-cols-[100px_repeat(6,1fr)] bg-slate-50/50 border-b border-slate-200">
-            <div className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center justify-center border-r border-slate-200/60">
+          <div className="sticky top-0 z-40 grid grid-cols-[100px_repeat(6,1fr)] bg-slate-50/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
+            <div className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center justify-center border-r border-slate-200/60 bg-slate-100/50">
               Time
             </div>
-            {DAYS.map(day => (
-              <div key={day} className="p-4 text-center border-r border-slate-200/60 last:border-r-0">
-                <span className="text-[11px] font-black text-slate-900 uppercase tracking-widest">{day}</span>
-              </div>
-            ))}
+            {DAYS.map((day, idx) => {
+                const isToday = currentDayIndex === idx + 1;
+                return (
+                    <div key={day} className={`p-4 text-center border-r border-slate-200/60 last:border-r-0 ${isToday ? 'bg-blue-50/50' : ''}`}>
+                        <div className="flex flex-col items-center gap-1">
+                            <span className={`text-[11px] font-black uppercase tracking-widest ${isToday ? 'text-blue-600' : 'text-slate-900'}`}>{day}</span>
+                            {isToday && <div className="h-1 w-8 rounded-full bg-blue-600 animate-pulse" />}
+                        </div>
+                    </div>
+                );
+            })}
           </div>
 
           {/* Time Rows */}
           <div className="divide-y divide-slate-100">
-            {TIME_SLOTS.map((time) => (
-              <div key={time} className="grid grid-cols-[100px_repeat(6,1fr)] min-h-[120px]">
-                {/* Time Indicator */}
-                <div className="bg-slate-50/30 border-r border-slate-200/60 flex flex-col items-center justify-center gap-1">
-                  <span className="text-xs font-black text-slate-900 tracking-tight">{time}</span>
-                  <div className="h-1 w-1 rounded-full bg-slate-300" />
+            {TIME_SLOTS.map((time, rowIdx) => (
+              <div key={time} className={`grid grid-cols-[100px_repeat(6,1fr)] ${isCompact ? 'min-h-[100px]' : 'min-h-[140px]'} group/row ${rowIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50/20'}`}>
+                {/* Time Indicator - Sticky Column */}
+                <div className={`sticky left-0 z-30 border-r border-slate-200/60 flex flex-col items-center justify-center gap-1 transition-colors ${isCurrentTimeRow(time) ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-50/80 backdrop-blur-sm'}`}>
+                  <span className={`text-[13px] font-black tracking-tight tabular-nums ${isCurrentTimeRow(time) ? 'text-white' : 'text-slate-900'}`}>{time}</span>
+                  <div className={`h-1.5 w-1.5 rounded-full ${isCurrentTimeRow(time) ? 'bg-white/40 animate-ping' : 'bg-slate-300'}`} />
                 </div>
 
                 {/* Day Columns */}
@@ -61,58 +85,34 @@ export function TimetableGrid({ records, onEdit, onDelete }: TimetableGridProps)
                     r.start_time.startsWith(time.substring(0, 2))
                   );
 
+                  const isToday = currentDayIndex === dayNumber;
+
                   return (
-                    <div key={`${day}-${time}`} className="p-2 border-r border-slate-200/60 last:border-r-0 relative hover:bg-blue-50/20 transition-colors">
-                      {slots.map(slot => {
-                        const style = SUBJECT_COLORS[slot.subject_name] || SUBJECT_COLORS.Default;
-                        return (
-                          <div
-                            key={slot._id}
-                            className={`${style.bg} ${style.border} border rounded-xl p-3 mb-2 group/item relative overflow-hidden backdrop-blur-[2px] transition-all hover:shadow-lg hover:shadow-slate-200/50 hover:scale-[1.02]`}
-                          >
-                            <div className="flex justify-between items-start mb-2">
-                              <div className="flex items-center gap-2 min-w-0">
-                                <div className={`h-1.5 w-1.5 rounded-full ${style.dot} shrink-0`} />
-                                <p className={`text-[12px] font-black leading-none uppercase tracking-tight truncate ${style.text}`}>
-                                  {slot.subject_name}
-                                </p>
-                              </div>
-                              <div className="flex gap-1 opacity-0 group-hover/item:opacity-100 transition-all">
-                                {onEdit && (
-                                  <button onClick={() => onEdit(slot)} className="h-6 w-6 flex items-center justify-center rounded-lg bg-white/80 text-slate-400 hover:text-blue-600 shadow-sm transition-colors">
-                                    <span className="material-symbols-outlined text-[14px]">edit</span>
-                                  </button>
-                                )}
-                                {onDelete && (
-                                  <button onClick={() => onDelete(slot._id)} className="h-6 w-6 flex items-center justify-center rounded-lg bg-white/80 text-slate-400 hover:text-red-600 shadow-sm transition-colors">
-                                    <span className="material-symbols-outlined text-[14px]">delete</span>
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="space-y-1.5">
-                              <div className="flex items-center gap-2 text-slate-600">
-                                <span className="material-symbols-outlined text-[14px] text-slate-400">badge</span>
-                                <span className="text-[10px] font-bold truncate">{slot.teacher_name}</span>
-                              </div>
-                              
-                              <div className="flex items-center gap-2 text-slate-500">
-                                <span className="material-symbols-outlined text-[14px] text-slate-400">meeting_room</span>
-                                <span className="text-[10px] font-medium uppercase tracking-wider">{slot.room || "Room TBA"}</span>
-                              </div>
-
-                              <div className="flex items-center gap-2 text-slate-400">
-                                <span className="material-symbols-outlined text-[14px]">schedule</span>
-                                <span className="text-[9px] font-black tabular-nums">{slot.start_time} - {slot.end_time}</span>
-                              </div>
-                            </div>
-                            
-                            {/* Decorative line */}
-                            <div className={`absolute left-0 top-0 bottom-0 w-1 ${style.dot} opacity-20`} />
+                    <div key={`${day}-${time}`} className={`p-3 border-r border-slate-200/60 last:border-r-0 relative transition-all duration-300 hover:bg-blue-50/30 ${isToday ? 'bg-blue-50/10' : ''}`}>
+                      {slots.length === 0 && (
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-opacity">
+                              <div className="h-full w-full border-2 border-dashed border-slate-200/60 rounded-2xl m-2" />
                           </div>
-                        );
-                      })}
+                      )}
+                      
+                      <div className="space-y-3 relative z-10">
+                        {slots.map(slot => {
+                          const conflicts = findTimetableConflicts(records, slot);
+                          const active = isCurrentPeriod(slot.start_time, slot.end_time, dayIdx);
+                          
+                          return (
+                            <div key={slot._id} className={active ? 'ring-2 ring-blue-500 ring-offset-2 rounded-xl shadow-xl shadow-blue-500/20' : ''}>
+                                <PeriodCard 
+                                    slot={slot} 
+                                    conflicts={conflicts} 
+                                    onEdit={onEdit} 
+                                    onDelete={onDelete} 
+                                    isCompact={isCompact}
+                                />
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   );
                 })}
@@ -121,6 +121,19 @@ export function TimetableGrid({ records, onEdit, onDelete }: TimetableGridProps)
           </div>
         </div>
       </div>
+
+      {/* Decorative Current Time Line */}
+      {currentDayIndex > 0 && currentDayIndex < 7 && (
+          <div 
+            className="absolute left-[100px] right-0 h-0.5 bg-blue-500/40 pointer-events-none z-20 flex items-center"
+            style={{ 
+                top: `${( (timeInMinutes - 8*60) / ( (18-8)*60 ) ) * 100}%`,
+                display: (currentHour >= 8 && currentHour < 18) ? 'flex' : 'none'
+            }}
+          >
+              <div className="h-3 w-3 rounded-full bg-blue-600 -ml-1.5 shadow-lg shadow-blue-600/50" />
+          </div>
+      )}
     </div>
   );
 }
