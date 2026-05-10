@@ -24,17 +24,14 @@ export async function POST(request: NextRequest) {
     const ctx = authenticateRequest(session, "school");
 
     const body = await request.json();
-    console.log("[POST /api/timetable] Request body:", JSON.stringify(body, null, 2));
 
     const result = await createTimetable(ctx, body);
-    console.log("[POST /api/timetable] Result:", JSON.stringify(result, null, 2));
 
     if (!result.ok) {
       console.error("[POST /api/timetable] Service error:", result.error);
       return NextResponse.json(result, { status: result.error.status ?? 400 });
     }
 
-    console.log("[POST /api/timetable] Success:", result.data);
     return NextResponse.json(result, { status: 201 });
   } catch (error: any) {
     console.error("[POST /api/timetable] Unexpected error:", error);

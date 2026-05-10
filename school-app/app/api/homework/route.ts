@@ -19,9 +19,7 @@ export async function POST(request: NextRequest) {
   try {
     const ctx = authenticateRequest(sessionRequest(request), "school");
     const body = await request.json();
-    console.log("[POST /api/homework] Request body:", JSON.stringify(body, null, 2));
     const result = await createHomework(ctx, body);
-    console.log("[POST /api/homework] Result:", JSON.stringify(result, null, 2));
     return NextResponse.json(result, { status: result.ok ? 201 : result.error.status ?? 400 });
   } catch (error: any) {
     console.error("[POST /api/homework] Error:", error?.message);
