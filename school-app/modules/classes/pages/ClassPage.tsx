@@ -63,10 +63,10 @@ export function ClassPage() {
     }, [state.data, searchQuery, statusFilter]);
 
     return (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
             {isDependencyLoading ? (
-                <div className="space-y-6">
-                    <Skeleton className="h-[400px] w-full rounded-xl" />
+                <div className="space-y-4">
+                    <Skeleton className="h-[300px] w-full rounded-xl" />
                     <TableSkeleton />
                 </div>
             ) : null}
@@ -96,10 +96,10 @@ export function ClassPage() {
             ) : null}
 
             {!isDependencyLoading && hasAcademicYears ? (
-                <Card className="max-w-4xl">
-                    <div className="mb-4">
-                        <h2 className="text-lg font-semibold tracking-tight text-slate-950">Create New Class</h2>
-                        <p className="text-sm text-slate-600">Set up a new classroom and assign teachers and subjects.</p>
+                <Card className="max-w-4xl p-4">
+                    <div className="mb-3">
+                        <h2 className="text-lg font-bold tracking-tight text-slate-900 leading-none">Create New Class</h2>
+                        <p className="mt-1 text-[13px] font-medium text-slate-500">Set up a new classroom and assign teachers and subjects.</p>
                     </div>
                     <ClassForm
                         onCreate={addClass}

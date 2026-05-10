@@ -42,8 +42,8 @@ export function AcademicYearForm({ onCreate }: { onCreate: (input: AcademicYearF
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-3.5">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                 <Input
                     label="Session Name"
                     placeholder="e.g., 2024-2025"
@@ -51,14 +51,14 @@ export function AcademicYearForm({ onCreate }: { onCreate: (input: AcademicYearF
                     onChange={(e) => setForm({ ...form, year: e.target.value })}
                     error={errors.year}
                     required
-                    className="bg-white border-slate-200 focus:bg-white px-3 py-2"
+                    className="bg-white border-slate-200"
                 />
 
-                <div className="flex flex-col gap-1">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Default setting</span>
-                    <label className={`flex h-9 cursor-pointer items-center gap-2.5 rounded-lg border px-3 transition-all duration-200 ${form.is_active ? 'border-blue-600 bg-blue-600 text-white shadow-sm' : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-300'}`}>
-                        <div className={`flex h-4 w-4 items-center justify-center rounded border ${form.is_active ? 'border-white bg-white/15' : 'border-slate-300 bg-white'}`}>
-                            {form.is_active && <span className="material-symbols-outlined text-xs font-black text-white">check</span>}
+                <div className="flex flex-col gap-0.5">
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Default setting</span>
+                    <label className={`flex h-8.5 cursor-pointer items-center gap-2 rounded border px-2.5 transition-all duration-200 ${form.is_active ? 'border-blue-600 bg-blue-600 text-white shadow-sm' : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-blue-300'}`}>
+                        <div className={`flex h-3.5 w-3.5 items-center justify-center rounded-sm border ${form.is_active ? 'border-white bg-white/15' : 'border-slate-300 bg-white'}`}>
+                            {form.is_active && <span className="material-symbols-outlined text-[10px] font-black text-white">check</span>}
                         </div>
                         <input
                             type="checkbox"
@@ -66,7 +66,7 @@ export function AcademicYearForm({ onCreate }: { onCreate: (input: AcademicYearF
                             onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
                             className="hidden"
                         />
-                        <span className="text-xs font-semibold uppercase tracking-[0.08em]">Active session</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.08em]">Active session</span>
                     </label>
                 </div>
 
@@ -77,7 +77,7 @@ export function AcademicYearForm({ onCreate }: { onCreate: (input: AcademicYearF
                     onChange={(e) => setForm({ ...form, start_date: e.target.value })}
                     error={errors.start_date}
                     required
-                    className="bg-white border-slate-200 focus:bg-white px-3 py-2"
+                    className="bg-white border-slate-200"
                 />
 
                 <Input
@@ -87,7 +87,7 @@ export function AcademicYearForm({ onCreate }: { onCreate: (input: AcademicYearF
                     onChange={(e) => setForm({ ...form, end_date: e.target.value })}
                     error={errors.end_date}
                     required
-                    className="bg-white border-slate-200 focus:bg-white px-3 py-2"
+                    className="bg-white border-slate-200"
                 />
             </div>
 
@@ -96,14 +96,14 @@ export function AcademicYearForm({ onCreate }: { onCreate: (input: AcademicYearF
                 placeholder="Short description..."
                 value={form.description || ""}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                className="bg-white border-slate-200 focus:bg-white px-3 py-2"
+                className="bg-white border-slate-200"
             />
 
-            <div className="sticky bottom-0 z-10 flex items-center justify-end border-t border-slate-200 bg-white/95 pt-2.5 backdrop-blur-sm">
+            <div className="flex items-center justify-end border-t border-slate-100 pt-3">
                 <Button
                     type="submit"
                     disabled={saving || !isValid}
-                    className="h-auto w-full rounded-lg px-5 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] shadow-sm transition-all active:scale-[0.98] sm:w-auto"
+                    className="h-8.5 w-full sm:w-auto px-4 text-[10px] font-black uppercase tracking-widest shadow-sm"
                 >
                     {saving ? "Saving..." : "Create Session"}
                 </Button>

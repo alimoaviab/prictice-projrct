@@ -15,9 +15,9 @@ export function Input({ label, error, helperText, id, className = "", ...props }
   const describedBy = [helperId, errorId].filter(Boolean).join(" ") || undefined;
 
   return (
-    <div className="flex flex-col gap-1.5 w-full">
+    <div className="flex flex-col gap-1 w-full">
       {label && (
-        <label htmlFor={inputId} className="text-sm font-medium text-gray-700">
+        <label htmlFor={inputId} className="text-[13px] font-semibold text-slate-700">
           {label}
           {props.required && <span className="text-error ml-0.5" aria-hidden="true">*</span>}
         </label>
@@ -27,7 +27,7 @@ export function Input({ label, error, helperText, id, className = "", ...props }
         {...props}
         aria-describedby={describedBy}
         aria-invalid={!!error}
-        className={`w-full px-4 py-2 text-sm bg-surface border rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20 ${
+        className={`w-full px-3 py-1.5 text-sm bg-surface border rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20 ${
           error ? "border-error focus:border-error focus:ring-error/20" : "border-border focus:border-primary"
         } ${className}`}
       />

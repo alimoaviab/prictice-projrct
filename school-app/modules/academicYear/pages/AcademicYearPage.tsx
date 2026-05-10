@@ -44,51 +44,51 @@ export function AcademicYearPage() {
             />
 
             <div className="grid gap-3 sm:grid-cols-3">
-                <Card className="premium-stat-card p-3 md:p-3.5">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Configured years</span>
-                    <div className="mt-2 flex items-end justify-between gap-3">
+                <Card className="p-3">
+                    <span className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Configured years</span>
+                    <div className="mt-1.5 flex items-end justify-between gap-3">
                         <div>
-                            <div className="text-2xl font-semibold tracking-tight text-slate-950">{years.length}</div>
-                            <p className="mt-1 text-sm text-slate-600">Operational windows available.</p>
+                            <div className="text-xl font-black tracking-tight text-slate-900">{years.length}</div>
+                            <p className="mt-0.5 text-[11px] font-medium text-slate-500">Operational windows.</p>
                         </div>
-                        <div className="rounded-xl bg-blue-50 px-2.5 py-2 text-blue-700">
-                            <span className="material-symbols-outlined text-[18px]">calendar_month</span>
+                        <div className="rounded-lg bg-blue-50 px-2 py-1.5 text-blue-600">
+                            <span className="material-symbols-outlined text-[16px]">calendar_month</span>
                         </div>
                     </div>
                 </Card>
-                <Card className="premium-stat-card p-3 md:p-3.5">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Active session</span>
-                    <div className="mt-2 flex items-end justify-between gap-3">
+                <Card className="p-3">
+                    <span className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Active session</span>
+                    <div className="mt-1.5 flex items-end justify-between gap-3">
                         <div>
-                            <div className="text-2xl font-semibold tracking-tight text-slate-950">{activeYear?.year ?? "None"}</div>
-                            <p className="mt-1 text-sm text-slate-600">Current school operating window.</p>
+                            <div className="text-xl font-black tracking-tight text-slate-900">{activeYear?.year ?? "None"}</div>
+                            <p className="mt-0.5 text-[11px] font-medium text-slate-500">Current window.</p>
                         </div>
-                        <Badge variant={activeYear ? "success" : "gray"} className="whitespace-nowrap">
+                        <Badge variant={activeYear ? "success" : "gray"} className="text-[10px] px-1.5 py-0">
                             {activeYear ? "Active" : "Inactive"}
                         </Badge>
                     </div>
                 </Card>
-                <Card className="premium-stat-card p-3 md:p-3.5">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Completed</span>
-                    <div className="mt-2 flex items-end justify-between gap-3">
+                <Card className="p-3">
+                    <span className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Completed</span>
+                    <div className="mt-1.5 flex items-end justify-between gap-3">
                         <div>
-                            <div className="text-2xl font-semibold tracking-tight text-slate-950">{completedYears}</div>
-                            <p className="mt-1 text-sm text-slate-600">Closed academic cycles.</p>
+                            <div className="text-xl font-black tracking-tight text-slate-900">{completedYears}</div>
+                            <p className="mt-0.5 text-[11px] font-medium text-slate-500">Closed cycles.</p>
                         </div>
-                        <div className="rounded-xl bg-emerald-50 px-2.5 py-2 text-emerald-700">
-                            <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                        <div className="rounded-lg bg-emerald-50 px-2 py-1.5 text-emerald-600">
+                            <span className="material-symbols-outlined text-[16px]">check_circle</span>
                         </div>
                     </div>
                 </Card>
             </div>
 
-            <Card className="max-w-4xl">
-                <div className="mb-4 flex items-start justify-between gap-3">
+            <Card className="max-w-4xl p-4">
+                <div className="mb-3 flex items-start justify-between gap-3">
                     <div>
-                        <h2 className="text-lg font-semibold tracking-tight text-slate-950">Create Academic Year</h2>
-                        <p className="mt-1 text-sm text-slate-600">Define a new academic session for the school.</p>
+                        <h2 className="text-lg font-bold tracking-tight text-slate-900 leading-none">Create Academic Year</h2>
+                        <p className="mt-1 text-[13px] font-medium text-slate-500">Define a new academic session window.</p>
                     </div>
-                    <Button variant="ghost" size="sm" className="hidden md:inline-flex">
+                    <Button variant="ghost" size="sm" className="hidden md:inline-flex text-[11px] h-7">
                         Draft mode
                     </Button>
                 </div>

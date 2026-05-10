@@ -155,9 +155,9 @@ export function ClassForm({
                 </div>
             )}
 
-            <div className="premium-card p-8 bg-white border border-slate-200/60 rounded-3xl shadow-sm space-y-10">
+            <div className="premium-card p-5 bg-white border border-slate-200 shadow-sm rounded-xl space-y-6">
                 {/* Basic Info Section */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <Input
                         label="Class Name *"
                         placeholder="Class 10"
@@ -361,26 +361,19 @@ export function ClassForm({
             </div>
 
             {/* Actions Bar */}
-            <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-100">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
                 <Link
                     href="/admin/classes"
-                    className="px-6 py-2.5 text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all"
+                    className="px-4 py-2 text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all"
                 >
                     Cancel
                 </Link>
                 <Button
                     type="submit"
                     disabled={saving}
-                    className="min-w-[180px] h-12 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl shadow-xl shadow-slate-900/10 transition-all text-[11px] font-black uppercase tracking-widest"
+                    className="min-w-[140px] h-9 bg-slate-900 hover:bg-slate-800 text-white rounded-lg shadow-md transition-all text-[10px] font-black uppercase tracking-widest"
                 >
-                    {saving ? (
-                        <span className="flex items-center gap-2 justify-center">
-                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                            Initializing...
-                        </span>
-                    ) : (
-                        "Create Academic Unit"
-                    )}
+                    {saving ? "Saving..." : "Create Unit"}
                 </Button>
             </div>
         </form>

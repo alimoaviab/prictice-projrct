@@ -93,25 +93,25 @@ export function AcademicYearTable({
                         <span className="material-symbols-outlined text-[16px]">{row.is_active ? "check_circle" : "radio_button_unchecked"}</span>
                         {row.is_active ? "Active" : "Inactive"}
                     </button>
-                    <div className="w-px h-4 bg-slate-100 mx-1" />
+                    <div className="w-px h-3 bg-slate-100 mx-0.5" />
                     <button 
                         onClick={() => onEdit(row)}
-                        className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                        className="h-7 w-7 flex items-center justify-center rounded text-slate-400 hover:bg-slate-50 hover:text-blue-600 transition-colors"
                         title="Edit"
                     >
-                        <span className="material-symbols-outlined text-[20px]">edit_note</span>
+                        <span className="material-symbols-outlined text-[18px]">edit_note</span>
                     </button>
                     <button 
                         onClick={() => onDelete(row)}
-                        className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                        className="h-7 w-7 flex items-center justify-center rounded text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"
                         title="Delete"
                     >
-                        <span className="material-symbols-outlined text-[20px]">delete</span>
+                        <span className="material-symbols-outlined text-[18px]">delete</span>
                     </button>
-                    <div className="w-px h-4 bg-slate-100 mx-1" />
+                    <div className="w-px h-3 bg-slate-100 mx-0.5" />
                     <button 
                         onClick={() => onEdit(row)}
-                        className="h-8 px-4 rounded-lg bg-blue-600 text-[11px] font-bold text-white hover:bg-blue-700 transition-all shadow-sm shadow-blue-200 active:scale-95"
+                        className="h-7 px-3 rounded bg-blue-600 text-[10px] font-black uppercase tracking-widest text-white hover:bg-blue-700 transition-all shadow-sm active:scale-95"
                     >
                         Open
                     </button>

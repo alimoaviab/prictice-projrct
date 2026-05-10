@@ -65,7 +65,7 @@ export function ConfirmModal({
         onClick={onCancel}
       />
       <div
-        className={`relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 transform transition-all duration-200 ${
+        className={`relative bg-white rounded-xl shadow-2xl w-full max-w-md p-5 transform transition-all duration-200 ${
           show ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-2"
         }`}
       >

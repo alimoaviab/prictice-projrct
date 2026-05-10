@@ -8,12 +8,12 @@ export function ClassTable({ rows }: { rows: ClassRow[] }) {
         {
             key: "name",
             label: "Class",
-            render: (row: ClassRow) => <div className="font-semibold text-gray-900">{row.name}</div>
+            render: (row: ClassRow) => <div className="font-bold text-slate-900">{row.name}</div>
         },
         {
             key: "academy_care_year",
             label: "Academy Year",
-            render: (row: ClassRow) => <div className="text-gray-600">{row.academy_care_year}</div>
+            render: (row: ClassRow) => <div className="text-[13px] font-medium text-slate-500">{row.academy_care_year}</div>
         },
         {
             key: "subjects",

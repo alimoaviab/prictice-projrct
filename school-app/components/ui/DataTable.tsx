@@ -272,7 +272,7 @@ export function DataTable<T>({
           <thead className="sticky top-0 z-10 bg-slate-50/90 backdrop-blur">
             <tr>
               {selectable && (
-                <th className="w-12 border-b border-slate-200 px-4 py-3.5">
+                <th className="w-12 border-b border-slate-200 px-3 py-2.5">
                   <input
                     type="checkbox"
                     checked={allCurrentSelected}
@@ -286,7 +286,7 @@ export function DataTable<T>({
                   key={column.key}
                   onClick={() => handleSort(column.key)}
                   style={column.width ? { width: column.width } : undefined}
-                  className={`whitespace-nowrap border-b border-slate-200 px-4 py-3.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 ${
+                  className={`whitespace-nowrap border-b border-slate-200 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${
                     sortable && column.sortable !== false ? "cursor-pointer select-none hover:text-slate-700" : ""
                   } ${column.align === "right" ? "text-right" : column.align === "center" ? "text-center" : "text-left"}`}
                 >
@@ -329,13 +329,13 @@ export function DataTable<T>({
                     <td 
                       key={column.key} 
                       style={column.width ? { width: column.width } : undefined}
-                      className={`px-4 py-3.5 text-sm text-slate-700 ${column.align === "right" ? "text-right" : column.align === "center" ? "text-center" : "text-left"}`}
+                      className={`px-3 py-2.5 text-[13px] text-slate-700 ${column.align === "right" ? "text-right" : column.align === "center" ? "text-center" : "text-left"}`}
                     >
                       {column.render(row)}
                     </td>
                   ))}
                   {rowActions && (
-                    <td className="px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
+                    <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-1">
                         {rowActions.map((action, i) => (
                           <button

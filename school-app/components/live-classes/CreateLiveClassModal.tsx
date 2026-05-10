@@ -67,7 +67,7 @@ export const CreateLiveClassModal: React.FC<CreateLiveClassModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-[2rem] bg-white p-6 shadow-xl">
+      <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-slate-900">Schedule Live Class</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
