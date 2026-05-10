@@ -38,15 +38,6 @@ export function ClassTable({ rows }: { rows: ClassRow[] }) {
                 );
             }
         },
-        {
-            key: "status",
-            label: "Status",
-            render: (row: ClassRow) => (
-                <Badge variant={row.status === "active" ? "success" : "gray"} className="capitalize">
-                    {row.status}
-                </Badge>
-            )
-        }
     ];
 
     return <DataTable columns={columns} rows={rows} />;

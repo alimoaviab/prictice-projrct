@@ -58,7 +58,6 @@ const adminNavGroups: NavGroup[] = [
     items: [
       { label: "Announcements", href: "/admin/announcements", icon: "campaign" },
       { label: "Events", href: "/admin/events", icon: "event" },
-      { label: "AI Copilot", href: "/admin/ai", icon: "smart_toy" },
     ],
   },
   {
@@ -303,12 +302,20 @@ export function SchoolShell({
 
   return (
     <div className="flex min-h-screen bg-background text-slate-900">
-      {showAIAssistant && (
-        <div className="fixed inset-0 z-40 pointer-events-none">
+      {showAIAssistant ? (
+        <div className="fixed inset-0 z-50 pointer-events-none">
            <div className="pointer-events-auto">
              <AIAssistant onClose={() => setShowAIAssistant(false)} />
            </div>
         </div>
+      ) : (
+        <button
+          onClick={() => setShowAIAssistant(true)}
+          className="chatbot-toggle animate-glow"
+          aria-label="Open AI Assistant"
+        >
+          <span className="material-symbols-outlined text-[28px]">smart_toy</span>
+        </button>
       )}
       {/* Sidebar */}
       <aside
@@ -465,13 +472,7 @@ export function SchoolShell({
               <span className="material-symbols-outlined text-[20px]">help</span>
             </button>
 
-            <button
-              onClick={() => setShowAIAssistant(!showAIAssistant)}
-              className="rounded-lg p-1.5 text-blue-600 bg-blue-50 transition-all hover:bg-blue-100 shadow-sm flex items-center justify-center gap-1 group"
-              aria-label="AI Assistant"
-            >
-              <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">smart_toy</span>
-            </button>
+
 
             <div className="flex h-7 w-7 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white transition-all hover:border-blue-400">
               <span className="text-[10px] font-black text-slate-600">{user.email.substring(0, 2).toUpperCase()}</span>

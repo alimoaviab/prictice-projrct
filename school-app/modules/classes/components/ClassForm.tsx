@@ -24,10 +24,31 @@ export function ClassForm({
     academyCareOptions: Array<{ id: string; label: string }>;
     teacherOptions: Array<{ id: string; label: string }>;
     subjectOptions: Array<{ id: string; label: string }>;
+    onAddSubject?: (name: string) => Promise<void>;
 }) {
     const [form, setForm] = useState<ClassFormInput>({ ...initialForm, subjects: [] });
+    const [newSubject, setNewSubject] = useState("");
+    const [addingSubject, setAddingSubject] = useState(false);
     const [saving, setSaving] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
+
+    const handleAddQuickSubject = async () => {
+        if (!newSubject.trim() || !onAddSubject) return;
+        setAddingSubject(true);
+        try {
+            await onAddSubject(newSubject.trim());
+            // After successful add, check the checkbox automatically
+            setForm(prev => ({
+                ...prev,
+                subjects: [...prev.subjects, newSubject.trim()]
+            }));
+            setNewSubject("");
+        } catch (error) {
+            console.error("Failed to add subject:", error);
+        } finally {
+            setAddingSubject(false);
+        }
+    };
 
     function validate() {
         const newErrors: Record<string, string> = {};
@@ -96,30 +117,8 @@ export function ClassForm({
                         required
                     />
 
-                    <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-col gap-1.5 opacity-0 pointer-events-none hidden">
                         <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Status</label>
-                        <div className="flex items-center gap-4 mt-2">
-                            <label className="flex items-center gap-2 cursor-pointer group">
-                                <input 
-                                    type="radio" 
-                                    name="status" 
-                                    checked={form.status === "active" || !form.status} 
-                                    onChange={() => setForm({...form, status: "active"})}
-                                    className="h-4 w-4 text-blue-600 focus:ring-blue-600/20"
-                                />
-                                <span className="text-sm font-bold text-slate-700">Active</span>
-                            </label>
-                            <label className="flex items-center gap-2 cursor-pointer group">
-                                <input 
-                                    type="radio" 
-                                    name="status" 
-                                    checked={form.status === "inactive"} 
-                                    onChange={() => setForm({...form, status: "inactive"})}
-                                    className="h-4 w-4 text-slate-300 focus:ring-slate-600/20"
-                                />
-                                <span className="text-sm font-bold text-slate-400">Inactive</span>
-                            </label>
-                        </div>
                     </div>
                 </div>
 
@@ -135,88 +134,77 @@ export function ClassForm({
                 </div>
             </section>
 
-            {/* Section: Faculty Assignment */}
-            <section className="space-y-6">
-                <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                        <span className="material-symbols-outlined text-[24px]">badge</span>
-                    </div>
-                    <div>
-                        <h3 className="text-[15px] font-bold text-slate-900">Faculty Assignment</h3>
-                        <p className="text-[11px] font-medium text-slate-400">Assign teachers and mentors to this section</p>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {teacherOptions.map((teacher) => {
-                        const isChecked = form.teacher_ids.includes(teacher.id);
-                        return (
-                            <label
-                                key={teacher.id}
-                                className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${isChecked ? "bg-blue-50 border-blue-200 shadow-sm" : "bg-white border-slate-100 hover:border-slate-200"}`}
+            {/* Section: Academic Mapping */}
+            <section className="space-y-6 pt-6 border-t border-slate-100">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Multi-Select Teachers */}
+                    <div className="flex flex-col gap-2">
+                        <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Assigned Faculty (Optional)</label>
+                        <div className="relative group">
+                            <select
+                                multiple
+                                value={form.teacher_ids}
+                                onChange={(e) => {
+                                    const values = Array.from(e.target.selectedOptions, option => option.value);
+                                    setForm({ ...form, teacher_ids: values });
+                                }}
+                                className="w-full min-h-[100px] rounded-xl border border-slate-200 bg-white p-2 text-sm text-slate-800 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-600/5 transition-all"
                             >
-                                <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${isChecked ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-500"}`}>
-                                    {teacher.label.substring(0, 2).toUpperCase()}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className={`text-xs font-bold truncate ${isChecked ? "text-blue-700" : "text-slate-700"}`}>{teacher.label}</div>
-                                    <div className="text-[10px] text-slate-400">Faculty</div>
-                                </div>
+                                {teacherOptions.map(t => (
+                                    <option key={t.id} value={t.id} className="p-2 rounded-lg m-1 checked:bg-blue-600 checked:text-white">
+                                        {t.label}
+                                    </option>
+                                ))}
+                            </select>
+                            <p className="text-[10px] text-slate-400 mt-1 italic">Hold Ctrl/Cmd to select multiple teachers</p>
+                        </div>
+                    </div>
+
+                    {/* Multi-Select Subjects + Quick Add */}
+                    <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                            <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Curriculum Subjects *</label>
+                            <div className="flex items-center gap-2">
                                 <input
-                                    type="checkbox"
-                                    checked={isChecked}
-                                    onChange={(e) => {
-                                        const newIds = e.target.checked
-                                            ? [...form.teacher_ids, teacher.id]
-                                            : form.teacher_ids.filter((id) => id !== teacher.id);
-                                        setForm({ ...form, teacher_ids: newIds });
-                                    }}
-                                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600/20"
+                                    type="text"
+                                    value={newSubject}
+                                    onChange={(e) => setNewSubject(e.target.value)}
+                                    placeholder="Quick add..."
+                                    className="h-7 w-28 rounded-lg border border-slate-200 bg-white px-2 text-[10px] font-bold text-slate-700 outline-none focus:border-amber-400"
                                 />
-                            </label>
-                        );
-                    })}
-                </div>
-            </section>
-
-            {/* Section: Subject Mapping */}
-            <section className="space-y-6">
-                <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-                        <span className="material-symbols-outlined text-[24px]">menu_book</span>
-                    </div>
-                    <div>
-                        <h3 className="text-[15px] font-bold text-slate-900">Subject Mapping</h3>
-                        <p className="text-[11px] font-medium text-slate-400">Select curriculum subjects for this class</p>
-                    </div>
-                </div>
-
-                <div className="space-y-3">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
-                        {subjectOptions.map((subject) => {
-                            const isChecked = form.subjects.includes(subject.label);
-                            return (
-                                <label
-                                    key={subject.id}
-                                    className={`flex items-center gap-2 p-2 rounded-lg border transition-all cursor-pointer ${isChecked ? "bg-amber-50 border-amber-200" : "bg-white border-slate-50 hover:border-slate-100"}`}
+                                <button
+                                    type="button"
+                                    onClick={handleAddQuickSubject}
+                                    disabled={addingSubject || !newSubject.trim()}
+                                    className="h-7 w-7 flex items-center justify-center rounded-lg bg-amber-50 text-amber-600 border border-amber-100 hover:bg-amber-100 disabled:opacity-50"
                                 >
-                                    <input
-                                        type="checkbox"
-                                        checked={isChecked}
-                                        onChange={(event) => {
-                                            const nextSubjects = event.target.checked
-                                                ? [...form.subjects, subject.label]
-                                                : form.subjects.filter((name) => name !== subject.label);
-                                            setForm({ ...form, subjects: nextSubjects });
-                                        }}
-                                        className="h-3.5 w-3.5 rounded border-slate-300 text-amber-600 focus:ring-amber-600/20"
-                                    />
-                                    <span className={`text-[11px] font-bold truncate ${isChecked ? "text-amber-800" : "text-slate-600"}`}>{subject.label}</span>
-                                </label>
-                            );
-                        })}
+                                    <span className="material-symbols-outlined text-sm">add</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div className="relative group">
+                            <select
+                                multiple
+                                value={form.subjects}
+                                onChange={(e) => {
+                                    const values = Array.from(e.target.selectedOptions, option => option.value);
+                                    setForm({ ...form, subjects: values });
+                                }}
+                                className={`w-full min-h-[100px] rounded-xl border ${errors.subjects ? 'border-red-300' : 'border-slate-200'} bg-white p-2 text-sm text-slate-800 outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-600/5 transition-all`}
+                            >
+                                {subjectOptions.map(s => (
+                                    <option key={s.id} value={s.label} className="p-2 rounded-lg m-1 checked:bg-amber-500 checked:text-white">
+                                        {s.label}
+                                    </option>
+                                ))}
+                            </select>
+                            {errors.subjects ? (
+                                <p className="text-[10px] font-bold text-red-500 mt-1">{errors.subjects}</p>
+                            ) : (
+                                <p className="text-[10px] text-slate-400 mt-1 italic">At least one subject required</p>
+                            )}
+                        </div>
                     </div>
-                    {errors.subjects ? <p className="text-[10px] font-bold text-red-500">{errors.subjects}</p> : null}
                 </div>
             </section>
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest } from "@edu/shared/auth/middleware";
-import { fail } from "@edu/shared/utils/result";
+import { fail, ok } from "@edu/shared/utils/result";
 import { TeacherModel, ClassModel, StudentModel } from "@edu/shared/models";
 import { sessionRequest } from "../../_utils";
 
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
         const countMap = new Map(counts.map((entry) => [String(entry._id), Number(entry.count || 0)]));
 
         return NextResponse.json(
-            {
+            ok({
                 classes: classes.map((classItem) => ({
                     id: String(classItem._id),
                     name: classItem.name,
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
                     subjects: classItem.subjects ?? [],
                     academic_year: classItem.academic_year ?? ""
                 }))
-            },
+            }),
             { status: 200 }
         );
     } catch (error) {

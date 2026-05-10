@@ -24,7 +24,7 @@ export default function LiveClassPage() {
 
                 if (classesRes.ok) {
                     const data = await classesRes.json();
-                    setClassesData(data.data || []);
+                    setClassesData(data.classes || []);
                 }
 
                 if (subjectsRes.ok) {

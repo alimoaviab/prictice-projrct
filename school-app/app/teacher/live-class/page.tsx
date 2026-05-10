@@ -31,10 +31,12 @@ export default function TeacherLiveClassPage() {
 
         if (classesRes.ok) {
           const data = await classesRes.json();
-          setClassesData(data.data || []);
+          // API returns { classes: [...] }
+          setClassesData(data.classes || []);
         }
         if (subjectsRes.ok) {
            const data = await subjectsRes.json();
+           // API returns { ok: true, data: [...] }
            setSubjectsData(data.data || []);
         }
       } catch (e) {

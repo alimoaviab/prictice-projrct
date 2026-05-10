@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest } from "@edu/shared/auth/middleware";
-import { fail } from "@edu/shared/utils/result";
+import { fail, ok } from "@edu/shared/utils/result";
 import { ClassModel, StudentModel } from "@edu/shared/models";
 import { sessionRequest } from "../../../../_utils";
 
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
             .lean();
 
         return NextResponse.json(
-            {
+            ok({
                 class: classroom.name,
                 total_students: students.length,
                 students: students.map((student) => ({
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
                     email: student.guardian?.email ?? "",
                     status: student.status ?? "active"
                 }))
-            },
+            }),
             { status: 200 }
         );
     } catch (error) {

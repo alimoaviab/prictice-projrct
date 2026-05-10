@@ -204,4 +204,24 @@ html {
     padding: 0.5rem 0.75rem;
     border-radius: 0.6rem;
   }
+
+  @keyframes glow {
+    0% {
+      box-shadow: 0 0 5px rgba(37, 99, 235, 0.2), 0 0 10px rgba(37, 99, 235, 0.2);
+    }
+    50% {
+      box-shadow: 0 0 20px rgba(37, 99, 235, 0.6), 0 0 30px rgba(37, 99, 235, 0.4);
+    }
+    100% {
+      box-shadow: 0 0 5px rgba(37, 99, 235, 0.2), 0 0 10px rgba(37, 99, 235, 0.2);
+    }
+  }
+
+  .animate-glow {
+    animation: glow 3s infinite ease-in-out;
+  }
+
+  .chatbot-toggle {
+    @apply fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-xl transition-all duration-300 hover:scale-110 active:scale-95;
+  }
 }

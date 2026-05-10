@@ -16,8 +16,8 @@ export class ProviderManager {
       this.providers.set(
         "gemini",
         new ChatGoogleGenerativeAI({
-          model: process.env.GEMINI_MODEL || "gemini-3.1-flash-lite",
-          temperature: 0.2,
+          model: process.env.GEMINI_MODEL || "gemini-1.5-flash-latest",
+          temperature: 0.1,
           maxRetries: 0,
           apiKey: process.env.GEMINI_API_KEY,
           apiVersion: "v1beta",
@@ -27,8 +27,8 @@ export class ProviderManager {
       this.providers.set(
         "gemini-pro",
         new ChatGoogleGenerativeAI({
-          model: "gemini-3.1-pro",
-          temperature: 0.2,
+          model: "gemini-1.5-pro-latest",
+          temperature: 0.1,
           maxRetries: 1,
           apiKey: process.env.GEMINI_API_KEY,
           apiVersion: "v1beta",

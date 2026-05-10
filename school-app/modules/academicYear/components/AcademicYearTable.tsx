@@ -6,11 +6,13 @@ import { AcademicYearRow } from "../types/academicYear.types";
 export function AcademicYearTable({ 
     years, 
     onEdit, 
-    onDelete 
+    onDelete,
+    onSetActive
 }: { 
     years: AcademicYearRow[]; 
     onEdit: (row: AcademicYearRow) => void;
     onDelete: (row: AcademicYearRow) => void;
+    onSetActive: (row: AcademicYearRow) => void;
 }) {
     const formatDate = (value: string) => new Date(value).toLocaleDateString("en-US", {
         month: "short",
@@ -79,6 +81,19 @@ export function AcademicYearTable({
             align: "right",
             render: (row: AcademicYearRow) => (
                 <div className="flex justify-end items-center gap-1.5 py-1">
+                    <button 
+                        onClick={() => onSetActive(row)}
+                        className={`h-8 px-3 flex items-center justify-center gap-2 rounded-lg transition-all border text-[9px] font-black uppercase tracking-widest ${
+                            row.is_active 
+                            ? "bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/10" 
+                            : "bg-white text-slate-400 border-slate-200 hover:border-blue-400 hover:text-blue-600"
+                        }`}
+                        title={row.is_active ? "Current Active Year" : "Set as Current"}
+                    >
+                        <span className="material-symbols-outlined text-[16px]">{row.is_active ? "check_circle" : "radio_button_unchecked"}</span>
+                        {row.is_active ? "Active" : "Inactive"}
+                    </button>
+                    <div className="w-px h-4 bg-slate-100 mx-1" />
                     <button 
                         onClick={() => onEdit(row)}
                         className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50 hover:text-blue-600 transition-colors"

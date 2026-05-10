@@ -16,7 +16,13 @@ export function ClassCreatePage() {
   const { addClass } = useClasses();
   const { state: academicYearState } = useAcademicYears();
   const { state: teacherState } = useTeachers();
-  const { data: subjects, isLoading: subjectsLoading, error: subjectsError } = useSubjects();
+  const {
+    data: subjects,
+    isLoading: subjectsLoading,
+    error: subjectsError,
+    createSubject,
+    refresh: refreshSubjects
+  } = useSubjects();
 
   const isDependencyLoading =
     academicYearState.status === "idle" ||
@@ -25,9 +31,9 @@ export function ClassCreatePage() {
     teacherState.status === "loading" ||
     subjectsLoading;
 
-  const hasAcademicYears = (academicYearState.data ?? []).length > 0;
+  const hasAcademicYears = (academicYearState.data?.data ?? []).length > 0;
 
-  const academyCareOptions = (academicYearState.data ?? []).map((item) => ({
+  const academyCareOptions = (academicYearState.data?.data ?? []).map((item) => ({
     id: item._id,
     label: item.year,
   }));
@@ -45,6 +51,21 @@ export function ClassCreatePage() {
       router.refresh();
     }
     return result;
+  }
+
+  async function handleQuickAddSubject(name: string) {
+    try {
+      await createSubject({
+        name,
+        code: name.substring(0, 3).toUpperCase(),
+        status: "active"
+      });
+      showToast(`Subject "${name}" added to curriculum`, "success");
+      await refreshSubjects();
+    } catch (error: any) {
+      showToast(error.message || "Failed to add subject", "error");
+      throw error;
+    }
   }
 
   return (
@@ -127,6 +148,7 @@ export function ClassCreatePage() {
           ) : (
             <ClassForm
               onCreate={handleCreate}
+              onAddSubject={handleQuickAddSubject}
               academyCareOptions={academyCareOptions}
               teacherOptions={teacherOptions}
               subjectOptions={(subjects ?? [])

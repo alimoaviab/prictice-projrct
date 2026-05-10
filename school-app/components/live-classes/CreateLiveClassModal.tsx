@@ -122,7 +122,7 @@ export const CreateLiveClassModal: React.FC<CreateLiveClassModalProps> = ({
                 onChange={(e) => setFormData({ ...formData, classId: e.target.value })}
               >
                 <option value="">Select...</option>
-                {classes.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                {classes.map(c => <option key={c.id || c._id} value={c.id || c._id}>{c.name}</option>)}
               </select>
             </div>
             <div>
@@ -135,7 +135,7 @@ export const CreateLiveClassModal: React.FC<CreateLiveClassModalProps> = ({
                 onChange={(e) => setFormData({ ...formData, subjectId: e.target.value })}
               >
                 <option value="">Select...</option>
-                {subjects.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
+                {subjects.map(s => <option key={s.id || s._id} value={s.id || s._id}>{s.name}</option>)}
               </select>
             </div>
           </div>

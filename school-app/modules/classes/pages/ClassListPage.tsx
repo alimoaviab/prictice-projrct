@@ -6,6 +6,7 @@ import { DataTable, DataTableColumn, RowAction, Badge, DataState, ListToolbar, S
 import { useClasses } from "../hooks/useClasses";
 import { useAcademyCare } from "../../academyCare/hooks/useAcademyCare";
 import { useTeachers } from "../../teachers/hooks/useTeachers";
+import { useSubjects } from "../../subjects/hooks/useSubjects";
 import { ClassRow, ClassFormInput } from "../types/class.types";
 import { showToast } from "../../../utils/toast";
 import { ClassEditSidebar } from "../components/ClassEditSidebar";
@@ -34,15 +35,14 @@ export function ClassListPage() {
     label: `${teacher.first_name} ${teacher.last_name}`,
   }));
 
-  const subjectOptions = [
-    { id: "math", label: "Mathematics" },
-    { id: "english", label: "English" },
-    { id: "science", label: "Science" },
-    { id: "social_studies", label: "Social Studies" },
-    { id: "hindi", label: "Hindi" },
-    { id: "sanskrit", label: "Sanskrit" },
-    { id: "physical_education", label: "Physical Education" },
-  ];
+  const { data: subjectsData } = useSubjects();
+
+  const subjectOptions = (subjectsData || [])
+    .filter(s => s.status === "active")
+    .map((s) => ({
+      id: s._id,
+      label: s.name,
+    }));
 
   const getSubjectLabel = (subject: unknown) => {
     if (typeof subject === "string") return subject;
@@ -137,15 +137,6 @@ export function ClassListPage() {
         </div>
       ),
     },
-    {
-      key: "status",
-      label: "Status",
-      render: (row) => (
-        <Badge variant={row.status === "active" ? "success" : "gray"} className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5">
-          {row.status}
-        </Badge>
-      ),
-    },
   ];
 
   const rowActions: RowAction<ClassRow>[] = [
@@ -224,17 +215,7 @@ export function ClassListPage() {
               className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-xs font-medium text-slate-700 outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-600/5 placeholder:text-slate-400"
             />
           </div>
-          <div className="h-6 w-px bg-slate-200" />
-          <select
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value as any)}
-            className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none cursor-pointer transition-all hover:border-slate-300 focus:border-blue-400"
-          >
-            <option value="all">Lifecycle: All</option>
-            <option value="active">Active Only</option>
-            <option value="inactive">Inactive / Archived</option>
-          </select>
-        </div>
+          </div>
 
         <div className="flex items-center gap-3">
           <div className="flex items-center rounded-lg bg-slate-100 p-1 shadow-inner">
@@ -313,9 +294,6 @@ export function ClassListPage() {
                       <div className="mb-6">
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className="text-lg font-black text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors">{row.name}</h3>
-                          <Badge variant={row.status === "active" ? "success" : "gray"} className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0">
-                            {row.status}
-                          </Badge>
                         </div>
                         <p className="text-[11px] font-bold text-slate-500 leading-relaxed line-clamp-2">
                           {row.description || "Foundational academic group module."}
@@ -424,8 +402,8 @@ export function ClassListPage() {
       </div>
 
       <ClassEditSidebar
-        classItem={editingClass}
         isOpen={editingClass !== null}
+        classItem={editingClass}
         academyCareOptions={academyCareOptions}
         teacherOptions={teacherOptions}
         subjectOptions={subjectOptions}
@@ -434,11 +412,16 @@ export function ClassListPage() {
           setIsSaving(true);
           try {
             await updateClass(id, data as ClassFormInput);
+            showToast("Class updated successfully");
             setEditingClass(null);
-            showToast("Class configuration updated", "success");
+          } catch (err: any) {
+            showToast(err.message || "Failed to update class");
           } finally {
             setIsSaving(false);
           }
+        }}
+        onAddSubject={async (name) => {
+          await createSubject({ name, status: "active" });
         }}
         isSaving={isSaving}
       />

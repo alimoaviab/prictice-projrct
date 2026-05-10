@@ -157,7 +157,7 @@ export function AIAssistant({ onClose }: { onClose: () => void }) {
           messages.map((msg, index) => (
             <div key={index} className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
               {msg.role === "ai" && (
-                <div className="flex-shrink-0 mt-1 h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+                <div className="flex-shrink-0 mt-1 h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 animate-glow">
                   <Bot size={16} />
                 </div>
               )}

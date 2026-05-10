@@ -25,9 +25,9 @@ export async function POST(request: Request) {
     const graph = createAgentGraph();
 
     let complexity: "simple" | "moderate" | "complex" = "moderate";
-    if (message.length < 50 && !message.includes("analyze") && !message.includes("why")) {
+    if (message.length < 100 && !message.toLowerCase().includes("analyze")) {
       complexity = "simple";
-    } else if (message.length > 200 || message.includes("analyze") || message.includes("summary") || message.includes("explain")) {
+    } else if (message.length > 500 || message.toLowerCase().includes("deep analysis")) {
       complexity = "complex";
     }
 

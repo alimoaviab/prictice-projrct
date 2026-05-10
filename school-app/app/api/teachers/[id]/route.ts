@@ -6,7 +6,7 @@ import { ClassModel } from "@edu/shared/models/class.model";
 import { StudentModel } from "@edu/shared/models/student.model";
 import { SubjectModel } from "@edu/shared/models/subject.model";
 import { TeacherModel } from "@edu/shared/models/teacher.model";
-import { fail } from "@edu/shared/utils/result";
+import { fail, ok } from "@edu/shared/utils/result";
 import { updateTeacher, deleteTeacher } from "@edu/shared/services/teacher.service";
 import { sessionRequest } from "../../_utils";
 
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             : [];
 
         return NextResponse.json(
-            {
+            ok({
                 teacher: {
                     id: String(teacher._id),
                     employee_no: teacher.employee_no,
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                     name: subject.name,
                     code: subject.code ?? ""
                 }))
-            },
+            }),
             { status: 200 }
         );
     } catch (error) {

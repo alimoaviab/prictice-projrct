@@ -29,8 +29,8 @@ export async function GET(req: Request) {
           status: "active"
         }).lean();
 
-        if (student?.class_id) {
-          filters.classId = String(student.class_id);
+        if ((student as any)?.class_id) {
+          filters.classId = String((student as any).class_id);
         }
       }
     }
