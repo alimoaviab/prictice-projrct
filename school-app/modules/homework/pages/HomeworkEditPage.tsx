@@ -3,20 +3,23 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Card, Skeleton, DataState } from "../../../components/ui";
-import { LiveClassForm } from "../components/LiveClassForm";
+import { Card, Skeleton } from "../../../components/ui";
+import { HomeworkForm } from "../components/HomeworkForm";
 import { showToast } from "../../../utils/toast";
 
-interface LiveClassCreatePageProps {
+interface HomeworkEditPageProps {
   role: "ADMIN" | "TEACHER";
+  id: string;
 }
 
-export function LiveClassCreatePage({ role }: LiveClassCreatePageProps) {
+export function HomeworkEditPage({ role, id }: HomeworkEditPageProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [homework, setHomework] = useState<any>(null);
   const [formData, setFormData] = useState({
     classes: [],
+    subjects: [],
     teachers: []
   });
 
@@ -24,19 +27,16 @@ export function LiveClassCreatePage({ role }: LiveClassCreatePageProps) {
     setLoading(true);
     try {
       const isTeacher = role === "TEACHER";
-      
       const endpoints = [
         fetch(isTeacher ? "/api/school/my-classes" : "/api/classes"),
+        fetch("/api/school/subjects"),
+        fetch(`/api/homework/${id}`),
         ...(role === "ADMIN" ? [fetch("/api/teachers")] : [])
       ];
 
       const responses = await Promise.all(endpoints);
       const jsonData = await Promise.all(responses.map(r => r.json()));
 
-      const classesRes = jsonData[0];
-      const teachersRes = jsonData[1];
-
-      // Robust data extraction
       const extractArray = (res: any, key?: string) => {
         if (!res) return [];
         if (Array.isArray(res)) return res;
@@ -47,18 +47,18 @@ export function LiveClassCreatePage({ role }: LiveClassCreatePageProps) {
       };
 
       setFormData({
-        classes: isTeacher 
-          ? extractArray(classesRes, "classes") 
-          : extractArray(classesRes),
-        teachers: extractArray(teachersRes)
+        classes: isTeacher ? extractArray(jsonData[0], "classes") : extractArray(jsonData[0]),
+        subjects: extractArray(jsonData[1]),
+        teachers: extractArray(jsonData[3])
       });
+      setHomework(jsonData[2]?.data);
     } catch (error) {
-      console.error("Failed to load form data", error);
+      console.error(error);
       showToast("Failed to load required data", "error");
     } finally {
       setLoading(false);
     }
-  }, [role]);
+  }, [role, id]);
 
   useEffect(() => {
     fetchData();
@@ -67,55 +67,42 @@ export function LiveClassCreatePage({ role }: LiveClassCreatePageProps) {
   const handleSubmit = async (data: any) => {
     setSubmitting(true);
     try {
-      const res = await fetch("/api/live/classes", {
-        method: "POST",
+      const res = await fetch(`/api/homework/${id}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
 
       const result = await res.json();
-
       if (res.ok && result.success) {
-        showToast("Live class scheduled successfully", "success");
-        router.push(role === "ADMIN" ? "/admin/live-class" : "/teacher/live-class");
+        showToast("Homework updated successfully", "success");
+        router.push(role === "ADMIN" ? "/admin/homework" : "/teacher/homework");
         router.refresh();
       } else {
-        showToast(result.error || "Failed to schedule class", "error");
+        showToast(result.error?.message || "Failed to update homework", "error");
       }
     } catch (err) {
       console.error(err);
-      showToast("An error occurred during scheduling", "error");
+      showToast("An error occurred", "error");
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (!loading && formData.classes.length === 0 && role === "TEACHER") {
-     return (
-       <DataState 
-         variant="error" 
-         title="No Classes Assigned" 
-         message="You must have assigned classes to schedule a live session. Please contact the administrator."
-       />
-     );
-  }
-
   return (
     <div className="max-w-full mx-auto space-y-6">
       <Link
-        href={role === "ADMIN" ? "/admin/live-class" : "/teacher/live-class"}
+        href={role === "ADMIN" ? "/admin/homework" : "/teacher/homework"}
         className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-indigo-600 transition-colors"
       >
         <span className="material-symbols-outlined text-lg">arrow_back</span>
-        Back to Live Classes
+        Back to Homework List
       </Link>
 
       <Card className="p-8">
         <div className="mb-8">
-          <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Schedule New Live Session</h2>
-          <p className="text-sm text-slate-500 mt-1 font-medium">
-            Setup a live video session for your students. Meeting links will be automatically shared.
-          </p>
+          <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Edit Homework</h2>
+          <p className="text-sm text-slate-500 mt-1 font-medium">Modify the assignment details.</p>
         </div>
 
         {loading ? (
@@ -125,13 +112,15 @@ export function LiveClassCreatePage({ role }: LiveClassCreatePageProps) {
               <Skeleton className="h-14 w-full rounded-2xl" />
               <Skeleton className="h-14 w-full rounded-2xl" />
             </div>
-            <Skeleton className="h-32 w-full rounded-3xl" />
+            <Skeleton className="h-48 w-full rounded-[2.5rem]" />
           </div>
         ) : (
-          <LiveClassForm
+          <HomeworkForm
             onSubmit={handleSubmit}
             classes={formData.classes}
+            subjects={formData.subjects}
             teachers={formData.teachers}
+            initialValues={homework}
             showTeacherField={role === "ADMIN"}
             loading={submitting}
           />

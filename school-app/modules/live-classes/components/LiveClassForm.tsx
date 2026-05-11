@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, FormEvent } from "react";
+import React, { useEffect, useState, FormEvent } from "react";
 import { Input, Select, Button } from "../../../components/ui";
 import { showToast } from "../../../utils/toast";
+import { serviceRequest } from "../../../services/service-client";
 
 interface LiveClassFormProps {
   onSubmit: (data: any) => Promise<void>;
   classes: any[];
-  subjects: any[];
   teachers?: any[];
   showTeacherField?: boolean;
   initialTeacherId?: string;
@@ -17,7 +17,6 @@ interface LiveClassFormProps {
 export function LiveClassForm({
   onSubmit,
   classes,
-  subjects,
   teachers = [],
   showTeacherField = false,
   initialTeacherId = "",
@@ -31,6 +30,9 @@ export function LiveClassForm({
     startTime: "",
     endTime: "",
   });
+  const [subjectOptions, setSubjectOptions] = useState<Array<{ label: string; value: string }>>([]);
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
+  const selectedClass = classes.find(c => c.id === formData.classId || c._id === formData.classId);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -41,14 +43,69 @@ export function LiveClassForm({
     await onSubmit(formData);
   };
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadClassSubjects(classId: string) {
+      if (!classId) {
+        setSubjectOptions([]);
+        return;
+      }
+
+      setLoadingSubjects(true);
+      try {
+        const result = await serviceRequest<{ subjects?: any[] }>(`/api/school/subjects/class/${classId}`);
+        if (!result.ok) {
+          throw new Error(result.error.message || "Failed to load class subjects");
+        }
+
+        const apiSubjects = (result.data?.subjects ?? [])
+          .map((subject: any) => ({
+            label: subject.name || String(subject._id ?? subject.id),
+            value: subject.id || subject._id || subject.name
+          }))
+          .filter((option: { label: string; value: string }) => Boolean(option.value));
+
+        const classFallbackSubjects = (selectedClass?.subjects ?? [])
+          .map((subject: any) => {
+            if (typeof subject === "string") {
+              return { label: subject, value: subject };
+            }
+
+            const value = subject.name || subject.subject || subject.id || subject._id;
+            return {
+              label: subject.name || String(value),
+              value: String(value)
+            };
+          })
+          .filter((option: { label: string; value: string }) => Boolean(option.value));
+
+        const subjects = apiSubjects.length > 0 ? apiSubjects : classFallbackSubjects;
+
+        if (!cancelled) {
+          setSubjectOptions(subjects);
+        }
+      } catch {
+        if (!cancelled) {
+          setSubjectOptions([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingSubjects(false);
+        }
+      }
+    }
+
+    void loadClassSubjects(formData.classId);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [formData.classId, selectedClass?.subjects]);
+
   const classOptions = [
     { label: "Select Class", value: "" },
     ...classes.map(c => ({ label: c.name || c.label, value: c.id || c._id }))
-  ];
-
-  const subjectOptions = [
-    { label: "Select Subject", value: "" },
-    ...subjects.map(s => ({ label: s.name || s.label, value: s.id || s._id }))
   ];
 
   const teacherOptions = [
@@ -77,7 +134,7 @@ export function LiveClassForm({
               label="Class Section"
               required
               value={formData.classId}
-              onChange={(e) => setFormData({ ...formData, classId: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, classId: e.target.value, subjectId: "" })}
               options={classOptions}
               className="h-14 text-base rounded-2xl"
             />
@@ -86,7 +143,11 @@ export function LiveClassForm({
               required
               value={formData.subjectId}
               onChange={(e) => setFormData({ ...formData, subjectId: e.target.value })}
-              options={subjectOptions}
+              options={[
+                { label: loadingSubjects ? "Loading subjects..." : "Select Subject", value: "" },
+                ...subjectOptions
+              ]}
+              disabled={!formData.classId || loadingSubjects}
               className="h-14 text-base rounded-2xl"
             />
           </div>

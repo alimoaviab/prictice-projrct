@@ -1,5 +1,5 @@
-import { SchoolShell } from "../../../layouts/SchoolShell";
-import { LiveClassCreatePage } from "../../../modules/live-classes/pages/LiveClassCreatePage";
+import { SchoolShell } from "../../../../layouts/SchoolShell";
+import { LiveClassCreatePage } from "../../../../modules/live-classes/pages/LiveClassCreatePage";
 
 export default function TeacherLiveClassCreatePage() {
     return (
