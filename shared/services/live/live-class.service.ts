@@ -3,6 +3,8 @@ import { RequestContext } from "../../types/core";
 import { tenantFilter } from "../../db/tenant-query";
 import { createGoogleMeetEvent, deleteGoogleMeetEvent } from "../../lib/google/calendar";
 import mongoose from "mongoose";
+import { TeacherModel } from "../../models/teacher.model";
+import { UserModel } from "../../models/user.model";
 
 export class LiveClassService {
   static async createClass(
@@ -17,11 +19,54 @@ export class LiveClassService {
       endTime: string;
     }
   ): Promise<ILiveClass> {
+    const attendees: Array<{ email: string; displayName?: string }> = [];
+
+    if (ctx.actor_email) {
+      attendees.push({ email: ctx.actor_email, displayName: "Organizer" });
+    }
+
+    try {
+      const teacher = await TeacherModel.findOne({
+        school_id: ctx.school_id,
+        _id: new mongoose.Types.ObjectId(data.teacherId)
+      })
+        .select("user_id first_name last_name")
+        .lean() as any;
+
+      if (teacher?.user_id) {
+        const teacherUser = await UserModel.findOne({
+          school_id: ctx.school_id,
+          _id: teacher.user_id
+        })
+          .select("email")
+          .lean() as any;
+
+        if (teacherUser?.email) {
+          attendees.push({
+            email: teacherUser.email,
+            displayName: `${teacher.first_name || ""} ${teacher.last_name || ""}`.trim() || "Teacher"
+          });
+        }
+      }
+    } catch (error) {
+      console.warn("[LiveClassService] Could not resolve teacher attendee email", {
+        teacherId: data.teacherId,
+        error: (error as Error)?.message
+      });
+    }
+
     // Generate Meet link
     let meetingLink = "";
     let meetingId = "";
     try {
-      const meetResult = await createGoogleMeetEvent(data.title, data.startTime, data.endTime);
+      const meetResult = await createGoogleMeetEvent(
+        ctx,
+        data.title,
+        data.startTime,
+        data.endTime,
+        `Live class for class ${data.classId}`,
+        attendees
+      );
       meetingLink = meetResult.meetingLink || "";
       meetingId = meetResult.eventId || "";
     } catch (error) {
@@ -92,7 +137,7 @@ export class LiveClassService {
 
     if (liveClass.meetingId) {
        try {
-         await deleteGoogleMeetEvent(liveClass.meetingId);
+         await deleteGoogleMeetEvent(ctx, liveClass.meetingId);
        } catch (e) {
          console.warn("Could not delete associated calendar event");
        }
