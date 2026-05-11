@@ -8,7 +8,7 @@ export const studentCreateSchema = z.object({
   subjects: z.array(z.string()).optional(),
   section: z.string().min(1).max(20),
   email: z.string().email().optional().or(z.literal("")),
-  password: z.string().min(6).max(128).optional(),
+  password: z.string().min(8).max(128).optional(),
   guardian: z.object({
     name: z.string().min(1).max(120),
     phone: z.string().min(6).max(30),

@@ -58,6 +58,16 @@ export async function createStudent(
     const normalizedEmail = parsed.email?.trim().toLowerCase();
     const { email: _email, password: _password, ...studentData } = parsed;
 
+    // 1. Resolve Academic Year
+    const { AcademicYearModel } = await import("../models/academic-year.model");
+    const activeYear = await AcademicYearModel.findOne(tenantFilter(ctx, { is_active: true }))
+      .select("_id")
+      .lean();
+
+    if (!activeYear) {
+      throw new Error("No active academic year found for this school.");
+    }
+
     let userId: Types.ObjectId | undefined;
     if (normalizedEmail) {
       const existingUser = await UserModel.findOne({
@@ -88,6 +98,7 @@ export async function createStudent(
 
     const created = await StudentModel.create({
       ...studentData,
+      academic_year_id: activeYear._id,
       admission_no: parsed.admission_no || (await nextAdmissionNumber(ctx.school_id)),
       class_id: new Types.ObjectId(parsed.class_id),
       user_id: userId,

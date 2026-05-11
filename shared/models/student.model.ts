@@ -4,6 +4,7 @@ import { requiredString, schemaOptions, tenantField } from "./base";
 const studentSchema = new Schema(
   {
     school_id: tenantField,
+    academic_year_id: { type: Types.ObjectId, ref: "AcademicYear", required: true, index: true },
     user_id: { type: Types.ObjectId, ref: "User", index: true },
     admission_no: requiredString,
     first_name: requiredString,

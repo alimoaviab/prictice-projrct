@@ -7,6 +7,7 @@ interface User {
   id: string;
   email: string;
   role: Role;
+  schoolId: string;
   profileId?: string;
   classId?: string;
   studentId?: string;
@@ -51,6 +52,7 @@ export function useAuth() {
         id: payload.sub,
         email: payload.actor_email,
         role: payload.role,
+        schoolId: payload.school_id,
         profileId,
         classId,
         studentId

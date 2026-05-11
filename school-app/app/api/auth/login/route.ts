@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     try {
         await connectDb();
         const body = await request.json();
-        const { email, password } = body;
+        const { email, password, role: requestedRole } = body;
 
         // Validation
         if (!email || !password) {
@@ -53,7 +53,31 @@ export async function POST(request: NextRequest) {
                 { status: 401 }
             );
         }
-        
+
+        // ROLE ISOLATION CHECK
+        if (requestedRole && user.role !== requestedRole) {
+            // Special error message for better UX
+            const roleLabels: Record<string, string> = {
+                admin: "an Administrator",
+                teacher: "a Teacher",
+                student: "a Student",
+                parent: "a Parent"
+            };
+            const portalLabels: Record<string, string> = {
+                admin: "Admin",
+                teacher: "Teacher",
+                student: "Student",
+                parent: "Parent"
+            };
+
+            return NextResponse.json(
+                { 
+                    message: `This account is registered as ${roleLabels[user.role] || "another role"}. Please switch to the ${portalLabels[user.role] || ""} portal.` 
+                },
+                { status: 403 }
+            );
+        }
+
         if (user.status !== "active") {
             return NextResponse.json(
                 { message: "Account is disabled or locked" },
@@ -68,13 +92,20 @@ export async function POST(request: NextRequest) {
             is_active: true
         }).select("_id").lean();
 
+        if (!activeAcademicYear) {
+            console.warn(`[Login] No active academic year for school: ${user.school_id}`);
+        }
+
+        let profileId: string | undefined;
+        let classId: string | undefined;
+        let studentId: string | undefined;
+
         // Additional data integrity checks for specific roles
         if (user.role === "teacher") {
             let teacher = await TeacherModel.findOne({ user_id: user._id, status: "active" });
             
             // AUTO-RECOVERY: If no link exists, try to link by email
             if (!teacher) {
-                console.log(`[Login] Attempting auto-recovery for teacher: ${user.email}`);
                 teacher = await TeacherModel.findOne({ 
                     school_id: user.school_id, 
                     email: user.email.toLowerCase(),
@@ -82,20 +113,24 @@ export async function POST(request: NextRequest) {
                 });
 
                 if (teacher) {
-                    console.log(`[Login] Auto-linked teacher ${teacher._id} to user ${user._id}`);
                     await TeacherModel.updateOne({ _id: teacher._id }, { $set: { user_id: user._id } });
                 }
             }
-
-            if (!teacher) {
-                // We allow login but the dashboard will show "Incomplete Profile"
-                // Alternatively, we could block login, but showing the onboarding state is better UX.
-                console.warn(`[Login] Teacher profile missing for user: ${user.email}`);
+            if (teacher) profileId = String(teacher._id);
+        } else if (user.role === "student") {
+            const student = await StudentModel.findOne({ user_id: user._id, status: "active" });
+            if (student) {
+                profileId = String(student._id);
+                studentId = String(student._id);
+                classId = String(student.class_id);
             }
         } else if (user.role === "parent") {
-            const parent = await ParentModel.findOne({ user_id: user._id, status: "active" });
-            if (!parent) {
-                console.warn(`[Login] Parent profile missing for user: ${user.email}`);
+            const parent = await ParentModel.findOne({ user_id: user._id, status: "active" })
+                .populate("student_id");
+            if (parent) {
+                profileId = String(parent._id);
+                studentId = String(parent.student_id?._id || parent.student_id);
+                classId = String((parent.student_id as any)?.class_id || "");
             }
         }
 
@@ -107,25 +142,11 @@ export async function POST(request: NextRequest) {
             active_academic_year_id: activeAcademicYear ? String(activeAcademicYear._id) : undefined,
             session_id: randomUUID(),
             app: "school",
-            actor_email: user.email
+            actor_email: user.email,
+            profile_id: profileId,
+            class_id: classId,
+            student_id: studentId
         });
-
-        let profileId: string | undefined;
-        let classId: string | undefined;
-        let studentId: string | undefined;
-
-        if (user.role === "teacher") {
-            const teacher = await TeacherModel.findOne({ user_id: user._id, status: "active" });
-            if (teacher) profileId = String(teacher._id);
-        } else if (user.role === "parent") {
-            const parent = await ParentModel.findOne({ user_id: user._id, status: "active" })
-                .populate("student_id");
-            if (parent) {
-                profileId = String(parent._id);
-                studentId = String(parent.student_id?._id || parent.student_id);
-                classId = String((parent.student_id as any)?.class_id || "");
-            }
-        }
 
         const response = NextResponse.json(
             { 

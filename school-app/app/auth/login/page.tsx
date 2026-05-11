@@ -114,20 +114,29 @@ export default function LoginPage() {
           </div>
 
           {/* Role Selection Tabs */}
-          <div className="mb-10 p-1.5 bg-gray-50 rounded-2xl flex border border-gray-100">
+          <div className="mb-10 p-1.5 bg-slate-50/50 backdrop-blur-sm rounded-2xl flex border border-slate-100/50 shadow-inner">
             {ROLES.map((role) => (
               <button
                 key={role.key}
                 type="button"
                 onClick={() => setSelectedRole(role.key)}
-                className={`flex-1 py-3.5 px-2 rounded-xl text-xs font-bold transition-all duration-300 flex items-center justify-center gap-2 ${
+                className={`flex-1 py-4 px-2 rounded-xl text-xs font-black transition-all duration-500 flex flex-col items-center justify-center gap-1.5 relative overflow-hidden ${
                   selectedRole === role.key
-                    ? "bg-white text-blue-600 shadow-sm border border-gray-100 scale-[1.02]"
-                    : "text-gray-400 hover:text-gray-900"
+                    ? "text-blue-600"
+                    : "text-slate-400 hover:text-slate-600"
                 }`}
               >
-                <span className="material-symbols-outlined text-[18px]">{role.icon}</span>
-                <span className="normal-case ">{role.label}</span>
+                {selectedRole === role.key && (
+                  <motion.div 
+                    layoutId="activeTab"
+                    className="absolute inset-0 bg-white shadow-[0_8px_20px_rgba(37,99,235,0.08)] border border-blue-50/50 rounded-xl"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+                <span className={`material-symbols-outlined text-[20px] relative z-10 transition-transform duration-500 ${selectedRole === role.key ? 'scale-110' : ''}`}>
+                  {role.icon}
+                </span>
+                <span className="relative z-10 uppercase tracking-[0.1em]">{role.label}</span>
               </button>
             ))}
           </div>

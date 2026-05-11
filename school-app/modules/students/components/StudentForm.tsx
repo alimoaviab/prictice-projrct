@@ -10,6 +10,8 @@ const initialForm: StudentFormInput = {
   last_name: "",
   class_id: "",
   section: "",
+  email: "",
+  password: "",
   guardian: {
     name: "",
     phone: "",
@@ -30,12 +32,15 @@ export function StudentForm({
 
   function validate() {
     const newErrors: Record<string, string> = {};
-    if (!form.first_name.trim()) newErrors.first_name = "First name is required";
-    if (!form.last_name.trim()) newErrors.last_name = "Last name is required";
-    if (!form.class_id.trim()) newErrors.class_id = "Class is required";
-    if (!form.section.trim()) newErrors.section = "Section is required";
-    if (!form.guardian.name.trim()) newErrors.guardian_name = "Guardian name is required";
-    if (!form.guardian.phone.trim()) newErrors.guardian_phone = "Guardian phone is required";
+    if (!form.first_name?.trim()) newErrors.first_name = "First name is required";
+    if (!form.last_name?.trim()) newErrors.last_name = "Last name is required";
+    if (!form.class_id?.trim()) newErrors.class_id = "Class is required";
+    if (!form.section?.trim()) newErrors.section = "Section is required";
+    if (!form.guardian.name?.trim()) newErrors.guardian_name = "Guardian name is required";
+    if (!form.guardian.phone?.trim()) newErrors.guardian_phone = "Guardian phone is required";
+    if (!form.email?.trim()) newErrors.email = "Student email is required";
+    if (!form.password || form.password.length < 8) newErrors.password = "Password must be at least 8 characters";
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }
@@ -138,12 +143,47 @@ export function StudentForm({
         </div>
 
         <Input
-          label="Email Address"
+          label="Guardian Email"
           placeholder="Contact email address"
           type="email"
           value={form.guardian.email || ""}
           onChange={(e) => setForm({ ...form, guardian: { ...form.guardian, email: e.target.value } })}
         />
+      </div>
+
+      <div className="space-y-4 border-t border-blue-50 bg-blue-50/20 p-6 rounded-[2rem] mt-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-black text-blue-900 normal-case ">Account Credentials</h3>
+            <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mt-1">Student Portal Access</p>
+          </div>
+          <div className="h-10 w-10 rounded-2xl bg-white flex items-center justify-center text-blue-600 shadow-sm">
+            <span className="material-symbols-outlined">lock_person</span>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+          <Input
+            label="Student Email Address"
+            placeholder="e.g., student@school.com"
+            type="email"
+            value={form.email || ""}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            error={errors.email}
+            required
+          />
+
+          <Input
+            label="Temporary Password"
+            placeholder="Minimum 8 characters"
+            type="password"
+            value={form.password || ""}
+            onChange={(e) => setForm({ ...form, password: e.target.value })}
+            error={errors.password}
+            required
+          />
+        </div>
+        <p className="text-[10px] font-medium text-slate-400 italic">This email will be used for student login and academic notifications.</p>
       </div>
 
       <div className="flex justify-end pt-4 border-t border-border">

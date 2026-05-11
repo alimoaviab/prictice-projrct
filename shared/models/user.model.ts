@@ -8,7 +8,7 @@ const userSchema = new Schema(
     password_hash: requiredString,
     role: {
       type: String,
-      enum: ["super_admin", "admin", "teacher", "parent"],
+      enum: ["super_admin", "admin", "teacher", "parent", "student"],
       required: true,
       index: true
     },
@@ -32,5 +32,11 @@ const userSchema = new Schema(
 
 userSchema.index({ school_id: 1, email: 1 }, { unique: true });
 userSchema.index({ school_id: 1, role: 1, status: 1 });
+
+// In development, the model might be cached with an old schema.
+// We force a re-registration if the role enum doesn't match what we expect.
+if (process.env.NODE_ENV === "development") {
+  delete models.User;
+}
 
 export const UserModel = models.User || model("User", userSchema);

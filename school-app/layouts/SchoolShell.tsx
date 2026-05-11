@@ -278,6 +278,8 @@ export function SchoolShell({
         router.replace(`/${user.role}/dashboard`);
       } else if (path.startsWith("/parent") && user.role !== "parent") {
         router.replace(`/${user.role}/dashboard`);
+      } else if (path.startsWith("/student") && user.role !== "student") {
+        router.replace(`/${user.role}/dashboard`);
       }
     }
   }, [authLoading, user, router, pathname]);
@@ -475,13 +477,14 @@ export function SchoolShell({
               <span className="material-symbols-outlined text-xs text-slate-300">calendar_today</span>
               <select
                 value={selectedAcademyCareId}
+                disabled={user.role === "student"}
                 onChange={(event) => {
                   const nextId = event.target.value;
                   setSelectedAcademyCareIdState(nextId);
                   setSelectedAcademyCareId(nextId);
                   window.location.reload();
                 }}
-                className="cursor-pointer bg-transparent text-[10px] font-bold text-slate-500 focus:outline-none"
+                className={`bg-transparent text-[10px] font-bold text-slate-500 focus:outline-none ${user.role === "student" ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
               >
                 {academyYears.map((row) => (
                   <option key={row._id} value={row._id}>
