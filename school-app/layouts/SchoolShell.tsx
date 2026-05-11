@@ -54,7 +54,6 @@ const adminNavGroups: NavGroup[] = [
   {
     label: "Operations",
     items: [
-      { label: "Announcements", href: "/admin/announcements", icon: "campaign" },
       { label: "Events", href: "/admin/events", icon: "event" },
     ],
   },
@@ -62,7 +61,6 @@ const adminNavGroups: NavGroup[] = [
     label: "Finance",
     items: [
       { label: "Fee", href: "/admin/fee", icon: "payments" },
-      { label: "Expense", href: "/admin/expense", icon: "account_balance_wallet" },
     ],
   },
   {
@@ -99,7 +97,6 @@ const teacherNavGroups: NavGroup[] = [
   {
     label: "Communication",
     items: [
-      { label: "Announcements", href: "/teacher/announcements", icon: "campaign" },
       { label: "Events", href: "/teacher/events", icon: "event" },
     ],
   },
@@ -122,7 +119,6 @@ const parentNavGroups: NavGroup[] = [
   {
     label: "School",
     items: [
-      { label: "Announcements", href: "/parent/announcements", icon: "campaign" },
       { label: "Events", href: "/parent/events", icon: "event" },
     ],
   },
@@ -154,7 +150,6 @@ const studentNavGroups: NavGroup[] = [
   {
     label: "School",
     items: [
-      { label: "Announcements", href: "/student/announcements", icon: "campaign" },
       { label: "Events", href: "/student/events", icon: "event" },
     ],
   },

@@ -260,10 +260,13 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
                         <span className="material-symbols-outlined text-xs">visibility</span>
                         Details
                      </button>
-                     <button className="group/btn h-7 px-3 rounded-lg bg-blue-600 text-[9px] font-bold text-white normal-case  hover:bg-blue-700 transition-all flex items-center gap-2 shadow-sm active:scale-95">
+                     <Link 
+                       href={`${pathname.includes("/teacher") ? "/teacher" : "/admin"}/results?exam_id=${exam._id}`}
+                       className="group/btn h-7 px-3 rounded-lg bg-blue-600 text-[9px] font-bold text-white normal-case  hover:bg-blue-700 transition-all flex items-center gap-2 shadow-sm active:scale-95"
+                     >
                         Results
                         <span className="material-symbols-outlined text-xs transition-transform group-hover/btn:translate-x-1">arrow_forward</span>
-                     </button>
+                     </Link>
                   </div>
                 </div>
               ))}

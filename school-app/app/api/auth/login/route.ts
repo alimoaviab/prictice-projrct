@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDb } from "@edu/shared/db/connect";
 import { signAuthToken } from "@edu/shared/auth/jwt";
 import { verifyPassword } from "@edu/shared/auth/password";
+import type { Role } from "@edu/shared/types/core";
 import { UserModel } from "@edu/shared/models/user.model";
 import { TeacherModel } from "@edu/shared/models/teacher.model";
 import { StudentModel } from "@edu/shared/models/student.model";
@@ -13,7 +14,7 @@ import { ParentModel } from "@edu/shared/models/parent.model";
 type LoginUser = {
     _id: unknown;
     school_id: string;
-    role: "super_admin" | "admin" | "teacher" | "parent";
+    role: Role;
     permissions?: string[];
     email: string;
     password_hash: string;
@@ -87,10 +88,10 @@ export async function POST(request: NextRequest) {
 
         // Get active academic year for the school
         const { AcademicYearModel } = await import("@edu/shared/models/academic-year.model");
-        const activeAcademicYear = await AcademicYearModel.findOne({
+        const activeAcademicYear = (await AcademicYearModel.findOne({
             school_id: user.school_id,
             is_active: true
-        }).select("_id").lean();
+        }).select("_id").lean()) as { _id: string } | null;
 
         if (!activeAcademicYear) {
             console.warn(`[Login] No active academic year for school: ${user.school_id}`);
@@ -142,10 +143,7 @@ export async function POST(request: NextRequest) {
             active_academic_year_id: activeAcademicYear ? String(activeAcademicYear._id) : undefined,
             session_id: randomUUID(),
             app: "school",
-            actor_email: user.email,
-            profile_id: profileId,
-            class_id: classId,
-            student_id: studentId
+            actor_email: user.email
         });
 
         const response = NextResponse.json(

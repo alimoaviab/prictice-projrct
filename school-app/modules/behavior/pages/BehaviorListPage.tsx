@@ -254,67 +254,86 @@ export function BehaviorListPage({ filters }: { filters?: { student_id?: string;
           />
         ) : (
           viewMode === "grid" ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
               {filteredRows.map((row) => (
-                <div key={row._id} className="premium-card group relative flex flex-col p-0 overflow-hidden transition-all duration-500 bg-white border-slate-200/60 hover:shadow-2xl hover:shadow-slate-200/80 hover:-translate-y-1">
-                  <div className="p-5">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className={`h-10 w-10 rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform ${
-                        row.severity === 'critical' ? 'bg-red-50 text-red-600' : 
-                        row.severity === 'major' ? 'bg-amber-50 text-amber-600' :
-                        'bg-blue-50 text-blue-600'
-                      }`}>
-                        <span className="material-symbols-outlined font-bold">
-                          {row.severity === 'critical' ? 'warning' : 'report_problem'}
-                        </span>
-                      </div>
+                <div key={row._id} className="premium-card group relative flex flex-col p-4 transition-all duration-300 bg-white border-slate-200/60 hover:shadow-xl hover:shadow-slate-200/30 hover:-translate-y-0.5">
+                  {/* Top Row: Student & Status */}
+                  <div className="flex items-start justify-between gap-4 mb-3.5">
+                    <div className="space-y-0.5 flex-1 min-w-0">
+                      <h3 className="text-[13px] font-bold text-slate-900 tracking-tight leading-tight truncate group-hover:text-blue-600 transition-colors">
+                        {row.student_name}
+                      </h3>
+                      <p className="text-[9px] font-bold text-slate-400 normal-case  mt-1">{row.class_name}</p>
+                    </div>
+                    
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <Badge
                         variant={
                           row.status === "resolved" ? "success" :
                           row.status === "open" ? "warning" : "primary"
                         }
-                        className="normal-case text-[9px] font-bold  px-2 py-0.5"
+                        className="text-[8px] font-bold normal-case  px-2 py-0"
                       >
                         {row.status.replace("_", " ")}
                       </Badge>
-                    </div>
-
-                    <div className="mb-6">
-                      <h3 className="text-lg font-bold text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors truncate">{row.student_name}</h3>
-                      <p className="text-[10px] font-bold text-slate-400 normal-case  mt-1">{row.class_name}</p>
-                    </div>
-
-                    <div className="bg-slate-50/50 rounded-xl p-3 border border-slate-100/50 mb-6 min-h-[60px]">
-                      <p className="text-[8px] font-bold text-slate-400 normal-case  mb-1">Incident Type</p>
-                      <p className="text-[11px] font-bold text-slate-700 normal-case mb-2">{row.incident_type.replace("_", " ")}</p>
-                      <p className="text-[10px] text-slate-500 line-clamp-2 leading-relaxed">{row.description || "No description provided."}</p>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-4 border-t border-slate-50">
-                       <div className="flex items-center gap-2 text-slate-400">
-                          <span className="material-symbols-outlined text-[16px]">notification_important</span>
-                          <span className="text-[9px] font-bold normal-case ">
-                            Warnings: <span className="text-slate-900">{row.warning_count}</span>
-                          </span>
-                       </div>
-                       <Badge variant={row.parent_notified ? "success" : "gray"} className="text-[8px] font-bold normal-case  px-1.5">
-                          {row.parent_notified ? "Parent Notified" : "Awaiting Notification"}
-                       </Badge>
+                      <button 
+                        onClick={() => handleDelete(row._id)}
+                        className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-300 hover:bg-red-50 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
+                        title="Archive Record"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">archive</span>
+                      </button>
                     </div>
                   </div>
-                  
-                  <div className="mt-auto px-5 py-3 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between group-hover:bg-white transition-all">
-                     <button className="text-[10px] font-bold text-slate-400 normal-case  hover:text-blue-600 flex items-center gap-1">
-                        <span className="material-symbols-outlined text-sm">visibility</span>
+
+                  {/* Middle Row: Incident Detail (Pill Style) */}
+                  <div className="mb-4 p-3 rounded-xl bg-slate-50/50 border border-slate-100/50 flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className="text-[8px] font-bold text-slate-400 normal-case  mb-1.5">Incident Context</p>
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-slate-700">
+                        <span className={`px-1.5 py-0.5 rounded-md border ${
+                          row.severity === 'critical' ? 'bg-red-50 text-red-600 border-red-100' : 
+                          row.severity === 'major' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                          'bg-white border-slate-100'
+                        }`}>
+                          {row.severity.toUpperCase()}
+                        </span>
+                        <span className="text-slate-300">/</span>
+                        <span className="bg-white px-1.5 py-0.5 rounded-md border border-slate-100 truncate max-w-[100px]">
+                          {row.incident_type.replace("_", " ")}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right pl-3 border-l border-slate-200/50 ml-3">
+                       <p className="text-xs font-bold text-slate-900 leading-none">{row.warning_count}</p>
+                       <p className="text-[7px] font-bold text-slate-400 normal-case  mt-0.5">Warnings</p>
+                    </div>
+                  </div>
+
+                  {/* Narrative Preview */}
+                  <div className="mb-4 px-0.5">
+                     <p className="text-[10px] font-medium text-slate-500 line-clamp-2 leading-relaxed italic">
+                       "{row.description || "No detailed description provided for this incident."}"
+                     </p>
+                  </div>
+
+                  {/* Bottom Row: Notifications & Action */}
+                  <div className="mt-auto pt-3 border-t border-slate-50 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className={`h-6 w-6 rounded-full flex items-center justify-center ${row.parent_notified ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
+                        <span className="material-symbols-outlined text-[14px]">{row.parent_notified ? 'notifications_active' : 'notifications_off'}</span>
+                      </div>
+                      <span className="text-[8px] font-bold text-slate-400 normal-case ">
+                        {row.parent_notified ? 'Parent Notified' : 'Unnotified'}
+                      </span>
+                    </div>
+                    <button 
+                      onClick={() => alert(`Review: ${row.description}`)}
+                      className="h-7 px-3 rounded-lg bg-slate-900 text-[9px] font-bold text-white normal-case  hover:bg-slate-800 transition-all flex items-center gap-1 shadow-md active:scale-95"
+                    >
                         Review
-                     </button>
-                     <button 
-                        onClick={() => handleDelete(row._id)}
-                        className="text-[10px] font-bold text-red-400 hover:text-red-600 normal-case  flex items-center gap-1"
-                      >
-                        <span className="material-symbols-outlined text-sm">delete</span>
-                        Archive
-                     </button>
+                        <span className="material-symbols-outlined text-[14px]">visibility</span>
+                    </button>
                   </div>
                 </div>
               ))}

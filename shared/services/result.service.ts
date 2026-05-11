@@ -47,7 +47,7 @@ function mapResultRecord(row: Record<string, any>) {
 
 export async function listResults(
   ctx: RequestContext,
-  filter: { academy_care_id?: string } = {}
+  filter: { academy_care_id?: string; exam_id?: string; student_id?: string } = {}
 ): Promise<ServiceResult<unknown[]>> {
   return serviceTry(async () => {
     await connectDb();
@@ -55,7 +55,15 @@ export async function listResults(
 
     const classIds = await resolveClassIdsForAcademyCare(ctx, filter.academy_care_id);
 
-    const rows = await ResultModel.find(tenantFilter(ctx, { class_id: { $in: classIds } }))
+    const query: any = tenantFilter(ctx, { class_id: { $in: classIds } });
+    if (filter.exam_id) {
+      query.exam_id = filter.exam_id;
+    }
+    if (filter.student_id) {
+      query.student_id = filter.student_id;
+    }
+
+    const rows = await ResultModel.find(query)
       .populate("exam_id", "title subject class_id max_marks")
       .populate("student_id", "first_name last_name admission_no class_id")
       .populate("class_id", "name")

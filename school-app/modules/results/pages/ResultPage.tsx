@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useCallback, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Card, DataState, Skeleton, TableSkeleton, Badge, DataTable, DataTableColumn, RowAction } from "../../../components/ui";
 import { useSafeAsync } from "../../../hooks/useSafeAsync";
 import { serviceRequest } from "../../../services/service-client";
@@ -9,7 +10,11 @@ import { useResults } from "../hooks/useResults";
 import { ResultRow } from "../types/result.types";
 
 export function ResultPage() {
-    const { state, addResult } = useResults();
+    const searchParams = useSearchParams();
+    const exam_id = searchParams.get("exam_id");
+    
+    const filters = exam_id ? { exam_id } : undefined;
+    const { state, addResult } = useResults(filters);
     const [searchQuery, setSearchQuery] = useState("");
     const [viewMode, setViewMode] = useState<"grid" | "list">("list");
     const [isAdding, setIsAdding] = useState(false);

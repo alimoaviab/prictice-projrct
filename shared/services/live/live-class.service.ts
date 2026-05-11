@@ -5,6 +5,17 @@ import { createGoogleMeetEvent, deleteGoogleMeetEvent } from "../../lib/google/c
 import mongoose from "mongoose";
 import { TeacherModel } from "../../models/teacher.model";
 import { UserModel } from "../../models/user.model";
+import { StudentModel } from "../../models/student.model";
+
+/**
+ * Generate a fallback meeting link when Google Meet is unavailable
+ * Format: https://meet.eduexplo.com/class-{classId}-{timestamp}
+ */
+function generateFallbackMeetingLink(classId: string): string {
+  const timestamp = Date.now().toString(36);
+  const randomId = Math.random().toString(36).substring(2, 8);
+  return `https://meet.eduexplo.com/class-${classId}-${timestamp}-${randomId}`;
+}
 
 export class LiveClassService {
   static async createClass(
@@ -55,7 +66,7 @@ export class LiveClassService {
       });
     }
 
-    // Generate Meet link
+    // Generate Meet link - try Google Meet first, fallback to custom link
     let meetingLink = "";
     let meetingId = "";
     try {
@@ -69,8 +80,17 @@ export class LiveClassService {
       );
       meetingLink = meetResult.meetingLink || "";
       meetingId = meetResult.eventId || "";
+      console.info("[LiveClassService] Google Meet link generated successfully", { meetingLink });
     } catch (error) {
-      console.warn("Could not generate Google Meet link automatically:", error);
+      console.warn("[LiveClassService] Could not generate Google Meet link, using fallback:", error);
+      // Generate fallback link
+      meetingLink = generateFallbackMeetingLink(data.classId);
+      console.info("[LiveClassService] Fallback meeting link generated", { meetingLink });
+    }
+
+    // Ensure we always have a meeting link
+    if (!meetingLink) {
+      meetingLink = generateFallbackMeetingLink(data.classId);
     }
 
     const liveClass = new LiveClass({
@@ -88,8 +108,72 @@ export class LiveClassService {
       createdBy: new mongoose.Types.ObjectId(ctx.user_id),
     });
 
-    await liveClass.save();
-    return liveClass as ILiveClass;
+    const savedClass = await liveClass.save();
+
+    // Share link with students in the class
+    try {
+      await this.shareClassLinkWithStudents(ctx, data.classId, meetingLink, data.title);
+    } catch (error) {
+      console.warn("[LiveClassService] Could not share link with students:", error);
+    }
+
+    return savedClass as ILiveClass;
+  }
+
+  /**
+   * Share the live class link with all students in the class
+   */
+  private static async shareClassLinkWithStudents(
+    ctx: RequestContext,
+    classId: string,
+    meetingLink: string,
+    title: string
+  ): Promise<void> {
+    try {
+      // Get all active students in the class
+      const students = await StudentModel.find({
+        school_id: ctx.school_id,
+        class_id: new mongoose.Types.ObjectId(classId),
+        status: "active"
+      })
+        .select("user_id email first_name last_name")
+        .lean() as any[];
+
+      if (students.length === 0) {
+        console.info("[LiveClassService] No students found in class to share link with");
+        return;
+      }
+
+      // Get user emails for students
+      const userIds = students.map(s => s.user_id).filter(Boolean);
+      const users = await UserModel.find({
+        school_id: ctx.school_id,
+        _id: { $in: userIds }
+      })
+        .select("_id email")
+        .lean() as any[];
+
+      const userEmailMap = new Map(users.map(u => [u._id.toString(), u.email]));
+
+      // Prepare notification data (can be extended to send emails/notifications)
+      const studentEmails = students
+        .map(s => userEmailMap.get(s.user_id?.toString() || ""))
+        .filter(Boolean) as string[];
+
+      console.info("[LiveClassService] Sharing live class link with students", {
+        classId,
+        studentCount: students.length,
+        emailCount: studentEmails.length,
+        title,
+        meetingLink
+      });
+
+      // TODO: Send notifications to students (email, SMS, in-app notification)
+      // For now, just log that we would share it
+    } catch (error) {
+      console.warn("[LiveClassService] Error sharing link with students:", error);
+      // Don't throw - this is a non-critical operation
+    }
   }
 
   static async getClasses(

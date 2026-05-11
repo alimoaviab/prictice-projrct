@@ -10,6 +10,7 @@ export function ClassEditSidebar({
     teacherOptions,
     subjectOptions,
     onClose,
+    onOpenFeeManager,
     onSave,
     onAddSubject,
     isSaving,
@@ -20,6 +21,7 @@ export function ClassEditSidebar({
     teacherOptions: Array<{ id: string; label: string }>;
     subjectOptions: Array<{ id: string; label: string }>;
     onClose: () => void;
+    onOpenFeeManager?: (classItem: ClassRow) => void;
     onSave: (id: string, data: Partial<ClassFormInput>) => Promise<void>;
     onAddSubject?: (name: string) => Promise<void>;
     isSaving: boolean;
@@ -106,12 +108,23 @@ export function ClassEditSidebar({
                         </div>
                         <p className="text-[10px] font-bold text-slate-400 normal-case ">Academic Node — {classItem.name}</p>
                     </div>
-                    <button
-                        onClick={handleClose}
-                        className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-50 text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-900 active:scale-90 border border-slate-100"
-                    >
-                        <span className="material-symbols-outlined text-lg">close</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {onOpenFeeManager && (
+                            <button
+                                onClick={() => onOpenFeeManager(classItem)}
+                                className="flex h-8 items-center gap-1.5 rounded-xl border border-violet-200 bg-violet-50 px-3 text-[10px] font-black uppercase tracking-[0.14em] text-violet-700 transition-all hover:bg-violet-100 active:scale-90"
+                            >
+                                <span className="material-symbols-outlined text-[16px]">payments</span>
+                                Fee Setup
+                            </button>
+                        )}
+                        <button
+                            onClick={handleClose}
+                            className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-50 text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-900 active:scale-90 border border-slate-100"
+                        >
+                            <span className="material-symbols-outlined text-lg">close</span>
+                        </button>
+                    </div>
                 </div>
 
                 {/* Content - Scrollable body with better rhythm */}

@@ -32,7 +32,7 @@ export function HomeworkForm({
     teacher_id: initialValues?.teacher_id || initialTeacherId,
     due_at: initialValues?.due_at || "",
     instructions: initialValues?.instructions || "",
-    status: initialValues?.status || "published"
+    status: initialValues?.status || "assigned"
   });
 
   const [classSubjects, setClassSubjects] = useState<any[]>([]);
@@ -66,6 +66,13 @@ export function HomeworkForm({
       setClassSubjects([]);
     }
   }, [formData.class_id]);
+
+  // Sync initial teacher ID if it changes (e.g. from auth hook)
+  React.useEffect(() => {
+    if (initialTeacherId && !formData.teacher_id) {
+      setFormData(prev => ({ ...prev, teacher_id: initialTeacherId }));
+    }
+  }, [initialTeacherId]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();

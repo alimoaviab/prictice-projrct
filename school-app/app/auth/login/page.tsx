@@ -14,6 +14,28 @@ const ROLES: { key: Role; label: string; icon: string }[] = [
   { key: "student", label: "Student", icon: "face" },
 ];
 
+const ROLE_ROUTES: Record<string, string> = {
+  admin: "/admin/dashboard",
+  super_admin: "/admin/dashboard",
+  teacher: "/teacher/dashboard",
+  student: "/student/dashboard",
+};
+
+function decodeJwtPayload(token: string): { role?: string } | null {
+  const payloadPart = token.split(".")[1];
+  if (!payloadPart) {
+    return null;
+  }
+
+  try {
+    const normalized = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+    return JSON.parse(atob(padded));
+  } catch {
+    return null;
+  }
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -32,7 +54,8 @@ export default function LoginPage() {
   useEffect(() => {
     const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
     if (token) {
-      router.replace("/admin/dashboard");
+      const payload = decodeJwtPayload(token);
+      router.replace(ROLE_ROUTES[payload?.role || "admin"] || "/admin/dashboard");
       return;
     }
     setSessionChecked(true);
@@ -72,18 +95,14 @@ export default function LoginPage() {
       setSuccess(true);
       localStorage.setItem("token", result.token);
       if (result.profile_id) localStorage.setItem("profile_id", result.profile_id);
+      else localStorage.removeItem("profile_id");
       if (result.class_id) localStorage.setItem("class_id", result.class_id);
+      else localStorage.removeItem("class_id");
       if (result.student_id) localStorage.setItem("student_id", result.student_id);
-      
-      const roleRoutes: Record<string, string> = {
-        admin: "/admin/dashboard",
-        super_admin: "/admin/dashboard",
-        teacher: "/teacher/dashboard",
-        student: "/student/dashboard",
-      };
+      else localStorage.removeItem("student_id");
       
       setTimeout(() => {
-        router.push(roleRoutes[result.role] || "/");
+        router.push(ROLE_ROUTES[result.role] || "/");
       }, 1500);
     } catch (err: any) {
       setError(err.message);

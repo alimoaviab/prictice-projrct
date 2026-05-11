@@ -47,7 +47,12 @@ export async function listHomework(
 
     const classIds = await resolveClassIdsForAcademyCare(ctx, filter.academy_care_id);
 
-    const rows = await HomeworkModel.find(tenantFilter(ctx, { class_id: { $in: classIds } }))
+    const query: any = tenantFilter(ctx);
+    if (classIds.length > 0) {
+      query.class_id = { $in: classIds };
+    }
+
+    const rows = await HomeworkModel.find(query)
       .populate("class_id", "name")
       .populate("teacher_id", "employee_no first_name last_name")
       .populate({ path: "subject_id", select: "name", strictPopulate: false })
@@ -107,18 +112,43 @@ export async function createHomework(
     }
 
     // Validate subject exists
-    const subject = await SubjectModel.findOne(
+    let subject = await SubjectModel.findOne(
       tenantFilter(ctx, { _id: parsed.subject_id })
     ).lean();
+
+    // Fallback: If not found by ID, try to find by name from class subjects (legacy data)
     if (!subject) {
-      throw new Error("Selected subject was not found.");
+      const embedded = (classroom.subjects || [])?.find(
+        (s: any) => s.name === parsed.subject_id || String(s._id) === parsed.subject_id
+      );
+      const searchName = embedded?.name || (Types.ObjectId.isValid(parsed.subject_id) ? "" : parsed.subject_id);
+      
+      if (searchName) {
+        // Try to find by name
+        subject = await SubjectModel.findOne(tenantFilter(ctx, { name: searchName })).lean();
+        
+        // If still not found, create a new Subject document to satisfy the model requirement
+        if (!subject && searchName.length >= 2) {
+          subject = await SubjectModel.create({
+            school_id: ctx.school_id,
+            name: searchName,
+            status: "active"
+          });
+          if (subject.toObject) subject = subject.toObject();
+        }
+      }
+    }
+
+    if (!subject) {
+      throw new Error(`Selected subject "${parsed.subject_id}" was not found and could not be resolved.`);
     }
 
     const created = await HomeworkModel.create({
       school_id: ctx.school_id,
+      academic_year_id: ctx.active_academic_year_id || (classroom as any).academy_care_id,
       class_id: new Types.ObjectId(parsed.class_id),
       teacher_id: new Types.ObjectId(parsed.teacher_id),
-      subject_id: new Types.ObjectId(parsed.subject_id),
+      subject_id: subject._id,
       subject: subject.name, // Set subject name for backward compatibility
       title: parsed.title,
       instructions: parsed.instructions ?? "",
@@ -167,12 +197,7 @@ export async function updateHomework(
       }
     }
 
-    if (parsed.subject_id) {
-      const subject = await SubjectModel.findOne(tenantFilter(ctx, { _id: parsed.subject_id })).lean();
-      if (!subject) {
-        throw new Error("Selected subject was not found.");
-      }
-    }
+    // Subject validation will happen during patch building below
 
     const patch = { ...parsed } as any;
     if (parsed.class_id) {
@@ -182,9 +207,39 @@ export async function updateHomework(
       patch.teacher_id = new Types.ObjectId(parsed.teacher_id);
     }
     if (parsed.subject_id) {
-      patch.subject_id = new Types.ObjectId(parsed.subject_id);
-      const subject = await SubjectModel.findOne(tenantFilter(ctx, { _id: parsed.subject_id })).lean();
-      patch.subject = subject?.name; // Update subject name for backward compatibility
+      // Resolve subject (handling potential legacy IDs/names)
+      let subject = await SubjectModel.findOne(tenantFilter(ctx, { _id: parsed.subject_id })).lean();
+      if (!subject) {
+        const homework = existing || await HomeworkModel.findById(id).lean();
+        if (homework) {
+          const classroom = await ClassModel.findById(homework.class_id).lean();
+          const embedded = (classroom?.subjects || [])?.find(
+            (s: any) => s.name === parsed.subject_id || String(s._id) === parsed.subject_id
+          );
+          const searchName = embedded?.name || (Types.ObjectId.isValid(parsed.subject_id) ? "" : parsed.subject_id);
+          
+          if (searchName) {
+            subject = await SubjectModel.findOne(tenantFilter(ctx, { name: searchName })).lean();
+            
+            // Auto-create if missing
+            if (!subject && searchName.length >= 2) {
+              subject = await SubjectModel.create({
+                school_id: ctx.school_id,
+                name: searchName,
+                status: "active"
+              });
+              if (subject.toObject) subject = subject.toObject();
+            }
+          }
+        }
+      }
+
+      if (!subject) {
+        throw new Error(`Selected subject "${parsed.subject_id}" was not found and could not be resolved.`);
+      }
+
+      patch.subject_id = subject._id;
+      patch.subject = subject.name;
     }
     if (parsed.due_at) {
       const dueAt = new Date(parsed.due_at);

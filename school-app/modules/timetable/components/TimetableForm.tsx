@@ -96,7 +96,21 @@ export function TimetableForm({
     };
   }, [form.class_id]);
 
-  const subjectsToDisplay = classSubjectOptions.length > 0 ? classSubjectOptions : subjectOptions;
+  const subjectsToDisplay = useMemo(() => {
+    if (classSubjectOptions.length === 0) return subjectOptions;
+    
+    // Combine both, avoiding duplicates
+    const combined = [...classSubjectOptions];
+    const seenIds = new Set(classSubjectOptions.map(s => s.id));
+    
+    subjectOptions.forEach(globalSub => {
+      if (!seenIds.has(globalSub.id)) {
+        combined.push(globalSub);
+      }
+    });
+    
+    return combined;
+  }, [classSubjectOptions, subjectOptions]);
 
   const conflicts = useMemo(() => {
     if (!timetableState.data) return [];

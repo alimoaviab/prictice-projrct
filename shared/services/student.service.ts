@@ -38,9 +38,14 @@ export async function listStudents(
 
     const classIds = await resolveClassIdsForAcademyCare(ctx, filter.academy_care_id);
     const query = tenantFilter(ctx, {
-      ...(filter.status ? { status: filter.status } : {}),
-      class_id: filter.class_id ? new Types.ObjectId(filter.class_id) : { $in: classIds }
+      ...(filter.status ? { status: filter.status } : {})
     });
+
+    if (filter.class_id) {
+        query.class_id = new Types.ObjectId(filter.class_id);
+    } else if (classIds.length > 0) {
+        query.class_id = { $in: classIds };
+    }
 
     return StudentModel.find(query).sort({ last_name: 1, first_name: 1 }).lean();
   });

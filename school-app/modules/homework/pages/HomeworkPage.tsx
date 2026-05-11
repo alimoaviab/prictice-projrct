@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Card, Button, DataState, Skeleton } from "../../../components/ui";
+import { Card, Button, DataState, Skeleton, Badge } from "../../../components/ui";
 import { showToast } from "../../../utils/toast";
 
 interface HomeworkPageProps {
@@ -13,6 +13,8 @@ export function HomeworkPage({ role }: HomeworkPageProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [homeworks, setHomeworks] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "assigned" | "draft" | "closed">("all");
 
   const fetchHomeworks = async () => {
     setLoading(true);
@@ -35,11 +37,11 @@ export function HomeworkPage({ role }: HomeworkPageProps) {
   }, []);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this homework?")) return;
+    if (!confirm("Are you sure you want to permanently delete this homework?")) return;
     try {
       const res = await fetch(`/api/homework/${id}`, { method: "DELETE" });
       if (res.ok) {
-        showToast("Homework deleted", "success");
+        showToast("Homework deleted successfully", "success");
         fetchHomeworks();
       }
     } catch (error) {
@@ -48,84 +50,185 @@ export function HomeworkPage({ role }: HomeworkPageProps) {
     }
   };
 
+  const filteredHomeworks = useMemo(() => {
+    return homeworks.filter((hw) => {
+      const q = searchQuery.toLowerCase();
+      const matchesSearch = 
+        hw.title?.toLowerCase().includes(q) || 
+        hw.class_name?.toLowerCase().includes(q) || 
+        hw.subject_name?.toLowerCase().includes(q);
+      const matchesStatus = statusFilter === "all" || hw.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [homeworks, searchQuery, statusFilter]);
+
+  const stats = useMemo(() => {
+    return [
+      { label: "Total Assignments", value: homeworks.length, icon: "assignment", color: "text-slate-500", bg: "bg-slate-500/5" },
+      { label: "Active/Assigned", value: homeworks.filter(h => h.status === 'assigned').length, icon: "play_circle", color: "text-blue-600", bg: "bg-blue-600/5" },
+      { label: "Drafts", value: homeworks.filter(h => h.status === 'draft').length, icon: "edit_document", color: "text-amber-600", bg: "bg-amber-600/5" },
+      { label: "Closed", value: homeworks.filter(h => h.status === 'closed').length, icon: "check_circle", color: "text-emerald-600", bg: "bg-emerald-600/5" },
+    ];
+  }, [homeworks]);
+
+  const formatDate = (value?: string) => {
+    if (!value) return "No Date";
+    try {
+        return new Date(value).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          });
+    } catch {
+        return value;
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-12">
+      {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 normal-case tracking-tight">Homework Management</h1>
-          <p className="text-slate-500 font-medium mt-1">Assign and manage homework for your classes.</p>
+          <p className="text-slate-500 font-medium mt-1">Assign and manage educational content for your classes.</p>
         </div>
         <Button
           onClick={() => router.push(role === "ADMIN" ? "/admin/homework/create" : "/teacher/homework/create")}
-          className="h-14 px-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-xl shadow-indigo-600/20 text-[11px] font-bold normal-case "
+          className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-600/10 text-[10px] font-bold normal-case transition-all active:scale-95"
         >
-          <span className="material-symbols-outlined mr-2">add</span>
+          <span className="material-symbols-outlined text-lg mr-2">add</span>
           New Homework
         </Button>
       </div>
 
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {stats.map((stat) => (
+          <div key={stat.label} className="premium-card p-4 flex items-center justify-between bg-white border-slate-200/60 shadow-sm">
+            <div>
+              <span className="text-[10px] font-bold normal-case text-slate-400 block mb-0.5">{stat.label}</span>
+              <span className={`text-xl font-bold tracking-tight block ${stat.color}`}>{stat.value}</span>
+            </div>
+            <div className={`h-10 w-10 rounded-xl ${stat.bg} flex items-center justify-center border border-current/5`}>
+              <span className={`material-symbols-outlined text-[20px] ${stat.color}`}>{stat.icon}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Search & Filter Toolbar */}
+      <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white border-slate-200/60 shadow-sm rounded-xl">
+        <div className="flex flex-1 items-center gap-2 max-w-2xl">
+          <div className="relative flex-1">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by title, class or subject..."
+              className="h-10 w-full rounded-lg border border-slate-100 bg-slate-50/50 pl-10 pr-3 text-xs font-medium text-slate-700 outline-none transition-all focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-600/5 placeholder:text-slate-400"
+            />
+          </div>
+          <div className="h-6 w-px bg-slate-100" />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as any)}
+            className="h-10 rounded-lg border border-slate-100 bg-slate-50/50 px-3 text-xs font-bold text-slate-600 outline-none cursor-pointer transition-all hover:border-slate-200 focus:bg-white focus:border-indigo-400"
+          >
+            <option value="all">All Status</option>
+            <option value="assigned">Assigned</option>
+            <option value="draft">Draft</option>
+            <option value="closed">Closed</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Content Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-48 w-full rounded-[2.5rem]" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <Skeleton key={i} className="h-64 w-full rounded-3xl" />
           ))}
         </div>
-      ) : homeworks.length === 0 ? (
+      ) : filteredHomeworks.length === 0 ? (
         <DataState
           variant="empty"
-          title="No Homework Assigned"
-          message="You haven't assigned any homework yet. Start by clicking 'New Homework'."
+          title={searchQuery ? "No matches found" : "No Homework Assigned"}
+          message={searchQuery ? "Try refining your search terms or filters." : "You haven't assigned any homework yet. Start by clicking 'New Homework'."}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {homeworks.map((hw) => (
-            <Card key={hw._id} className="p-6 group hover:shadow-2xl transition-all duration-300 border-slate-100 hover:border-indigo-100 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="px-3 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-bold normal-case  rounded-full">
-                    {hw.class_name}
-                  </div>
-                  <div className="text-[10px] font-bold text-slate-400 normal-case ">
-                    Due: {hw.due_at}
-                  </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5">
+          {filteredHomeworks.map((hw) => (
+            <div
+              key={hw._id}
+              className="premium-card group relative flex flex-col p-5 transition-all duration-300 bg-white border-slate-200/60 hover:shadow-2xl hover:shadow-indigo-200/20 hover:-translate-y-1"
+            >
+              {/* Status Badge & Actions */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                        <span className={`h-1.5 w-1.5 rounded-full ${
+                            hw.status === 'assigned' ? 'bg-blue-500 animate-pulse' : 
+                            hw.status === 'draft' ? 'bg-amber-500' : 'bg-slate-400'
+                        }`} />
+                        <span className="text-[10px] font-bold text-slate-400 normal-case ">{hw.status?.toUpperCase() || 'ASSIGNED'}</span>
+                    </div>
+                    <h3 className="text-base font-bold text-slate-900 tracking-tight leading-tight group-hover:text-indigo-600 transition-colors line-clamp-1">
+                        {hw.title}
+                    </h3>
                 </div>
-                <h3 className="text-lg font-bold text-slate-900 mb-2 normal-case tracking-tight group-hover:text-indigo-600 transition-colors">
-                  {hw.title}
-                </h3>
-                <p className="text-sm text-slate-500 font-medium line-clamp-2 mb-4">
-                  {hw.instructions || "No instructions provided."}
-                </p>
-                <div className="flex items-center gap-2 mb-6">
-                  <div className="h-6 w-6 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500">
-                    <span className="material-symbols-outlined text-sm font-bold">book</span>
-                  </div>
-                  <span className="text-[11px] font-bold text-slate-600 normal-case ">{hw.subject_name}</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-4 border-t border-slate-50">
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-[10px] font-bold normal-case">
-                    {hw.teacher_name?.substring(0, 2).toUpperCase()}
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-500 normal-case ">{hw.teacher_name}</span>
-                </div>
-                <div className="flex items-center gap-1">
+                
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => router.push(role === "ADMIN" ? `/admin/homework/edit/${hw._id}` : `/teacher/homework/edit/${hw._id}`)}
-                    className="h-8 w-8 rounded-xl hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-all flex items-center justify-center"
+                    className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-all"
                   >
                     <span className="material-symbols-outlined text-lg">edit</span>
                   </button>
                   <button
                     onClick={() => handleDelete(hw._id)}
-                    className="h-8 w-8 rounded-xl hover:bg-red-50 text-slate-400 hover:text-red-500 transition-all flex items-center justify-center"
+                    className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all"
                   >
                     <span className="material-symbols-outlined text-lg">delete</span>
                   </button>
                 </div>
               </div>
-            </Card>
+
+              {/* Context Info */}
+              <div className="grid grid-cols-2 gap-3 mb-5">
+                  <div className="p-3 rounded-2xl bg-slate-50/80 border border-slate-100 flex flex-col gap-1">
+                      <span className="text-[8px] font-bold text-slate-400 normal-case ">Class Section</span>
+                      <span className="text-[11px] font-bold text-indigo-600 line-clamp-1">{hw.class_name}</span>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-slate-50/80 border border-slate-100 flex flex-col gap-1">
+                      <span className="text-[8px] font-bold text-slate-400 normal-case ">Subject</span>
+                      <span className="text-[11px] font-bold text-slate-700 line-clamp-1">{hw.subject_name}</span>
+                  </div>
+              </div>
+
+              {/* Instructions Preview */}
+              <div className="mb-5">
+                  <p className="text-[11px] font-medium text-slate-500 line-clamp-2 leading-relaxed">
+                      {hw.instructions || "No detailed instructions provided for this assignment."}
+                  </p>
+              </div>
+
+              {/* Footer Row */}
+              <div className="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white text-[10px] font-bold shadow-lg shadow-indigo-200">
+                    {hw.teacher_name?.substring(0, 2).toUpperCase() || 'T'}
+                  </div>
+                  <div className="flex flex-col">
+                      <span className="text-[9px] font-bold text-slate-400 normal-case  leading-none mb-0.5">Assigned By</span>
+                      <span className="text-[10px] font-bold text-slate-700 normal-case  leading-none">{hw.teacher_name || 'Teacher'}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                    <span className="text-[8px] font-bold text-slate-400 normal-case  block mb-0.5">Due Date</span>
+                    <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">{formatDate(hw.due_at)}</span>
+                </div>
+              </div>
+            </div>
           ))}
         </div>
       )}

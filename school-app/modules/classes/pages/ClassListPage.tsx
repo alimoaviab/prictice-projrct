@@ -10,6 +10,7 @@ import { useSubjects } from "../../subjects/hooks/useSubjects";
 import { ClassRow, ClassFormInput } from "../types/class.types";
 import { showToast } from "../../../utils/toast";
 import { ClassEditSidebar } from "../components/ClassEditSidebar";
+import { ClassFeeManagerDrawer } from "../components/ClassFeeManagerDrawer";
 import { useSafeAsync } from "../../../hooks/useSafeAsync";
 import { ConfirmModal } from "../../../components/ui/ConfirmModal";
 
@@ -19,6 +20,7 @@ export function ClassListPage() {
   const { state: teachersState } = useTeachers();
   const [editingClass, setEditingClass] = useState<ClassRow | null>(null);
   const [deletingClass, setDeletingClass] = useState<ClassRow | null>(null);
+  const [feeClass, setFeeClass] = useState<ClassRow | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -153,6 +155,12 @@ export function ClassListPage() {
       onClick: (row) => window.location.href = `/admin/timetable?class_id=${row._id}`,
     },
     {
+      icon: "payments",
+      label: "Fee Setup",
+      variant: "ghost",
+      onClick: (row) => setFeeClass(row),
+    },
+    {
       icon: "delete",
       label: "Remove",
       variant: "danger",
@@ -275,6 +283,13 @@ export function ClassListPage() {
                         </div>
                         <div className="flex items-center gap-1 bg-slate-50/50 rounded-lg p-1 border border-slate-100">
                           <button
+                            onClick={() => setFeeClass(row)}
+                            title="Fee Setup"
+                            className="h-7 w-7 flex items-center justify-center rounded text-violet-500 hover:bg-white hover:text-violet-700 hover:shadow-sm transition-all"
+                          >
+                            <span className="material-symbols-outlined text-base">payments</span>
+                          </button>
+                          <button
                             onClick={() => setEditingClass(row)}
                             title="Configure"
                             className="h-7 w-7 flex items-center justify-center rounded text-slate-400 hover:bg-white hover:text-blue-600 hover:shadow-sm transition-all"
@@ -353,6 +368,13 @@ export function ClassListPage() {
                           <span className="material-symbols-outlined text-lg">calendar_month</span>
                         </Link>
                         <button
+                          onClick={() => setFeeClass(row)}
+                          className="h-8 w-8 flex items-center justify-center rounded-lg bg-white border border-violet-200 text-violet-600 hover:border-violet-500 hover:shadow-sm transition-all"
+                          title="Fee Setup"
+                        >
+                          <span className="material-symbols-outlined text-lg">payments</span>
+                        </button>
+                        <button
                           onClick={() => setEditingClass(row)}
                           className="group/btn h-8 px-4 rounded-lg bg-blue-600 text-[10px] font-bold text-white normal-case  hover:bg-blue-700 transition-all flex items-center gap-2 shadow-sm active:scale-95"
                         >
@@ -408,6 +430,7 @@ export function ClassListPage() {
         teacherOptions={teacherOptions}
         subjectOptions={subjectOptions}
         onClose={() => setEditingClass(null)}
+        onOpenFeeManager={(classItem) => setFeeClass(classItem)}
         onSave={async (id, data) => {
           setIsSaving(true);
           try {
@@ -435,6 +458,12 @@ export function ClassListPage() {
         isLoading={isDeleting}
         onConfirm={handleDelete}
         onCancel={() => setDeletingClass(null)}
+      />
+
+      <ClassFeeManagerDrawer
+        isOpen={feeClass !== null}
+        classItem={feeClass}
+        onClose={() => setFeeClass(null)}
       />
     </div>
   );

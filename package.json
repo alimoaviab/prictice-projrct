@@ -17,7 +17,7 @@
     "test:exams": "node test-exams.js",
     "test:results": "node test-results.js",
     "test:all": "node test-all.js",
-    "seed:demo": "ts-node scripts/seed-demo-data.ts"
+    "seed:school-demo": "echo \"Seed scripts disabled in production. Enable explicitly if needed.\" && exit 1"
   },
   "devDependencies": {
     "jiti": "^2.7.0",

@@ -41,6 +41,7 @@ export async function GET(req: Request) {
     const classes = await LiveClassService.getClasses(ctx, filters);
     return NextResponse.json({ success: true, data: classes });
   } catch (error: any) {
+    console.error("[GET /api/live/classes] Error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
@@ -61,8 +62,18 @@ export async function POST(req: Request) {
     }
 
     const liveClass = await LiveClassService.createClass(ctx, body);
-    return NextResponse.json({ success: true, data: liveClass }, { status: 201 });
+    
+    // Return with meeting link included
+    return NextResponse.json({ 
+      success: true, 
+      data: {
+        ...liveClass.toObject?.() || liveClass,
+        meetingLink: liveClass.meetingLink,
+        meetingId: liveClass.meetingId
+      }
+    }, { status: 201 });
   } catch (error: any) {
+    console.error("[POST /api/live/classes] Error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 400 });
   }
 }

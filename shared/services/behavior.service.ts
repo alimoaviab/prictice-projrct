@@ -32,11 +32,20 @@ export async function createBehavior(
       };
     }
 
+    let teacherId = ctx.user_id;
+    if (ctx.role === "teacher") {
+      const { TeacherModel } = await import("../models/teacher.model");
+      const teacherProfile = await TeacherModel.findOne(tenantFilter(ctx, { user_id: ctx.user_id })).select("_id").lean();
+      if (teacherProfile) {
+        teacherId = teacherProfile._id;
+      }
+    }
+
     const behaviorData = {
       school_id: ctx.school_id,
       student_id: new Types.ObjectId(data.student_id),
       class_id: new Types.ObjectId(data.class_id),
-      teacher_id: new Types.ObjectId(ctx.user_id),
+      teacher_id: new Types.ObjectId(teacherId),
       incident_type: data.incident_type,
       description: data.description,
       severity: data.severity,
@@ -114,7 +123,15 @@ export async function listBehavior(
   try {
     await connectDb();
 
-    const behaviors = await BehaviorModel.find(tenantFilter(ctx, query))
+    // Clean query to remove undefined/null filters
+    const cleanQuery = {};
+    Object.keys(query).forEach(key => {
+        if (query[key] !== undefined && query[key] !== null && key !== 'academy_care_id') {
+            cleanQuery[key] = query[key];
+        }
+    });
+
+    const behaviors = await BehaviorModel.find(tenantFilter(ctx, cleanQuery))
       .populate("student_id", "first_name last_name admission_no")
       .populate("class_id", "name")
       .populate("teacher_id", "first_name last_name")

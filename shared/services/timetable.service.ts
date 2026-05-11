@@ -8,6 +8,7 @@ import {
 import { assertPermission } from "../auth/rbac";
 import { TimetableModel } from "../models/timetable.model";
 import { SubjectModel } from "../models/subject.model";
+import { AcademicYearModel } from "../models/academic-year.model";
 import { connectDb } from "../db/connect";
 import { tenantFilter } from "../db/tenant-query";
 import { resolveClassIdsForAcademyCare } from "./_academy-care-filter";

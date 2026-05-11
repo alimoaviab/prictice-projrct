@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useAuth } from "../../../hooks/useAuth";
 import { Card, Skeleton } from "../../../components/ui";
 import { HomeworkForm } from "../components/HomeworkForm";
 import { showToast } from "../../../utils/toast";
@@ -13,6 +14,7 @@ interface HomeworkCreatePageProps {
 
 export function HomeworkCreatePage({ role }: HomeworkCreatePageProps) {
   const router = useRouter();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -118,6 +120,7 @@ export function HomeworkCreatePage({ role }: HomeworkCreatePageProps) {
             subjects={formData.subjects}
             teachers={formData.teachers}
             showTeacherField={role === "ADMIN"}
+            initialTeacherId={role === "TEACHER" ? user?.profileId : ""}
             loading={submitting}
           />
         )}

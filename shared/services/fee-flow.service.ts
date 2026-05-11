@@ -354,7 +354,11 @@ function mapFeeRecord(row: MonthlyFeeDoc, student?: any, classroom?: any) {
         id: String(row._id),
         student_id: String(row.student_id),
         student_name: student ? `${student.first_name ?? ""} ${student.last_name ?? ""}`.trim() : "",
+        admission_no: student?.admission_no ?? "",
+        guardian_phone: student?.guardian?.phone ?? "",
+        class_id: String(row.class_id ?? classroom?._id ?? ""),
         class: classroom?.name ?? "",
+        class_section: classroom?.section ?? "",
         month: row.month ? `${row.month} ${row.year ?? ""}`.trim() : monthLabelFromDate(new Date(String(row.due_at))),
         total_fee: total,
         paid,
@@ -865,8 +869,9 @@ export async function listFeeAdjustments(ctx: RequestContext, filters: Record<st
     return serviceTry(async () => {
         await connectDb();
         assertPermission(ctx, "fees", "view");
-
         const query: Record<string, unknown> = tenantFilter(ctx);
+        const academicYearId = (filters.academic_year_id ? String(filters.academic_year_id) : undefined) ?? (await resolveAcademicYearId(ctx));
+        if (academicYearId) query.academic_year_id = academicYearId;
         if (filters.student_id) query.student_id = String(filters.student_id);
         if (filters.type) query.type = String(filters.type);
         if (filters.status) query.status = String(filters.status);
@@ -935,7 +940,7 @@ export async function getFeeBreakdown(ctx: RequestContext, filters: Record<strin
         const classId = String(student.class_id?._id ?? student.class_id);
         const academicYearId = String(student.class_id?.academy_care_id?._id ?? student.class_id?.academy_care_id ?? student.class_id?.academy_care_id ?? "");
         const academicYear = academicYearId ? await AcademicYearModel.findOne(tenantFilter(ctx, { _id: academicYearId })).lean() : null;
-        const fees = (await FeeModel.find(tenantFilter(ctx, { student_id: studentId }))
+        const fees = (await FeeModel.find(tenantFilter(ctx, { student_id: studentId, academic_year_id: academicYearId || undefined }))
             .sort({ due_at: 1 })
             .lean()) as MonthlyFeeDoc[];
         const adjustments = academicYearId ? await FeeAdjustmentModel.find(tenantFilter(ctx, { student_id: studentId, academic_year_id: academicYearId }))
@@ -1168,6 +1173,8 @@ export async function listPayments(ctx: RequestContext, filters: Record<string, 
         assertPermission(ctx, "fees", "view");
 
         const query: Record<string, unknown> = tenantFilter(ctx);
+        const academicYearId = (filters.academic_year_id ? String(filters.academic_year_id) : undefined) ?? (await resolveAcademicYearId(ctx));
+        if (academicYearId) query.academic_year_id = academicYearId;
         if (filters.student_id) query.student_id = String(filters.student_id);
         if (filters.method) query.payment_method = String(filters.method);
         if (filters.date_from || filters.date_to) {
@@ -1218,8 +1225,8 @@ export async function getDailyCollection(ctx: RequestContext, date?: string): Pr
         target.setHours(0, 0, 0, 0);
         const next = new Date(target);
         next.setDate(next.getDate() + 1);
-
-        const payments = await FeePaymentModel.find(tenantFilter(ctx, { payment_date: { $gte: target, $lt: next }, status: "completed" }))
+        const academicYearId = await resolveAcademicYearId(ctx);
+        const payments = await FeePaymentModel.find(tenantFilter(ctx, { payment_date: { $gte: target, $lt: next }, status: "completed", academic_year_id: academicYearId || undefined }))
             .lean();
 
         const byMethod = payments.reduce<Record<string, number>>((acc, payment: any) => {
@@ -1347,10 +1354,14 @@ export async function getFeeDefaulters(ctx: RequestContext, filters: Record<stri
         assertPermission(ctx, "fees", "view");
 
         const query: Record<string, unknown> = tenantFilter(ctx);
+        const academicYearId = (filters.academic_year_id ? String(filters.academic_year_id) : undefined) ?? (await resolveAcademicYearId(ctx));
+        if (academicYearId) query.academic_year_id = academicYearId;
         if (filters.class_id) query.class_id = String(filters.class_id);
         if (filters.min_amount) query.paid_amount = { $lt: Number(filters.min_amount) };
 
-        const fees = (await FeeModel.find(tenantFilter(ctx, { status: { $in: ["unpaid", "partial"] } }))
+        query.status = { $in: ["unpaid", "partial"] };
+
+        const fees = (await FeeModel.find(query)
             .populate("student_id", "first_name last_name admission_no guardian class_id")
             .populate("class_id", "name")
             .lean()) as any[];
@@ -1408,9 +1419,10 @@ export async function getStudentFees(ctx: RequestContext, studentId?: string): P
             .populate("class_id", "name section academic_year grade_thresholds academy_care_id")
             .lean();
 
+        const academicYearId = await resolveAcademicYearId(ctx);
         const children = await Promise.all(students.map(async (child: any): Promise<ParentFeeChild> => {
             const className = child.class_id?.name ?? "";
-            const fees = (await FeeModel.find(tenantFilter(ctx, { student_id: child._id }))
+            const fees = (await FeeModel.find(tenantFilter(ctx, { student_id: child._id, academic_year_id: academicYearId || undefined }))
                 .sort({ due_at: 1 })
                 .lean()) as MonthlyFeeDoc[];
             const total = fees.reduce((sum, fee) => sum + Number(fee.amount ?? 0) + Number(fee.adjustment_amount ?? 0), 0);

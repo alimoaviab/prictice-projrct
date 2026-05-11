@@ -234,72 +234,89 @@ export function StudentListPage() {
           />
         ) : (
           viewMode === "grid" ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
               {filteredRows.map((row) => (
-                <div key={row._id} className="premium-card group relative flex flex-col p-0 overflow-hidden transition-all duration-500 bg-white border-slate-200/60 hover:shadow-2xl hover:shadow-slate-200/80 hover:-translate-y-1">
-                  <div className="p-5">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="h-12 w-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center text-sm font-bold normal-case shadow-lg group-hover:scale-110 transition-transform">
-                        {row.first_name.substring(0, 1)}{row.last_name.substring(0, 1)}
-                      </div>
-                      <div className="flex items-center gap-1 bg-slate-50/50 rounded-lg p-1 border border-slate-100">
-                        <button 
-                          onClick={() => setEditingStudent(row)}
-                          className="h-7 w-7 flex items-center justify-center rounded text-slate-400 hover:bg-white hover:text-blue-600 hover:shadow-sm transition-all"
-                        >
-                          <span className="material-symbols-outlined text-base">edit</span>
-                        </button>
-                        <button 
-                          onClick={async () => {
-                            if (window.confirm(`Delete ${row.first_name}?`)) {
-                              await deleteStudent(row._id);
-                            }
-                          }}
-                          className="h-7 w-7 flex items-center justify-center rounded text-slate-400 hover:bg-white hover:text-red-500 hover:shadow-sm transition-all"
-                        >
-                          <span className="material-symbols-outlined text-base">delete</span>
-                        </button>
-                      </div>
+                <div key={row._id} className="premium-card group relative flex flex-col p-4 transition-all duration-300 bg-white border-slate-200/60 hover:shadow-xl hover:shadow-slate-200/30 hover:-translate-y-0.5">
+                  {/* Top Row: Name & Actions */}
+                  <div className="flex items-start justify-between gap-4 mb-3.5">
+                    <div className="space-y-0.5 flex-1 min-w-0">
+                      <h3 className="text-base font-bold text-slate-900 tracking-tight leading-none truncate">{row.first_name} {row.last_name}</h3>
+                      <p className="text-[9px] font-bold text-slate-400 normal-case  mt-1">Student ID: {row.admission_no}</p>
                     </div>
-
-                    <div className="mb-6">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-lg font-bold text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors truncate">{row.first_name} {row.last_name}</h3>
-                        <Badge variant={row.status === "active" ? "success" : "gray"} className="text-[8px] font-bold normal-case  px-1.5 py-0">
-                          {row.status}
-                        </Badge>
-                      </div>
-                      <p className="text-[10px] font-bold text-blue-600 normal-case ">{row.admission_no}</p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3 mb-6">
-                      <div className="bg-slate-50/50 rounded-xl p-2.5 border border-slate-100/50">
-                        <p className="text-[8px] font-bold text-slate-400 normal-case  mb-1">Academic Unit</p>
-                        <p className="text-[10px] font-bold text-slate-700 truncate">{row.class_id} / {row.section}</p>
-                      </div>
-                      <div className="bg-slate-50/50 rounded-xl p-2.5 border border-slate-100/50">
-                        <p className="text-[8px] font-bold text-slate-400 normal-case  mb-1">Guardian</p>
-                        <p className="text-[10px] font-bold text-slate-700 truncate">{row.guardian?.name || "—"}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-4 border-t border-slate-50">
-                       <div className="flex items-center gap-2 text-slate-400">
-                          <span className="material-symbols-outlined text-sm">call</span>
-                          <span className="text-[10px] font-bold normal-case ">{row.guardian?.phone || "No Contact"}</span>
-                       </div>
+                    
+                    <div className="flex items-center gap-0.5">
+                      <button 
+                        onClick={() => setEditingStudent(row)}
+                        className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all"
+                        title="Edit Student"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">edit_note</span>
+                      </button>
+                      <button 
+                        onClick={async () => {
+                          if (window.confirm(`Are you sure you want to delete ${row.first_name}?`)) {
+                            await deleteStudent(row._id);
+                          }
+                        }}
+                        className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all"
+                        title="Delete"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                      </button>
                     </div>
                   </div>
-                  
-                  <div className="mt-auto px-5 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between group-hover:bg-white transition-all">
-                     <button className="text-[10px] font-bold text-slate-400 normal-case  hover:text-blue-600 flex items-center gap-1 transition-colors">
-                        <span className="material-symbols-outlined text-sm">assignment_ind</span>
-                        Dossier
-                     </button>
-                     <button className="group/btn h-8 px-4 rounded-lg bg-blue-600 text-[10px] font-bold text-white normal-case  hover:bg-blue-700 transition-all flex items-center gap-2 shadow-sm active:scale-95">
-                        Profile
-                        <span className="material-symbols-outlined text-sm transition-transform group-hover/btn:translate-x-1">arrow_forward</span>
-                     </button>
+
+                  {/* Middle Row: Academic Placement (Pill Style) */}
+                  <div className="mb-3.5 p-3 rounded-xl bg-slate-50/50 border border-slate-100/50 flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className="text-[8px] font-bold text-slate-400 normal-case  mb-1.5">Academic Placement</p>
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-slate-700">
+                        <span className="bg-white px-1.5 py-0.5 rounded-md border border-slate-100">{row.class_id}</span>
+                        <span className="text-slate-300">→</span>
+                        <span className="bg-white px-1.5 py-0.5 rounded-md border border-slate-100">Section {row.section}</span>
+                      </div>
+                    </div>
+                    <div className="text-right pl-3 border-l border-slate-200/50 ml-3">
+                       <p className="text-xs font-bold text-slate-900 leading-none">{row.status === 'active' ? 'EN' : 'WD'}</p>
+                       <p className="text-[7px] font-bold text-slate-400 normal-case  mt-0.5">Type</p>
+                    </div>
+                  </div>
+
+                  {/* Bottom Row: Contact & Status Toggle */}
+                  <div className="mt-auto pt-2 flex flex-col gap-3">
+                    <div className="px-0.5">
+                       <p className="text-[8px] font-bold text-slate-400 normal-case  mb-1">Primary Contact</p>
+                       <p className="text-[10px] font-medium text-slate-500 line-clamp-1 leading-relaxed">
+                         {row.guardian?.name || "No guardian"} • {row.guardian?.phone || "No phone"}
+                       </p>
+                    </div>
+
+                    <div className="flex items-center justify-between bg-slate-50/30 rounded-lg p-1.5 border border-slate-100/30">
+                      <div className="flex items-center gap-1.5">
+                        {row.status === 'active' ? (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-bold normal-case  text-blue-600 bg-blue-50">
+                            <span className="h-1 w-1 rounded-full bg-blue-500 animate-pulse" />
+                            Active
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold normal-case  text-slate-400 bg-slate-100">
+                            Inactive
+                          </span>
+                        )}
+                      </div>
+                      <label className="relative inline-flex cursor-pointer items-center shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={row.status === 'active'}
+                          onChange={async () => {
+                            const nextStatus = row.status === 'active' ? 'inactive' : 'active';
+                            await updateStudent(row._id, { status: nextStatus });
+                          }}
+                          className="peer sr-only"
+                        />
+                        <div className="peer h-[18px] w-[34px] rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-[14px] after:w-[14px] after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-[16px] peer-focus:outline-none" />
+                      </label>
+                    </div>
                   </div>
                 </div>
               ))}
