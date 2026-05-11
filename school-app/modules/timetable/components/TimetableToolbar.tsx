@@ -36,43 +36,42 @@ export function TimetableToolbar({
   const activeClass = classOptions.find(opt => opt.id === classId);
 
   return (
-    <div className="flex flex-col gap-4 bg-white/90 backdrop-blur-2xl p-5 rounded-[2.5rem] border border-slate-200/50 shadow-2xl shadow-slate-200/40 sticky top-4 z-50 transition-all duration-300">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+    <div className="flex flex-col gap-2 bg-white/95 backdrop-blur-3xl p-3 rounded-[2rem] border border-slate-200/60 shadow-2xl shadow-slate-200/30 sticky top-4 z-50 transition-all duration-300">
+      <div className="flex items-center justify-between gap-4">
         {/* Left Side: Brand & Class Selector */}
-        <div className="flex items-center gap-6">
-          <div className="flex h-14 w-14 items-center justify-center rounded-[1.5rem] bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-xl shadow-blue-500/30">
-             <span className="material-symbols-outlined text-[30px]">dashboard_customize</span>
+        <div className="flex items-center gap-4">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-lg shadow-blue-500/20 shrink-0">
+             <span className="material-symbols-outlined text-[20px]">calendar_today</span>
           </div>
           
           <div className="relative group">
-            <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-1 px-1">Academic Workspace</p>
             <div 
               onClick={() => setIsSearchOpen(!isSearchOpen)}
-              className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-slate-50 border border-slate-200/60 hover:border-blue-400 hover:bg-white transition-all cursor-pointer min-w-[280px]"
+              className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200/60 hover:border-blue-400 hover:bg-white transition-all cursor-pointer min-w-[240px]"
             >
-              <span className="material-symbols-outlined text-slate-400">school</span>
-              <span className="text-lg font-black text-slate-900 truncate">
-                {activeClass ? activeClass.label : "Select Class Section"}
+              <span className="material-symbols-outlined text-slate-400 text-lg">school</span>
+              <span className="text-sm font-black text-slate-900 truncate">
+                {activeClass ? activeClass.label : "Select Class"}
               </span>
-              <span className="material-symbols-outlined text-slate-400 ml-auto group-hover:rotate-180 transition-transform duration-300">expand_more</span>
+              <span className="material-symbols-outlined text-slate-400 text-lg ml-auto group-hover:rotate-180 transition-transform duration-300">expand_more</span>
             </div>
 
             {isSearchOpen && (
-              <div className="absolute top-full left-0 mt-3 w-full bg-white rounded-3xl border border-slate-200 shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                <div className="p-3 border-b border-slate-100">
-                  <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-xl border border-slate-100 focus-within:border-blue-400 focus-within:bg-white transition-all">
+              <div className="absolute top-full left-0 mt-2 w-full bg-white rounded-2xl border border-slate-200 shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="p-2 border-b border-slate-100">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-lg border border-slate-100 focus-within:border-blue-400 focus-within:bg-white transition-all">
                     <span className="material-symbols-outlined text-slate-400 text-sm">search</span>
                     <input 
                       autoFocus
                       type="text" 
-                      placeholder="Search classes..." 
-                      className="bg-transparent border-none p-0 text-sm font-bold focus:ring-0 w-full"
+                      placeholder="Search..." 
+                      className="bg-transparent border-none p-0 text-[11px] font-bold focus:ring-0 w-full"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
                   </div>
                 </div>
-                <div className="max-h-[300px] overflow-y-auto p-2 custom-scrollbar">
+                <div className="max-h-[250px] overflow-y-auto p-1 custom-scrollbar">
                   {filteredOptions.length > 0 ? (
                     filteredOptions.map(opt => (
                       <button
@@ -82,17 +81,15 @@ export function TimetableToolbar({
                           setIsSearchOpen(false);
                           setSearchTerm("");
                         }}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all ${classId === opt.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'hover:bg-slate-50 text-slate-700 hover:text-blue-600'}`}
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-all ${classId === opt.id ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-slate-50 text-slate-700 hover:text-blue-600'}`}
                       >
-                        <span className={`material-symbols-outlined text-lg ${classId === opt.id ? 'text-white' : 'text-slate-400'}`}>class</span>
-                        <span className="font-black uppercase tracking-tight text-sm">{opt.label}</span>
-                        {classId === opt.id && <span className="material-symbols-outlined ml-auto text-sm">check_circle</span>}
+                        <span className={`material-symbols-outlined text-sm ${classId === opt.id ? 'text-white' : 'text-slate-400'}`}>class</span>
+                        <span className="font-black uppercase tracking-tight text-[11px]">{opt.label}</span>
                       </button>
                     ))
                   ) : (
-                    <div className="p-8 text-center">
-                      <span className="material-symbols-outlined text-4xl text-slate-200 mb-2">search_off</span>
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No classes found</p>
+                    <div className="p-4 text-center">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No results</p>
                     </div>
                   )}
                 </div>
@@ -101,70 +98,66 @@ export function TimetableToolbar({
           </div>
         </div>
 
-        {/* Center: Info Badges */}
-        <div className="hidden xl:flex items-center gap-4">
-           <div className="flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-white border border-slate-200 shadow-sm">
-              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[11px] font-black text-slate-900 uppercase tracking-widest">
-                {selectedClass ? `${selectedClass.room_number || 'No Room Assigned'}` : "Unassigned Room"}
+        {/* Center: Info Chips */}
+        <div className="hidden lg:flex items-center gap-2">
+           <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-100">
+              <div className={`h-1.5 w-1.5 rounded-full ${selectedClass?.room_number ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+              <span className="text-[10px] font-black text-slate-600 uppercase tracking-wider">
+                {selectedClass?.room_number || 'Room TBA'}
               </span>
            </div>
            
-           <div className="flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-white border border-slate-200 shadow-sm">
-              <span className="material-symbols-outlined text-blue-500 text-[18px]">subject</span>
-              <span className="text-[11px] font-black text-slate-900 uppercase tracking-widest">
-                {selectedClass?.subjects?.length || 0} Subjects Configured
+           <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-100">
+              <span className="material-symbols-outlined text-blue-500 text-[16px]">layers</span>
+              <span className="text-[10px] font-black text-slate-600 uppercase tracking-wider">
+                {selectedClass?.subjects?.length || 0} Subjects
               </span>
            </div>
 
            {conflictsCount > 0 && (
-             <div className="flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-red-50 border border-red-200 shadow-sm animate-bounce">
-                <span className="material-symbols-outlined text-red-500 text-[18px]">warning</span>
-                <span className="text-[11px] font-black text-red-600 uppercase tracking-widest">
-                  {conflictsCount} Schedule Conflicts
+             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-50 border border-red-100 animate-pulse">
+                <span className="material-symbols-outlined text-red-500 text-[16px]">error</span>
+                <span className="text-[10px] font-black text-red-600 uppercase tracking-wider">
+                  {conflictsCount} Conflicts
                 </span>
              </div>
            )}
         </div>
 
         {/* Right Side: Actions */}
-        <div className="flex items-center gap-3">
-           <div className="flex items-center bg-slate-100 p-1.5 rounded-[1.25rem] border border-slate-200">
+        <div className="flex items-center gap-2">
+           <div className="flex items-center bg-slate-100/50 p-1 rounded-xl border border-slate-200/60">
               <button 
                 onClick={onCompactToggle}
-                title={isCompact ? "Show Standard View" : "Show Compact View"}
-                className={`p-2 rounded-xl transition-all ${isCompact ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-blue-600 hover:bg-white'}`}
+                className={`h-8 w-8 flex items-center justify-center rounded-lg transition-all ${isCompact ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
               >
-                <span className="material-symbols-outlined">{isCompact ? 'density_medium' : 'density_small'}</span>
+                <span className="material-symbols-outlined text-[18px]">{isCompact ? 'density_medium' : 'density_small'}</span>
               </button>
-              <button title="Print Schedule" className="p-2 text-slate-500 hover:text-blue-600 hover:bg-white rounded-xl transition-all">
-                <span className="material-symbols-outlined">print</span>
+              <div className="w-px h-4 bg-slate-200 mx-0.5" />
+              <button className="h-8 w-8 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-white rounded-lg transition-all">
+                <span className="material-symbols-outlined text-[18px]">print</span>
               </button>
               <div className="relative">
                   <button 
                     onClick={() => setIsMenuOpen(!isMenuOpen)}
-                    className="p-2 text-slate-500 hover:text-blue-600 hover:bg-white rounded-xl transition-all"
+                    className="h-8 w-8 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-white rounded-lg transition-all"
                   >
-                    <span className="material-symbols-outlined">more_vert</span>
+                    <span className="material-symbols-outlined text-[18px]">more_horiz</span>
                   </button>
                   {isMenuOpen && (
-                      <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl border border-slate-200 shadow-2xl z-50 py-2 animate-in fade-in slide-in-from-top-2">
-                          <button className="w-full flex items-center gap-3 px-4 py-2 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-blue-600">
-                              <span className="material-symbols-outlined text-lg">content_copy</span>
-                              Duplicate Week
+                      <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl border border-slate-200 shadow-xl z-50 py-1.5 animate-in fade-in slide-in-from-top-2">
+                          <button className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 hover:text-blue-600">
+                              <span className="material-symbols-outlined text-base">content_copy</span>
+                              Duplicate
                           </button>
-                          <button className="w-full flex items-center gap-3 px-4 py-2 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-blue-600">
-                              <span className="material-symbols-outlined text-lg">auto_awesome</span>
-                              Auto-Generate
-                          </button>
-                          <button className="w-full flex items-center gap-3 px-4 py-2 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-blue-600">
-                              <span className="material-symbols-outlined text-lg">file_download</span>
-                              Export to Excel
+                          <button className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 hover:text-blue-600">
+                              <span className="material-symbols-outlined text-base">auto_awesome</span>
+                              Auto-Fill
                           </button>
                           <div className="my-1 border-t border-slate-100" />
-                          <button className="w-full flex items-center gap-3 px-4 py-2 text-left text-sm font-bold text-red-600 hover:bg-red-50">
-                              <span className="material-symbols-outlined text-lg">delete_sweep</span>
-                              Clear Schedule
+                          <button className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-[10px] font-black uppercase tracking-widest text-red-600 hover:bg-red-50">
+                              <span className="material-symbols-outlined text-base">delete_sweep</span>
+                              Clear
                           </button>
                       </div>
                   )}
@@ -173,10 +166,10 @@ export function TimetableToolbar({
 
            <button
               onClick={onNewEntry}
-              className="group flex h-12 items-center gap-3 px-6 bg-blue-600 text-white rounded-[1.25rem] hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/30 active:scale-95"
+              className="h-10 px-5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95 flex items-center gap-2 group"
            >
-              <span className="material-symbols-outlined text-xl group-hover:rotate-90 transition-transform duration-300">add_circle</span>
-              <span className="text-[11px] font-black uppercase tracking-[0.15em]">New Entry</span>
+              <span className="material-symbols-outlined text-[18px] group-hover:rotate-90 transition-transform duration-300">add</span>
+              <span className="text-[10px] font-black uppercase tracking-widest">New Entry</span>
            </button>
         </div>
       </div>

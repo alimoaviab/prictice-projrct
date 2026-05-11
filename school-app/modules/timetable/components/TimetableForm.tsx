@@ -130,11 +130,11 @@ export function TimetableForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Main Form Fields */}
-        <div className="lg:col-span-8 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="lg:col-span-7 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Select
               label="Class Section"
               value={form.class_id}
@@ -142,7 +142,7 @@ export function TimetableForm({
               options={[{ label: "Select class", value: "" }, ...classOptions.map(o => ({ label: o.label, value: o.id }))]}
               error={errors.class_id}
               required
-              className="h-14 text-base rounded-2xl"
+              className="h-11 text-sm rounded-xl"
             />
             <Select
               label="Subject"
@@ -151,11 +151,11 @@ export function TimetableForm({
               options={[{ label: "Select subject", value: "" }, ...subjectOptions.map(o => ({ label: o.label, value: o.id }))]}
               error={errors.subject_id}
               required
-              className="h-14 text-base rounded-2xl"
+              className="h-11 text-sm rounded-xl"
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Select
               label="Teacher / Lecturer"
               value={form.teacher_id}
@@ -163,7 +163,7 @@ export function TimetableForm({
               options={[{ label: "Select teacher", value: "" }, ...teacherOptions.map(o => ({ label: o.label, value: o.id }))]}
               error={errors.teacher_id}
               required
-              className="h-14 text-base rounded-2xl"
+              className="h-11 text-sm rounded-xl"
             />
             <Select
               label="Day of Week"
@@ -171,13 +171,13 @@ export function TimetableForm({
               onChange={(e) => setForm({ ...form, day_of_week: e.target.value as any })}
               options={DAY_OPTIONS.map(d => ({ label: d.label, value: d.value }))}
               error={errors.day_of_week}
-              className="h-14 text-base rounded-2xl"
+              className="h-11 text-sm rounded-xl"
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Input
-              label="Period Number"
+              label="Period #"
               type="number"
               min="1"
               max="20"
@@ -185,7 +185,7 @@ export function TimetableForm({
               onChange={(e) => setForm({ ...form, period_number: parseInt(e.target.value) || 1 })}
               error={errors.period_number}
               required
-              className="h-14 text-base rounded-2xl"
+              className="h-11 text-sm rounded-xl"
             />
             <Input
               label="Start Time"
@@ -194,7 +194,7 @@ export function TimetableForm({
               onChange={(e) => setForm({ ...form, start_time: e.target.value })}
               error={errors.start_time}
               required
-              className="h-14 text-base rounded-2xl px-4"
+              className="h-11 text-sm rounded-xl px-3"
             />
             <Input
               label="End Time"
@@ -203,49 +203,54 @@ export function TimetableForm({
               onChange={(e) => setForm({ ...form, end_time: e.target.value })}
               error={errors.end_time}
               required
-              className="h-14 text-base rounded-2xl px-4"
+              className="h-11 text-sm rounded-xl px-3"
             />
           </div>
 
           <Input
-            label="Room / Hall Number"
+            label="Room / Hall"
             placeholder="e.g., Science Lab 2"
             value={form.room || ""}
             onChange={(e) => setForm({ ...form, room: e.target.value })}
-            className="h-14 text-base rounded-2xl"
+            className="h-11 text-sm rounded-xl"
           />
         </div>
 
         {/* Sidebar Preview */}
-        <div className="lg:col-span-4 space-y-6">
-          <div className="bg-slate-50 rounded-[2.5rem] p-6 border border-slate-200 border-dashed h-full flex flex-col justify-center min-h-[300px]">
-            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 text-center">Live Schedule Preview</h4>
-            <div className="max-w-[240px] mx-auto w-full">
-              <PeriodCard slot={previewRecord} conflicts={conflicts} isCompact={false} />
-            </div>
-
-            {conflicts.length > 0 && (
-              <div className="mt-6 p-4 bg-red-50 rounded-2xl border border-red-100 animate-in fade-in slide-in-from-top-2 duration-300">
-                <div className="flex items-center gap-2 text-red-600 mb-2">
-                  <span className="material-symbols-outlined text-sm font-bold">warning</span>
-                  <p className="text-[11px] font-black uppercase tracking-widest">Conflict Detected</p>
-                </div>
-                <p className="text-[10px] font-bold text-red-500/80 leading-relaxed uppercase tracking-tight">
-                  {conflicts[0].type === 'teacher' && "This teacher is already assigned to another class during this time."}
-                  {conflicts[0].type === 'room' && "The selected room is already occupied during this time."}
-                  {conflicts[0].type === 'class' && "This class already has a different subject scheduled at this time."}
-                </p>
-              </div>
-            )}
+        <div className="lg:col-span-5 border-l border-slate-100 pl-6 flex flex-col justify-center bg-slate-50/50 rounded-2xl p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
+            <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Entry Intelligence</h4>
           </div>
+          
+          <div className="w-full">
+            <PeriodCard slot={previewRecord} conflicts={conflicts} isCompact={false} />
+          </div>
+
+          {conflicts.length > 0 ? (
+            <div className="mt-4 p-3 bg-red-50 rounded-xl border border-red-100/50">
+              <div className="flex items-center gap-2 text-red-600 mb-1">
+                <span className="material-symbols-outlined text-[14px]">warning</span>
+                <p className="text-[9px] font-black uppercase tracking-widest">Conflict detected</p>
+              </div>
+              <p className="text-[10px] font-bold text-red-500/80 leading-relaxed uppercase tracking-tight">
+                {conflicts[0].type} overlaps found at this time slot.
+              </p>
+            </div>
+          ) : (
+             <div className="mt-4 p-3 bg-emerald-50/50 rounded-xl border border-emerald-100/50 flex items-center gap-2">
+                <span className="material-symbols-outlined text-emerald-500 text-[14px]">check_circle</span>
+                <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Schedule Clear</p>
+             </div>
+          )}
         </div>
       </div>
 
-      <div className="flex justify-end pt-8 border-t border-slate-100 gap-4">
+      <div className="flex justify-end pt-6 border-t border-slate-100 gap-3">
         <Button
           variant="secondary"
           type="button"
-          className="h-14 px-10 rounded-2xl text-[11px] font-black uppercase tracking-widest"
+          className="h-10 px-8 rounded-xl text-[10px] font-black uppercase tracking-widest"
           onClick={() => window.history.back()}
         >
           Cancel
@@ -253,9 +258,9 @@ export function TimetableForm({
         <Button
           type="submit"
           disabled={saving || isLoading}
-          className="h-14 px-12 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-xl shadow-blue-600/20 text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all"
+          className="h-10 px-10 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-600/20 text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
         >
-          {saving ? "Processing..." : "Save Schedule Entry"}
+          {saving ? "Processing..." : "Create Schedule Entry"}
         </Button>
       </div>
     </form>
