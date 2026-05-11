@@ -13,25 +13,25 @@ export class ProviderManager {
 
   private initializeProviders() {
     if (process.env.GEMINI_API_KEY) {
+      // Primary model: Fast and efficient (Gemini 2.5 Flash)
       this.providers.set(
         "gemini",
         new ChatGoogleGenerativeAI({
-          model: process.env.GEMINI_MODEL || "gemini-1.5-flash-latest",
+          model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
           temperature: 0.1,
           maxRetries: 0,
           apiKey: process.env.GEMINI_API_KEY,
-          apiVersion: "v1beta",
         })
       );
       
+      // Pro model: For complex tasks (Gemini 2.5 Pro)
       this.providers.set(
         "gemini-pro",
         new ChatGoogleGenerativeAI({
-          model: "gemini-1.5-pro-latest",
+          model: "gemini-2.5-pro",
           temperature: 0.1,
           maxRetries: 1,
           apiKey: process.env.GEMINI_API_KEY,
-          apiVersion: "v1beta",
         })
       );
     }
