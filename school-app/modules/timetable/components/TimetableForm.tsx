@@ -131,8 +131,8 @@ export function TimetableForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        <div className="space-y-8">
+      <div className="flex flex-col xl:flex-row gap-10">
+        <div className="flex-1 space-y-8">
            <FormSection title="Academic Details" description="Define the subject and staff assigned.">
              <div className="grid grid-cols-1 gap-6">
                 <Select
@@ -144,7 +144,7 @@ export function TimetableForm({
                   required
                 />
 
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <Select
                       label="Subject"
                       value={form.subject_id}
@@ -168,7 +168,7 @@ export function TimetableForm({
 
            <FormSection title="Timing & Location" description="When and where will this take place?">
              <div className="grid grid-cols-1 gap-6">
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <Select
                       label="Day of Week"
                       value={form.day_of_week}
@@ -189,7 +189,7 @@ export function TimetableForm({
                     />
                 </div>
 
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <Input
                       label="Start Time"
                       type="time"
