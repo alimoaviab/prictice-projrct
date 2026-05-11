@@ -50,30 +50,67 @@ export async function POST(req: Request) {
   try {
     const ctx = authenticateRequest(sessionRequest(req), "school");
     if (ctx.role !== "admin" && ctx.role !== "teacher") {
+      console.error("[POST /api/live/classes] Unauthorized role:", ctx.role);
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 403 });
     }
 
     const body = await req.json();
+    console.info("[POST /api/live/classes] Request body:", {
+      title: body.title,
+      classId: body.classId,
+      subjectId: body.subjectId,
+      teacherId: body.teacherId,
+      startTime: body.startTime,
+      endTime: body.endTime
+    });
 
     if (ctx.role === "teacher") {
       body.teacherId = ctx.user_id;
     } else if (!body.teacherId) {
+      console.error("[POST /api/live/classes] Missing teacherId");
       return NextResponse.json({ success: false, error: "teacherId is required" }, { status: 400 });
     }
 
+    console.info("[POST /api/live/classes] Creating live class...");
     const liveClass = await LiveClassService.createClass(ctx, body);
+    
+    console.info("[POST /api/live/classes] Live class created successfully", {
+      id: liveClass._id,
+      meetingLink: liveClass.meetingLink,
+      status: liveClass.status
+    });
+
+    // Convert to plain object and ensure all fields are included
+    const classData = liveClass.toObject ? liveClass.toObject() : liveClass;
     
     // Return with meeting link included
     return NextResponse.json({ 
       success: true, 
       data: {
-        ...liveClass.toObject?.() || liveClass,
-        meetingLink: liveClass.meetingLink,
-        meetingId: liveClass.meetingId
+        _id: classData._id,
+        title: classData.title,
+        teacherId: classData.teacherId,
+        classId: classData.classId,
+        subjectId: classData.subjectId,
+        meetingLink: classData.meetingLink,
+        meetingId: classData.meetingId,
+        startTime: classData.startTime,
+        endTime: classData.endTime,
+        status: classData.status,
+        createdBy: classData.createdBy,
+        createdAt: classData.createdAt,
+        updatedAt: classData.updatedAt
       }
     }, { status: 201 });
   } catch (error: any) {
-    console.error("[POST /api/live/classes] Error:", error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+    console.error("[POST /api/live/classes] Error:", {
+      message: error.message,
+      stack: error.stack,
+      code: error.code
+    });
+    return NextResponse.json({ 
+      success: false, 
+      error: error.message || "Failed to create live class" 
+    }, { status: 400 });
   }
 }

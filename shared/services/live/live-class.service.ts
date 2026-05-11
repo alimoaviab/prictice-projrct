@@ -69,7 +69,11 @@ export class LiveClassService {
     // Generate Meet link - try Google Meet first, fallback to custom link
     let meetingLink = "";
     let meetingId = "";
+    
+    console.info("[LiveClassService.createClass] Starting link generation for class:", data.classId);
+    
     try {
+      console.info("[LiveClassService.createClass] Attempting Google Meet link generation...");
       const meetResult = await createGoogleMeetEvent(
         ctx,
         data.title,
@@ -80,18 +84,27 @@ export class LiveClassService {
       );
       meetingLink = meetResult.meetingLink || "";
       meetingId = meetResult.eventId || "";
-      console.info("[LiveClassService] Google Meet link generated successfully", { meetingLink });
+      console.info("[LiveClassService.createClass] ✅ Google Meet link generated successfully", { 
+        meetingLink,
+        meetingId
+      });
     } catch (error) {
-      console.warn("[LiveClassService] Could not generate Google Meet link, using fallback:", error);
+      console.warn("[LiveClassService.createClass] ❌ Could not generate Google Meet link, using fallback:", {
+        error: (error as Error)?.message
+      });
       // Generate fallback link
       meetingLink = generateFallbackMeetingLink(data.classId);
-      console.info("[LiveClassService] Fallback meeting link generated", { meetingLink });
+      console.info("[LiveClassService.createClass] ✅ Fallback meeting link generated", { meetingLink });
     }
 
     // Ensure we always have a meeting link
     if (!meetingLink) {
+      console.warn("[LiveClassService.createClass] ⚠️ No meeting link generated, creating fallback as safety net");
       meetingLink = generateFallbackMeetingLink(data.classId);
+      console.info("[LiveClassService.createClass] ✅ Safety net fallback link created", { meetingLink });
     }
+
+    console.info("[LiveClassService.createClass] Final meeting link:", { meetingLink, meetingId });
 
     const liveClass = new LiveClass({
       school_id: ctx.school_id,
@@ -108,13 +121,27 @@ export class LiveClassService {
       createdBy: new mongoose.Types.ObjectId(ctx.user_id),
     });
 
+    console.info("[LiveClassService.createClass] Saving live class to database...", {
+      title: liveClass.title,
+      meetingLink: liveClass.meetingLink,
+      status: liveClass.status
+    });
+
     const savedClass = await liveClass.save();
+
+    console.info("[LiveClassService.createClass] ✅ Live class saved successfully", {
+      id: savedClass._id,
+      meetingLink: savedClass.meetingLink,
+      status: savedClass.status
+    });
 
     // Share link with students in the class
     try {
+      console.info("[LiveClassService.createClass] Sharing link with students...");
       await this.shareClassLinkWithStudents(ctx, data.classId, meetingLink, data.title);
+      console.info("[LiveClassService.createClass] ✅ Link shared with students");
     } catch (error) {
-      console.warn("[LiveClassService] Could not share link with students:", error);
+      console.warn("[LiveClassService.createClass] ⚠️ Could not share link with students:", error);
     }
 
     return savedClass as ILiveClass;
@@ -130,6 +157,12 @@ export class LiveClassService {
     title: string
   ): Promise<void> {
     try {
+      console.info("[LiveClassService.shareClassLinkWithStudents] Starting student link sharing...", {
+        classId,
+        meetingLink,
+        title
+      });
+
       // Get all active students in the class
       const students = await StudentModel.find({
         school_id: ctx.school_id,
@@ -139,13 +172,21 @@ export class LiveClassService {
         .select("user_id email first_name last_name")
         .lean() as any[];
 
+      console.info("[LiveClassService.shareClassLinkWithStudents] Found students:", {
+        count: students.length
+      });
+
       if (students.length === 0) {
-        console.info("[LiveClassService] No students found in class to share link with");
+        console.info("[LiveClassService.shareClassLinkWithStudents] No students found in class to share link with");
         return;
       }
 
       // Get user emails for students
       const userIds = students.map(s => s.user_id).filter(Boolean);
+      console.info("[LiveClassService.shareClassLinkWithStudents] Fetching user emails...", {
+        userCount: userIds.length
+      });
+
       const users = await UserModel.find({
         school_id: ctx.school_id,
         _id: { $in: userIds }
@@ -155,12 +196,12 @@ export class LiveClassService {
 
       const userEmailMap = new Map(users.map(u => [u._id.toString(), u.email]));
 
-      // Prepare notification data (can be extended to send emails/notifications)
+      // Prepare notification data
       const studentEmails = students
         .map(s => userEmailMap.get(s.user_id?.toString() || ""))
         .filter(Boolean) as string[];
 
-      console.info("[LiveClassService] Sharing live class link with students", {
+      console.info("[LiveClassService.shareClassLinkWithStudents] ✅ Sharing complete", {
         classId,
         studentCount: students.length,
         emailCount: studentEmails.length,
@@ -171,7 +212,9 @@ export class LiveClassService {
       // TODO: Send notifications to students (email, SMS, in-app notification)
       // For now, just log that we would share it
     } catch (error) {
-      console.warn("[LiveClassService] Error sharing link with students:", error);
+      console.warn("[LiveClassService.shareClassLinkWithStudents] ⚠️ Error sharing link with students:", {
+        error: (error as Error)?.message
+      });
       // Don't throw - this is a non-critical operation
     }
   }
