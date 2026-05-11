@@ -359,7 +359,7 @@ export function SchoolShell({
               <span className="material-symbols-outlined text-[12px] font-black text-white">school</span>
             </div>
             {!isCollapsed && (
-              <span className="text-[13px] font-black tracking-tight text-slate-900">Eduplexo</span>
+              <span className="text-[13px] font-black tracking-tight text-black">Eduplexo</span>
             )}
           </div>
 
@@ -383,7 +383,7 @@ export function SchoolShell({
                 {!isCollapsed && (
                   <button
                     onClick={() => toggleGroup(group.label)}
-                    className="group flex w-full items-center justify-between px-2 py-1 text-[8px] font-black uppercase tracking-[0.15em] text-slate-400 transition-colors hover:text-blue-600"
+                    className="group flex w-full items-center justify-between px-2 py-1 text-[8px] font-black uppercase tracking-[0.15em] text-black transition-colors hover:text-blue-600"
                   >
                     <span>{group.label}</span>
                     <span className={`material-symbols-outlined text-[10px] transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}>
@@ -409,9 +409,9 @@ export function SchoolShell({
                       <Link
                         key={item.href}
                         href={item.href}
-                        className={`premium-nav-item group flex h-7.5 items-center gap-2 px-2.5 py-1 text-[12px] font-bold ${isActive ? "premium-nav-item-active" : "text-slate-500 hover:bg-slate-50"}`}
+                        className={`premium-nav-item group flex h-7.5 items-center gap-2 px-2.5 py-1 text-[12px] font-bold ${isActive ? "premium-nav-item-active" : "text-black hover:bg-slate-50"}`}
                       >
-                        <span className={`material-symbols-outlined text-[15px] transition-colors ${isActive ? "font-bold text-white" : "text-slate-400 group-hover:text-blue-600"}`}>
+                        <span className={`material-symbols-outlined text-[15px] transition-colors ${isActive ? "font-bold text-white" : "text-black/70 group-hover:text-blue-600"}`}>
                           {item.icon}
                         </span>
                         <span className="truncate tracking-tight">{item.label}</span>
@@ -436,8 +436,8 @@ export function SchoolShell({
             {!isCollapsed && (
               <>
                 <div className="flex flex-col min-w-0 text-left flex-1">
-                  <span className="truncate text-[10px] font-bold text-slate-900">{user.email.split('@')[0]}</span>
-                  <span className="text-[8px] font-black uppercase tracking-wider text-slate-400">{user.role.replace('_', ' ')}</span>
+                  <span className="truncate text-[10px] font-bold text-black">{user.email.split('@')[0]}</span>
+                  <span className="text-[8px] font-black uppercase tracking-wider text-black">{user.role.replace('_', ' ')}</span>
                 </div>
                 <button
                   onClick={logout}

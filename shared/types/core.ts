@@ -65,6 +65,7 @@ export interface RequestContext {
   role: Role;
   app: AppName;
   permissions: string[];
+  active_academic_year_id?: string; // CRITICAL: Academic year isolation
   session_id?: string;
   actor_email?: string;
   ip?: string;

@@ -6,6 +6,7 @@ export interface AuthTokenPayload extends JwtPayload {
   school_id: string;
   role: Role;
   permissions: string[];
+  active_academic_year_id?: string; // CRITICAL: Academic year context
   session_id: string;
   app: AppName;
   actor_email?: string;
@@ -68,6 +69,7 @@ export function contextFromToken(
     role: payload.role,
     app: payload.app,
     permissions: payload.permissions ?? [],
+    active_academic_year_id: payload.active_academic_year_id, // CRITICAL: Pass academic year
     session_id: payload.session_id,
     actor_email: payload.actor_email,
     ip: meta.ip,

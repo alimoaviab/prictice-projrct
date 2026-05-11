@@ -4,6 +4,7 @@ import { schemaOptions, tenantField, requiredString } from "./base";
 const timetableSchema = new Schema(
   {
     school_id: tenantField,
+    academic_year_id: { type: Types.ObjectId, ref: "AcademicYear", required: true, index: true },
     class_id: { type: Types.ObjectId, ref: "Class", required: true, index: true },
     teacher_id: { type: Types.ObjectId, ref: "Teacher", required: true, index: true },
     subject_id: { type: Types.ObjectId, ref: "Subject", index: true },
@@ -23,8 +24,8 @@ const timetableSchema = new Schema(
   { ...schemaOptions, collection: "timetable" }
 );
 
-timetableSchema.index({ school_id: 1, class_id: 1, day: 1, start_time: 1, end_time: 1 });
-timetableSchema.index({ school_id: 1, teacher_id: 1, day: 1, start_time: 1, end_time: 1 });
+timetableSchema.index({ school_id: 1, academic_year_id: 1, class_id: 1, day: 1, start_time: 1, end_time: 1 });
+timetableSchema.index({ school_id: 1, academic_year_id: 1, teacher_id: 1, day: 1, start_time: 1, end_time: 1 });
 
 if (models.Timetable) {
   delete (models as any).Timetable;

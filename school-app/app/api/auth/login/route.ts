@@ -60,6 +60,13 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Get active academic year for the school
+        const { AcademicYearModel } = await import("@edu/shared/models/academic-year.model");
+        const activeAcademicYear = await AcademicYearModel.findOne({
+            school_id: user.school_id,
+            is_active: true
+        }).select("_id").lean();
+
         // Additional data integrity checks for specific roles
         if (user.role === "teacher") {
             const teacher = await TeacherModel.findOne({ user_id: user._id, status: "active" });
@@ -78,6 +85,7 @@ export async function POST(request: NextRequest) {
             school_id: user.school_id,
             role: user.role,
             permissions: user.permissions ?? [],
+            active_academic_year_id: activeAcademicYear ? String(activeAcademicYear._id) : undefined,
             session_id: randomUUID(),
             app: "school",
             actor_email: user.email

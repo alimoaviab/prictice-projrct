@@ -4,6 +4,7 @@ import { schemaOptions, tenantField } from "./base";
 const attendanceSchema = new Schema(
   {
     school_id: tenantField,
+    academic_year_id: { type: Types.ObjectId, ref: "AcademicYear", required: true, index: true },
     student_id: { type: Types.ObjectId, ref: "Student", required: true, index: true },
     class_id: { type: Types.ObjectId, ref: "Class", required: true, index: true },
     teacher_id: { type: Types.ObjectId, ref: "Teacher", default: null, index: true },
@@ -25,8 +26,8 @@ const attendanceSchema = new Schema(
   { ...schemaOptions, collection: "attendance" }
 );
 
-attendanceSchema.index({ school_id: 1, student_id: 1, date: 1 }, { unique: true });
-attendanceSchema.index({ school_id: 1, class_id: 1, date: 1 });
-attendanceSchema.index({ school_id: 1, status: 1, date: -1 });
+attendanceSchema.index({ school_id: 1, academic_year_id: 1, student_id: 1, date: 1 }, { unique: true });
+attendanceSchema.index({ school_id: 1, academic_year_id: 1, class_id: 1, date: 1 });
+attendanceSchema.index({ school_id: 1, academic_year_id: 1, status: 1, date: -1 });
 
 export const AttendanceModel = models.Attendance || model("Attendance", attendanceSchema);

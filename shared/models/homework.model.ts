@@ -4,6 +4,7 @@ import { requiredString, schemaOptions, tenantField } from "./base";
 const homeworkSchema = new Schema(
   {
     school_id: tenantField,
+    academic_year_id: { type: Types.ObjectId, ref: "AcademicYear", required: true, index: true },
     class_id: { type: Types.ObjectId, ref: "Class", required: true, index: true },
     teacher_id: { type: Types.ObjectId, ref: "Teacher", required: true, index: true },
     subject_id: { type: Types.ObjectId, ref: "Subject", required: true, index: true },
@@ -43,9 +44,9 @@ const homeworkSchema = new Schema(
   { ...schemaOptions, collection: "homework" }
 );
 
-homeworkSchema.index({ school_id: 1, class_id: 1, due_at: 1 });
-homeworkSchema.index({ school_id: 1, teacher_id: 1, created_at: -1 });
-homeworkSchema.index({ school_id: 1, "submissions.student_id": 1 });
-homeworkSchema.index({ school_id: 1, assigned_at: -1 });
+homeworkSchema.index({ school_id: 1, academic_year_id: 1, class_id: 1, due_at: 1 });
+homeworkSchema.index({ school_id: 1, academic_year_id: 1, teacher_id: 1, created_at: -1 });
+homeworkSchema.index({ school_id: 1, academic_year_id: 1, "submissions.student_id": 1 });
+homeworkSchema.index({ school_id: 1, academic_year_id: 1, assigned_at: -1 });
 
 export const HomeworkModel = models.Homework || model("Homework", homeworkSchema);
