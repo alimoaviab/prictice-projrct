@@ -19,6 +19,7 @@
     "extend": "^3.0.2",
     "framer-motion": "^12.38.0",
     "googleapis": "^171.4.0",
+    "gsap": "^3.15.0",
     "hast-util-to-jsx-runtime": "^2.3.6",
     "html-url-attributes": "^3.0.1",
     "is-plain-obj": "^4.1.0",

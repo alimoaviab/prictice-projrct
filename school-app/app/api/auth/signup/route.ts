@@ -8,19 +8,12 @@ export async function POST(request: NextRequest) {
         await connectDb();
 
         const body = await request.json();
-        const { schoolName, email, password, confirmPassword } = body;
+        const { fullName, email, password, role, schoolName, schoolCode } = body;
 
-        // Validation
-        if (!schoolName || !email || !password || !confirmPassword) {
+        // Basic Validation
+        if (!fullName || !email || !password || !role) {
             return NextResponse.json(
-                { ok: false, error: { message: "All fields are required" } },
-                { status: 400 }
-            );
-        }
-
-        if (password !== confirmPassword) {
-            return NextResponse.json(
-                { ok: false, error: { message: "Passwords do not match" } },
+                { ok: false, error: { message: "Required fields are missing" } },
                 { status: 400 }
             );
         }
@@ -32,14 +25,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            return NextResponse.json(
-                { ok: false, error: { message: "Invalid email format" } },
-                { status: 400 }
-            );
-        }
-
-        // Check if email already in use globally (or across users)
+        // Check if user exists
         const existingUser = await UserModel.findOne({ email: email.toLowerCase() });
         if (existingUser) {
             return NextResponse.json(
@@ -48,34 +34,70 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const schoolCodeBase = schoolName.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 8) || "SCHOOL";
-        const suffix = Date.now().toString().slice(-4);
-        const schoolCode = `${schoolCodeBase}${suffix}`;
-        const schoolId = `school-${Date.now()}`;
-        const schoolDomain = `${schoolName.toLowerCase().replace(/[^a-z0-9]/g, "") || "school"}.eduplexo.com`;
+        let targetSchoolId: string;
+        let finalSchoolCode: string | undefined;
 
-        // Create Tenant (School)
-        const newSchool = new SchoolModel({
-            school_id: schoolId,
-            name: schoolName,
-            code: schoolCode,
-            domains: [schoolDomain],
-            status: "active",
-        });
-        await newSchool.save();
+        if (role === "admin") {
+            // Logic for creating a NEW school
+            if (!schoolName) {
+                return NextResponse.json(
+                    { ok: false, error: { message: "School name is required for administrators" } },
+                    { status: 400 }
+                );
+            }
 
-        // Create Admin User
+            const schoolCodeBase = schoolName.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 6) || "SCH";
+            const suffix = Math.floor(1000 + Math.random() * 9000);
+            finalSchoolCode = `${schoolCodeBase}-${suffix}`;
+            targetSchoolId = `school-${Date.now()}`;
+
+            const newSchool = new SchoolModel({
+                school_id: targetSchoolId,
+                name: schoolName,
+                code: finalSchoolCode,
+                status: "active",
+            });
+            await newSchool.save();
+        } else {
+            // Logic for joining an EXISTING school
+            if (!schoolCode) {
+                return NextResponse.json(
+                    { ok: false, error: { message: "School join code is required" } },
+                    { status: 400 }
+                );
+            }
+
+            const school = await SchoolModel.findOne({ code: schoolCode.toUpperCase() });
+            if (!school) {
+                return NextResponse.json(
+                    { ok: false, error: { message: "Invalid school join code" } },
+                    { status: 404 }
+                );
+            }
+            targetSchoolId = school.school_id;
+        }
+
+        // Create User
         const newUser = new UserModel({
-            school_id: schoolId,
+            school_id: targetSchoolId,
             email: email.toLowerCase(),
             password_hash: hashPassword(password),
-            role: "admin",
-            permissions: ["*"],
+            role: role,
+            permissions: role === "admin" ? ["*"] : [],
             status: "active"
         });
         await newUser.save();
 
-        return NextResponse.json({ ok: true, data: { message: "Admin account created successfully. You can now log in." } }, { status: 201 });
+        return NextResponse.json({ 
+            ok: true, 
+            data: { 
+                message: role === "admin" 
+                    ? `School registered successfully. Your school join code is: ${finalSchoolCode}` 
+                    : "Account created and linked to school successfully.",
+                schoolCode: finalSchoolCode
+            } 
+        }, { status: 201 });
+
     } catch (error: any) {
         console.error("Signup error:", error);
         return NextResponse.json(

@@ -3,17 +3,30 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import InteractiveCharacters from "@/components/auth/InteractiveCharacters";
 
-type Role = "admin" | "teacher" | "parent";
+type Role = "admin" | "teacher" | "student";
+
+const ROLES: { key: Role; label: string; icon: string }[] = [
+  { key: "admin", label: "Admin", icon: "admin_panel_settings" },
+  { key: "teacher", label: "Teacher", icon: "local_library" },
+  { key: "student", label: "Student", icon: "face" },
+];
 
 export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
   const [sessionChecked, setSessionChecked] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role>("admin");
   const [formData, setFormData] = useState({ email: "", password: "" });
-  const [showPassword, setShowPassword] = useState(false);
+  
+  // Animation States
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+  const [isEmailHovered, setIsEmailHovered] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
 
   useEffect(() => {
     const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
@@ -26,16 +39,14 @@ export default function LoginPage() {
 
   if (!sessionChecked) return null;
 
-  const roles: { key: Role; label: string; icon: string }[] = [
-    { key: "admin", label: "Admin", icon: "admin_panel_settings" },
-    { key: "teacher", label: "Teacher", icon: "local_library" },
-    { key: "parent", label: "Parent", icon: "family_restroom" },
-  ];
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setError("");
+    
+    // Trigger typing animation
+    setIsTyping(true);
+    setTimeout(() => setIsTyping(false), 200);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -48,98 +59,83 @@ export default function LoginPage() {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, role: selectedRole }),
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Login failed");
+        throw new Error(result.message || "Login failed");
       }
 
-      const data = await response.json();
-      localStorage.setItem("token", data.token);
-      if (data.profile_id) localStorage.setItem("profile_id", data.profile_id);
-      if (data.class_id) localStorage.setItem("class_id", data.class_id);
-      if (data.student_id) localStorage.setItem("student_id", data.student_id);
-
-      if (data.role === "admin" || data.role === "super_admin") {
-        router.push("/admin/dashboard");
-      } else if (data.role === "teacher") {
-        router.push("/teacher/dashboard");
-      } else if (data.role === "parent") {
-        router.push("/parent/dashboard");
-      } else {
-        router.push("/");
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setSuccess(true);
+      localStorage.setItem("token", result.token);
+      
+      const roleRoutes: Record<string, string> = {
+        admin: "/admin/dashboard",
+        super_admin: "/admin/dashboard",
+        teacher: "/teacher/dashboard",
+        student: "/student/dashboard",
+      };
+      
+      setTimeout(() => {
+        router.push(roleRoutes[result.role] || "/");
+      }, 1500);
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-[#F0F4F8]">
-      <div className="max-w-[1000px] w-full bg-white rounded-[32px] shadow-2xl flex flex-col md:flex-row overflow-hidden border border-gray-100">
-        {/* Left Branding Panel */}
-        <div className="md:w-5/12 bg-[#1E3A8A] p-10 flex flex-col justify-between text-white relative overflow-hidden">
-          {/* Decorative background circle */}
-          <div className="absolute top-[-10%] right-[-10%] w-[300px] h-[300px] bg-white opacity-5 rounded-full blur-3xl"></div>
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4 overflow-hidden">
+      <div className="w-full max-w-[480px] relative">
+        {/* Characters Component */}
+        <InteractiveCharacters 
+          isPasswordFocused={isPasswordFocused}
+          isUsernameHovered={isEmailHovered}
+          isTyping={isTyping}
+          isSuccess={success}
+        />
 
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-10">
-              <span className="material-symbols-outlined text-4xl text-[#3B82F6]">school</span>
-              <span className="text-2xl font-bold tracking-tight">EduFlow</span>
-            </div>
-            <h1 className="text-4xl font-bold leading-tight mb-4">
-              Empowering Education through Innovation
-            </h1>
-            <p className="text-blue-100 opacity-80 leading-relaxed">
-              Experience the next generation of school management. Secure, efficient, and beautifully simple.
-            </p>
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-[24px] shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-gray-100 p-6 md:p-9 relative z-10"
+        >
+          <div className="text-center mb-10">
+            <h2 className="text-4xl font-black text-gray-900 mb-2 tracking-tight">Welcome Back!</h2>
+            <p className="text-gray-400 font-semibold uppercase tracking-[0.15em] text-xs">Log in to continue</p>
           </div>
 
-          <div className="relative z-10 mt-12 p-4 bg-white/10 rounded-2xl backdrop-blur-md border border-white/10">
-            <p className="text-xs font-semibold uppercase tracking-widest text-blue-300 mb-2">Default Admin</p>
-            <p className="text-sm font-medium">Email: <span className="text-blue-200">admin@school.com</span></p>
-            <p className="text-sm font-medium">Pass: <span className="text-blue-200">admin123</span></p>
-          </div>
-        </div>
-
-        {/* Right Login Panel */}
-        <div className="md:w-7/12 p-8 md:p-12 lg:p-16 flex flex-col justify-center">
-          <div className="mb-10 text-center md:text-left">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h2>
-            <p className="text-gray-500">Please sign in to access your portal</p>
-          </div>
-
-          {/* Role Tabs */}
-          <div className="mb-8">
-            <div className="flex p-1 bg-gray-100 rounded-2xl">
-              {roles.map((role) => (
-                <button
-                  key={role.key}
-                  type="button"
-                  onClick={() => setSelectedRole(role.key)}
-                  className={`flex-1 py-3 px-2 rounded-xl text-sm font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${selectedRole === role.key
-                      ? "bg-white text-[#1E3A8A] shadow-lg"
-                      : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"
-                    }`}
-                >
-                  <span className="material-symbols-outlined text-[20px]">{role.icon}</span>
-                  <span className="hidden sm:inline">{role.label}</span>
-                </button>
-              ))}
-            </div>
+          {/* Role Selection Tabs */}
+          <div className="mb-10 p-1.5 bg-gray-50 rounded-2xl flex border border-gray-100">
+            {ROLES.map((role) => (
+              <button
+                key={role.key}
+                type="button"
+                onClick={() => setSelectedRole(role.key)}
+                className={`flex-1 py-3.5 px-2 rounded-xl text-xs font-black transition-all duration-300 flex items-center justify-center gap-2 ${
+                  selectedRole === role.key
+                    ? "bg-white text-blue-600 shadow-sm border border-gray-100 scale-[1.02]"
+                    : "text-gray-400 hover:text-gray-900"
+                }`}
+              >
+                <span className="material-symbols-outlined text-[18px]">{role.icon}</span>
+                <span className="uppercase tracking-widest">{role.label}</span>
+              </button>
+            ))}
           </div>
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-8" onSubmit={handleSubmit}>
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700 ml-1">Email Address</label>
-              <div className="relative group">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 group-focus-within:text-[#1E3A8A] transition-colors">
-                  mail
-                </span>
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Email Address</label>
+              <div 
+                className="relative group"
+                onMouseEnter={() => setIsEmailHovered(true)}
+                onMouseLeave={() => setIsEmailHovered(false)}
+              >
                 <input
                   name="email"
                   type="email"
@@ -147,71 +143,65 @@ export default function LoginPage() {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="name@school.com"
-                  className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-[#1E3A8A] transition-all outline-none text-gray-900"
+                  className="w-full h-12 pl-6 pr-6 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-blue-600 transition-all outline-none text-gray-900 font-bold placeholder:text-gray-300"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700 ml-1">Password</label>
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Password</label>
               <div className="relative group">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 group-focus-within:text-[#1E3A8A] transition-colors">
-                  lock
-                </span>
                 <input
                   name="password"
-                  type={showPassword ? "text" : "password"}
+                  type="password"
                   required
                   value={formData.password}
                   onChange={handleChange}
+                  onFocus={() => setIsPasswordFocused(true)}
+                  onBlur={() => setIsPasswordFocused(false)}
                   placeholder="••••••••"
-                  className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-[#1E3A8A] transition-all outline-none text-gray-900"
+                  className="w-full h-12 pl-6 pr-6 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-blue-600 transition-all outline-none text-gray-900 font-bold placeholder:text-gray-300"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? "visibility_off" : "visibility"}
-                </button>
               </div>
             </div>
 
             {error && (
-              <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 animate-shake">
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3">
                 <span className="material-symbols-outlined text-red-500">error</span>
-                <p className="text-sm text-red-600 font-medium">{error}</p>
-              </div>
+                <p className="text-sm text-red-600 font-bold">{error}</p>
+              </motion.div>
             )}
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full bg-[#1E3A8A] hover:bg-[#152963] text-white font-bold py-4 rounded-2xl shadow-xl shadow-blue-900/10 hover:shadow-blue-900/20 active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-70"
+              disabled={loading || success}
+              className={`w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-black text-lg rounded-2xl shadow-[0_10px_20px_rgba(37,99,235,0.2)] hover:shadow-[0_15px_25px_rgba(37,99,235,0.3)] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-4 disabled:opacity-50 ${success ? 'bg-green-500 shadow-[0_10px_20px_rgba(34,197,94,0.2)]' : ''}`}
             >
               {loading ? (
-                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <div className="w-6 h-6 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+              ) : success ? (
+                <>
+                  <span className="uppercase tracking-widest">Authenticated!</span>
+                  <span className="material-symbols-outlined">check_circle</span>
+                </>
               ) : (
                 <>
-                  <span>Sign In</span>
+                  <span className="uppercase tracking-widest">Sign In</span>
                   <span className="material-symbols-outlined">arrow_forward</span>
                 </>
               )}
             </button>
           </form>
 
-          <div className="mt-8 pt-8 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <Link href="/auth/forgot-password" className="text-sm font-semibold text-blue-600 hover:text-blue-700">
-              Forgot password?
-            </Link>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-400">New here?</span>
-              <Link href="/auth/signup" className="text-sm font-bold text-[#1E3A8A] hover:underline">
+          <div className="mt-10 text-center">
+            <p className="text-gray-400 font-bold text-sm">
+              New here?{" "}
+              <Link href="/auth/signup" className="text-blue-600 hover:underline decoration-2 underline-offset-8">
                 Create Account
               </Link>
-            </div>
+            </p>
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

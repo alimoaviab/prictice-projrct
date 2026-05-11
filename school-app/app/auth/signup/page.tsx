@@ -1,76 +1,55 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import InteractiveCharacters from "@/components/auth/InteractiveCharacters";
 
-type Role = "admin" | "teacher" | "student" | "parent";
+type Role = "admin" | "teacher" | "student";
+
+const ROLES: { key: Role; label: string; icon: string }[] = [
+  { key: "admin", label: "Admin", icon: "admin_panel_settings" },
+  { key: "teacher", label: "Teacher", icon: "local_library" },
+  { key: "student", label: "Student", icon: "face" },
+];
 
 export default function SignupPage() {
   const router = useRouter();
-  const isDevelopment = process.env.NODE_ENV !== "production";
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [generatedCode, setGeneratedCode] = useState("");
   const [selectedRole, setSelectedRole] = useState<Role>("admin");
+  
   const [formData, setFormData] = useState({
     fullName: "",
-    schoolName: "",
     email: "",
     password: "",
     confirmPassword: "",
+    schoolName: "",
+    schoolCode: "",
   });
 
-  useEffect(() => {
-    if (isDevelopment) {
-      router.replace("/admin/dashboard");
-    }
-  }, [isDevelopment, router]);
-
-  if (isDevelopment) {
-    return null;
-  }
-
-  const roles: { key: Role; label: string; icon: string }[] = [
-    { key: "admin", label: "Admin", icon: "admin_panel_settings" },
-    { key: "teacher", label: "Teacher", icon: "local_library" },
-    { key: "student", label: "Student", icon: "face" },
-    { key: "parent", label: "Parent", icon: "family_restroom" },
-  ];
+  // Animation States
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+  const [isEmailHovered, setIsEmailHovered] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setError("");
+    
+    // Trigger typing animation
+    setIsTyping(true);
+    setTimeout(() => setIsTyping(false), 200);
   };
 
-  const validateForm = () => {
-    if (!formData.fullName.trim()) {
-      setError("Full name is required");
-      return false;
-    }
-    if (!formData.schoolName.trim()) {
-      setError("School name is required");
-      return false;
-    }
-    if (!formData.email.trim()) {
-      setError("Email address is required");
-      return false;
-    }
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters");
-      return false;
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
-      return false;
-    }
-    return true;
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    if (!validateForm()) {
       return;
     }
 
@@ -80,309 +59,241 @@ export default function SignupPage() {
     try {
       const response = await fetch("/api/auth/signup", {
         method: "POST",
-        credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fullName: formData.fullName,
-          schoolName: formData.schoolName,
-          email: formData.email,
-          password: formData.password,
-          role: selectedRole,
-        }),
+        body: JSON.stringify({ ...formData, role: selectedRole }),
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Signup failed");
+        throw new Error(result.error?.message || "Signup failed");
       }
 
-      const data = await response.json();
-      localStorage.setItem("token", data.token);
-
-      // Route based on role
-      const roleRoutes: Record<Role, string> = {
-        admin: "/admin/dashboard",
-        teacher: "/teacher/dashboard",
-        student: "/student/dashboard",
-        parent: "/parent/dashboard",
-      };
-      router.push(roleRoutes[selectedRole] || "/student/dashboard");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setSuccess(true);
+      if (result.data.schoolCode) {
+        setGeneratedCode(result.data.schoolCode);
+      }
+      
+      if (!result.data.schoolCode) {
+        setTimeout(() => {
+          router.push("/auth/login");
+        }, 2000);
+      }
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="bg-gradient-to-br from-surface to-surface-container min-h-screen flex items-center justify-center p-sm lg:p-xl font-body-md text-on-surface">
-      <div className="max-w-[1200px] w-full bg-surface-container-lowest rounded-[24px] shadow-soft-ambient flex flex-col lg:flex-row relative z-10 border border-outline-variant/30 overflow-visible">
-        {/* Left Side: Image and Branding */}
-        <div
-          className="lg:w-5/12 relative hidden lg:flex flex-col justify-end p-xl overflow-hidden min-h-[600px] rounded-r-[80px]"
-          style={{ clipPath: "ellipse(100% 120% at 0% 50%)" }}
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4 overflow-hidden py-12">
+      <div className="w-full max-w-[600px] relative">
+        {/* Characters Component */}
+        <InteractiveCharacters 
+          isPasswordFocused={isPasswordFocused}
+          isUsernameHovered={isEmailHovered}
+          isTyping={isTyping}
+          isSuccess={success}
+        />
+
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-[24px] shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-gray-100 p-6 md:p-9 relative z-10"
         >
-          <div className="absolute inset-0 bg-primary/20 z-10 mix-blend-multiply rounded-r-[80px]"></div>
-          <img
-            alt="Modern educational campus"
-            className="absolute inset-0 w-full h-full object-cover rounded-r-[80px]"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBAdyCVNz6vSHSwd-rbVf0kNpJo4k3G6lwGMOU2f17VDvcWZJtLKw3ZHGTyOnokhzFqY9DdOCxtNtEmxGvLTdugN_G-shZ8ZwbBeNn2oBPuMOh59-lZtOpcHr908UPYxXmys7LpMhBEoOUQUJpjnFwOCn5Y_LvWWPD_pmFMlfbONWwZ5mwwMEIjAEHY8l-kjhiKhmMcPtuBXIlsVmtARyw5rnDPangYmHCvt8dY4OuZJefzAP2yXpmmLpeW1Cx_EKBSR3VJrwRKNTk"
-          />
-          <div className="relative z-20 text-on-primary">
-            <div className="flex items-center gap-sm mb-lg">
-              <span className="material-symbols-outlined text-[32px] text-primary-fixed">
-                school
-              </span>
-              <span className="font-headline-md text-primary-fixed">
-                EduFlow
-              </span>
-            </div>
-            <h1 className="font-headline-lg text-white mb-sm drop-shadow-md">
-              Start Your Educational Journey
-            </h1>
-            <p className="font-body-lg text-primary-container drop-shadow-sm max-w-md text-primary-fixed-dim">
-              Join thousands of schools managing their operations with clarity,
-              reliability, and modern sophistication.
-            </p>
-          </div>
-          {/* Subtle gradient overlay at bottom for text readability */}
-          <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-on-background/80 to-transparent z-10 rounded-br-[80px]"></div>
-        </div>
-
-        {/* Right Side: Signup Form Container */}
-        <div className="lg:w-7/12 p-sm sm:p-lg xl:p-xl flex items-center justify-center bg-surface-container-lowest">
-          <div className="w-full max-w-[480px]">
-            {/* Mobile Logo */}
-            <div className="flex md:hidden items-center justify-center gap-sm mb-lg">
-              <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-on-primary">
-                <span className="material-symbols-outlined text-[20px]">
-                  school
-                </span>
-              </div>
-              <h1 className="font-headline-md text-primary">EduFlow</h1>
-            </div>
-
-            <div className="mb-lg">
-              <h2 className="font-headline-md text-on-surface mb-xs">
-                Create Account
-              </h2>
-              <p className="font-body-md text-on-surface-variant">
-                Fill in the details below to get started
-              </p>
-            </div>
-
-            {/* Role Selector (Segmented Control) */}
-            <div className="mb-lg">
-              <label className="block font-label-md text-on-surface-variant mb-sm">
-                Register as
-              </label>
-              <div className="grid grid-cols-4 gap-xs bg-surface-container rounded-lg p-xs border border-outline-variant/20">
-                {roles.map((role) => (
-                  <button
-                    key={role.key}
-                    type="button"
-                    onClick={() => setSelectedRole(role.key)}
-                    className={`py-sm px-xs font-label-sm rounded-DEFAULT transition-colors flex flex-col items-center gap-xs ${selectedRole === role.key
-                        ? "text-on-primary bg-primary shadow-sm"
-                        : "text-on-surface-variant hover:bg-surface-variant/50"
-                      }`}
-                  >
-                    <span className="material-symbols-outlined text-[20px]">
-                      {role.icon}
-                    </span>
-                    {role.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Form */}
-            <form className="space-y-md" onSubmit={handleSubmit}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-md">
-                <div>
-                  <label htmlFor="fullName" className="block font-label-md text-on-surface mb-xs">
-                    Full Name
-                  </label>
-                  <div className="relative">
-                    <span
-                      aria-hidden="true"
-                      className="absolute left-sm top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[18px]"
-                    >
-                      person
-                    </span>
-                    <input
-                      id="fullName"
-                      name="fullName"
-                      type="text"
-                      value={formData.fullName}
-                      onChange={handleChange}
-                      required
-                      placeholder="John Doe"
-                      className="w-full bg-surface-container-low border-0 border-b border-outline-variant focus:border-primary focus:ring-0 font-body-md text-on-surface px-sm py-sm pl-lg transition-colors rounded-t-DEFAULT"
-                    />
+          <AnimatePresence mode="wait">
+            {success ? (
+              <motion.div
+                key="success"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center py-6"
+              >
+                <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-8 shadow-sm">
+                  <span className="material-symbols-outlined text-green-500 text-[64px]">check_circle</span>
+                </div>
+                <h2 className="text-4xl font-black text-gray-900 mb-4">Registration Successful!</h2>
+                <p className="text-gray-500 font-bold mb-10">{success ? "Welcome to the future of education." : ""}</p>
+                
+                {generatedCode && (
+                  <div className="bg-gray-50 border-2 border-gray-100 rounded-[32px] p-8 mb-10">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Your School Join Code</p>
+                    <div className="flex items-center justify-center gap-6">
+                      <span className="text-5xl font-mono font-black text-blue-600 tracking-tighter">{generatedCode}</span>
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(generatedCode);
+                          alert("Code copied!");
+                        }}
+                        className="p-4 bg-white hover:bg-gray-50 border border-gray-100 rounded-2xl transition-all shadow-sm"
+                      >
+                        <span className="material-symbols-outlined text-[24px] text-gray-400">content_copy</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
 
-                <div>
-                  <label htmlFor="schoolName" className="block font-label-md text-on-surface mb-xs">
-                    School Name
-                  </label>
-                  <div className="relative">
-                    <span
-                      aria-hidden="true"
-                      className="absolute left-sm top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[18px]"
-                    >
-                      apartment
-                    </span>
-                    <input
-                      id="schoolName"
-                      name="schoolName"
-                      type="text"
-                      value={formData.schoolName}
-                      onChange={handleChange}
-                      required
-                      placeholder="Greenwood Academy"
-                      className="w-full bg-surface-container-low border-0 border-b border-outline-variant focus:border-primary focus:ring-0 font-body-md text-on-surface px-sm py-sm pl-lg transition-colors rounded-t-DEFAULT"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="email" className="block font-label-md text-on-surface mb-xs">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <span
-                    aria-hidden="true"
-                    className="absolute left-sm top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[18px]"
-                  >
-                    mail
-                  </span>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    placeholder="john@example.com"
-                    className="w-full bg-surface-container-low border-0 border-b border-outline-variant focus:border-primary focus:ring-0 font-body-md text-on-surface px-sm py-sm pl-lg transition-colors rounded-t-DEFAULT"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-md">
-                <div>
-                  <label htmlFor="password" className="block font-label-md text-on-surface mb-xs">
-                    Password
-                  </label>
-                  <div className="relative">
-                    <span
-                      aria-hidden="true"
-                      className="absolute left-sm top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[18px]"
-                    >
-                      lock
-                    </span>
-                    <input
-                      id="password"
-                      name="password"
-                      type="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      required
-                      placeholder="••••••••"
-                      className="w-full bg-surface-container-low border-0 border-b border-outline-variant focus:border-primary focus:ring-0 font-body-md text-on-surface px-sm py-sm pl-lg transition-colors rounded-t-DEFAULT"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="confirmPassword" className="block font-label-md text-on-surface mb-xs">
-                    Confirm Password
-                  </label>
-                  <div className="relative">
-                    <span
-                      aria-hidden="true"
-                      className="absolute left-sm top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[18px]"
-                    >
-                      lock_reset
-                    </span>
-                    <input
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      type="password"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      required
-                      placeholder="••••••••"
-                      className="w-full bg-surface-container-low border-0 border-b border-outline-variant focus:border-primary focus:ring-0 font-body-md text-on-surface px-sm py-sm pl-lg transition-colors rounded-t-DEFAULT"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {error && (
-                <div className="text-error font-label-md text-sm">{error}</div>
-              )}
-
-              <div className="pt-sm">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-gradient-to-r from-primary to-secondary text-on-primary font-label-md py-sm px-md rounded-full shadow-card hover:shadow-soft-ambient hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-card"
+                <Link 
+                  href="/auth/login" 
+                  className="inline-block px-12 py-5 rounded-2xl bg-blue-600 text-white font-black text-lg hover:bg-blue-700 shadow-xl transition-all"
                 >
-                  {loading ? "Creating Account..." : "Create Account"}
-                </button>
-              </div>
-            </form>
+                  Proceed to Login
+                </Link>
+              </motion.div>
+            ) : (
+              <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <div className="text-center mb-10">
+                  <h2 className="text-4xl font-black text-gray-900 mb-2 tracking-tight">Create Account</h2>
+                  <p className="text-gray-400 font-semibold uppercase tracking-[0.15em] text-xs">Join the Eduplexo network</p>
+                </div>
 
-            {/* Divider */}
-            <div className="flex items-center gap-sm my-lg">
-              <div className="flex-1 h-px bg-outline-variant/30"></div>
-              <span className="font-label-sm text-on-surface-variant uppercase tracking-wider">
-                Or continue with
-              </span>
-              <div className="flex-1 h-px bg-outline-variant/30"></div>
-            </div>
+                {/* Role Selection Tabs */}
+                <div className="mb-10 p-1.5 bg-gray-50 rounded-2xl flex border border-gray-100">
+                  {ROLES.map((role) => (
+                    <button
+                      key={role.key}
+                      type="button"
+                      onClick={() => setSelectedRole(role.key)}
+                      className={`flex-1 py-3.5 px-2 rounded-xl text-xs font-black transition-all duration-300 flex items-center justify-center gap-2 ${
+                        selectedRole === role.key
+                          ? "bg-white text-blue-600 shadow-sm border border-gray-100 scale-[1.02]"
+                          : "text-gray-400 hover:text-gray-900"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[18px]">{role.icon}</span>
+                      <span className="uppercase tracking-widest">{role.label}</span>
+                    </button>
+                  ))}
+                </div>
 
-            {/* Social Login */}
-            <div className="grid grid-cols-2 gap-md">
-              <button
-                type="button"
-                className="flex items-center justify-center gap-sm py-sm px-md bg-surface border border-outline-variant/30 rounded-lg font-label-md text-on-surface hover:bg-surface-container-low transition-colors shadow-sm"
-              >
-                <img
-                  alt="Google"
-                  className="w-5 h-5"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdsze_pcqlboVH2C3WtneIkX8_RHKCPeUclqeHO3QUZayHlfv2erQ_qNpcIXMDo6AWmGqWDdIh0UfYCUpvYt7XwBTX2cUhFybTb5NTYrQ9MSiBtDWV5qG9a_PyD1HAPaerGag2OhH1RFYS4bKRwGClyovjEwOChHoITmoalmUi3OH9TVkkUAEmzc3Hu0QDZkrCCT9x5inZs3Bt5ZNl4GuGks8AVmNYG2lHHHOzmk4xenlQ3NuUuLeYmqRLHn2XB8huX9PcWQRSSpE"
-                />
-                Google
-              </button>
-              <button
-                type="button"
-                className="flex items-center justify-center gap-sm py-sm px-md bg-surface border border-outline-variant/30 rounded-lg font-label-md text-on-surface hover:bg-surface-container-low transition-colors shadow-sm"
-              >
-                <img
-                  alt="Microsoft"
-                  className="w-5 h-5"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuANZI9cNyZV1UhmF5iHFvFoXcmV2rWQhsEe97Pm92Hs_XbZvj9Gw_6XLaksYhOmaReBnvrlLVx_qvy6H0f-cVNEF1gcRLucB9OKeBbNxhTKADG1ze3Y1GY0io8AbiAXyNGoARWd34gS72FBvmc0U57W4npYR6LjTxT8ew_fTni0_N5QWL5cP0_TBx-THcACYdsPJ7PVw0doyem3E0Ey-Sfxv1JEc--UMJWmq-eT9PS--KsGKHFbno3dZrFn_iG2EMjtlZBJc2MQdds"
-                />
-                Microsoft
-              </button>
-            </div>
+                <form className="space-y-8" onSubmit={handleSubmit}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Full Legal Name</label>
+                      <div className="relative group">
+                        <input
+                          name="fullName"
+                          required
+                          value={formData.fullName}
+                          onChange={handleChange}
+                          placeholder="Johnathan Doe"
+                          className="w-full h-12 px-6 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-blue-600 transition-all outline-none text-gray-900 font-bold placeholder:text-gray-300"
+                        />
+                      </div>
+                    </div>
 
-            <p className="mt-lg text-center font-body-md text-sm text-on-surface-variant">
-              Already have an account?{" "}
-              <Link
-                href="/auth/login"
-                className="text-primary hover:underline font-label-md"
-              >
-                Sign In
-              </Link>
-            </p>
-          </div>
-        </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">
+                        {selectedRole === "admin" ? "School Entity" : "Access Code"}
+                      </label>
+                      <div className="relative group">
+                        <input
+                          name={selectedRole === "admin" ? "schoolName" : "schoolCode"}
+                          required
+                          value={selectedRole === "admin" ? formData.schoolName : formData.schoolCode}
+                          onChange={handleChange}
+                          placeholder={selectedRole === "admin" ? "Academy Name" : "SCH-XXXX"}
+                          className={`w-full h-12 px-6 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-blue-600 transition-all outline-none text-gray-900 font-bold placeholder:text-gray-300 ${selectedRole !== "admin" ? "font-mono uppercase tracking-widest text-blue-600" : ""}`}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Work Email Address</label>
+                    <div 
+                      className="relative group"
+                      onMouseEnter={() => setIsEmailHovered(true)}
+                      onMouseLeave={() => setIsEmailHovered(false)}
+                    >
+                      <input
+                        name="email"
+                        type="email"
+                        required
+                        value={formData.email}
+                        onChange={handleChange}
+                        placeholder="name@eduplexo.com"
+                        className="w-full h-12 px-6 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-blue-600 transition-all outline-none text-gray-900 font-bold placeholder:text-gray-300"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Security Key</label>
+                      <div className="relative group">
+                        <input
+                          name="password"
+                          type="password"
+                          required
+                          value={formData.password}
+                          onChange={handleChange}
+                          onFocus={() => setIsPasswordFocused(true)}
+                          onBlur={() => setIsPasswordFocused(false)}
+                          placeholder="••••••••"
+                          className="w-full h-12 px-6 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-blue-600 transition-all outline-none text-gray-900 font-bold placeholder:text-gray-300"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Verify Key</label>
+                      <div className="relative group">
+                        <input
+                          name="confirmPassword"
+                          type="password"
+                          required
+                          value={formData.confirmPassword}
+                          onChange={handleChange}
+                          onFocus={() => setIsPasswordFocused(true)}
+                          onBlur={() => setIsPasswordFocused(false)}
+                          placeholder="••••••••"
+                          className="w-full h-12 px-6 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-blue-600 transition-all outline-none text-gray-900 font-bold placeholder:text-gray-300"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {error && (
+                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3">
+                      <span className="material-symbols-outlined text-red-500">error</span>
+                      <p className="text-sm text-red-600 font-bold">{error}</p>
+                    </motion.div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={loading || success}
+                    className={`w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-black text-lg rounded-2xl shadow-[0_10px_20px_rgba(37,99,235,0.2)] hover:shadow-[0_15px_25px_rgba(37,99,235,0.3)] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-4 disabled:opacity-50 ${success ? 'bg-green-500 shadow-[0_10px_20px_rgba(34,197,94,0.2)]' : ''}`}
+                  >
+                    {loading ? (
+                      <div className="w-6 h-6 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+                    ) : success ? (
+                      <>
+                        <span className="uppercase tracking-widest">Success!</span>
+                        <span className="material-symbols-outlined">check_circle</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="uppercase tracking-widest">Register Profile</span>
+                        <span className="material-symbols-outlined">person_add</span>
+                      </>
+                    )}
+                  </button>
+                </form>
+
+                <div className="mt-10 text-center">
+                  <p className="text-gray-400 font-bold text-sm">
+                    Already part of the family?{" "}
+                    <Link href="/auth/login" className="text-blue-600 hover:underline decoration-2 underline-offset-8">
+                      Sign In
+                    </Link>
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
       </div>
     </div>
   );
