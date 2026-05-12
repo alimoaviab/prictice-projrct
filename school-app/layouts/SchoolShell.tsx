@@ -64,6 +64,10 @@ const adminNavGroups: NavGroup[] = [
     ],
   },
   {
+    label: "Domain",
+    items: [{ label: "Connect Domain", href: "/admin/connect-domain", icon: "language" }],
+  },
+  {
     label: "Settings",
     items: [{ label: "Settings", href: "/admin/settings", icon: "settings" }],
   },

@@ -21,20 +21,23 @@ function getRequestContext(request: Request) {
   );
 }
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const ctx = getRequestContext(request);
-  const result = await getTimetable(ctx, params.id);
+  const { id } = await params;
+  const result = await getTimetable(ctx, id);
   return NextResponse.json(result, { status: result.ok ? 200 : result.error?.status ?? 400 });
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const ctx = getRequestContext(request);
-  const result = await updateTimetable(ctx, params.id, await request.json());
+  const { id } = await params;
+  const result = await updateTimetable(ctx, id, await request.json());
   return NextResponse.json(result, { status: result.ok ? 200 : result.error?.status ?? 400 });
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const ctx = getRequestContext(request);
-  const result = await deleteTimetable(ctx, params.id);
+  const { id } = await params;
+  const result = await deleteTimetable(ctx, id);
   return NextResponse.json(result, { status: result.ok ? 200 : result.error?.status ?? 400 });
 }

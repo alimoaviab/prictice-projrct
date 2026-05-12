@@ -36,7 +36,7 @@ export default function EventListPage() {
     return {
       total: data.length,
       upcoming: data.filter(r => new Date(r.start_date) > new Date()).length,
-      academic: data.filter(r => r.event_type === 'exam').length,
+      academic: data.filter(r => r.event_type === 'academic').length,
       participation: "92%",
     };
   }, [state.data]);
