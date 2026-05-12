@@ -72,10 +72,15 @@ export async function listAttendance(
         query.class_id = new Types.ObjectId(filter.class_id);
     }
 
-    if (filter.academic_year_id) {
-      query.academic_year_id = new Types.ObjectId(filter.academic_year_id);
-    } else if (ctx.active_academic_year_id) {
-      query.academic_year_id = new Types.ObjectId(ctx.active_academic_year_id);
+    // Resolve Academic Year strictly
+    let academicYearId = filter.academic_year_id;
+    if (!academicYearId || academicYearId === "undefined") {
+      const { resolveAcademicYearId } = await import("./_academic-year-filter");
+      academicYearId = await resolveAcademicYearId(ctx);
+    }
+
+    if (academicYearId) {
+      query.academic_year_id = new Types.ObjectId(academicYearId);
     }
 
     if (ctx.role !== "student" && filter.student_id) {

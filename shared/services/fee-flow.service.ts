@@ -777,12 +777,16 @@ export async function listMonthlyFees(ctx: RequestContext, filters: unknown): Pr
         assertPermission(ctx, "fees", "view");
 
         const parsed = feeFilterSchema.parse(filters ?? {});
-        const academicYearId = parsed.academic_year_id;
-        const resolvedYearId = await resolveAcademicYearId(ctx, academicYearId);
+        let academicYearId = parsed.academic_year_id;
+        
+        // Resolve Academic Year strictly
+        if (!academicYearId || academicYearId === "undefined") {
+            academicYearId = await resolveAcademicYearId(ctx);
+        }
 
         const query: Record<string, unknown> = tenantFilter(ctx);
-        if (resolvedYearId) {
-            query.academic_year_id = new Types.ObjectId(resolvedYearId);
+        if (academicYearId) {
+            query.academic_year_id = new Types.ObjectId(academicYearId);
         }
 
         if (parsed.class_id) query.class_id = new Types.ObjectId(parsed.class_id);

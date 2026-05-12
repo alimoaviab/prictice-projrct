@@ -139,14 +139,23 @@ export async function listAttendance(
     return serviceTry(async () => {
         await connectDb();
         assertPermission(ctx, "attendance", "view");
-
         const query: Record<string, unknown> = tenantFilter(ctx);
 
         if (filter.date) {
             query.date = normalizeDate(filter.date);
         }
 
-        let classIds = await resolveClassIdsForAcademicYear(ctx, filter.Academy_year_id);
+        let academicYearId = filter.academic_year_id || filter.Academy_year_id;
+        if (!academicYearId || academicYearId === "undefined") {
+            const { resolveAcademicYearId } = await import("./_academic-year-filter");
+            academicYearId = await resolveAcademicYearId(ctx);
+        }
+
+        if (academicYearId) {
+            query.academic_year_id = new Types.ObjectId(academicYearId);
+        }
+
+        let classIds = await resolveClassIdsForAcademicYear(ctx, academicYearId);
 
         if (ctx.role === "teacher") {
             const teacherClassIds = await resolveTeacherClassIds(ctx);

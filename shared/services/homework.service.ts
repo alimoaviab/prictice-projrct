@@ -40,18 +40,22 @@ export async function getHomework(
 
 export async function listHomework(
   ctx: RequestContext,
-  filter: { Academy_year_id?: string } = {}
+  filter: { academic_year_id?: string } = {}
 ): Promise<ServiceResult<unknown[]>> {
   return serviceTry(async () => {
     await connectDb();
     assertPermission(ctx, "homework", "view");
 
-    const classIds = await resolveClassIdsForAcademicYear(ctx, filter.Academy_year_id);
-
-    const query: any = tenantFilter(ctx);
-    if (classIds.length > 0) {
-      query.class_id = { $in: classIds };
+    // Resolve Academic Year strictly
+    let academicYearId = filter.academic_year_id;
+    if (!academicYearId || academicYearId === "undefined") {
+      const { resolveAcademicYearId } = await import("./_academic-year-filter");
+      academicYearId = await resolveAcademicYearId(ctx);
     }
+
+    const query: any = tenantFilter(ctx, {
+      ...(academicYearId ? { academic_year_id: new Types.ObjectId(academicYearId) } : {})
+    });
 
     const rows = await HomeworkModel.find(query)
       .populate("class_id", "name")

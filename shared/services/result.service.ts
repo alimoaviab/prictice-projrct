@@ -20,14 +20,17 @@ export async function listResults(
     const query = tenantFilter(ctx);
 
     if (ctx.role === "teacher") {
-        const teacherClassIds = await resolveTeacherClassIds(ctx);
-        query.class_id = { $in: teacherClassIds };
+      const teacherClassIds = await resolveTeacherClassIds(ctx);
+      query.class_id = { $in: teacherClassIds };
+    }
+    let academicYearId = filter.academic_year_id;
+    if (!academicYearId || academicYearId === "undefined") {
+      const { resolveAcademicYearId } = await import("./_academic-year-filter");
+      academicYearId = await resolveAcademicYearId(ctx);
     }
 
-    if (filter.academic_year_id) {
-      query.academic_year_id = new Types.ObjectId(filter.academic_year_id);
-    } else if (ctx.active_academic_year_id) {
-      query.academic_year_id = new Types.ObjectId(ctx.active_academic_year_id);
+    if (academicYearId) {
+      query.academic_year_id = new Types.ObjectId(academicYearId);
     }
 
     if (filter.exam_id) {

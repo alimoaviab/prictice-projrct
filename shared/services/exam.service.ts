@@ -35,23 +35,27 @@ function mapExamRecord(row: Record<string, any>) {
 
 export async function listExams(
   ctx: RequestContext,
-  filter: { Academy_year_id?: string } = {}
+  filter: { academic_year_id?: string } = {}
 ): Promise<ServiceResult<unknown[]>> {
   return serviceTry(async () => {
     await connectDb();
     assertPermission(ctx, "exams", "view");
 
-    const query = tenantFilter(ctx);
+    // Resolve Academic Year strictly
+    let academicYearId = filter.academic_year_id;
+    if (!academicYearId || academicYearId === "undefined") {
+      const { resolveAcademicYearId } = await import("./_academic-year-filter");
+      academicYearId = await resolveAcademicYearId(ctx);
+    }
+
+    const query = tenantFilter(ctx, {
+      ...(academicYearId ? { academic_year_id: new Types.ObjectId(academicYearId) } : {})
+    });
     
     if (ctx.role === "teacher") {
       const { resolveTeacherClassIds } = await import("./teacher.service");
       const teacherClassIds = await resolveTeacherClassIds(ctx);
       query.class_id = { $in: teacherClassIds };
-    } else if (filter.Academy_year_id) {
-       const classIds = await resolveClassIdsForAcademicYear(ctx, filter.Academy_year_id);
-       query.class_id = { $in: classIds };
-    } else if (ctx.active_academic_year_id) {
-       query.academic_year_id = new Types.ObjectId(ctx.active_academic_year_id);
     }
 
     const rows = await ExamModel.find(query)

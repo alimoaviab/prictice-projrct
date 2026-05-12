@@ -314,11 +314,9 @@ export async function listTimetable(
     
     // 1. Resolve Academic Year (Priority: Query > Active Year)
     let academicYearId = query.academic_year_id;
-    if (!academicYearId) {
-      const active = await AcademicYearModel.findOne(tenantFilter(ctx, { is_active: true }))
-        .select("_id")
-        .lean();
-      if (active) academicYearId = String(active._id);
+    if (!academicYearId || academicYearId === "undefined") {
+      const { resolveAcademicYearId } = await import("./_academic-year-filter");
+      academicYearId = await resolveAcademicYearId(ctx);
     }
 
     // 2. Build Base Filter

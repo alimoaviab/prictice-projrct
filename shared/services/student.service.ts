@@ -36,15 +36,20 @@ export async function listStudents(
     await connectDb();
     assertPermission(ctx, "students", "view");
 
-    const classIds = await resolveClassIdsForAcademicYear(ctx, filter.academic_year_id);
+    // Resolve Academic Year strictly
+    let academicYearId = filter.academic_year_id;
+    if (!academicYearId || academicYearId === "undefined") {
+      const { resolveAcademicYearId } = await import("./_academic-year-filter");
+      academicYearId = await resolveAcademicYearId(ctx);
+    }
+
     const query = tenantFilter(ctx, {
-      ...(filter.status ? { status: filter.status } : {})
+      ...(filter.status ? { status: filter.status } : {}),
+      ...(academicYearId ? { academic_year_id: new Types.ObjectId(academicYearId) } : {})
     });
 
     if (filter.class_id) {
-        query.class_id = new Types.ObjectId(filter.class_id);
-    } else if (classIds.length > 0) {
-        query.class_id = { $in: classIds };
+      query.class_id = new Types.ObjectId(filter.class_id);
     }
 
     return StudentModel.find(query).sort({ last_name: 1, first_name: 1 }).lean();

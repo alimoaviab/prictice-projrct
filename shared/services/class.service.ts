@@ -98,10 +98,14 @@ export async function listClasses(ctx: RequestContext, query: any = {}): Promise
   return serviceTry(async () => {
     const filter = tenantFilter(ctx);
     
-    if (query.academic_year_id) {
-      filter.academic_year_id = new Types.ObjectId(query.academic_year_id);
-    } else if (ctx.active_academic_year_id) {
-      filter.academic_year_id = new Types.ObjectId(ctx.active_academic_year_id);
+    let academicYearId = query.academic_year_id;
+    if (!academicYearId || academicYearId === "undefined") {
+      const { resolveAcademicYearId } = await import("./_academic-year-filter");
+      academicYearId = await resolveAcademicYearId(ctx);
+    }
+
+    if (academicYearId) {
+      filter.academic_year_id = new Types.ObjectId(academicYearId);
     }
     
     const { academic_year_id, ...restQuery } = query;
