@@ -10,13 +10,16 @@ export async function POST(req: Request) {
     await connectDb();
     const { email, password, role: requestedRole } = await req.json();
 
-    if (!email || !password) {
-      return NextResponse.json({ ok: false, message: "Email and password are required" }, { status: 400 });
+    if (!email || !password || typeof email !== 'string' || typeof password !== 'string') {
+      return NextResponse.json({ ok: false, message: "Email and password are required and must be valid strings" }, { status: 400 });
     }
 
     const user = await UserModel.findOne({ email: email.toLowerCase() });
     if (!user) {
       console.warn(`[Login] User not found: ${email}`);
+      // Prevent user enumeration via timing attack
+      await new Promise(resolve => setTimeout(resolve, 0)); // Yield to event loop, simulate delay or do minimal work to mimic password hashing overhead, though scryptSync is synchronous
+      verifyPassword(password, "ea182579743ddbac14f79b62554c5dc4:014ef2373807e6ca06b3a1914da6491264be1d3be7022adc5779304e6e92d45648ecb8af665dc2e226493266d93ef5fd2e26f980681d3647eacdefabbb4da323");
       return NextResponse.json({ ok: false, message: "Invalid email or password" }, { status: 401 });
     }
 

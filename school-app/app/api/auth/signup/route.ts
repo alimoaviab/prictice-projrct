@@ -31,6 +31,13 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        if (typeof school_name !== 'string' || typeof admin_name !== 'string' || typeof email !== 'string' || typeof password !== 'string') {
+            return NextResponse.json(
+                { message: "All fields must be valid strings" },
+                { status: 400 }
+            );
+        }
+
         if (password.length < 6) {
             return NextResponse.json(
                 { message: "Password must be at least 6 characters" },
