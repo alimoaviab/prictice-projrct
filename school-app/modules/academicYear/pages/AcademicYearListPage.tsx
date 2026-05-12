@@ -9,6 +9,7 @@ import { showToast } from "../../../utils/toast";
 import { AcademicYearEditSidebar } from "../components/AcademicYearEditSidebar";
 import { AcademicYearTable } from "../components/AcademicYearTable";
 import { ConfirmModal } from "../../../components/ui/ConfirmModal";
+import { setSelectedAcademicYearId } from "../../../services/academic-year-context";
 
 type ViewMode = "grid" | "list";
 
@@ -66,12 +67,15 @@ export function AcademicYearListPage() {
       setIsDeleting(false);
     }
   };
-
   const handleSetCurrent = async (year: AcademicYearRow) => {
     try {
       const nextActiveState = !year.is_active;
       const result = await updateAcademicYear(year._id, { is_active: nextActiveState });
       if (result.ok) {
+        if (nextActiveState) {
+            setSelectedAcademicYearId(year._id);
+            window.location.reload();
+        }
         showToast(
           nextActiveState ? `${year.year} set as active` : `${year.year} deactivated`, 
           "success"
