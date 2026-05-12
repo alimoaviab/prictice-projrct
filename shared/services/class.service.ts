@@ -56,45 +56,7 @@ function toClassSummary(classRow: any) {
   };
 }
 
-async function hydrateClassRows(ctx: RequestContext, rows: any[]) {
-  const academicYearIds = rows.map((row) => extractId(row.academic_year_id)).filter(Boolean);
-  const teacherIds = rows.flatMap((row) => (row.teacher_ids ?? []).map((value: unknown) => extractId(value))).filter(Boolean);
-
-  const [academicYears, teachers] = await Promise.all([
-    academicYearIds.length > 0
-      ? AcademicYearModel.find(tenantFilter(ctx, { _id: { $in: academicYearIds } })).lean()
-      : Promise.resolve([]),
-    teacherIds.length > 0
-      ? TeacherModel.find(tenantFilter(ctx, { _id: { $in: teacherIds } })).lean()
-      : Promise.resolve([])
-  ]);
-
-  const academicYearMap = new Map(academicYears.map((year: any) => [String(year._id), year]));
-  const teacherMap = new Map(teachers.map((teacher: any) => [String(teacher._id), teacher]));
-
-  return rows.map((row) => {
-    const academicYear = academicYearMap.get(extractId(row.academic_year_id));
-    const teacherId = row.class_teacher_id || (row.teacher_ids ?? [])[0];
-    const teacher = teacherId ? teacherMap.get(extractId(teacherId)) : null;
-
-    return {
-      ...toClassSummary(row),
-      academic_year: academicYear?.year ?? row.academic_year ?? "",
-      class_teacher: teacher
-        ? {
-          id: String(teacher._id),
-          name: `${teacher.first_name || ""} ${teacher.last_name || ""}`.trim(),
-          phone: teacher.phone ?? ""
-        }
-        : null,
-      subjects: (row.subject_ids ?? []).length > 0
-        ? row.subjects ?? []
-        : row.subjects ?? []
-    };
-  });
-}
-
-export async function listClasses(ctx: RequestContext, query: any = {}): Promise<ServiceResult<any[]>> {
+export async function listClasses(ctx: RequestContext, query: any = {}): Promise<ServiceResult<any>> {
   return serviceTry(async () => {
     const filter = tenantFilter(ctx);
     
@@ -108,7 +70,13 @@ export async function listClasses(ctx: RequestContext, query: any = {}): Promise
       filter.academic_year_id = new Types.ObjectId(academicYearId);
     }
     
-    const { academic_year_id, ...restQuery } = query;
+    // Pagination params
+    const page = Number(query.page || 1);
+    const limit = Number(query.limit || 100); // Higher default for classes if no limit provided
+    const skip = (page - 1) * limit;
+
+    // Clean query from pagination and academic year params for model filtering
+    const { academic_year_id, page: _p, limit: _l, ...restQuery } = query;
     Object.assign(filter, restQuery);
 
     if (ctx.role === "teacher") {
@@ -117,13 +85,18 @@ export async function listClasses(ctx: RequestContext, query: any = {}): Promise
       filter._id = { $in: teacherClassIds };
     }
 
-    const rows = await ClassModel.find(filter)
-      .populate("academic_year_id", "year start_date end_date is_active")
-      .populate("teacher_ids", "first_name last_name phone")
-      .populate("class_teacher_id", "first_name last_name phone")
-      .populate("subject_ids", "name code")
-      .sort({ name: 1 })
-      .lean();
+    const [rows, total] = await Promise.all([
+      ClassModel.find(filter)
+        .populate("academic_year_id", "year start_date end_date is_active")
+        .populate("teacher_ids", "first_name last_name phone")
+        .populate("class_teacher_id", "first_name last_name phone")
+        .populate("subject_ids", "name code")
+        .sort({ name: 1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      ClassModel.countDocuments(filter)
+    ]);
 
     const studentCounts = await StudentModel.aggregate([
       { $match: tenantFilter(ctx, query as any) },
@@ -131,7 +104,7 @@ export async function listClasses(ctx: RequestContext, query: any = {}): Promise
     ]);
     const countMap = new Map(studentCounts.map((item) => [String(item._id), Number(item.count || 0)]));
 
-    return rows.map((row: any) => ({
+    const items = rows.map((row: any) => ({
       ...toClassSummary({ ...row, enrolled_students: countMap.get(String(row._id)) ?? 0 }),
       academic_year: row.academic_year_id?.year ?? row.academic_year ?? "",
       class_teacher: row.class_teacher_id
@@ -143,6 +116,21 @@ export async function listClasses(ctx: RequestContext, query: any = {}): Promise
         : null,
       subjects: normalizeSubjects(row)
     }));
+
+    // Return paginated structure if page/limit were provided, otherwise just data for backward compatibility
+    if (query.page || query.limit) {
+      return {
+        data: items,
+        meta: {
+          total,
+          page,
+          limit,
+          pages: Math.ceil(total / limit)
+        }
+      };
+    }
+
+    return items;
   });
 }
 

@@ -3,7 +3,7 @@
 import { FormEvent, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Button, Input, Select } from "../../../components/ui";
-import { ClassFormInput, ClassSubject, GradeThreshold } from "../types/class.types";
+import { ClassFormInput, ClassSubject, GradeThreshold, ClassRow } from "../types/class.types";
 
 const defaultGrades: GradeThreshold[] = [
     { grade: "A+", min_score: 90, max_score: 100, description: "Outstanding" },
@@ -46,7 +46,8 @@ export function ClassForm({
     onCreateTeacher,
     autoSelectAcademicYear,
     autoSelectTeacher,
-    onSelectionHandled
+    onSelectionHandled,
+    initialData
 }: {
     onCreate: (input: ClassFormInput) => Promise<unknown>;
     academicYearOptions: Array<{ id: string; label: string }>;
@@ -58,8 +59,23 @@ export function ClassForm({
     autoSelectAcademicYear?: string | undefined;
     autoSelectTeacher?: string | undefined;
     onSelectionHandled?: () => void;
+    initialData?: ClassRow;
 }) {
-    const [form, setForm] = useState<ClassFormInput>(initialForm);
+    const [form, setForm] = useState<ClassFormInput>(initialData ? {
+        name: initialData.name,
+        code: initialData.code || "",
+        display_order: initialData.display_order || 1,
+        passing_percentage: initialData.passing_percentage || 33,
+        academic_year_id: initialData.academic_year_id || "",
+        teacher_ids: initialData.teacher_ids || [],
+        subjects: initialData.subjects || [...defaultSubjects],
+        grade_thresholds: initialData.grade_thresholds || [...defaultGrades],
+        room_number: initialData.room_number || "",
+        description: initialData.description || "",
+        capacity: initialData.capacity || 40,
+        status: initialData.status as any || "active"
+    } : initialForm);
+
     const [saving, setSaving] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [teacherSearch, setTeacherSearch] = useState("");
@@ -83,18 +99,18 @@ export function ClassForm({
     }, [autoSelectTeacher, onSelectionHandled]);
 
     // Summary data
-    const subjectCount = form.subjects.length;
-    const gradeCount = form.grade_thresholds.length;
+    const subjectCount = form.subjects?.length || 0;
+    const gradeCount = form.grade_thresholds?.length || 0;
 
     function validate() {
         const newErrors: Record<string, string> = {};
         if (!form.name.trim()) newErrors.name = "Class name is required";
-        if (!form.code.trim()) newErrors.code = "Class code is required";
-        if (!form.academic_year_id.trim()) newErrors.academic_year_id = "Academic Year is required";
-        if (form.subjects.length === 0) newErrors.subjects = "At least one subject is required";
+        if (!form.code?.trim()) newErrors.code = "Class code is required";
+        if (!form.academic_year_id?.trim()) newErrors.academic_year_id = "Academic Year is required";
+        if ((form.subjects?.length || 0) === 0) newErrors.subjects = "At least one subject is required";
         
         // Validate subjects
-        form.subjects.forEach((s, i) => {
+        form.subjects?.forEach((s, i) => {
             if (!s.name.trim()) newErrors[`subject_${i}_name`] = "Required";
         });
 
@@ -108,7 +124,7 @@ export function ClassForm({
         setSaving(true);
         const result = await onCreate(form);
         if (result && (result as any).ok !== false) {
-             setForm(initialForm);
+             if (!initialData) setForm(initialForm);
         }
         setSaving(false);
     }
@@ -116,20 +132,20 @@ export function ClassForm({
     const addSubject = () => {
         setForm(prev => ({
             ...prev,
-            subjects: [...prev.subjects, { name: "", total_marks: 100, passing_marks: prev.passing_percentage }]
+            subjects: [...(prev.subjects || []), { name: "", total_marks: 100, passing_marks: prev.passing_percentage || 33 }]
         }));
     };
 
     const removeSubject = (index: number) => {
         setForm(prev => ({
             ...prev,
-            subjects: prev.subjects.filter((_, i) => i !== index)
+            subjects: (prev.subjects || []).filter((_, i) => i !== index)
         }));
     };
 
     const updateSubject = (index: number, field: keyof ClassSubject, value: any) => {
         setForm(prev => {
-            const newSubjects = [...prev.subjects];
+            const newSubjects = [...(prev.subjects || [])];
             newSubjects[index] = { ...newSubjects[index], [field]: value };
             return { ...prev, subjects: newSubjects };
         });
@@ -140,27 +156,27 @@ export function ClassForm({
     const applyPassPercentage = () => {
         setForm(prev => ({
             ...prev,
-            subjects: prev.subjects.map(s => ({ ...s, passing_marks: Math.round((s.total_marks * prev.passing_percentage) / 100) }))
+            subjects: (prev.subjects || []).map(s => ({ ...s, passing_marks: Math.round((s.total_marks * (prev.passing_percentage || 33)) / 100) }))
         }));
     };
 
     const addGrade = () => {
         setForm(prev => ({
             ...prev,
-            grade_thresholds: [...prev.grade_thresholds, { grade: "", min_score: 0, max_score: 0, description: "" }]
+            grade_thresholds: [...(prev.grade_thresholds || []), { grade: "", min_score: 0, max_score: 0, description: "" }]
         }));
     };
 
     const removeGrade = (index: number) => {
         setForm(prev => ({
             ...prev,
-            grade_thresholds: prev.grade_thresholds.filter((_, i) => i !== index)
+            grade_thresholds: (prev.grade_thresholds || []).filter((_, i) => i !== index)
         }));
     };
 
     const updateGrade = (index: number, field: keyof GradeThreshold, value: any) => {
         setForm(prev => {
-            const newGrades = [...prev.grade_thresholds];
+            const newGrades = [...(prev.grade_thresholds || [])];
             newGrades[index] = { ...newGrades[index], [field]: value };
             return { ...prev, grade_thresholds: newGrades };
         });
@@ -281,14 +297,14 @@ export function ClassForm({
                         
                         <div className="relative group">
                             <div className="flex flex-wrap gap-1.5 p-2 min-h-[44px] rounded-xl border border-slate-200 bg-white focus-within:border-blue-300 focus-within:ring-4 focus-within:ring-blue-600/5 transition-all">
-                                {form.teacher_ids.map(id => {
+                                {form.teacher_ids?.map(id => {
                                     const teacher = teacherOptions.find((t: { id: string; label: string }) => t.id === id);
                                     return (
                                         <span key={id} className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-100 border border-slate-200 text-[11px] font-bold text-slate-700">
                                             {teacher?.label || "Unknown"}
                                             <button 
                                                 type="button"
-                                                onClick={() => setForm(prev => ({ ...prev, teacher_ids: prev.teacher_ids.filter(t => t !== id) }))}
+                                                onClick={() => setForm(prev => ({ ...prev, teacher_ids: prev.teacher_ids?.filter(t => t !== id) || [] }))}
                                                 className="text-slate-400 hover:text-red-500 transition-colors"
                                             >
                                                 <span className="material-symbols-outlined text-sm">close</span>
@@ -297,7 +313,7 @@ export function ClassForm({
                                     );
                                 })}
                                 <input 
-                                    placeholder={form.teacher_ids.length === 0 ? "Search and select teachers..." : "Add more..."}
+                                    placeholder={form.teacher_ids?.length === 0 ? "Search and select teachers..." : "Add more..."}
                                     className="flex-1 min-w-[120px] bg-transparent text-[11px] font-medium text-slate-700 outline-none placeholder:text-slate-400"
                                     value={teacherSearch}
                                     onChange={(e) => setTeacherSearch(e.target.value)}
@@ -308,13 +324,13 @@ export function ClassForm({
                             {teacherSearch && (
                                 <div className="absolute top-full left-0 right-0 mt-2 z-50 max-h-48 overflow-y-auto bg-white rounded-xl border border-slate-200 shadow-xl p-1.5 space-y-1">
                                     {teacherOptions
-                                        .filter((t: { id: string; label: string }) => t.label.toLowerCase().includes(teacherSearch.toLowerCase()) && !form.teacher_ids.includes(t.id))
+                                        .filter((t: { id: string; label: string }) => t.label.toLowerCase().includes(teacherSearch.toLowerCase()) && !form.teacher_ids?.includes(t.id))
                                         .map((t: { id: string; label: string }) => (
                                             <button
                                                 key={t.id}
                                                 type="button"
                                                 onClick={() => {
-                                                    setForm(prev => ({ ...prev, teacher_ids: [...prev.teacher_ids, t.id] }));
+                                                    setForm(prev => ({ ...prev, teacher_ids: [...(prev.teacher_ids || []), t.id] }));
                                                     setTeacherSearch("");
                                                 }}
                                                 className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50 text-[11px] font-bold text-slate-700 transition-colors flex items-center gap-3"
@@ -325,7 +341,7 @@ export function ClassForm({
                                                 {t.label}
                                             </button>
                                         ))}
-                                    {teacherOptions.filter((t: { id: string; label: string }) => t.label.toLowerCase().includes(teacherSearch.toLowerCase()) && !form.teacher_ids.includes(t.id)).length === 0 && (
+                                    {teacherOptions.filter((t: { id: string; label: string }) => t.label.toLowerCase().includes(teacherSearch.toLowerCase()) && !form.teacher_ids?.includes(t.id)).length === 0 && (
                                         <div className="px-3 py-4 text-center">
                                             <p className="text-[10px] font-bold text-slate-400 normal-case ">No faculty found</p>
                                             <button 
@@ -376,7 +392,7 @@ export function ClassForm({
                     </div>
 
                     <div className="space-y-1.5">
-                        {form.subjects.map((subject, index) => (
+                        {form.subjects?.map((subject, index) => (
                             <div key={index} className="flex items-center gap-2 p-1.5 bg-slate-50/50 rounded-xl border border-slate-100 group transition-all hover:bg-white hover:border-blue-200">
                                 <div className="flex-1 flex items-center gap-2">
                                     <span className="material-symbols-outlined text-[16px] text-slate-300 group-hover:text-blue-500 transition-colors">book</span>
@@ -457,7 +473,7 @@ export function ClassForm({
                     </div>
 
                     <div className="space-y-1.5">
-                        {form.grade_thresholds.map((grade, index) => (
+                        {form.grade_thresholds?.map((grade, index) => (
                             <div key={index} className="flex items-center gap-2 p-1.5 bg-slate-50/50 rounded-xl border border-slate-100 group">
                                 <div className="w-10">
                                     <input

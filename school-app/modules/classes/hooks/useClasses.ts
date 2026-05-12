@@ -7,19 +7,20 @@ import { setSelectedAcademicYearId } from "../../../services/academic-year-conte
 import { ClassFormInput, ClassRow } from "../types/class.types";
 import * as service from "../services/class.service";
 
-export function useClasses() {
-    const { state, run } = useSafeAsync<ClassRow[]>();
+export function useClasses(params?: { page?: number; limit?: number }) {
+    const { state, run } = useSafeAsync<service.ClassListResponse>();
+
+    const pageKey = `${params?.page}-${params?.limit}`;
 
     const loadClasses = useCallback(() => {
         return run(async () => {
-            const result = await service.listClasses();
+            const result = await service.listClasses(params);
             if (!result.success) {
                 throw new Error(result.message || "Failed to load classes");
             }
-
             return result.data;
         });
-    }, [run]);
+    }, [run, pageKey]);
 
     const addClass = useCallback(
         async (input: ClassFormInput) => {
@@ -29,7 +30,6 @@ export function useClasses() {
                 return result;
             }
 
-            // Keep list filter aligned with the just-created class year so it appears immediately.
             if (input.academic_year_id) {
                 setSelectedAcademicYearId(input.academic_year_id);
             }
@@ -72,10 +72,8 @@ export function useClasses() {
     );
 
     useEffect(() => {
-        void loadClasses().catch(() => {
-            // Error state is already managed by useSafeAsync.
-        });
+        void loadClasses().catch(() => {});
     }, [loadClasses]);
 
-    return { state, addClass, updateClass, deleteClass };
+    return { state, addClass, updateClass, deleteClass, refresh: loadClasses };
 }

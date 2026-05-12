@@ -2,12 +2,31 @@ import { serviceRequest } from "../../../services/service-client";
 import { getAcademicYearQuery } from "../../../services/academic-year-context";
 import { ClassFormInput, ClassRow } from "../types/class.types";
 
-export function listClasses() {
-    const query = getAcademicYearQuery();
+export interface ClassListResponse {
+    data: ClassRow[];
+    meta: {
+        total: number;
+        page: number;
+        limit: number;
+        pages: number;
+    };
+}
 
-    return (async () => {
-    return serviceRequest<ClassRow[]>(`/api/classes${query}`);
-    })();
+export function listClasses(params?: { page?: number; limit?: number }) {
+    const baseQuery = getAcademicYearQuery();
+    const query = new URLSearchParams(baseQuery.replace('?', ''));
+    
+    if (params?.page) query.append("page", params.page.toString());
+    if (params?.limit) query.append("limit", params.limit.toString());
+    
+    const queryString = query.toString();
+    const url = `/api/classes${queryString ? `?${queryString}` : ""}`;
+
+    return serviceRequest<ClassListResponse>(url);
+}
+
+export function getClass(id: string) {
+    return serviceRequest<ClassRow>(`/api/classes/${id}`);
 }
 
 export function createClass(input: ClassFormInput) {

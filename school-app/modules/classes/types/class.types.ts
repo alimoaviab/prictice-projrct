@@ -14,33 +14,38 @@ export interface GradeThreshold {
 export interface ClassRow {
     _id: string;
     name: string;
+    section?: string;
     code?: string;
     display_order?: number;
     passing_percentage?: number;
     academic_year_id: string;
     academic_year: string;
-    subjects: string[] | ClassSubject[];
+    subjects: string[];
+    subject_ids?: string[];
     teacher_ids: string[];
     teacher_names: string[];
     room_number?: string;
+    capacity?: number;
     description?: string;
     grade_thresholds?: GradeThreshold[];
-    status: "active" | "archived";
+    status: "active" | "inactive" | "archived";
     student_count?: number;
     attendance_percentage?: number;
 }
 
 export interface ClassFormInput {
     name: string;
-    code: string;
+    section?: string;
+    code?: string;
     display_order: number;
     passing_percentage: number;
     academic_year_id: string;
     teacher_ids: string[];
-    subjects: ClassSubject[];
-    grade_thresholds: GradeThreshold[];
+    subject_ids?: string[];
+    subjects?: any[];
+    grade_thresholds?: GradeThreshold[];
     room_number?: string;
+    capacity?: number;
     description?: string;
-    status?: "active" | "inactive";
+    status?: "active" | "inactive" | "archived";
 }
-
