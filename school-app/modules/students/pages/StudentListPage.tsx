@@ -29,7 +29,7 @@ export function StudentListPage() {
   }, [currentParams.toString()]);
 
   const subjectOptions = subjectsData.map((subj) => ({ id: (subj as any)._id || (subj as any).id || subj.name, label: subj.name }));
-  const classOptions = (classesState.data || []).map((cls) => ({
+  const classOptions = ((classesState.data as any)?.data || []).map((cls: any) => ({
     id: cls._id,
     label: cls.name,
   }));

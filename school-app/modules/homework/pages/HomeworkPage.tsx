@@ -7,7 +7,7 @@ import { showToast } from "../../../utils/toast";
 import { useQueryParams } from "../../../hooks/useQueryParams";
 
 interface HomeworkPageProps {
-  role: "ADMIN" | "TEACHER";
+  role: "ADMIN" | "TEACHER" | "STUDENT";
 }
 
 export function HomeworkPage({ role }: HomeworkPageProps) {
@@ -99,13 +99,15 @@ export function HomeworkPage({ role }: HomeworkPageProps) {
           <h1 className="text-3xl font-bold text-slate-900 normal-case tracking-tight">Homework Management</h1>
           <p className="text-slate-500 font-medium mt-1">Assign and manage educational content for your classes.</p>
         </div>
-        <Button
-          onClick={() => router.push(withQuery(role === "ADMIN" ? "/admin/homework/create" : "/teacher/homework/create"))}
-          className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-600/10 text-[10px] font-bold normal-case transition-all active:scale-95"
-        >
-          <span className="material-symbols-outlined text-lg mr-2">add</span>
-          New Homework
-        </Button>
+        {role !== "STUDENT" && (
+          <Button
+            onClick={() => router.push(withQuery(role === "ADMIN" ? "/admin/homework/create" : "/teacher/homework/create"))}
+            className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-600/10 text-[10px] font-bold normal-case transition-all active:scale-95"
+          >
+            <span className="material-symbols-outlined text-lg mr-2">add</span>
+            New Homework
+          </Button>
+        )}
       </div>
 
       {/* Stats Cards */}
@@ -139,21 +141,25 @@ export function HomeworkPage({ role }: HomeworkPageProps) {
               className="h-10 w-full rounded-lg border border-slate-100 bg-slate-50/50 pl-10 pr-3 text-xs font-medium text-slate-700 outline-none transition-all focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-600/5 placeholder:text-slate-400"
             />
           </div>
-          <div className="h-6 w-px bg-slate-100" />
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              const value = e.target.value as any;
-              setStatusFilter(value);
-              updateQuery({ status: value });
-            }}
-            className="h-10 rounded-lg border border-slate-100 bg-slate-50/50 px-3 text-xs font-bold text-slate-600 outline-none cursor-pointer transition-all hover:border-slate-200 focus:bg-white focus:border-indigo-400"
-          >
-            <option value="all">All Status</option>
-            <option value="assigned">Assigned</option>
-            <option value="draft">Draft</option>
-            <option value="closed">Closed</option>
-          </select>
+          {role !== "STUDENT" && (
+            <>
+              <div className="h-6 w-px bg-slate-100" />
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  const value = e.target.value as any;
+                  setStatusFilter(value);
+                  updateQuery({ status: value });
+                }}
+                className="h-10 rounded-lg border border-slate-100 bg-slate-50/50 px-3 text-xs font-bold text-slate-600 outline-none cursor-pointer transition-all hover:border-slate-200 focus:bg-white focus:border-indigo-400"
+              >
+                <option value="all">All Status</option>
+                <option value="assigned">Assigned</option>
+                <option value="draft">Draft</option>
+                <option value="closed">Closed</option>
+              </select>
+            </>
+          )}
         </div>
       </div>
 
@@ -194,26 +200,33 @@ export function HomeworkPage({ role }: HomeworkPageProps) {
                 
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
-                    onClick={() => router.push(role === "ADMIN" ? `/admin/homework/${hw._id}/review` : `/teacher/homework/${hw._id}/review`)}
+                    onClick={() => {
+                        const baseUrl = role === "ADMIN" ? "/admin/homework" : role === "TEACHER" ? "/teacher/homework" : "/student/homework";
+                        router.push(`${baseUrl}/${hw._id}/review`);
+                    }}
                     className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 transition-all"
-                    title="Review Submissions"
+                    title={role === "STUDENT" ? "View Details" : "Review Submissions"}
                   >
-                    <span className="material-symbols-outlined text-lg">grading</span>
+                    <span className="material-symbols-outlined text-lg">{role === "STUDENT" ? "visibility" : "grading"}</span>
                   </button>
-                  <button
-                    onClick={() => router.push(role === "ADMIN" ? `/admin/homework/edit/${hw._id}` : `/teacher/homework/edit/${hw._id}`)}
-                    className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-all"
-                    title="Edit Homework"
-                  >
-                    <span className="material-symbols-outlined text-lg">edit</span>
-                  </button>
-                  <button
-                    onClick={() => handleDelete(hw._id)}
-                    className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all"
-                    title="Delete Homework"
-                  >
-                    <span className="material-symbols-outlined text-lg">delete</span>
-                  </button>
+                  {role !== "STUDENT" && (
+                    <>
+                      <button
+                        onClick={() => router.push(role === "ADMIN" ? `/admin/homework/edit/${hw._id}` : `/teacher/homework/edit/${hw._id}`)}
+                        className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-all"
+                        title="Edit Homework"
+                      >
+                        <span className="material-symbols-outlined text-lg">edit</span>
+                      </button>
+                      <button
+                        onClick={() => handleDelete(hw._id)}
+                        className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all"
+                        title="Delete Homework"
+                      >
+                        <span className="material-symbols-outlined text-lg">delete</span>
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 

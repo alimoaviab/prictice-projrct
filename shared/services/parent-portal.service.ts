@@ -88,7 +88,7 @@ async function resolveLinkedStudents(ctx: RequestContext, studentId?: string) {
     }
 
     const students = (await StudentModel.find(tenantFilter(ctx, { _id: { $in: linkedIds } }))
-        .populate({ path: "class_id", select: "name section Academy_year_id subject_ids subjects grade_thresholds" })
+        .populate({ path: "class_id", select: "name section academic_year_id subject_ids subjects grade_thresholds" })
         .populate({ path: "user_id", select: "email" })
         .lean()) as ParentStudentDoc[];
 
@@ -100,16 +100,16 @@ async function resolveLinkedStudents(ctx: RequestContext, studentId?: string) {
 }
 
 async function resolveStudentAcademicYear(student: ParentStudentDoc) {
-    const classDoc = student.class_id as { Academy_year_id?: any; academic_year?: string } | undefined;
-    if (!classDoc?.Academy_year_id) {
+    const classDoc = student.class_id as { academic_year_id?: any; academic_year?: string } | undefined;
+    if (!classDoc?.academic_year_id) {
         return null;
     }
 
-    if (typeof classDoc.Academy_year_id === "object" && classDoc.Academy_year_id?.year) {
-        return classDoc.Academy_year_id;
+    if (typeof classDoc.academic_year_id === "object" && classDoc.academic_year_id?.year) {
+        return classDoc.academic_year_id;
     }
 
-    const record = await AcademicYearModel.findOne({ _id: classDoc.Academy_year_id }).lean();
+    const record = await AcademicYearModel.findOne({ _id: classDoc.academic_year_id }).lean();
     return record ?? null;
 }
 

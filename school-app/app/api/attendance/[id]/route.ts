@@ -21,14 +21,16 @@ function getRequestContext(request: Request) {
   );
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const ctx = getRequestContext(request);
-  const result = await updateAttendance(ctx, params.id, await request.json());
+  const result = await updateAttendance(ctx, id, await request.json());
   return NextResponse.json(result, { status: result.ok ? 200 : result.error.status ?? 400 });
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const ctx = getRequestContext(request);
-  const result = await deleteAttendance(ctx, params.id);
+  const result = await deleteAttendance(ctx, id);
   return NextResponse.json(result, { status: result.ok ? 200 : result.error.status ?? 400 });
 }

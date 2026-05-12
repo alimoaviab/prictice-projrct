@@ -49,9 +49,9 @@ export function ClassPage() {
     }
 
     const filteredRows = useMemo(() => {
-        const rows = state.data ?? [];
+        const rows = (state.data as any)?.data ?? [];
         const q = searchQuery.trim().toLowerCase();
-        return rows.filter((row) => {
+        return rows.filter((row: any) => {
             const queryMatch =
                 q.length === 0 ||
                 row.name.toLowerCase().includes(q) ||
@@ -134,7 +134,7 @@ export function ClassPage() {
                 <DataState variant="empty" title="No classes created" message="Create your first class to begin." />
             ) : null}
 
-            {state.status === "success" && state.data && state.data.length > 0 ? (
+            {state.status === "success" && state.data && (state.data as any).data.length > 0 ? (
                 <div className="space-y-3">
                     <div className="flex items-center justify-between">
                         <h3 className="text-base font-semibold tracking-tight text-slate-950">Classes List</h3>

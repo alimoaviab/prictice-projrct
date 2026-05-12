@@ -30,11 +30,29 @@ export async function getHomework(
 
     if (!row) throw new Error("Homework not found.");
 
-    return {
+    const teacher = row.teacher_id as any;
+    const result = {
       ...row,
       _id: String(row._id),
+      teacher_name: teacher ? `${teacher.first_name || ""} ${teacher.last_name || ""}`.trim() : "Teacher",
       due_at: row.due_at instanceof Date ? row.due_at.toISOString().split("T")[0] : row.due_at
     };
+
+    // Student privacy: only show their own submission
+    if (ctx.role === "student") {
+      const { StudentModel } = await import("../models/student.model");
+      const student = await StudentModel.findOne(tenantFilter(ctx, { user_id: ctx.user_id })).select("_id").lean();
+      if (student) {
+        const studentId = String(student._id);
+        const mySub = (row.submissions || []).find(s => 
+          String(typeof s.student_id === 'object' ? (s.student_id as any)._id : s.student_id) === studentId
+        );
+        (result as any).my_submission = mySub;
+        delete (result as any).submissions;
+      }
+    }
+
+    return result;
   });
 }
 
@@ -53,6 +71,18 @@ export async function listHomework(
     const query: any = tenantFilter(ctx, {
       ...(academicYearId ? { academic_year_id: new Types.ObjectId(academicYearId) } : {})
     });
+
+    // Student-specific filtering
+    if (ctx.role === "student") {
+      const { StudentModel } = await import("../models/student.model");
+      const student = await StudentModel.findOne(tenantFilter(ctx, { user_id: ctx.user_id })).select("class_id").lean();
+      if (student?.class_id) {
+        query.class_id = student.class_id;
+        query.status = "assigned"; // Students only see assigned homework
+      } else {
+        return []; // No class assigned, no homework visible
+      }
+    }
 
     const rows = await HomeworkModel.find(query)
       .populate("class_id", "name")
@@ -114,9 +144,12 @@ export async function createHomework(
     }
 
     // Validate subject exists
-    let subject = await SubjectModel.findOne(
-      tenantFilter(ctx, { _id: parsed.subject_id })
-    ).lean();
+    let subject = null;
+    if (Types.ObjectId.isValid(parsed.subject_id)) {
+      subject = await SubjectModel.findOne(
+        tenantFilter(ctx, { _id: parsed.subject_id })
+      ).lean();
+    }
 
     // Fallback: If not found by ID, try to find by name from class subjects (legacy data)
     if (!subject) {
@@ -156,7 +189,7 @@ export async function createHomework(
 
     const created = await HomeworkModel.create({
       school_id: ctx.school_id,
-      academic_year_id: ctx.active_academic_year_id || (classroom as any).Academy_year_id,
+      academic_year_id: classroom.academic_year_id || ctx.active_academic_year_id,
       class_id: new Types.ObjectId(parsed.class_id),
       teacher_id: new Types.ObjectId(parsed.teacher_id),
       subject_id: subject._id,
@@ -224,7 +257,10 @@ export async function updateHomework(
     }
     if (parsed.subject_id) {
       // Resolve subject (handling potential legacy IDs/names)
-      let subject = await SubjectModel.findOne(tenantFilter(ctx, { _id: parsed.subject_id })).lean();
+      let subject = null;
+      if (Types.ObjectId.isValid(parsed.subject_id)) {
+        subject = await SubjectModel.findOne(tenantFilter(ctx, { _id: parsed.subject_id })).lean();
+      }
       if (!subject) {
         const homework = existing || await HomeworkModel.findById(id).lean();
         if (homework) {

@@ -100,21 +100,9 @@ export function TimetableEditPage({ id }: TimetableEditPageProps) {
     );
   }
 
-  const classOptions = (classState.data ?? []).map(o => ({ id: o._id, label: o.name }));
+  const classOptions = ((classState.data as any)?.data || classState.data || []).map((o: any) => ({ id: o._id, label: o.name }));
   const teacherOptions = (teacherState.data ?? []).map(o => ({ id: o._id, label: o.name }));
   const subjectOptions = (subjectState.data ?? []).map(o => ({ id: o._id, label: o.name }));
-
-  const initialValues = recordState.data ? {
-    class_id: recordState.data.class_id,
-    subject_id: recordState.data.subject_id,
-    teacher_id: recordState.data.teacher_id,
-    day_of_week: getDayLabel(recordState.data.day_of_week) as any,
-    period_number: recordState.data.period_number,
-    start_time: recordState.data.start_time,
-    end_time: recordState.data.end_time,
-    room: recordState.data.room,
-    section: recordState.data.section
-  } : undefined;
 
   return (
     <div className="max-w-full mx-auto space-y-6">
@@ -144,12 +132,13 @@ export function TimetableEditPage({ id }: TimetableEditPageProps) {
           </div>
         ) : (
           <TimetableForm
-            onCreate={handleUpdate}
+            onSubmit={handleUpdate}
+            onCancel={() => router.back()}
             classOptions={classOptions}
             teacherOptions={teacherOptions}
             subjectOptions={subjectOptions}
             isLoading={isLoading}
-            initialValues={initialValues}
+            initialValues={recordState.data}
           />
         )}
       </Card>

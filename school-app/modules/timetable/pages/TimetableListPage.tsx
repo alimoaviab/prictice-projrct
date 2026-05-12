@@ -65,10 +65,10 @@ export function TimetableListPage() {
       label: "Delete",
       variant: "danger",
       requireConfirm: true,
-      hidden: (row) => !!row.is_class_schedule,
+      hidden: (row: TimetableRecord) => !!row.is_class_schedule,
       confirmTitle: "Delete Timetable Entry",
-      confirmMessage: (row) => `Delete ${row.class_name} - ${row.subject_name} on ${getDayLabel(row.day_of_week)}?`,
-      onClick: async (row) => {
+      confirmMessage: (row: TimetableRecord) => `Delete ${row.class_name} - ${row.subject_name} on ${getDayLabel(row.day_of_week)}?`,
+      onClick: async (row: TimetableRecord) => {
         const result: any = await deleteTimetable(row._id);
         if (!result.ok) showToast(result.message || result.error?.message || "Failed to delete", "error");
       },

@@ -31,6 +31,8 @@ export async function createEvent(
       throw new Error("Target classes are required for specific_classes visibility");
     }
 
+    const { toObjectId } = await import("../utils/db");
+
     const created = await EventModel.create({
       school_id: ctx.school_id,
       title: parsed.title,
@@ -45,7 +47,7 @@ export async function createEvent(
       target_class_ids: parsed.target_class_ids?.map(id => new Types.ObjectId(id)) ?? [],
       organizer: parsed.organizer,
       status: parsed.status,
-      created_by: new Types.ObjectId(ctx.user_id)
+      created_by: toObjectId(ctx.user_id)
     });
 
     await writeAuditLog(ctx, {
@@ -72,7 +74,9 @@ export async function listEvents(
     if (query.status) filter.status = query.status;
     if (query.event_type) filter.event_type = query.event_type;
     if (query.visibility) filter.visibility = query.visibility;
-    if (query.class_id) filter.target_class_ids = new Types.ObjectId(query.class_id);
+    if (query.class_id && Types.ObjectId.isValid(query.class_id)) {
+      filter.target_class_ids = new Types.ObjectId(query.class_id);
+    }
     
     // Date range filter
     if (query.start_date || query.end_date) {

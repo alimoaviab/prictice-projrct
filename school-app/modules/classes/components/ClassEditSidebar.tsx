@@ -40,9 +40,11 @@ export function ClassEditSidebar({
         passing_percentage: form.passing_percentage ?? classItem.passing_percentage ?? 33,
         academic_year_id: form.academic_year_id ?? classItem.academic_year_id ?? "",
         teacher_ids: form.teacher_ids ?? classItem.teacher_ids ?? [],
-        subjects: (form.subjects ?? (Array.isArray(classItem.subjects) && typeof classItem.subjects[0] === "string" 
-            ? (classItem.subjects as string[]).map(s => ({ name: s, total_marks: 100, passing_marks: 33 }))
-            : (classItem.subjects as ClassSubject[]) ?? [])) as ClassSubject[],
+        subjects: (form.subjects || (Array.isArray(classItem.subjects) 
+            ? (typeof classItem.subjects[0] === "string" 
+                ? (classItem.subjects as any[]).map(s => ({ name: String(s), total_marks: 100, passing_marks: 33 }))
+                : (classItem.subjects as ClassSubject[]))
+            : [])) as ClassSubject[],
         grade_thresholds: (form.grade_thresholds ?? classItem.grade_thresholds ?? []) as GradeThreshold[],
         room_number: form.room_number ?? classItem.room_number ?? "",
         description: form.description ?? classItem.description ?? "",

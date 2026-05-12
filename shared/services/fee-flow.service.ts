@@ -942,7 +942,7 @@ export async function getFeeBreakdown(ctx: RequestContext, filters: Record<strin
         const student = await loadStudentForContext(ctx, String(filters.student_id ?? ""));
         const studentId = String(student._id);
         const classId = String(student.class_id?._id ?? student.class_id);
-        const academicYearId = String(student.class_id?.Academy_year_id?._id ?? student.class_id?.Academy_year_id ?? student.class_id?.Academy_year_id ?? "");
+        const academicYearId = String(student.class_id?.academic_year_id?._id ?? student.class_id?.academic_year_id ?? "");
         const academicYear = academicYearId ? await AcademicYearModel.findOne(tenantFilter(ctx, { _id: academicYearId })).lean() : null;
         const fees = (await FeeModel.find(tenantFilter(ctx, { student_id: studentId, academic_year_id: academicYearId || undefined }))
             .sort({ due_at: 1 })
@@ -997,11 +997,11 @@ async function allocatePayment(ctx: RequestContext, input: AllocatePaymentInput)
     const { studentId, amount, paymentMethod, referenceNo, notes, paymentDate } = input;
 
     const student = await StudentModel.findOne(tenantFilter(ctx, { _id: studentId }))
-        .populate("class_id", "name section Academy_year_id")
+        .populate("class_id", "name section academic_year_id")
         .lean();
     if (!student) throw new ControlledError("NOT_FOUND", "Student not found.", 404);
 
-    const academicYearId = String((student as any).class_id?.Academy_year_id?._id ?? (student as any).class_id?.Academy_year_id ?? "");
+    const academicYearId = String((student as any).class_id?.academic_year_id?._id ?? (student as any).class_id?.academic_year_id ?? "");
     const fees = (await FeeModel.find(tenantFilter(ctx, {
         student_id: studentId,
         academic_year_id: academicYearId || undefined,
@@ -1420,7 +1420,7 @@ export async function getStudentFees(ctx: RequestContext, studentId?: string): P
         const allStudentIds = ctx.role === "parent" && parentStudentIds.length > 0 ? parentStudentIds : [String(student._id)];
 
         const students = await StudentModel.find(tenantFilter(ctx, { _id: { $in: allStudentIds } }))
-            .populate("class_id", "name section academic_year grade_thresholds Academy_year_id")
+            .populate("class_id", "name section academic_year grade_thresholds academic_year_id")
             .lean();
 
         const academicYearId = await resolveAcademicYearId(ctx);

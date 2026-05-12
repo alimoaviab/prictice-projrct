@@ -35,6 +35,15 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
      return NextResponse.json(result, { status: result.ok ? 200 : result.error.status ?? 400 });
   }
 
+  // Validate ID format to prevent BSON errors
+  const { Types } = await import("mongoose");
+  if (!Types.ObjectId.isValid(id)) {
+    return NextResponse.json(
+      { ok: false, success: false, message: "Invalid Teacher ID format", error: { code: "INVALID_ID", message: "The provided ID is not a valid ObjectId" } },
+      { status: 400 }
+    );
+  }
+
   await connectDb();
   const result = await TeacherModel.findOne(tenantFilter(ctx, { _id: id })).lean();
   if (!result) {

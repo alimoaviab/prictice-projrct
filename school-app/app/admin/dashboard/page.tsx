@@ -353,7 +353,7 @@ export default function AdminDashboardPage() {
                     
                     {/* Live Classes Data */}
                     {(drawerConfig?.type === "Students" || drawerConfig?.type === "Attendance") && 
-                      classesState.data?.map(cls => (
+                      (classesState.data as any)?.data?.map((cls: any) => (
                         <option key={cls._id} value={cls._id}>{cls.name}</option>
                       ))
                     }

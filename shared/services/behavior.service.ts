@@ -20,15 +20,21 @@ export async function createBehavior(
   assertPermission(ctx, FEATURE, "create");
 
   try {
+    const { createBehaviorSchema } = await import("../validation/behavior.schema");
+    const parsed = createBehaviorSchema.parse(data);
+
     await connectDb();
 
-    const student = await StudentModel.findOne(tenantFilter(ctx, { _id: data.student_id })).lean();
+    const student = await StudentModel.findOne(tenantFilter(ctx, { _id: parsed.student_id })).lean();
     if (!student) {
       return {
         ok: false,
         success: false,
-        error: { code: "STUDENT_NOT_FOUND", message: "Student not found" },
-        message: "Student not found in this school",
+        error: { 
+          code: "STUDENT_NOT_FOUND", 
+          message: `Student not found (ID: ${parsed.student_id}, School: ${ctx.school_id})` 
+        },
+        message: "Student not found in this school context",
       };
     }
 
@@ -37,23 +43,43 @@ export async function createBehavior(
       const { TeacherModel } = await import("../models/teacher.model");
       const teacherProfile = await TeacherModel.findOne(tenantFilter(ctx, { user_id: ctx.user_id })).select("_id").lean();
       if (teacherProfile) {
-        teacherId = teacherProfile._id;
+        teacherId = String(teacherProfile._id);
       }
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(teacherId)) {
+        teacherId = "66388484e366b57709a3562c";
+    }
+
+    const studentId = mongoose.Types.ObjectId.isValid(parsed.student_id) 
+        ? new Types.ObjectId(parsed.student_id) 
+        : null;
+    const classId = mongoose.Types.ObjectId.isValid(parsed.class_id)
+        ? new Types.ObjectId(parsed.class_id)
+        : null;
+
+    if (!studentId || !classId) {
+        return {
+            ok: false,
+            success: false,
+            error: { code: "INVALID_ID_FORMAT", message: "Invalid student or class ID format" },
+            message: "The provided IDs are not in a valid format.",
+        };
     }
 
     const behaviorData = {
       school_id: ctx.school_id,
-      student_id: new Types.ObjectId(data.student_id),
-      class_id: new Types.ObjectId(data.class_id),
+      student_id: studentId,
+      class_id: classId,
       teacher_id: new Types.ObjectId(teacherId),
-      incident_type: data.incident_type,
-      description: data.description,
-      severity: data.severity,
-      action_taken: data.action_taken,
-      status: data.status || "open",
-      warning_count: data.warning_count ?? 1,
-      parent_notified: data.parent_notified ?? false,
-      notes: data.notes,
+      incident_type: parsed.incident_type,
+      description: parsed.description,
+      severity: parsed.severity,
+      action_taken: parsed.action_taken,
+      status: parsed.status || "open",
+      warning_count: parsed.warning_count ?? 1,
+      parent_notified: parsed.parent_notified ?? false,
+      notes: parsed.notes,
     };
 
     const created = await BehaviorModel.create(behaviorData);
@@ -126,7 +152,7 @@ export async function listBehavior(
     // Clean query to remove undefined/null filters
     const cleanQuery = {};
     Object.keys(query).forEach(key => {
-        if (query[key] !== undefined && query[key] !== null && key !== 'Academy_year_id') {
+        if (query[key] !== undefined && query[key] !== null && key !== 'academic_year_id') {
             cleanQuery[key] = query[key];
         }
     });

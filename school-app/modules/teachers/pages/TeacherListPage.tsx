@@ -31,7 +31,7 @@ export function TeacherListPage() {
     setViewMode((currentParams.get("view") as any) || "grid");
   }, [currentParams.toString()]);
 
-  const classOptions = useMemo(() => (classesState.data || []).map((cls) => ({
+  const classOptions = useMemo(() => ((classesState.data as any)?.data || []).map((cls: any) => ({
     id: cls._id,
     label: cls.name,
   })), [classesState.data]);

@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import { Types, isValidObjectId } from "mongoose";
 import { connectDb } from "../db/connect";
 import { tenantFilter } from "../db/tenant-query";
 import { TeacherModel } from "../models/teacher.model";
@@ -8,7 +8,7 @@ import { ClassModel } from "../models/class.model";
 import { StudentModel } from "../models/student.model";
 import { TimetableModel } from "../models/timetable.model";
 import { AttendanceModel } from "../models/attendance.model";
-import { AnnouncementModel } from "../models/announcement.model";
+import { AnnouncementDocModel as AnnouncementModel } from "../models/announcement.model";
 import { RequestContext, ServiceResult } from "../types/core";
 import { serviceTry } from "../utils/result";
 
@@ -16,21 +16,56 @@ export async function getTeacherDashboardData(ctx: RequestContext, teacherId: st
   return serviceTry(async () => {
     await connectDb();
     
-    const filter = tenantFilter(ctx);
+    const devMode = process.env.NODE_ENV === "development";
+    let effectiveCtx = ctx;
+
+    if (devMode && ctx.school_id === "dev-school-id") {
+        const fallbackSchool = (await SchoolModel.findOne().select("school_id").lean()) as any;
+        const fallbackAcademicYear = fallbackSchool
+          ? (await AcademicYearModel.findOne({ school_id: fallbackSchool.school_id }).sort({ is_active: -1, _id: 1 }).select("_id").lean()) as any
+          : null;
+
+        if (fallbackSchool?.school_id) {
+            effectiveCtx = {
+                ...ctx,
+                school_id: fallbackSchool.school_id,
+                active_academic_year_id: fallbackAcademicYear ? String(fallbackAcademicYear._id) : ctx.active_academic_year_id
+            };
+        }
+    }
+
+    const filter = tenantFilter(effectiveCtx);
     
     // Resolve teacher if ID is "session"
     let realTeacherId = teacherId;
     if (teacherId === "session") {
-        const teacher = await TeacherModel.findOne({ ...filter, user_id: new Types.ObjectId(ctx.user_id) }).select("_id").lean();
-        if (!teacher) throw new Error("Teacher profile not found for current session.");
-        realTeacherId = String(teacher._id);
+    let teacher = null;
+
+      if (isValidObjectId(effectiveCtx.user_id)) {
+        teacher = (await TeacherModel.findOne({ ...filter, user_id: new Types.ObjectId(effectiveCtx.user_id) }).select("_id").lean()) as any;
     }
 
-    const teacher = await TeacherModel.findOne({ ...filter, _id: realTeacherId }).lean();
+      if (!teacher && devMode) {
+      teacher = (await TeacherModel.findOne(filter).sort({ joined_at: 1, _id: 1 }).select("_id").lean()) as any;
+    }
+
+    if (!teacher) throw new Error("Teacher profile not found for current session.");
+    realTeacherId = String(teacher._id);
+    }
+
+    const teacherQuery = isValidObjectId(realTeacherId)
+    ? { ...filter, _id: realTeacherId }
+      : devMode
+    ? filter
+    : { ...filter, _id: realTeacherId };
+
+    const teacher = (await TeacherModel.findOne(teacherQuery).sort({ joined_at: 1, _id: 1 }).lean()) as any;
     if (!teacher) throw new Error("Teacher profile not found");
 
-    const school = await SchoolModel.findById(ctx.school_id).select("name").lean();
-    const ay = await AcademicYearModel.findById(ctx.active_academic_year_id).select("year").lean();
+    const school = (await SchoolModel.findOne({ school_id: effectiveCtx.school_id }).select("name").lean()) as any;
+    const ay = (effectiveCtx.active_academic_year_id
+      ? await AcademicYearModel.findById(effectiveCtx.active_academic_year_id).select("year").lean()
+      : null) as any;
 
     // 1. Assigned Classes
     const assignedClasses = await ClassModel.find({ 

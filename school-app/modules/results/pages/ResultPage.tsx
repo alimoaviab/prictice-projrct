@@ -225,7 +225,7 @@ export function ResultPage() {
                         className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-[10px] font-bold text-slate-600 outline-none cursor-pointer transition-all hover:border-slate-300 focus:border-blue-400"
                     >
                         <option value="all">All Classes</option>
-                        {(classState.data || []).map((c: any) => (
+                        {((classState.data as any)?.data || []).map((c: any) => (
                             <option key={c._id} value={c._id}>{c.name}</option>
                         ))}
                     </select>

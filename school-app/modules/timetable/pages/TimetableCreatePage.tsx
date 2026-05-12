@@ -93,7 +93,7 @@ export function TimetableCreatePage() {
     );
   }
 
-  const classOptions = (classState.data ?? []).map(o => ({ id: o._id, label: o.name }));
+  const classOptions = ((classState.data as any)?.data || classState.data || []).map((o: any) => ({ id: o._id, label: o.name }));
   const teacherOptions = (teacherState.data ?? []).map(o => ({ id: o._id, label: o.name }));
   const subjectOptions = (subjectState.data ?? []).map(o => ({ id: o._id, label: o.name }));
   // academicYearOptions removed
@@ -126,7 +126,8 @@ export function TimetableCreatePage() {
           </div>
         ) : (
           <TimetableForm
-            onCreate={handleCreate}
+            onSubmit={handleCreate}
+            onCancel={() => router.back()}
             classOptions={classOptions}
             teacherOptions={teacherOptions}
             subjectOptions={subjectOptions}
