@@ -34,7 +34,7 @@ export function AcademicYearForm({
 
     function validate() {
         const newErrors: Record<string, string> = {};
-        if (!form.year.trim()) newErrors.year = "Academic year name is required";
+        if (!form.year.trim()) newErrors.year = "Session name is required";
         if (!form.start_date) newErrors.start_date = "Start date is required";
         if (!form.end_date) newErrors.end_date = "End date is required";
         if (form.start_date && form.end_date && new Date(form.start_date) >= new Date(form.end_date)) {
@@ -51,50 +51,49 @@ export function AcademicYearForm({
         if (!validate()) return;
         setSaving(true);
         await onCreate(form);
-        setForm(initialForm);
+        if (!initialData) setForm(initialForm);
         setSaving(false);
         setErrors({});
     }
 
     return (
         <form id="academic-year-form-quick" onSubmit={handleSubmit} className="space-y-8">
-            <div className="space-y-6">
-                {/* Row 1: General Configuration */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <div className="space-y-7">
+                {/* Section 1: Identity & Status */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-end">
                     <div className="lg:col-span-8">
                         <Input
                             label="Academic Session Name"
-                            placeholder="e.g., 2025-2026 Academic Year"
+                            placeholder="e.g., Session 2025-26"
                             value={form.year}
                             onChange={(e) => setForm({ ...form, year: e.target.value })}
                             error={errors.year}
                             required
-                            leftIcon={<span className="material-symbols-outlined text-[16px]">badge</span>}
-                            className="bg-white border-slate-200 h-9.5 focus:border-slate-900 focus:ring-slate-900/5 transition-all text-sm"
+                            leftIcon={<span className="material-symbols-outlined text-[18px]">badge</span>}
+                            className="bg-white border-slate-200 h-11 focus:border-blue-600 focus:ring-blue-600/5 transition-all text-[13px] font-medium"
                         />
                     </div>
 
-                    <div className="lg:col-span-4 h-full flex flex-col justify-end">
-                        <div className="flex items-center justify-between p-3 rounded-[16px] border border-slate-100 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-200 transition-all duration-300 h-[60px]">
+                    <div className="lg:col-span-4">
+                        <div className="flex items-center justify-between px-4 h-12 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 hover:border-blue-200 transition-all group cursor-pointer shadow-sm" onClick={() => setForm({ ...form, is_active: !form.is_active })}>
                             <div className="flex flex-col gap-0.5">
-                                <span className="text-[10px] font-bold normal-case  text-slate-900 leading-tight">Current Active</span>
-                                <span className="text-[9px] font-medium text-slate-500 leading-tight">Mark as system default</span>
+                                <span className="text-[10px] font-bold text-slate-900 uppercase tracking-tight leading-none">Current Active</span>
+                                <span className="text-[9px] font-medium text-slate-500 normal-case">Mark as system default</span>
                             </div>
-                            <label className="relative inline-flex cursor-pointer items-center">
-                                <input
-                                    type="checkbox"
-                                    checked={form.is_active}
-                                    onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-                                    className="peer sr-only"
+                            <div className="relative inline-flex items-center">
+                                <div 
+                                    className={`w-10 h-5.5 rounded-full transition-colors duration-300 ease-in-out ${form.is_active ? 'bg-blue-600 shadow-inner' : 'bg-slate-200'}`}
                                 />
-                                <div className="peer h-4.5 w-8 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-3.5 after:w-3.5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-slate-900 peer-checked:after:translate-x-full peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-slate-900/10" />
-                            </label>
+                                <div 
+                                    className={`absolute left-0.5 top-0.5 h-4.5 w-4.5 rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${form.is_active ? 'translate-x-4.5' : 'translate-x-0'}`}
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Row 2: Operational Dates */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Section 2: Timeline Configuration */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Input
                         label="Session Start Date"
                         type="date"
@@ -103,7 +102,7 @@ export function AcademicYearForm({
                         error={errors.start_date}
                         required
                         leftIcon={<span className="material-symbols-outlined text-[18px]">calendar_today</span>}
-                        className="bg-white border-slate-200 h-9.5 focus:border-slate-900 focus:ring-slate-900/5 transition-all"
+                        className="bg-white border-slate-200 h-11 focus:border-blue-600 focus:ring-blue-600/5 transition-all text-[13px] font-medium"
                     />
 
                     <Input
@@ -114,38 +113,45 @@ export function AcademicYearForm({
                         error={errors.end_date}
                         required
                         leftIcon={<span className="material-symbols-outlined text-[18px]">event_busy</span>}
-                        className="bg-white border-slate-200 h-9.5 focus:border-slate-900 focus:ring-slate-900/5 transition-all"
+                        className="bg-white border-slate-200 h-11 focus:border-blue-600 focus:ring-blue-600/5 transition-all text-[13px] font-medium"
                     />
                 </div>
 
-                {/* Row 3: Narrative Context */}
-                <div className="pt-1">
-                    <Input
-                        label="Administrative Notes (Optional)"
-                        placeholder="Add details regarding academic holidays..."
-                        value={form.description || ""}
-                        onChange={(e) => setForm({ ...form, description: e.target.value })}
-                        leftIcon={<span className="material-symbols-outlined text-[18px]">notes</span>}
-                        className="bg-white border-slate-200 h-9.5 focus:border-slate-900 focus:ring-slate-900/5 transition-all"
-                    />
+                {/* Section 3: Contextual Narrative */}
+                <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold text-slate-500 normal-case px-1">
+                        Administrative Notes (Optional)
+                    </label>
+                    <div className="relative">
+                        <span className="material-symbols-outlined absolute left-3.5 top-3.5 text-[18px] text-slate-400">notes</span>
+                        <textarea
+                            placeholder="Add details regarding academic holidays, term breaks, or specific cycle goals..."
+                            value={form.description || ""}
+                            onChange={(e) => setForm({ ...form, description: e.target.value })}
+                            className="w-full min-h-[100px] rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-3 text-[13px] font-medium text-slate-700 outline-none transition-all focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 placeholder:text-slate-400 resize-none"
+                        />
+                    </div>
                 </div>
             </div>
 
-            {/* Premium Action Row */}
+            {/* Premium Footer with Contextual Actions */}
             {showFooter && (
-                <div className="-mx-6 -mb-6 mt-12 flex items-center justify-between border-t border-slate-100 bg-slate-50/40 px-8 py-4">
+                <div className="-mx-6 -mb-6 mt-12 flex items-center justify-between border-t border-slate-100 bg-slate-50/40 px-8 py-5">
                     <Link
                         href="/admin/academic-years"
-                        className="flex items-center gap-2 rounded-xl px-4 py-2 text-[10px] font-bold normal-case  text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-900"
+                        className="flex items-center gap-2 rounded-xl px-4 py-2 text-[11px] font-bold text-slate-400 transition-all hover:bg-white hover:text-slate-900 hover:shadow-sm"
                     >
                         Discard Changes
                     </Link>
                     <Button
                         type="submit"
                         disabled={saving || !isValid}
-                        className="h-9.5 px-8 text-[10px] font-bold normal-case  shadow-xl shadow-slate-900/10 active:scale-[0.98] transition-all bg-slate-900 hover:bg-slate-800 text-white rounded-lg"
+                        className="h-11 px-8 text-[11px] font-bold uppercase tracking-widest shadow-xl shadow-blue-600/20 active:scale-[0.98] transition-all bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center gap-2"
                     >
-                        {saving ? "Deploying..." : (initialData ? "Update Session" : "Publish Session")}
+                        {saving && (
+                            <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        )}
+                        {initialData ? "Update Session" : "Deploy Session"}
                     </Button>
                 </div>
             )}

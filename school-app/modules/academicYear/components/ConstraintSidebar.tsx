@@ -15,13 +15,13 @@ export function ConstraintSidebar({ isOpen, onClose, title, message, reason }: C
         <AnimatePresence>
             {isOpen && (
                 <>
-                    {/* Backdrop */}
+                    {/* Backdrop - Transparent */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="fixed inset-0 bg-slate-900/60 backdrop-blur-[4px] z-[10000]"
+                        className="fixed inset-0 bg-transparent z-[99998]"
                     />
 
                     {/* Sidebar Panel */}
@@ -30,7 +30,7 @@ export function ConstraintSidebar({ isOpen, onClose, title, message, reason }: C
                         animate={{ x: 0 }}
                         exit={{ x: "100%" }}
                         transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                        className="fixed inset-y-0 right-0 w-full max-w-sm bg-white z-[10001] shadow-[-20px_0_60px_-12px_rgba(15,23,42,0.1)] flex flex-col border-l border-blue-50"
+                        className="fixed inset-y-0 right-0 w-full max-w-sm bg-white z-[99999] shadow-[-20px_0_60px_-12px_rgba(15,23,42,0.1)] flex flex-col border-l border-blue-50"
                     >
                         {/* Header - Clean Blue/White */}
                         <div className="flex items-center justify-between px-6 py-5 border-b border-blue-50 bg-white">
@@ -40,7 +40,7 @@ export function ConstraintSidebar({ isOpen, onClose, title, message, reason }: C
                                 </div>
                                 <div>
                                     <h2 className="text-[12px] font-bold text-slate-900 uppercase tracking-tight">System Constraint</h2>
-                                    <p className="text-[10px] font-medium text-blue-500 normal-case mt-0.5">Academic Integrity Policy</p>
+                                    <p className="text-[10px] font-medium text-blue-500 normal-case mt-0.5">Session Integrity Policy</p>
                                 </div>
                             </div>
                             <button

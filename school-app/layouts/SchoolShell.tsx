@@ -452,7 +452,7 @@ export function SchoolShell({
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 min-w-0 flex flex-col bg-background h-screen overflow-hidden">
+      <main className="flex-1 min-w-0 flex flex-col bg-background h-screen overflow-hidden relative z-30">
         <header className="sticky top-0 z-10 flex h-12 items-center justify-between border-b border-slate-200/40 bg-white/70 px-4 backdrop-blur-md md:px-5">
           <div className="flex items-center gap-3 flex-1">
             <button
@@ -509,7 +509,7 @@ export function SchoolShell({
           </div>
         </header>
 
-        <div key={pathname} className="w-full flex-1 overflow-y-auto animate-fade-in-up px-2 py-2 md:px-4 custom-scrollbar">
+        <div key={pathname} className="w-full flex-1 overflow-y-auto animate-fade-in-up px-2 py-2 md:px-4 custom-scrollbar relative z-20">
           {actions && (
             <div className="mb-4 flex items-center justify-end gap-2">
               {actions}
