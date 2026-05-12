@@ -148,7 +148,7 @@ function buildStudentName(student: any) {
 async function getClassroomWithStudents(ctx: RequestContext, classId: string) {
     const classroom = await ClassModel.findOne(tenantFilter(ctx, { _id: classId }))
         .populate("subject_ids", "name code")
-        .populate("academy_care_id", "year")
+        .populate("Academy_year_id", "year")
         .lean();
 
     if (!classroom) {

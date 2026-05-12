@@ -4,12 +4,13 @@ import crypto from "node:crypto";
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/eduplexo";
 const SCHOOL_ID = process.env.SCHOOL_ID || "default-school";
 const ACADEMIC_YEAR_LABEL = process.env.ACADEMIC_YEAR || "2025-2026";
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@gmail.com";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "school@gmail.com";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "Test@123";
 
-const CLASS_COUNT = 10;
-const TEACHER_COUNT = 20;
-const STUDENT_COUNT = 500;
+// Requested dataset sizes
+const CLASS_COUNT = Number(process.env.CLASS_COUNT || 20);
+const TEACHER_COUNT = Number(process.env.TEACHER_COUNT || 25);
+const STUDENT_COUNT = Number(process.env.STUDENT_COUNT || 500);
 
 const SUBJECTS = [
     { name: "English", code: "ENG" },
@@ -101,7 +102,7 @@ async function main() {
     const classSchema = new mongoose.Schema({
         school_id: tenantField,
         name: requiredString,
-        academy_care_id: { type: mongoose.Schema.Types.ObjectId, ref: "AcademicYear", required: true, index: true },
+        academic_year_id: { type: mongoose.Schema.Types.ObjectId, ref: "AcademicYear", required: true, index: true },
         subject_ids: [{ type: mongoose.Schema.Types.ObjectId, ref: "Subject", index: true }],
         subjects: [{ type: String, trim: true }],
         grade: { type: String, trim: true, default: "" },
@@ -304,12 +305,12 @@ async function main() {
     for (let index = 1; index <= CLASS_COUNT; index += 1) {
         const name = `Class ${index}`;
         const doc = await ClassModel.findOneAndUpdate(
-            { school_id: SCHOOL_ID, name, academy_care_id: academicYear._id },
+            { school_id: SCHOOL_ID, name, academic_year_id: academicYear._id },
             {
                 $set: {
                     school_id: SCHOOL_ID,
                     name,
-                    academy_care_id: academicYear._id,
+                    academic_year_id: academicYear._id,
                     academic_year: ACADEMIC_YEAR_LABEL,
                     grade: String(index),
                     section: "A",
@@ -673,8 +674,204 @@ async function main() {
 
     await bulkWriteIfNeeded(ResultModel, resultOps);
 
+    await bulkWriteIfNeeded(ResultModel, resultOps);
+
+    // --- Create teacher user accounts and link to teacher docs ---
+    const teacherUserOps = [];
+    teacherDocs.forEach((teacherDoc, idx) => {
+        const email = buildEmail("teacher", idx + 1);
+        teacherUserOps.push({
+            updateOne: {
+                filter: { school_id: SCHOOL_ID, email },
+                update: {
+                    $set: {
+                        school_id: SCHOOL_ID,
+                        email,
+                        password_hash: hashPassword("teacher123"),
+                        role: "teacher",
+                        profile: { first_name: "Teacher", last_name: String(idx + 1) },
+                        status: "active"
+                    }
+                },
+                upsert: true
+            }
+        });
+    });
+    await bulkWriteIfNeeded(UserModel, teacherUserOps);
+
+    const teacherUserDocs = await UserModel.find({ school_id: SCHOOL_ID, email: /^teacher/ }).lean();
+    const teacherUserByEmail = new Map(teacherUserDocs.map((u) => [u.email, u._id]));
+
+    const teacherUpdateUserOps = teacherDocs.map((t, idx) => {
+        const email = buildEmail("teacher", idx + 1);
+        const userId = teacherUserByEmail.get(email);
+        if (!userId) return null;
+        return {
+            updateOne: {
+                filter: { _id: t._id },
+                update: { $set: { user_id: userId } }
+            }
+        };
+    }).filter(Boolean);
+    await bulkWriteIfNeeded(TeacherModel, teacherUpdateUserOps);
+
+    // Create explicit test accounts requested by the user
+    const testTeacherUser = await UserModel.findOneAndUpdate(
+        { school_id: SCHOOL_ID, email: "teacher@gmail.com" },
+        {
+            $set: {
+                school_id: SCHOOL_ID,
+                email: "teacher@gmail.com",
+                password_hash: hashPassword("Test@123"),
+                role: "teacher",
+                profile: { first_name: "Test", last_name: "Teacher" },
+                status: "active"
+            }
+        },
+        { upsert: true, new: true }
+    );
+
+    const testStudentUser = await UserModel.findOneAndUpdate(
+        { school_id: SCHOOL_ID, email: "student@gmail.com" },
+        {
+            $set: {
+                school_id: SCHOOL_ID,
+                email: "student@gmail.com",
+                password_hash: hashPassword("Test@123"),
+                role: "parent",
+                profile: { first_name: "Test", last_name: "Student" },
+                status: "active"
+            }
+        },
+        { upsert: true, new: true }
+    );
+
+    // Link the test teacher to the first teacher doc, if exists
+    if (teacherDocs.length > 0 && testTeacherUser?._id) {
+        await TeacherModel.findByIdAndUpdate(teacherDocs[0]._id, { $set: { user_id: testTeacherUser._id } });
+    }
+
+    // Link the test student to the first student doc, if exists
+    if (studentDocs.length > 0 && testStudentUser?._id) {
+        await StudentModel.findByIdAndUpdate(studentDocs[0]._id, { $set: { user_id: testStudentUser._id } });
+    }
+
+    // --- Seed Fees: one invoice per student ---
+    const FeeModel = mongoose.models.Fee || mongoose.model("Fee", new mongoose.Schema({}, { strict: false, collection: "fees" }));
+    const feeOps = [];
+    studentDocs.forEach((studentDoc, idx) => {
+        const invoiceNo = `${SCHOOL_ID}-INV-${String(idx + 1).padStart(6, "0")}`;
+        const amount = 500 + (idx % 10) * 25;
+        feeOps.push({
+            updateOne: {
+                filter: { school_id: SCHOOL_ID, invoice_no: invoiceNo },
+                update: {
+                    $set: {
+                        school_id: SCHOOL_ID,
+                        student_id: studentDoc._id,
+                        class_id: studentDoc.class_id,
+                        academic_year_id: academicYear._id,
+                        invoice_no: invoiceNo,
+                        title: `Tuition Fee ${academicYear.year}`,
+                        amount,
+                        currency: "USD",
+                        due_at: addDays(new Date(), 15 + (idx % 30)),
+                        status: idx % 3 === 0 ? "paid" : "unpaid",
+                        paid_amount: idx % 3 === 0 ? amount : 0,
+                        generated_by: adminUser._id
+                    }
+                },
+                upsert: true
+            }
+        });
+    });
+    await bulkWriteIfNeeded(FeeModel, feeOps);
+
+    // --- Seed Behavior incidents ---
+    const BehaviorModel = mongoose.models.Behavior || mongoose.model("Behavior", new mongoose.Schema({}, { strict: false, collection: "behavior" }));
+    const behaviorOps = [];
+    for (let i = 0; i < Math.min(100, studentDocs.length); i += 1) {
+        const student = studentDocs[i];
+        const teacher = teacherDocs[i % teacherDocs.length];
+        behaviorOps.push({
+            updateOne: {
+                filter: { school_id: SCHOOL_ID, student_id: student._id, incident_type: "conduct", description: `Behavior incident ${i + 1}` },
+                update: {
+                    $set: {
+                        school_id: SCHOOL_ID,
+                        student_id: student._id,
+                        class_id: student.class_id,
+                        teacher_id: teacher._id,
+                        incident_type: "conduct",
+                        description: `Auto-seeded incident ${i + 1}`,
+                        severity: i % 4 === 0 ? "major" : "minor",
+                        action_taken: "Counseling",
+                        status: "open",
+                        warning_count: 1,
+                        parent_notified: false
+                    }
+                },
+                upsert: true
+            }
+        });
+    }
+    await bulkWriteIfNeeded(BehaviorModel, behaviorOps);
+
+    // --- Seed Leaves for some teachers and students ---
+    const LeaveModel = mongoose.models.Leave || mongoose.model("Leave", new mongoose.Schema({}, { strict: false, collection: "leaves" }));
+    const leaveOps = [];
+    // Teacher leaves
+    for (let i = 0; i < Math.min(10, teacherDocs.length); i += 1) {
+        const teacher = teacherDocs[i];
+        leaveOps.push({
+            updateOne: {
+                filter: { school_id: SCHOOL_ID, requester_type: "teacher", requester_id: teacher._id, start_date: addDays(new Date(), i + 1) },
+                update: {
+                    $set: {
+                        school_id: SCHOOL_ID,
+                        requester_type: "teacher",
+                        requester_id: teacher._id,
+                        requester_name: `${teacher.first_name || "Teacher"} ${teacher.last_name || ""}`.trim(),
+                        leave_type: "personal",
+                        reason: "Auto-seeded leave",
+                        start_date: addDays(new Date(), i + 1),
+                        end_date: addDays(new Date(), i + 2),
+                        status: "approved",
+                        approved_by: adminUser._id,
+                        approved_at: new Date()
+                    }
+                },
+                upsert: true
+            }
+        });
+    }
+    // Student leaves
+    for (let i = 0; i < Math.min(20, studentDocs.length); i += 1) {
+        const student = studentDocs[i];
+        leaveOps.push({
+            updateOne: {
+                filter: { school_id: SCHOOL_ID, requester_type: "student", requester_id: student._id, start_date: addDays(new Date(), i + 3) },
+                update: {
+                    $set: {
+                        school_id: SCHOOL_ID,
+                        requester_type: "student",
+                        requester_id: student._id,
+                        requester_name: `${student.first_name || "Student"} ${student.last_name || ""}`.trim(),
+                        leave_type: "sick",
+                        reason: "Auto-seeded student leave",
+                        start_date: addDays(new Date(), i + 3),
+                        end_date: addDays(new Date(), i + 4),
+                        status: "pending"
+                    }
+                },
+                upsert: true
+            }
+        });
+    }
+    await bulkWriteIfNeeded(LeaveModel, leaveOps);
+
     console.log(
-        `Seeded ${CLASS_COUNT} classes, ${TEACHER_COUNT} teachers, ${SUBJECTS.length} subjects, ${STUDENT_COUNT} students, ${classDocs.length * WEEK_DAYS.length * PERIODS.length} timetable entries, ${studentDocs.length * attendanceDates.length} attendance records, ${homeworkOps.length} homework items, ${examOps.length} exams, and ${resultOps.length} results for ${SCHOOL_ID}.`
+        `Seeded ${CLASS_COUNT} classes, ${TEACHER_COUNT} teachers, ${SUBJECTS.length} subjects, ${STUDENT_COUNT} students, ${classDocs.length * WEEK_DAYS.length * PERIODS.length} timetable entries, ${studentDocs.length * attendanceDates.length} attendance records, ${homeworkOps.length} homework items, ${examOps.length} exams, ${resultOps.length} results, ${feeOps.length} fees, ${behaviorOps.length} behavior incidents, ${leaveOps.length} leaves for ${SCHOOL_ID}.`
     );
 
     await mongoose.disconnect();

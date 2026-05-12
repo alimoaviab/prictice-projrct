@@ -13,7 +13,7 @@ import {
   studentCreateSchema,
   studentUpdateSchema
 } from "../validation/student.schema";
-import { resolveClassIdsForAcademyCare } from "./_academy-care-filter";
+import { resolveClassIdsForAcademicYear } from "./_academic-year-filter";
 import { writeAuditLog } from "./audit.service";
 
 async function nextAdmissionNumber(schoolId: string): Promise<string> {
@@ -30,13 +30,13 @@ async function nextAdmissionNumber(schoolId: string): Promise<string> {
 
 export async function listStudents(
   ctx: RequestContext,
-  filter: { class_id?: string; status?: string; academy_care_id?: string } = {}
+  filter: { class_id?: string; status?: string; academic_year_id?: string } = {}
 ): Promise<ServiceResult<unknown[]>> {
   return serviceTry(async () => {
     await connectDb();
     assertPermission(ctx, "students", "view");
 
-    const classIds = await resolveClassIdsForAcademyCare(ctx, filter.academy_care_id);
+    const classIds = await resolveClassIdsForAcademicYear(ctx, filter.academic_year_id);
     const query = tenantFilter(ctx, {
       ...(filter.status ? { status: filter.status } : {})
     });
@@ -67,11 +67,13 @@ export async function createStudent(
     const { AcademicYearModel } = await import("../models/academic-year.model");
     const activeYear = await AcademicYearModel.findOne(tenantFilter(ctx, { is_active: true }))
       .select("_id")
-      .lean();
+      .lean() as any;
 
     if (!activeYear) {
       throw new Error("No active academic year found for this school.");
     }
+
+    const academicYear = activeYear as { _id: Types.ObjectId };
 
     let userId: Types.ObjectId | undefined;
     if (normalizedEmail) {
@@ -103,7 +105,7 @@ export async function createStudent(
 
     const created = await StudentModel.create({
       ...studentData,
-      academic_year_id: activeYear._id,
+      academic_year_id: academicYear._id,
       admission_no: parsed.admission_no || (await nextAdmissionNumber(ctx.school_id)),
       class_id: new Types.ObjectId(parsed.class_id),
       user_id: userId,

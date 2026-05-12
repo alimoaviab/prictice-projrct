@@ -47,7 +47,7 @@ export function ClassCreatePage() {
 
   const hasAcademicYears = (academicYearState.data?.data ?? []).length > 0;
 
-  const academyCareOptions = (academicYearState.data?.data ?? []).map((item) => ({
+  const academicYearOptions = (academicYearState.data?.data ?? []).map((item) => ({
     id: item._id,
     label: item.year,
   }));
@@ -95,21 +95,7 @@ export function ClassCreatePage() {
             <DataState variant="error" title="Faculty Data Unavailable" message={teacherState.error} />
           ) : subjectsError ? (
             <DataState variant="error" title="Curriculum Error" message={subjectsError} />
-          ) : !isDependencyLoading && !hasAcademicYears ? (
-            <div className="py-12 flex flex-col items-center text-center">
-              <div className="h-16 w-16 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600 mb-4 border border-amber-100">
-                <span className="material-symbols-outlined text-3xl font-bold">priority_high</span>
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">Academic Cycle Required</h3>
-              <p className="text-sm text-slate-500 mb-6 max-w-xs">Initialization cannot proceed without an active academic year configuration.</p>
-              <Link 
-                href="/admin/academic-years"
-                className="h-11 px-6 rounded-xl bg-slate-900 text-[11px] font-bold normal-case  text-white hover:bg-slate-800 transition-all shadow-lg active:scale-95"
-              >
-                Create Academic Session
-              </Link>
-            </div>
-          ) : isDependencyLoading ? (
+          ) : isDependencyLoading && !academicYearState.data ? (
             <div className="space-y-8 py-4">
               <div className="space-y-2">
                 <Skeleton className="h-4 w-24 rounded" />
@@ -130,24 +116,48 @@ export function ClassCreatePage() {
                  <Skeleton className="h-12 w-48 rounded-xl" />
               </div>
             </div>
+          ) : !hasAcademicYears ? (
+            <div className="py-12 flex flex-col items-center text-center">
+              <div className="h-16 w-16 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600 mb-4 border border-amber-100">
+                <span className="material-symbols-outlined text-3xl font-bold">priority_high</span>
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Academic Cycle Required</h3>
+              <p className="text-sm text-slate-500 mb-6 max-w-xs">Initialization cannot proceed without an active academic year configuration.</p>
+              <Link 
+                href="/admin/academic-years"
+                className="h-11 px-6 rounded-xl bg-slate-900 text-[11px] font-bold normal-case  text-white hover:bg-slate-800 transition-all shadow-lg active:scale-95"
+              >
+                Create Academic Session
+              </Link>
+            </div>
           ) : (
-            <ClassForm
-              onCreate={handleCreate}
-              onAddSubject={handleQuickAddSubject}
-              academyCareOptions={academyCareOptions}
-              teacherOptions={teacherOptions}
-              subjectOptions={(subjects ?? [])
-                .filter((item) => item.status === "active")
-                .map((item) => ({ id: item._id, label: item.name }))}
-              onCreateAcademicYear={() => setIsAcademicYearDrawerOpen(true)}
-              onCreateTeacher={() => setIsTeacherDrawerOpen(true)}
-              autoSelectAcademicYear={newAcademicYearId}
-              autoSelectTeacher={newTeacherId}
-              onSelectionHandled={() => {
-                setNewAcademicYearId(undefined);
-                setNewTeacherId(undefined);
-              }}
-            />
+            <div className="relative">
+              {isDependencyLoading && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/40 backdrop-blur-[1px] rounded-2xl">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="h-8 w-8 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
+                    <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Refreshing...</span>
+                  </div>
+                </div>
+              )}
+              <ClassForm
+                onCreate={handleCreate}
+                onAddSubject={handleQuickAddSubject}
+                academicYearOptions={academicYearOptions}
+                teacherOptions={teacherOptions}
+                subjectOptions={(subjects ?? [])
+                  .filter((item) => item.status === "active")
+                  .map((item) => ({ id: item._id, label: item.name }))}
+                onCreateAcademicYear={() => setIsAcademicYearDrawerOpen(true)}
+                onCreateTeacher={() => setIsTeacherDrawerOpen(true)}
+                autoSelectAcademicYear={newAcademicYearId}
+                autoSelectTeacher={newTeacherId}
+                onSelectionHandled={() => {
+                  setNewAcademicYearId(undefined);
+                  setNewTeacherId(undefined);
+                }}
+              />
+            </div>
           )}
         </div>
       </div>

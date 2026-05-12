@@ -4,6 +4,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Card, Button, DataState, Skeleton, Badge } from "../../../components/ui";
 import { showToast } from "../../../utils/toast";
+import { useQueryParams } from "../../../hooks/useQueryParams";
 
 interface HomeworkPageProps {
   role: "ADMIN" | "TEACHER";
@@ -11,10 +12,16 @@ interface HomeworkPageProps {
 
 export function HomeworkPage({ role }: HomeworkPageProps) {
   const router = useRouter();
+  const { currentParams, updateQuery, withQuery } = useQueryParams();
   const [loading, setLoading] = useState(true);
   const [homeworks, setHomeworks] = useState<any[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "assigned" | "draft" | "closed">("all");
+  const [searchQuery, setSearchQuery] = useState(currentParams.get("search") || "");
+  const [statusFilter, setStatusFilter] = useState<"all" | "assigned" | "draft" | "closed">((currentParams.get("status") as any) || "all");
+
+  useEffect(() => {
+    setSearchQuery(currentParams.get("search") || "");
+    setStatusFilter((currentParams.get("status") as any) || "all");
+  }, [currentParams.toString()]);
 
   const fetchHomeworks = async () => {
     setLoading(true);
@@ -93,7 +100,7 @@ export function HomeworkPage({ role }: HomeworkPageProps) {
           <p className="text-slate-500 font-medium mt-1">Assign and manage educational content for your classes.</p>
         </div>
         <Button
-          onClick={() => router.push(role === "ADMIN" ? "/admin/homework/create" : "/teacher/homework/create")}
+          onClick={() => router.push(withQuery(role === "ADMIN" ? "/admin/homework/create" : "/teacher/homework/create"))}
           className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-600/10 text-[10px] font-bold normal-case transition-all active:scale-95"
         >
           <span className="material-symbols-outlined text-lg mr-2">add</span>
@@ -123,7 +130,11 @@ export function HomeworkPage({ role }: HomeworkPageProps) {
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
             <input
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setSearchQuery(value);
+                updateQuery({ search: value });
+              }}
               placeholder="Search by title, class or subject..."
               className="h-10 w-full rounded-lg border border-slate-100 bg-slate-50/50 pl-10 pr-3 text-xs font-medium text-slate-700 outline-none transition-all focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-600/5 placeholder:text-slate-400"
             />
@@ -131,7 +142,11 @@ export function HomeworkPage({ role }: HomeworkPageProps) {
           <div className="h-6 w-px bg-slate-100" />
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
+            onChange={(e) => {
+              const value = e.target.value as any;
+              setStatusFilter(value);
+              updateQuery({ status: value });
+            }}
             className="h-10 rounded-lg border border-slate-100 bg-slate-50/50 px-3 text-xs font-bold text-slate-600 outline-none cursor-pointer transition-all hover:border-slate-200 focus:bg-white focus:border-indigo-400"
           >
             <option value="all">All Status</option>

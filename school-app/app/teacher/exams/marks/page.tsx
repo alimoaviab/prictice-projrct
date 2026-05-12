@@ -1,10 +1,12 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+export const dynamic = "force-dynamic";
 import { SchoolShell } from "../../../../layouts/SchoolShell";
 import { ExamMarksEntryPage } from "../../../../modules/exams/pages/ExamMarksEntryPage";
 
-export default function TeacherExamMarksPage() {
+function ExamMarksContent() {
   const searchParams = useSearchParams();
   const examId = searchParams.get("exam_id") || "";
 
@@ -12,5 +14,13 @@ export default function TeacherExamMarksPage() {
     <SchoolShell eyebrow="Teacher Dashboard" title="Marks Entry Workspace">
       <ExamMarksEntryPage examId={examId} />
     </SchoolShell>
+  );
+}
+
+export default function TeacherExamMarksPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ExamMarksContent />
+    </Suspense>
   );
 }

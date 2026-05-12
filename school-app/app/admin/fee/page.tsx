@@ -106,12 +106,12 @@ export default function FeePage() {
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1">
                                         <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Monthly Collection</p>
-                                        <p className="mt-1 text-2xl font-black text-slate-900">{money(stats?.monthly_collection.total ?? 0)}</p>
+                                        <p className="mt-1 text-2xl font-black text-slate-900">{money(stats?.monthly_collection?.total ?? 0)}</p>
                                         <div className="mt-2 flex items-center gap-2">
-                                            <span className={`text-xs font-bold ${(stats?.monthly_collection.growth_percentage ?? 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                                {(stats?.monthly_collection.growth_percentage ?? 0) >= 0 ? '↑' : '↓'} {Math.abs(stats?.monthly_collection.growth_percentage ?? 0)}%
+                                            <span className={`text-xs font-bold ${(stats?.monthly_collection?.growth_percentage ?? 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                                {(stats?.monthly_collection?.growth_percentage ?? 0) >= 0 ? '↑' : '↓'} {Math.abs(stats?.monthly_collection?.growth_percentage ?? 0)}%
                                             </span>
-                                            <span className="text-xs text-slate-500">{stats?.monthly_collection.paid_vs_pending_ratio ?? '0:0'}</span>
+                                            <span className="text-xs text-slate-500">{stats?.monthly_collection?.paid_vs_pending_ratio ?? '0:0'}</span>
                                         </div>
                                     </div>
                                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50">
@@ -125,10 +125,10 @@ export default function FeePage() {
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1">
                                         <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Defaulters</p>
-                                        <p className="mt-1 text-2xl font-black text-slate-900">{stats?.defaulters.count ?? 0}</p>
+                                        <p className="mt-1 text-2xl font-black text-slate-900">{stats?.defaulters?.count ?? 0}</p>
                                         <div className="mt-2 space-y-0.5">
-                                            <p className="text-xs font-semibold text-red-600">{money(stats?.defaulters.overdue_amount ?? 0)} overdue</p>
-                                            <p className="text-xs text-slate-500">{stats?.defaulters.high_priority ?? 0} high priority</p>
+                                            <p className="text-xs font-semibold text-red-600">{money(stats?.defaulters?.overdue_amount ?? 0)} overdue</p>
+                                            <p className="text-xs text-slate-500">{stats?.defaulters?.high_priority ?? 0} high priority</p>
                                         </div>
                                     </div>
                                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50">
@@ -142,15 +142,15 @@ export default function FeePage() {
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1">
                                         <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Collection Progress</p>
-                                        <p className="mt-1 text-2xl font-black text-slate-900">{stats?.collection_progress.paid_percentage ?? 0}%</p>
+                                        <p className="mt-1 text-2xl font-black text-slate-900">{stats?.collection_progress?.paid_percentage ?? 0}%</p>
                                         <div className="mt-2">
                                             <div className="h-2 w-full rounded-full bg-slate-100">
                                                 <div 
                                                     className="h-full rounded-full bg-emerald-500" 
-                                                    style={{ width: `${stats?.collection_progress.paid_percentage ?? 0}%` }}
+                                                    style={{ width: `${stats?.collection_progress?.paid_percentage ?? 0}%` }}
                                                 />
                                             </div>
-                                            <p className="mt-1 text-xs text-slate-500">{stats?.collection_progress.remaining_percentage ?? 0}% remaining</p>
+                                            <p className="mt-1 text-xs text-slate-500">{stats?.collection_progress?.remaining_percentage ?? 0}% remaining</p>
                                         </div>
                                     </div>
                                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50">
@@ -164,10 +164,10 @@ export default function FeePage() {
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1">
                                         <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Active Components</p>
-                                        <p className="mt-1 text-2xl font-black text-slate-900">{(stats?.active_components.recurring ?? 0) + (stats?.active_components.onetime ?? 0)}</p>
+                                        <p className="mt-1 text-2xl font-black text-slate-900">{(stats?.active_components?.recurring ?? 0) + (stats?.active_components?.onetime ?? 0)}</p>
                                         <div className="mt-2 space-y-0.5">
-                                            <p className="text-xs text-slate-600">{stats?.active_components.recurring ?? 0} recurring</p>
-                                            <p className="text-xs text-slate-500">{stats?.active_components.active_classes ?? 0} classes</p>
+                                            <p className="text-xs text-slate-600">{stats?.active_components?.recurring ?? 0} recurring</p>
+                                            <p className="text-xs text-slate-500">{stats?.active_components?.active_classes ?? 0} classes</p>
                                         </div>
                                     </div>
                                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50">
@@ -195,7 +195,7 @@ export default function FeePage() {
                                 <DataState
                                     variant="empty"
                                     title="No classes found"
-                                    description="Create classes to start managing fees"
+                                    message="Create classes to start managing fees"
                                 />
                             ) : (
                                 <div className="grid grid-cols-3 gap-4">

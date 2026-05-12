@@ -1,32 +1,38 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { authenticateRequest } from "@edu/shared/auth/middleware";
-import { fail } from "@edu/shared/utils/result";
 import { createEvent, listEvents } from "@edu/shared/services/event.service";
-import { sessionRequest } from "../_utils";
 
-export async function GET(request: NextRequest) {
-  try {
-    const ctx = authenticateRequest(sessionRequest(request), "school");
-    const status = request.nextUrl.searchParams.get("status") ?? undefined;
-    const event_type = request.nextUrl.searchParams.get("event_type") ?? undefined;
-    const visibility = request.nextUrl.searchParams.get("visibility") ?? undefined;
-    const start_date = request.nextUrl.searchParams.get("start_date") ?? undefined;
-    const end_date = request.nextUrl.searchParams.get("end_date") ?? undefined;
-    const class_id = request.nextUrl.searchParams.get("class_id") ?? undefined;
-    const result = await listEvents(ctx, { status, event_type, visibility, start_date, end_date, class_id });
-    return NextResponse.json(result, { status: result.ok ? 200 : result.error.status ?? 400 });
-  } catch {
-    return NextResponse.json(fail("UNAUTHORIZED", "Authentication required.", 401), { status: 401 });
-  }
+function parseCookies(cookieHeader: string | null) {
+  return Object.fromEntries(
+    (cookieHeader?.split("; ") ?? []).map((entry) => {
+      const separatorIndex = entry.indexOf("=");
+      return separatorIndex >= 0 ? [entry.slice(0, separatorIndex), entry.slice(separatorIndex + 1)] : [entry, ""];
+    })
+  );
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const ctx = authenticateRequest(sessionRequest(request), "school");
-    const body = await request.json();
-    const result = await createEvent(ctx, body);
-    return NextResponse.json(result, { status: result.ok ? 201 : result.error.status ?? 400 });
-  } catch {
-    return NextResponse.json(fail("UNAUTHORIZED", "Authentication required.", 401), { status: 401 });
-  }
+function getRequestContext(request: Request) {
+  return authenticateRequest(
+    {
+      cookies: parseCookies(request.headers.get("cookie")),
+      headers: Object.fromEntries(request.headers.entries())
+    },
+    "school"
+  );
+}
+
+function getQuery(request: Request) {
+  return Object.fromEntries(new URL(request.url).searchParams.entries());
+}
+
+export async function GET(request: Request) {
+  const ctx = getRequestContext(request);
+  const result = await listEvents(ctx, getQuery(request));
+  return NextResponse.json(result, { status: result.ok ? 200 : result.error.status ?? 400 });
+}
+
+export async function POST(request: Request) {
+  const ctx = getRequestContext(request);
+  const result = await createEvent(ctx, await request.json());
+  return NextResponse.json(result, { status: result.ok ? 200 : result.error.status ?? 400 });
 }

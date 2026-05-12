@@ -171,7 +171,7 @@ export default function TeacherTimetablePage() {
               <Select 
                 options={academicYears} 
                 value={filters.academicYear} 
-                onChange={(val) => setFilters(prev => ({ ...prev, academicYear: val }))}
+                onChange={(event) => setFilters(prev => ({ ...prev, academicYear: event.target.value }))}
                 className="border-0 bg-transparent h-8 text-[9px] font-black text-slate-900 uppercase tracking-widest min-w-[110px]"
               />
             </div>

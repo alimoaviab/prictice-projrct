@@ -15,7 +15,7 @@ export function useTimetable(filters?: { class_id?: string; teacher_id?: string;
     return run(async () => {
       const result = await service.listTimetable(filters);
       if (!result.ok) {
-        throw new Error(result.error.message || "Failed to load timetable");
+        throw new Error(result.error?.message || "Failed to load timetable");
       }
       return result.data || [];
     });

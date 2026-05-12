@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQueryParams } from "../../../hooks/useQueryParams";
 import { DataTable, DataTableColumn, RowAction, Badge, DataState, ListToolbar, Skeleton, TableSkeleton } from "../../../components/ui";
 import { useStudents } from "../hooks/useStudents";
 import { useClasses } from "../../classes/hooks/useClasses";
@@ -14,11 +15,18 @@ export function StudentListPage() {
   const { state, updateStudent, deleteStudent } = useStudents();
   const { state: classesState } = useClasses();
   const { data: subjectsData } = useSubjects();
+  const { currentParams, updateQuery, withQuery } = useQueryParams();
   const [editingStudent, setEditingStudent] = useState<StudentRow | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [searchQuery, setSearchQuery] = useState(currentParams.get("search") || "");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">((currentParams.get("status") as any) || "all");
+  const [viewMode, setViewMode] = useState<"grid" | "list">((currentParams.get("view") as any) || "grid");
+
+  useEffect(() => {
+    setSearchQuery(currentParams.get("search") || "");
+    setStatusFilter((currentParams.get("status") as any) || "all");
+    setViewMode((currentParams.get("view") as any) || "grid");
+  }, [currentParams.toString()]);
 
   const subjectOptions = subjectsData.map((subj) => ({ id: (subj as any)._id || (subj as any).id || subj.name, label: subj.name }));
   const classOptions = (classesState.data || []).map((cls) => ({
@@ -171,7 +179,11 @@ export function StudentListPage() {
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
             <input
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setSearchQuery(value);
+                updateQuery({ search: value });
+              }}
               placeholder="Search name, admission no or class..."
               className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-xs font-medium text-slate-700 outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-600/5 placeholder:text-slate-400"
             />
@@ -179,7 +191,11 @@ export function StudentListPage() {
           <div className="h-6 w-px bg-slate-200" />
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
+            onChange={(e) => {
+              const value = e.target.value as any;
+              setStatusFilter(value);
+              updateQuery({ status: value });
+            }}
             className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none cursor-pointer transition-all hover:border-slate-300 focus:border-blue-400"
           >
             <option value="all">Lifecycle: All</option>
@@ -191,7 +207,10 @@ export function StudentListPage() {
         <div className="flex items-center gap-3">
           <div className="flex items-center rounded-lg bg-slate-100 p-1 shadow-inner">
             <button
-              onClick={() => setViewMode("grid")}
+              onClick={() => {
+                setViewMode("grid");
+                updateQuery({ view: "grid" });
+              }}
               className={`flex h-7 items-center gap-2 rounded-md px-3 text-[11px] font-bold transition-all ${
                 viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
               }`}
@@ -200,7 +219,10 @@ export function StudentListPage() {
               Grid
             </button>
             <button
-              onClick={() => setViewMode("list")}
+              onClick={() => {
+                setViewMode("list");
+                updateQuery({ view: "list" });
+              }}
               className={`flex h-7 items-center gap-2 rounded-md px-3 text-[11px] font-bold transition-all ${
                 viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
               }`}
@@ -215,7 +237,7 @@ export function StudentListPage() {
           </span>
           <div className="h-6 w-px bg-slate-200" />
           <Link
-            href="/admin/students/create"
+            href={withQuery("/admin/students/create")}
             className="inline-flex h-9 items-center gap-2 px-5 text-[11px] font-bold normal-case  text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
           >
             <span className="material-symbols-outlined text-lg">person_add</span>

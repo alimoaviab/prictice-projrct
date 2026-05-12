@@ -40,7 +40,7 @@ export const HeroSection = () => {
   return (
     <section ref={containerRef} className="relative h-[150vh] bg-slate-50">
       {/* Sticky Container for the storytelling experience */}
-      <div className="sticky top-0 h-screen overflow-hidden flex flex-col justify-center pt-20">
+      <div className="sticky top-0 h-screen overflow-hidden flex flex-col pt-32 md:pt-40">
         
         {/* Deep Background Layers */}
         <div className="absolute inset-0 z-0 bg-[#F5F7FB]" />

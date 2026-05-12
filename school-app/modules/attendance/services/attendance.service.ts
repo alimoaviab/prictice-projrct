@@ -1,5 +1,5 @@
 import { serviceRequest } from "../../../services/service-client";
-import { getAcademyCareQuery } from "../../../services/academy-care-context";
+import { getAcademicYearQuery } from "../../../services/academic-year-context";
 import {
   AttendanceBulkInput,
   AttendanceBulkResult,
@@ -10,7 +10,7 @@ import {
 } from "../types/attendance.types";
 
 export function listAttendance(filters?: { class_id?: string; student_id?: string; date?: string; period?: number }) {
-  const baseQuery = getAcademyCareQuery();
+  const baseQuery = getAcademicYearQuery();
   let filterQuery = "";
   if (filters?.class_id) filterQuery += `&class_id=${filters.class_id}`;
   if (filters?.student_id) filterQuery += `&student_id=${filters.student_id}`;

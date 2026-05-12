@@ -11,7 +11,7 @@ import { writeAuditLog } from "./audit.service";
 
 export async function listResults(
   ctx: RequestContext,
-  filter: { academy_care_id?: string; exam_id?: string; student_id?: string }
+  filter: { academic_year_id?: string; exam_id?: string; student_id?: string }
 ): Promise<ServiceResult<unknown[]>> {
   return serviceTry(async () => {
     await connectDb();
@@ -24,8 +24,8 @@ export async function listResults(
         query.class_id = { $in: teacherClassIds };
     }
 
-    if (filter.academy_care_id) {
-      query.academic_year_id = new Types.ObjectId(filter.academy_care_id);
+    if (filter.academic_year_id) {
+      query.academic_year_id = new Types.ObjectId(filter.academic_year_id);
     }
     if (filter.exam_id) {
       query.exam_id = new Types.ObjectId(filter.exam_id);
@@ -124,7 +124,7 @@ export async function saveExamResults(
 
     await writeAuditLog(ctx, {
       action: "update",
-      entity_type: "exams",
+      entity_type: "exam",
       entity_id: examId,
       metadata: { count: saved }
     });

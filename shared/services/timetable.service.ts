@@ -11,7 +11,7 @@ import { SubjectModel } from "../models/subject.model";
 import { AcademicYearModel } from "../models/academic-year.model";
 import { connectDb } from "../db/connect";
 import { tenantFilter } from "../db/tenant-query";
-import { resolveClassIdsForAcademyCare } from "./_academy-care-filter";
+import { resolveClassIdsForAcademicYear } from "./_academic-year-filter";
 
 const FEATURE = "timetable" as const;
 
@@ -196,10 +196,29 @@ export async function createTimetable(
 
   try {
     await connectDb();
+    
+    // Resolve academic year
+    let academicYearId = ctx.active_academic_year_id;
+    if (!academicYearId) {
+      const active = await AcademicYearModel.findOne(tenantFilter(ctx, { is_active: true }))
+        .select("_id")
+        .lean();
+      academicYearId = active?._id?.toString();
+    }
+    if (!academicYearId) {
+      throw new ControlledError("VALIDATION_ERROR", "No active academic year found", 400);
+    }
+    
     const classId = toObjectId((data as any).class_id, "Class");
     const teacherId = toObjectId((data as any).teacher_id, "Teacher");
-    const day = normalizeDay((data as any).day) || normalizeDay((data as any).day_of_week);
-    const dayOfWeek = normalizeDayNumber((data as any).day_of_week) || (day ? DAY_LABEL_TO_NUMBER[day] : undefined);
+    
+    let day = normalizeDay((data as any).day_of_week);
+    let dayOfWeek = normalizeDayNumber((data as any).day_of_week);
+    if (!day && !dayOfWeek) {
+      day = normalizeDay((data as any).day);
+      dayOfWeek = day ? DAY_LABEL_TO_NUMBER[day] : undefined;
+    }
+    
     const startTime = (data as any).start_time;
     const endTime = (data as any).end_time;
 
@@ -223,6 +242,7 @@ export async function createTimetable(
 
     const timetable = await TimetableModel.create({
       school_id: ctx.school_id,
+      academic_year_id: new Types.ObjectId(academicYearId),
       class_id: classId,
       teacher_id: teacherId,
       subject_id: subjectId,

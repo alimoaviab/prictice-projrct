@@ -1,0 +1,33 @@
+
+> build
+> turbo run build
+
+• turbo 2.9.6
+
+   • Packages in scope: @edu/shared, school-app, super-admin-app
+   • Running build in 3 packages
+   • Remote caching disabled
+
+@edu/shared:build: cache miss, executing a3d6898d9732ec45
+@edu/shared:build: 
+@edu/shared:build: > @edu/shared@0.1.0 build
+@edu/shared:build: > tsc -p tsconfig.json
+@edu/shared:build: 
+@edu/shared:build: crypto-js.ts(1,16): error TS2665: Invalid module name in augmentation. Module 'crypto-js' resolves to an untyped module at '/Users/ali/Desktop/EDUEXPLO/Eduplexo/node_modules/crypto-js/index.js', which cannot be augmented.
+@edu/shared:build: services/google/oauth2-helper.ts(7,22): error TS7016: Could not find a declaration file for module 'crypto-js'. '/Users/ali/Desktop/EDUEXPLO/Eduplexo/node_modules/crypto-js/index.js' implicitly has an 'any' type.
+@edu/shared:build:   Try `npm i --save-dev @types/crypto-js` if it exists or add a new declaration (.d.ts) file containing `declare module 'crypto-js';`
+@edu/shared:build: npm error Lifecycle script `build` failed with error:
+@edu/shared:build: npm error code 2
+@edu/shared:build: npm error path /Users/ali/Desktop/EDUEXPLO/Eduplexo/shared
+@edu/shared:build: npm error workspace @edu/shared@0.1.0
+@edu/shared:build: npm error location /Users/ali/Desktop/EDUEXPLO/Eduplexo/shared
+@edu/shared:build: npm error command failed
+@edu/shared:build: npm error command sh -c tsc -p tsconfig.json
+ ERROR  @edu/shared#build: command (/Users/ali/Desktop/EDUEXPLO/Eduplexo/shared) /opt/homebrew/bin/npm run build exited (2)
+
+ Tasks:    0 successful, 1 total
+Cached:    0 cached, 1 total
+  Time:    13.661s 
+Failed:    @edu/shared#build
+
+ ERROR  run failed: command  exited (2)

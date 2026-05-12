@@ -1,9 +1,9 @@
 import { serviceRequest } from "../../../services/service-client";
-import { getAcademyCareQuery } from "../../../services/academy-care-context";
+import { getAcademicYearQuery } from "../../../services/academic-year-context";
 import { ExamFormInput, ExamRow } from "../types/exam.types";
 
 export function listExams(filters?: { class_id?: string; subject?: string }) {
-  const baseQuery = getAcademyCareQuery();
+  const baseQuery = getAcademicYearQuery();
   let filterQuery = "";
   if (filters?.class_id) filterQuery += `&class_id=${filters.class_id}`;
   if (filters?.subject) filterQuery += `&subject=${filters.subject}`;

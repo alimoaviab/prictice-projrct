@@ -55,7 +55,7 @@ export function ClassPage() {
             const queryMatch =
                 q.length === 0 ||
                 row.name.toLowerCase().includes(q) ||
-                (row.academy_care_year || "").toLowerCase().includes(q) ||
+                (row.academic_year || "").toLowerCase().includes(q) ||
                 row.teacher_names.join(" ").toLowerCase().includes(q) ||
                 row.subjects.join(" ").toLowerCase().includes(q);
             const statusMatch = statusFilter === "all" ? true : row.status === statusFilter;
@@ -104,7 +104,7 @@ export function ClassPage() {
                     </div>
                     <ClassForm
                         onCreate={addClass}
-                        academyCareOptions={(academicYearState.data?.data ?? []).map((item: any) => ({
+                        academicYearOptions={(academicYearState.data?.data ?? []).map((item: any) => ({
                             id: item._id,
                             label: item.year
                         }))}

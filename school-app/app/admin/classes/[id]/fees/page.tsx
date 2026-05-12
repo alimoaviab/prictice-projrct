@@ -240,7 +240,7 @@ export default function ClassFeesPage() {
                             <DataState
                                 variant="empty"
                                 title="No fee components"
-                                description="Add recurring or one-time fee components to start billing"
+                                message="Add recurring or one-time fee components to start billing"
                             />
                         ) : (
                             <div className="space-y-2">
@@ -291,7 +291,7 @@ export default function ClassFeesPage() {
                             <DataState
                                 variant="empty"
                                 title="No students found"
-                                description="Add students to this class to manage their fees"
+                                message="Add students to this class to manage their fees"
                             />
                         ) : viewMode === "grid" ? (
                             <div className="grid grid-cols-3 gap-4">
@@ -309,7 +309,7 @@ export default function ClassFeesPage() {
                                                 variant={
                                                     student.status === "paid" ? "success" :
                                                     student.status === "partial" ? "warning" :
-                                                    student.status === "overdue" ? "error" : "default"
+                                                    student.status === "overdue" ? "error" : "gray"
                                                 }
                                             >
                                                 {student.status}
@@ -390,7 +390,7 @@ export default function ClassFeesPage() {
                                                         variant={
                                                             student.status === "paid" ? "success" :
                                                             student.status === "partial" ? "warning" :
-                                                            student.status === "overdue" ? "error" : "default"
+                                                            student.status === "overdue" ? "error" : "gray"
                                                         }
                                                     >
                                                         {student.status}

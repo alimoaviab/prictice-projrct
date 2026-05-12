@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQueryParams } from "../../../hooks/useQueryParams";
 import { DataTable, DataTableColumn, RowAction, Badge, DataState, ListToolbar, Skeleton, TableSkeleton } from "../../../components/ui";
 import { useClasses } from "../hooks/useClasses";
-import { useAcademyCare } from "../../academyCare/hooks/useAcademyCare";
+import { useAcademicYears } from "../../academicYear/hooks/useAcademicYears";
 import { useTeachers } from "../../teachers/hooks/useTeachers";
 import { useSubjects } from "../../subjects/hooks/useSubjects";
 import { ClassRow, ClassFormInput } from "../types/class.types";
@@ -16,18 +17,25 @@ import { ConfirmModal } from "../../../components/ui/ConfirmModal";
 
 export function ClassListPage() {
   const { state, updateClass, deleteClass } = useClasses();
-  const { state: academyCareState } = useAcademyCare();
+  const { state: academicYearState } = useAcademicYears();
   const { state: teachersState } = useTeachers();
+  const { currentParams, updateQuery, withQuery } = useQueryParams();
   const [editingClass, setEditingClass] = useState<ClassRow | null>(null);
   const [deletingClass, setDeletingClass] = useState<ClassRow | null>(null);
   const [feeClass, setFeeClass] = useState<ClassRow | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [searchQuery, setSearchQuery] = useState(currentParams.get("search") || "");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">((currentParams.get("status") as any) || "all");
+  const [viewMode, setViewMode] = useState<"grid" | "list">((currentParams.get("view") as any) || "grid");
 
-  const academyCareOptions = (academyCareState.data || []).map((ac) => ({
+  useEffect(() => {
+    setSearchQuery(currentParams.get("search") || "");
+    setStatusFilter((currentParams.get("status") as any) || "all");
+    setViewMode((currentParams.get("view") as any) || "grid");
+  }, [currentParams.toString()]);
+
+  const academicYearOptions = (academicYearState.data?.data || []).map((ac) => ({
     id: ac._id,
     label: (ac as any).name || ac.year,
   }));
@@ -85,7 +93,7 @@ export function ClassListPage() {
         q.length === 0 ||
         row.name.toLowerCase().includes(q) ||
         (row.description || "").toLowerCase().includes(q) ||
-        (row.academy_care_year || row.academy_care_id || "").toLowerCase().includes(q) ||
+        (row.academic_year || row.academic_year_id || "").toLowerCase().includes(q) ||
         (row.room_number || "").toLowerCase().includes(q) ||
         (row.teacher_names || row.teacher_ids || []).join(" ").toLowerCase().includes(q) ||
         row.subjects.join(" ").toLowerCase().includes(q);
@@ -114,7 +122,7 @@ export function ClassListPage() {
     {
       key: "academic_year",
       label: "Session",
-      render: (row) => <Badge variant="secondary" className="bg-slate-50 text-slate-600 border-slate-100">{row.academy_care_year || row.academy_care_id}</Badge>,
+      render: (row) => <Badge variant="secondary" className="bg-slate-50 text-slate-600 border-slate-100">{row.academic_year || row.academic_year_id}</Badge>,
     },
     {
       key: "room",
@@ -218,7 +226,11 @@ export function ClassListPage() {
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
             <input
               value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
+              onChange={(event) => {
+                const value = event.target.value;
+                setSearchQuery(value);
+                updateQuery({ search: value });
+              }}
               placeholder="Search by name, year, faculty or subjects..."
               className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-xs font-medium text-slate-700 outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-600/5 placeholder:text-slate-400"
             />
@@ -228,7 +240,10 @@ export function ClassListPage() {
         <div className="flex items-center gap-3">
           <div className="flex items-center rounded-lg bg-slate-100 p-1 shadow-inner">
             <button
-              onClick={() => setViewMode("grid")}
+              onClick={() => {
+                setViewMode("grid");
+                updateQuery({ view: "grid" });
+              }}
               className={`flex h-7 items-center gap-2 rounded-md px-3 text-[11px] font-bold transition-all ${viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
                 }`}
             >
@@ -236,7 +251,10 @@ export function ClassListPage() {
               Grid
             </button>
             <button
-              onClick={() => setViewMode("list")}
+              onClick={() => {
+                setViewMode("list");
+                updateQuery({ view: "list" });
+              }}
               className={`flex h-7 items-center gap-2 rounded-md px-3 text-[11px] font-bold transition-all ${viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
                 }`}
             >
@@ -250,7 +268,7 @@ export function ClassListPage() {
           </span>
           <div className="h-6 w-px bg-slate-200" />
           <Link
-            href="/admin/classes/create"
+            href={withQuery("/admin/classes/create")}
             className="inline-flex h-8 items-center gap-2 px-4 text-[10px] font-bold normal-case  text-white bg-blue-600 backdrop-blur-md border border-slate-900/10 rounded-lg hover:bg-slate-800 transition-all shadow-sm active:scale-95"
           >
             <span className="material-symbols-outlined text-base">add_box</span>
@@ -356,7 +374,7 @@ export function ClassListPage() {
                       <div className="flex items-center gap-2">
                          <span className="material-symbols-outlined text-slate-400 text-sm">calendar_month</span>
                          <p className="text-[10px] font-bold text-slate-400 normal-case ">
-                           {row.academy_care_year || row.academy_care_id}
+                           {row.academic_year || row.academic_year_id}
                          </p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -426,7 +444,7 @@ export function ClassListPage() {
       <ClassEditSidebar
         isOpen={editingClass !== null}
         classItem={editingClass}
-        academyCareOptions={academyCareOptions}
+        academicYearOptions={academicYearOptions}
         teacherOptions={teacherOptions}
         subjectOptions={subjectOptions}
         onClose={() => setEditingClass(null)}
@@ -434,11 +452,15 @@ export function ClassListPage() {
         onSave={async (id, data) => {
           setIsSaving(true);
           try {
-            await updateClass(id, data as ClassFormInput);
-            showToast("Class updated successfully");
-            setEditingClass(null);
+            const result = await updateClass(id, data as ClassFormInput);
+            if (result.success) {
+              setEditingClass(null);
+              return true;
+            }
+            return false;
           } catch (err: any) {
-            showToast(err.message || "Failed to update class");
+            showToast(err.message || "Failed to update class", "error");
+            return false;
           } finally {
             setIsSaving(false);
           }

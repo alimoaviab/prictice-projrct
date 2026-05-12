@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Skeleton } from "../../../components/ui";
 import { SchoolShell } from "../../../layouts/SchoolShell";
 import Link from "next/link";
-import { getAcademyCareQuery, getSelectedAcademyCareId } from "../../../services/academy-care-context";
+import { getAcademicYearQuery, getSelectedAcademicYearId } from "../../../services/academic-year-context";
 import { DashboardDrawer } from "../../../components/dashboard/DashboardDrawer";
 import { useClasses } from "../../../modules/classes/hooks/useClasses";
 import { useTeachers } from "../../../modules/teachers/hooks/useTeachers";
@@ -62,13 +62,13 @@ export default function AdminDashboardPage() {
   const { state: teachersState } = useTeachers();
   const { state: examsState } = useExams();
 
-  const selectedYearId = getSelectedAcademyCareId();
+  const selectedYearId = getSelectedAcademicYearId();
 
   useEffect(() => {
     async function fetchDashboard() {
       try {
         setLoading(true);
-        const query = getAcademyCareQuery();
+        const query = getAcademicYearQuery();
         const res = await fetch(`/api/analytics/dashboard${query}`);
         const payload = await res.json();
         if (payload.ok) {
@@ -86,11 +86,11 @@ export default function AdminDashboardPage() {
   }, [selectedYearId]);
 
   const stats = [
-    { title: "Students", value: data?.overview.totalStudents ?? "0", icon: "school", color: "text-blue-600 bg-blue-50" },
-    { title: "Teachers", value: data?.overview.totalTeachers ?? "0", icon: "badge", color: "text-emerald-600 bg-emerald-50" },
-    { title: "Attendance", value: `${data?.overview.attendanceToday ?? 0}%`, icon: "fact_check", color: "text-amber-600 bg-amber-50" },
-    { title: "Fees", value: `${data?.overview.feeCollection.percentage ?? 0}%`, icon: "payments", color: "text-purple-600 bg-purple-50" },
-    { title: "Exams", value: data?.overview.activeExams ?? "0", icon: "quiz", color: "text-rose-600 bg-rose-50" }
+    { title: "Students", value: data?.overview?.totalStudents ?? "0", icon: "school", color: "text-blue-600 bg-blue-50" },
+    { title: "Teachers", value: data?.overview?.totalTeachers ?? "0", icon: "badge", color: "text-emerald-600 bg-emerald-50" },
+    { title: "Attendance", value: `${data?.overview?.attendanceToday ?? 0}%`, icon: "fact_check", color: "text-amber-600 bg-amber-50" },
+    { title: "Fees", value: `${data?.overview?.feeCollection?.percentage ?? 0}%`, icon: "payments", color: "text-purple-600 bg-purple-50" },
+    { title: "Exams", value: data?.overview?.activeExams ?? "0", icon: "quiz", color: "text-rose-600 bg-rose-50" }
   ];
 
   if (error) {
@@ -111,7 +111,9 @@ export default function AdminDashboardPage() {
     );
   }
 
-  const attendanceCompletionPercent = data ? Math.round(((data.classAttendance.length) / (data.overview.totalClasses || 1)) * 100) : 0;
+  const attendanceCompletionPercent = data
+    ? Math.round(((data.classAttendance?.length || 0) / (data.overview?.totalClasses || 1)) * 100)
+    : 0;
 
   return (
     <SchoolShell eyebrow="System Intelligence" title="Admin Command Center">
@@ -149,8 +151,8 @@ export default function AdminDashboardPage() {
           </div>
           <div>
             <p className="text-[10px] font-bold text-slate-700">Attendance Completion</p>
-            <p className="text-[8px] font-medium text-slate-500 normal-case tracking-tighter">
-              {data?.classAttendance.length} of {data?.overview.totalClasses} classes registered today
+              <p className="text-[8px] font-medium text-slate-500 normal-case tracking-tighter">
+              {data?.classAttendance?.length ?? 0} of {data?.overview?.totalClasses ?? 0} classes registered today
             </p>
           </div>
         </div>
@@ -178,11 +180,11 @@ export default function AdminDashboardPage() {
                  <div className="grid grid-cols-2 gap-2.5">
                     <div className="rounded-xl border border-emerald-50 bg-emerald-50/30 p-2.5 text-center">
                        <p className="text-[9px] font-bold text-emerald-600 normal-case">Present</p>
-                       <h4 className="text-lg font-bold text-emerald-700">{data?.overview.attendanceDetailed.present ?? 0}</h4>
+                       <h4 className="text-lg font-bold text-emerald-700">{data?.overview?.attendanceDetailed?.present ?? 0}</h4>
                     </div>
                     <div className="rounded-xl border border-rose-50 bg-rose-50/30 p-2.5 text-center">
                        <p className="text-[9px] font-bold text-rose-600 normal-case">Absent</p>
-                       <h4 className="text-lg font-bold text-rose-700">{data?.overview.attendanceDetailed.absent ?? 0}</h4>
+                       <h4 className="text-lg font-bold text-rose-700">{data?.overview?.attendanceDetailed?.absent ?? 0}</h4>
                     </div>
                     <div className="rounded-xl border border-amber-50 bg-amber-50/30 p-2.5 text-center">
                        <p className="text-[9px] font-bold text-amber-600 normal-case">Late</p>
@@ -193,7 +195,7 @@ export default function AdminDashboardPage() {
                        <h4 className="text-lg font-bold text-slate-600">0</h4>
                     </div>
                  </div>
-                 {data?.overview.attendanceDetailed.total === 0 && (
+                 { (data?.overview?.attendanceDetailed?.total ?? 0) === 0 && (
                    <Link href="/admin/attendance" className="mt-3 block w-full text-center py-2 bg-blue-600 text-white rounded-lg text-[10px] font-bold normal-case  hover:bg-blue-700 transition-all shadow-md shadow-blue-600/20 active:scale-[0.98]">
                      Mark Attendance
                    </Link>
@@ -208,9 +210,9 @@ export default function AdminDashboardPage() {
                  </div>
                  <div className="space-y-1.5">
                     {[
-                      { label: "Pending Fees", count: data?.overview.feeCollection.pending_count ?? 0, href: "/admin/fee" },
-                      { label: "Leave Requests", count: data?.overview.pendingLeave ?? 0, href: "/admin/leave" },
-                      { label: "Unmarked Attendance", count: (data?.overview.totalClasses || 0) - (data?.classAttendance.length || 0), href: "/admin/attendance" }
+                      { label: "Pending Fees", count: data?.overview?.feeCollection?.pending_count ?? 0, href: "/admin/fee" },
+                        { label: "Leave Requests", count: data?.overview?.pendingLeave ?? 0, href: "/admin/leave" },
+                        { label: "Unmarked Attendance", count: (data?.overview?.totalClasses || 0) - (data?.classAttendance?.length || 0), href: "/admin/attendance" }
                     ].map((task) => (
                       <Link key={task.label} href={task.href} className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 transition-colors group">
                          <span className="text-[11px] font-bold text-slate-700 group-hover:text-blue-600 transition-colors">{task.label}</span>
@@ -224,8 +226,8 @@ export default function AdminDashboardPage() {
            </div>
 
            {/* Quick Insights Chips */}
-           <div className="flex flex-wrap gap-2">
-              {data?.alerts.map((alert, i) => (
+              <div className="flex flex-wrap gap-2">
+              {(data?.alerts || []).map((alert, i) => (
                 <Link key={i} href={alert.link} className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-[9px] font-bold normal-case  transition-all hover:scale-[1.02] ${
                   alert.severity === 'error' ? 'bg-rose-50 border-rose-100 text-rose-600' : 
                   alert.severity === 'warning' ? 'bg-amber-50 border-amber-100 text-amber-600' : 'bg-blue-50 border-blue-100 text-blue-600'
@@ -234,7 +236,7 @@ export default function AdminDashboardPage() {
                    {alert.title}
                 </Link>
               ))}
-              {!loading && data?.alerts.length === 0 && (
+              {!loading && (data?.alerts?.length ?? 0) === 0 && (
                 <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600 text-[9px] font-bold normal-case ">
                    <span className="material-symbols-outlined text-[14px]">check_circle</span>
                    Systems Nominal
@@ -249,9 +251,9 @@ export default function AdminDashboardPage() {
                  <span className="material-symbols-outlined text-slate-300 text-base">event</span>
               </div>
               <div className="relative ml-2 pl-4 border-l-2 border-slate-100">
-                 {data?.alerts.filter(a => a.severity === "info" && a.title.includes("Exam")).length ? (
+                  {(data?.alerts || []).filter(a => a.severity === "info" && a.title.includes("Exam")).length ? (
                     <div className="space-y-4">
-                       {data.alerts.filter(a => a.severity === "info" && a.title.includes("Exam")).map((alert, i) => (
+                      {(data?.alerts || []).filter(a => a.severity === "info" && a.title.includes("Exam")).map((alert, i) => (
                          <div key={i} className="relative">
                             <div className="absolute -left-[21px] top-1.5 h-2 w-2 rounded-full bg-blue-600 border-2 border-white shadow-sm" />
                             <div>
@@ -389,11 +391,11 @@ export default function AdminDashboardPage() {
               <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4">
                 <p className="text-[9px] font-bold normal-case  text-slate-400">Current Value</p>
                 <h4 className="mt-1 text-2xl font-bold text-slate-900">
-                  {drawerConfig?.type === "Students" ? data?.overview.totalStudents : 
-                   drawerConfig?.type === "Teachers" ? data?.overview.totalTeachers : 
-                   drawerConfig?.type === "Attendance" ? `${data?.overview.attendanceToday}%` : 
-                   drawerConfig?.type === "Fees" ? `${data?.overview.feeCollection.percentage}%` : 
-                   data?.overview.activeExams}
+                  {drawerConfig?.type === "Students" ? (data?.overview?.totalStudents ?? 0) : 
+                   drawerConfig?.type === "Teachers" ? (data?.overview?.totalTeachers ?? 0) : 
+                   drawerConfig?.type === "Attendance" ? `${data?.overview?.attendanceToday ?? 0}%` : 
+                   drawerConfig?.type === "Fees" ? `${data?.overview?.feeCollection?.percentage ?? 0}%` : 
+                   (data?.overview?.activeExams ?? 0)}
                 </h4>
               </div>
               <div className="rounded-2xl border border-slate-100 bg-blue-50/20 p-4">

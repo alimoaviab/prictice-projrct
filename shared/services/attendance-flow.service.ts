@@ -17,13 +17,13 @@ import {
     attendanceStatusSchema,
     type AttendanceBulkMarkInput
 } from "../validation/attendance.schema";
-import { resolveClassIdsForAcademyCare } from "./_academy-care-filter";
+import { resolveClassIdsForAcademicYear } from "./_academic-year-filter";
 import { writeAuditLog } from "./audit.service";
 
 type AttendanceListFilter = {
     class_id?: string;
     student_id?: string;
-    academy_care_id?: string;
+    Academy_year_id?: string;
     date?: string;
 };
 
@@ -146,7 +146,7 @@ export async function listAttendance(
             query.date = normalizeDate(filter.date);
         }
 
-        let classIds = await resolveClassIdsForAcademyCare(ctx, filter.academy_care_id);
+        let classIds = await resolveClassIdsForAcademicYear(ctx, filter.Academy_year_id);
 
         if (ctx.role === "teacher") {
             const teacherClassIds = await resolveTeacherClassIds(ctx);
@@ -215,19 +215,19 @@ export async function markAttendanceBatch(
         const classroom = (await ClassModel.findOne(
             tenantFilter(ctx, { _id: parsed.class_id })
         )
-            .select("_id name academy_care_id")
-            .lean()) as { _id?: unknown; name?: string; academy_care_id?: unknown } | null;
+            .select("_id name Academy_year_id")
+            .lean()) as { _id?: unknown; name?: string; Academy_year_id?: unknown } | null;
 
         if (!classroom?._id) {
             throw new ControlledError("NOT_FOUND", "Selected class was not found.", 404);
         }
 
         if (parsed.academic_year_id) {
-            const expectedAcademicYearId = String(classroom.academy_care_id ?? "");
+            const expectedAcademicYearId = String(classroom.Academy_year_id ?? "");
             if (expectedAcademicYearId && expectedAcademicYearId !== parsed.academic_year_id) {
                 throw new ControlledError("BAD_REQUEST", "Selected class does not belong to the selected academic year.", 400);
             }
-        } else if (!classroom.academy_care_id) {
+        } else if (!classroom.Academy_year_id) {
             parsed.academic_year_id = await resolveActiveAcademicYearId(ctx) ?? undefined;
         }
 
@@ -315,7 +315,7 @@ export async function markAttendanceBatch(
             metadata: {
                 scope: "attendance_batch",
                 class_id: parsed.class_id,
-                academic_year_id: parsed.academic_year_id ?? String(classroom.academy_care_id ?? ""),
+                academic_year_id: parsed.academic_year_id ?? String(classroom.Academy_year_id ?? ""),
                 date: attendanceDate.toISOString().split("T")[0],
                 total,
                 saved,

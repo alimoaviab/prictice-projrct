@@ -1,30 +1,38 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { authenticateRequest } from "@edu/shared/auth/middleware";
-import { fail } from "@edu/shared/utils/result";
 import { listResults, saveResult } from "@edu/shared/services/result.service";
-import { sessionRequest } from "../_utils";
 
-export async function GET(request: NextRequest) {
-  try {
-    const ctx = authenticateRequest(sessionRequest(request), "school");
-    const academy_care_id = request.nextUrl.searchParams.get("academy_care_id") ?? undefined;
-    const exam_id = request.nextUrl.searchParams.get("exam_id") ?? undefined;
-    const student_id = request.nextUrl.searchParams.get("student_id") ?? undefined;
-    
-    const result = await listResults(ctx, { academy_care_id, exam_id, student_id });
-    return NextResponse.json(result, { status: result.ok ? 200 : result.error.status ?? 400 });
-  } catch (error: any) {
-    return NextResponse.json(fail("SERVER_ERROR", error.message || "Internal server error", 500), { status: 500 });
-  }
+function parseCookies(cookieHeader: string | null) {
+  return Object.fromEntries(
+    (cookieHeader?.split("; ") ?? []).map((entry) => {
+      const separatorIndex = entry.indexOf("=");
+      return separatorIndex >= 0 ? [entry.slice(0, separatorIndex), entry.slice(separatorIndex + 1)] : [entry, ""];
+    })
+  );
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const ctx = authenticateRequest(sessionRequest(request), "school");
-    const body = await request.json();
-    const result = await saveResult(ctx, body);
-    return NextResponse.json(result, { status: result.ok ? 201 : result.error.status ?? 400 });
-  } catch (error: any) {
-    return NextResponse.json(fail("SERVER_ERROR", error.message || "Internal server error", 500), { status: 500 });
-  }
+function getRequestContext(request: Request) {
+  return authenticateRequest(
+    {
+      cookies: parseCookies(request.headers.get("cookie")),
+      headers: Object.fromEntries(request.headers.entries())
+    },
+    "school"
+  );
+}
+
+function getQuery(request: Request) {
+  return Object.fromEntries(new URL(request.url).searchParams.entries());
+}
+
+export async function GET(request: Request) {
+  const ctx = getRequestContext(request);
+  const result = await listResults(ctx, getQuery(request));
+  return NextResponse.json(result, { status: result.ok ? 200 : result.error.status ?? 400 });
+}
+
+export async function POST(request: Request) {
+  const ctx = getRequestContext(request);
+  const result = await saveResult(ctx, await request.json());
+  return NextResponse.json(result, { status: result.ok ? 200 : result.error.status ?? 400 });
 }

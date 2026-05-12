@@ -10,7 +10,7 @@ import { UserModel } from "../models/user.model";
 import { RequestContext, ServiceResult } from "../types/core";
 import { serviceTry } from "../utils/result";
 import { TeacherCreateInput, TeacherUpdateInput, teacherCreateSchema, teacherUpdateSchema } from "../validation/teacher.schema";
-import { resolveClassIdsForAcademyCare } from "./_academy-care-filter";
+import { resolveClassIdsForAcademicYear } from "./_academic-year-filter";
 import { writeAuditLog } from "./audit.service";
 
 async function nextEmployeeNumber(schoolId: string) {
@@ -34,13 +34,13 @@ export async function resolveTeacherClassIds(ctx: RequestContext): Promise<Types
 
 export async function listTeachers(
   ctx: RequestContext,
-  filter: { academy_care_id?: string } = {}
+  filter: { academic_year_id?: string } = {}
 ): Promise<ServiceResult<unknown[]>> {
   return serviceTry(async () => {
     await connectDb();
     assertPermission(ctx, "teachers", "view");
 
-    const classIds = await resolveClassIdsForAcademyCare(ctx, filter.academy_care_id);
+    const classIds = await resolveClassIdsForAcademicYear(ctx, filter.academic_year_id);
     const classIdSet = new Set(classIds.map(String));
 
     const teachers = await TeacherModel.find(tenantFilter(ctx))

@@ -92,14 +92,14 @@ export function AttendanceBulkForm({ initialClassId, onSaved }: AttendanceBulkFo
     // Initial load: Classes
     useEffect(() => {
         void runClasses(async () => {
-            const result = await serviceRequest<Array<{ _id: string; name: string; section?: string; academy_care_id?: string }>>("/api/classes");
+            const result = await serviceRequest<Array<{ _id: string; name: string; section?: string; academic_year_id?: string }>>("/api/classes");
             if (!result.ok) throw new Error(result.error.message || "Failed to load classes");
 
             return result.data.map((item) => ({
                 id: item._id,
                 label: item.name,
                 section: item.section || "A",
-                academicYearId: item.academy_care_id
+                academicYearId: item.academic_year_id
             }));
         });
     }, [runClasses]);

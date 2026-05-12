@@ -6,7 +6,7 @@ import { ClassRow, ClassFormInput, ClassSubject, GradeThreshold } from "../types
 export function ClassEditSidebar({
     classItem,
     isOpen,
-    academyCareOptions,
+    academicYearOptions,
     teacherOptions,
     subjectOptions,
     onClose,
@@ -17,12 +17,12 @@ export function ClassEditSidebar({
 }: {
     classItem: ClassRow | null;
     isOpen: boolean;
-    academyCareOptions: Array<{ id: string; label: string }>;
+    academicYearOptions: Array<{ id: string; label: string }>;
     teacherOptions: Array<{ id: string; label: string }>;
     subjectOptions: Array<{ id: string; label: string }>;
     onClose: () => void;
     onOpenFeeManager?: (classItem: ClassRow) => void;
-    onSave: (id: string, data: Partial<ClassFormInput>) => Promise<void>;
+    onSave: (id: string, data: Partial<ClassFormInput>) => Promise<boolean>;
     onAddSubject?: (name: string) => Promise<void>;
     isSaving: boolean;
 }) {
@@ -38,7 +38,7 @@ export function ClassEditSidebar({
         code: form.code ?? classItem.code ?? "",
         display_order: form.display_order ?? classItem.display_order ?? 1,
         passing_percentage: form.passing_percentage ?? classItem.passing_percentage ?? 33,
-        academy_care_id: form.academy_care_id ?? classItem.academy_care_id ?? "",
+        academic_year_id: form.academic_year_id ?? classItem.academic_year_id ?? "",
         teacher_ids: form.teacher_ids ?? classItem.teacher_ids ?? [],
         subjects: (form.subjects ?? (Array.isArray(classItem.subjects) && typeof classItem.subjects[0] === "string" 
             ? (classItem.subjects as string[]).map(s => ({ name: s, total_marks: 100, passing_marks: 33 }))
@@ -51,8 +51,8 @@ export function ClassEditSidebar({
     function validate() {
         const newErrors: Record<string, string> = {};
         if (!currentForm.name.trim()) newErrors.name = "Class name is required";
-        if (!currentForm.academy_care_id.trim())
-            newErrors.academy_care_id = "Academy Year is required";
+        if (!currentForm.academic_year_id.trim())
+            newErrors.academic_year_id = "Academic Year is required";
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     }
@@ -60,19 +60,21 @@ export function ClassEditSidebar({
     async function handleSubmit(e: FormEvent) {
         e.preventDefault();
         if (!validate() || !classItem) return;
-        await onSave(classItem._id, {
+        const success = await onSave(classItem._id, {
             name: currentForm.name,
             code: currentForm.code,
             display_order: currentForm.display_order,
             passing_percentage: currentForm.passing_percentage,
-            academy_care_id: currentForm.academy_care_id,
+            academic_year_id: currentForm.academic_year_id,
             teacher_ids: currentForm.teacher_ids,
             subjects: currentForm.subjects,
             grade_thresholds: currentForm.grade_thresholds,
             room_number: currentForm.room_number,
             description: currentForm.description,
         });
-        handleClose();
+        if (success) {
+            handleClose();
+        }
     }
 
     function handleClose() {
@@ -166,12 +168,12 @@ export function ClassEditSidebar({
                                     <div className="space-y-1.5">
                                         <label className="text-[10px] font-bold normal-case  text-slate-500 pl-1">Session Cycle <span className="text-red-500">*</span></label>
                                         <select
-                                            value={currentForm.academy_care_id}
-                                            onChange={(e) => setForm({ ...form, academy_care_id: e.target.value })}
-                                            className={`h-11 w-full px-3 text-[11px] font-bold normal-case tracking-tight border rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 transition-all ${errors.academy_care_id ? "border-red-500 bg-red-50/30" : "border-slate-200 bg-white focus:border-blue-400 text-slate-700"}`}
+                                            value={currentForm.academic_year_id}
+                                            onChange={(e) => setForm({ ...form, academic_year_id: e.target.value })}
+                                            className={`h-11 w-full px-3 text-[11px] font-bold normal-case tracking-tight border rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 transition-all ${errors.academic_year_id ? "border-red-500 bg-red-50/30" : "border-slate-200 bg-white focus:border-blue-400 text-slate-700"}`}
                                         >
                                             <option value="">Select Cycle</option>
-                                            {academyCareOptions.map((opt) => <option key={opt.id} value={opt.id}>{opt.label}</option>)}
+                                            {academicYearOptions.map((opt) => <option key={opt.id} value={opt.id}>{opt.label}</option>)}
                                         </select>
                                     </div>
                                 </div>
@@ -294,7 +296,7 @@ export function ClassEditSidebar({
                     </button>
                     <button
                         onClick={() => void handleSubmit({ preventDefault: () => {} } as any)}
-                        disabled={isSaving || !currentForm.name || !currentForm.academy_care_id}
+                        disabled={isSaving || !currentForm.name || !currentForm.academic_year_id}
                         className="h-11 flex-[2] rounded-xl bg-slate-900 text-[10px] font-bold normal-case  text-white shadow-lg shadow-slate-900/10 transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-30 flex items-center justify-center gap-2"
                     >
                         {isSaving ? (

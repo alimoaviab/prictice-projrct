@@ -4,12 +4,16 @@ import { tenantField, schemaOptions, requiredString } from "../base";
 export interface ILiveClass extends Document {
   school_id: string;
   title: string;
+  description?: string;
   teacherId: mongoose.Types.ObjectId;
   classId: mongoose.Types.ObjectId;
   sectionId?: mongoose.Types.ObjectId;
   subjectId: mongoose.Types.ObjectId;
-  meetingLink: string;
-  meetingId?: string; // e.g. Calendar event ID
+  meetingLink?: string;
+  meetingProvider: 'google_meet' | 'zoom' | 'manual';
+  googleCalendarEventId?: string;
+  meetingStatus: 'scheduled' | 'started' | 'ended' | 'cancelled';
+  timezone: string;
   startTime: Date;
   endTime: Date;
   status: "SCHEDULED" | "LIVE" | "COMPLETED" | "CANCELLED";
@@ -22,12 +26,24 @@ const LiveClassSchema = new Schema(
   {
     school_id: tenantField,
     title: requiredString,
+    description: { type: String, default: "" },
     teacherId: { type: Schema.Types.ObjectId, ref: "Teacher", required: true },
     classId: { type: Schema.Types.ObjectId, ref: "Class", required: true },
-    sectionId: { type: Schema.Types.ObjectId, ref: "Section" }, // Section can be optional depending on setup
+    sectionId: { type: Schema.Types.ObjectId, ref: "Section" },
     subjectId: { type: Schema.Types.ObjectId, ref: "Subject", required: true },
-    meetingLink: { type: String }, // Can be generated later
-    meetingId: { type: String },
+    meetingLink: { type: String },
+    meetingProvider: {
+      type: String,
+      enum: ['google_meet', 'zoom', 'manual'],
+      default: 'google_meet'
+    },
+    googleCalendarEventId: { type: String },
+    meetingStatus: {
+      type: String,
+      enum: ['scheduled', 'started', 'ended', 'cancelled'],
+      default: 'scheduled'
+    },
+    timezone: { type: String, default: 'UTC' },
     startTime: { type: Date, required: true },
     endTime: { type: Date, required: true },
     status: {
@@ -43,5 +59,6 @@ const LiveClassSchema = new Schema(
 
 LiveClassSchema.index({ school_id: 1, classId: 1, startTime: 1 });
 LiveClassSchema.index({ school_id: 1, teacherId: 1, status: 1 });
+LiveClassSchema.index({ school_id: 1, meetingProvider: 1, meetingStatus: 1 });
 
 export const LiveClass = mongoose.models.LiveClass || mongoose.model<ILiveClass>("LiveClass", LiveClassSchema);

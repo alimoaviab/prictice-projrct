@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
 import { PageHeader, Breadcrumb } from "../components/ui";
 import { AIAssistant } from "../components/ai/AIAssistant";
-import { getSelectedAcademyCareId, setSelectedAcademyCareId } from "../services/academy-care-context";
+import { getSelectedAcademicYearId, setSelectedAcademicYearId } from "../services/academic-year-context";
 import { useAuth, Role } from "../hooks/useAuth";
 
 type NavItem = {
@@ -222,7 +222,7 @@ export function SchoolShell({
   const { user, loading: authLoading, logout } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [academyYears, setAcademyYears] = useState<Array<{ _id: string; year: string; is_active: boolean }>>([]);
-  const [selectedAcademyCareId, setSelectedAcademyCareIdState] = useState<string>("");
+  const [selectedAcademyCareId, setSelectedAcademicYearIdState] = useState<string>("");
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const [showAIAssistant, setShowAIAssistant] = useState(false);
 
@@ -294,12 +294,12 @@ export function SchoolShell({
         const rows = payload.data as Array<{ _id: string; year: string; is_active: boolean }>;
         setAcademyYears(rows);
 
-        const stored = getSelectedAcademyCareId();
+        const stored = getSelectedAcademicYearId();
         const defaultId = stored || rows.find((row) => row.is_active)?._id || rows[0]?._id || "";
         if (!defaultId) return;
 
-        setSelectedAcademyCareIdState(defaultId);
-        setSelectedAcademyCareId(defaultId);
+        setSelectedAcademicYearIdState(defaultId);
+        setSelectedAcademicYearId(defaultId);
       } catch {
         // Ignore failure
       }
@@ -475,8 +475,8 @@ export function SchoolShell({
                 disabled={user.role === "student"}
                 onChange={(event) => {
                   const nextId = event.target.value;
-                  setSelectedAcademyCareIdState(nextId);
-                  setSelectedAcademyCareId(nextId);
+                  setSelectedAcademicYearIdState(nextId);
+                  setSelectedAcademicYearId(nextId);
                   window.location.reload();
                 }}
                 className={`bg-transparent text-[10px] font-bold text-slate-500 focus:outline-none ${user.role === "student" ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}

@@ -4,7 +4,7 @@ import { listClasses, getClass } from "../../services/class.service";
 import { RequestContext } from "../../types/core";
 
 export const getClassesTool = tool(
-  async ({ id, academy_care_id }, config) => {
+  async ({ id, Academy_year_id }, config) => {
     const ctx = config.configurable?.context as RequestContext;
     if (!ctx) {
       throw new Error("RequestContext is missing in tool config");
@@ -33,7 +33,7 @@ export const getClassesTool = tool(
       } else {
         // ✅ SECURITY: Automatically filter by school_id
         const filters = {
-          ...( academy_care_id ? { academy_care_id } : {}),
+          ...( Academy_year_id ? { Academy_year_id } : {}),
           school_id: ctx.school_id // Always filter by school
         };
         
@@ -52,7 +52,7 @@ export const getClassesTool = tool(
     description: "Fetches a list of classes or details of a specific class for the current school only. Use this to find class IDs or enrollment info.",
     schema: z.object({
       id: z.string().optional().describe("The ID of a specific class to fetch details for"),
-      academy_care_id: z.string().optional().describe("Optional filter by academic year ID")
+      Academy_year_id: z.string().optional().describe("Optional filter by academic year ID")
     }),
   }
 );

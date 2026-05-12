@@ -84,15 +84,16 @@ async function migrateSchool(schoolId: string): Promise<void> {
   const activeAcademicYear = await AcademicYearModel.findOne({
     school_id: schoolId,
     is_active: true
-  }).lean();
+  }).lean() as any;
 
   if (!activeAcademicYear) {
     console.warn(`⚠️  No active academic year found for school ${schoolId}. Skipping.`);
     return;
   }
 
-  const academicYearId = String(activeAcademicYear._id);
-  console.log(`Using academic year: ${activeAcademicYear.year} (${academicYearId})`);
+  const academicYear = activeAcademicYear as { _id: string; year: string };
+  const academicYearId = String(academicYear._id);
+  console.log(`Using academic year: ${academicYear.year} (${academicYearId})`);
 
   // Migrate each collection
   const collections = [

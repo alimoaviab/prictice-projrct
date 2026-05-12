@@ -1,90 +1,70 @@
 "use client";
 
 import { useCallback, useEffect } from "react";
-import { serviceRequest } from "../../../services/service-client";
-import { getAcademyCareQuery } from "../../../services/academy-care-context";
 import { useSafeAsync } from "../../../hooks/useSafeAsync";
 import { showToast } from "../../../utils/toast";
-import { StudentFormInput, StudentPatchInput, StudentRow } from "../types/student.types";
+import { StudentFormInput, StudentRow, StudentPatchInput } from "../types/student.types";
+import * as service from "../services/student.service";
 
-export function useStudents() {
-  const { state, run } = useSafeAsync<StudentRow[]>();
+export function useStudents(filters?: { class_id?: string }) {
+	const { state, run } = useSafeAsync<StudentRow[]>();
 
-  const loadStudents = useCallback(() => {
-    return run(async () => {
-      const query = getAcademyCareQuery();
+	const loadStudents = useCallback(() => {
+		return run(async () => {
+			const result = await service.listStudents(filters);
+			if (!result.success) {
+				throw new Error(result.message || "Failed to load students");
+			}
+			return result.data;
+		});
+	}, [run, filters]);
 
-      const filtered = await serviceRequest<StudentRow[]>(`/api/students${query}`);
+	const addStudent = useCallback(
+		async (input: StudentFormInput) => {
+			const result = await service.createStudent(input);
+			if (!result.success) {
+				showToast(result.message || "Failed to create student", "error");
+				return result;
+			}
+			showToast("Student created.", "success");
+			await loadStudents();
+			return result;
+		},
+		[loadStudents]
+	);
 
-      if (!filtered.ok) {
-        throw new Error(filtered.error.message || "Failed to load students");
-      }
+	const updateStudent = useCallback(
+		async (id: string, input: Partial<StudentPatchInput> | Partial<StudentFormInput>) => {
+			const result = await service.updateStudent(id, input as any);
+			if (!result.success) {
+				showToast(result.message || "Failed to update student", "error");
+				return result;
+			}
+			showToast("Student updated.", "success");
+			await loadStudents();
+			return result;
+		},
+		[loadStudents]
+	);
 
-      return filtered.data;
-    });
-  }, [run]);
+	const deleteStudent = useCallback(
+		async (id: string) => {
+			const result = await service.deleteStudent(id);
+			if (!result.success) {
+				showToast(result.message || "Failed to delete student", "error");
+				return result;
+			}
+			showToast("Student deleted.", "success");
+			await loadStudents();
+			return result;
+		},
+		[loadStudents]
+	);
 
-  const addStudent = useCallback(
-    async (input: StudentFormInput) => {
-      const result = await serviceRequest<StudentRow>("/api/students", {
-        method: "POST",
-        body: JSON.stringify(input)
-      });
+	useEffect(() => {
+		void loadStudents().catch(() => {});
+	}, [loadStudents]);
 
-      if (!result.ok) {
-        showToast(result.error.message || "Failed to create student", "error");
-        return result;
-      }
-
-      showToast("Student created.", "success");
-      await loadStudents();
-      return result;
-    },
-    [loadStudents]
-  );
-
-  const updateStudent = useCallback(
-    async (id: string, input: StudentPatchInput) => {
-      const result = await serviceRequest<StudentRow>(`/api/students/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify(input)
-      });
-
-      if (!result.ok) {
-        showToast(result.error.message || "Failed to update student", "error");
-        return result;
-      }
-
-      showToast("Student updated.", "success");
-      await loadStudents();
-      return result;
-    },
-    [loadStudents]
-  );
-
-  const deleteStudent = useCallback(
-    async (id: string) => {
-      const result = await serviceRequest<{ success: boolean; id: string }>(`/api/students/${id}`, {
-        method: "DELETE"
-      });
-
-      if (!result.ok) {
-        showToast(result.error.message || "Failed to delete student", "error");
-        return result;
-      }
-
-      showToast("Student deleted.", "success");
-      await loadStudents();
-      return result;
-    },
-    [loadStudents]
-  );
-
-  useEffect(() => {
-    void loadStudents().catch(() => {
-      // Error state is already managed by useSafeAsync.
-    });
-  }, [loadStudents]);
-
-  return { state, loadStudents, addStudent, updateStudent, deleteStudent };
+	return { state, addStudent, updateStudent, deleteStudent };
 }
+

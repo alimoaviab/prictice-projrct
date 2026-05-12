@@ -75,20 +75,25 @@ export function LiveClassCreatePage({ role }: LiveClassCreatePageProps) {
 
       const result = await res.json();
 
-      if (res.ok && result.success) {
+      if (res.ok && (result.success || result.data?.success)) {
         const meetingLink = result.data?.meetingLink;
         if (meetingLink) {
           showToast(`Live class scheduled! Meeting link: ${meetingLink}`, "success");
         } else {
           showToast("Live class scheduled successfully", "success");
         }
-        router.push(role === "ADMIN" ? "/admin/live-class" : "/teacher/live-class");
-        router.refresh();
+        
+        // Redirect after a short delay to show the toast
+        setTimeout(() => {
+          router.push(role === "ADMIN" ? "/admin/live-class" : "/teacher/live-class");
+          router.refresh();
+        }, 1500);
       } else {
-        showToast(result.error || "Failed to schedule class", "error");
+        const errorMsg = result.error || result.data?.error || "Failed to schedule class";
+        showToast(errorMsg, "error");
       }
     } catch (err) {
-      console.error(err);
+      console.error("Schedule error:", err);
       showToast("An error occurred during scheduling", "error");
     } finally {
       setSubmitting(false);

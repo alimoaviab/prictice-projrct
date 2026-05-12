@@ -71,7 +71,7 @@ export const feePaymentBulkSchema = z.object({
 });
 
 export const feeFilterSchema = z.object({
-  academy_care_id: z.string().min(12).optional(),
+  academic_year_id: z.string().min(12).optional(),
   class_id: z.string().min(12).optional(),
   month: z.string().min(1).optional(),
   year: z.coerce.number().int().optional(),

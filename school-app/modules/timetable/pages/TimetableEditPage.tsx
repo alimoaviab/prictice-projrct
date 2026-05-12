@@ -29,8 +29,8 @@ export function TimetableEditPage({ id }: TimetableEditPageProps) {
   const loadDependencies = useCallback(() => {
     return Promise.all([
       runRecord(() => service.getTimetable(id).then(r => {
-          if (!r.ok) throw new Error(r.error.message);
-          return r.data;
+          if (!r.ok) throw new Error(r.error?.message);
+          return r.data!;
       })),
       runClasses(async () => {
         const result = await serviceRequest<Array<{ _id: string; name: string }>>("/api/classes");
@@ -80,7 +80,7 @@ export function TimetableEditPage({ id }: TimetableEditPageProps) {
         router.push("/admin/timetable");
         router.refresh();
       } else {
-        showToast(result.error.message || "Failed to update entry", "error");
+        showToast(result.error?.message || "Failed to update entry", "error");
       }
       return result;
     } catch (error: any) {

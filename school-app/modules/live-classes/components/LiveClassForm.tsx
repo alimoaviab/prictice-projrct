@@ -36,10 +36,19 @@ export function LiveClassForm({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    
+    // Validation
+    if (!formData.title || !formData.classId || !formData.subjectId || !formData.startTime || !formData.endTime) {
+      showToast("Please fill in all required fields", "error");
+      return;
+    }
+    
     if (showTeacherField && !formData.teacherId) {
       showToast("Please select a teacher", "error");
       return;
     }
+    
+    console.log("Submitting live class form with data:", formData);
     await onSubmit(formData);
   };
 

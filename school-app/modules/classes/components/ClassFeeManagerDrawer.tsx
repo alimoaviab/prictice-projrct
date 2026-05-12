@@ -37,8 +37,8 @@ type Props = {
   classItem: {
     _id: string;
     name: string;
-    academy_care_id?: string;
-    academy_care_year?: string;
+    academic_year_id?: string;
+    academic_year?: string;
   } | null;
   onClose: () => void;
 };
@@ -124,7 +124,7 @@ export function ClassFeeManagerDrawer({ isOpen, classItem, onClose }: Props) {
 
   if (!isOpen || !classItem) return null;
 
-  const classAcademicYearId = classItem.academy_care_id ?? "";
+  const classAcademicYearId = classItem.academic_year_id ?? "";
 
   const handleCreate = async () => {
     if (!draft.fee_type_id || !draft.amount || !draft.due_date) return;
@@ -217,7 +217,7 @@ export function ClassFeeManagerDrawer({ isOpen, classItem, onClose }: Props) {
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.28em] text-blue-600">Fee Structure Manager</p>
             <h2 className="mt-1 text-xl font-black text-slate-900">{classItem.name}</h2>
-            <p className="text-xs font-semibold text-slate-500">{classItem.academy_care_year || "Active academic year"}</p>
+            <p className="text-xs font-semibold text-slate-500">{classItem.academic_year || "Active academic year"}</p>
           </div>
           <button onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:text-slate-900">
             <span className="material-symbols-outlined text-xl">close</span>

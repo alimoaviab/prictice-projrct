@@ -8,14 +8,14 @@ import { LeaveModel } from "../models/leave.model";
 import { TimetableModel } from "../models/timetable.model";
 import { ClassModel } from "../models/class.model";
 import { AuditLogModel } from "../models/audit-log.model";
-import { resolveClassIdsForAcademyCare, resolveAcademyCareId } from "./_academy-care-filter";
+import { resolveClassIdsForAcademicYear, resolveAcademicYearId } from "./_academic-year-filter";
 import { RequestContext } from "../types/core";
 
 export class DashboardAnalyticsService {
-  static async getOverviewStats(ctx: RequestContext, academyCareId?: string) {
+  static async getOverviewStats(ctx: RequestContext, academicYearId?: string) {
     const schoolId = ctx.school_id;
-    const classIds = await resolveClassIdsForAcademyCare(ctx, academyCareId);
-    const academicYearId = await resolveAcademyCareId(ctx, academyCareId);
+    const classIds = await resolveClassIdsForAcademicYear(ctx, academicYearId);
+    const resolvedYearId = await resolveAcademicYearId(ctx, academicYearId);
 
     const [totalStudents, totalTeachers, activeExams, pendingLeave] = await Promise.all([
       StudentModel.countDocuments({ 
@@ -78,7 +78,7 @@ export class DashboardAnalyticsService {
       { 
         $match: { 
           school_id: schoolId,
-          academic_year_id: academicYearId ? new Types.ObjectId(academicYearId) : null
+          academic_year_id: resolvedYearId ? new Types.ObjectId(resolvedYearId) : null
         } 
       },
       {
@@ -111,9 +111,9 @@ export class DashboardAnalyticsService {
     };
   }
 
-  static async getClassAttendance(ctx: RequestContext, academyCareId?: string) {
+  static async getClassAttendance(ctx: RequestContext, academicYearId?: string) {
     const schoolId = ctx.school_id;
-    const classIds = await resolveClassIdsForAcademyCare(ctx, academyCareId);
+    const classIds = await resolveClassIdsForAcademicYear(ctx, academicYearId);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -161,9 +161,9 @@ export class DashboardAnalyticsService {
     return stats;
   }
 
-  static async getAttendanceTrends(ctx: RequestContext, academyCareId?: string, days: number = 7) {
+  static async getAttendanceTrends(ctx: RequestContext, academicYearId?: string, days: number = 7) {
     const schoolId = ctx.school_id;
-    const classIds = await resolveClassIdsForAcademyCare(ctx, academyCareId);
+    const classIds = await resolveClassIdsForAcademicYear(ctx, academicYearId);
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
     startDate.setHours(0, 0, 0, 0);
@@ -194,9 +194,9 @@ export class DashboardAnalyticsService {
     }));
   }
 
-  static async getSystemAlerts(ctx: RequestContext, academyCareId?: string) {
+  static async getSystemAlerts(ctx: RequestContext, academicYearId?: string) {
     const schoolId = ctx.school_id;
-    const classIds = await resolveClassIdsForAcademyCare(ctx, academyCareId);
+    const classIds = await resolveClassIdsForAcademicYear(ctx, academicYearId);
     const alerts = [];
 
     // 1. Check for low attendance
@@ -233,13 +233,10 @@ export class DashboardAnalyticsService {
     }
 
     // 4. Missing Timetable Alert
-    const allClasses = await ClassModel.find({ school_id: schoolId, academy_care_id: { $in: classIds.map(id => id.toString()) } }).select("_id name").lean();
-    // Wait, the line above is wrong, academy_care_id is not classIds.
-    // I should use the academyCareId.
-    const resolvedYearId = await resolveAcademyCareId(ctx, academyCareId);
+    const resolvedYearId = await resolveAcademicYearId(ctx, academicYearId);
     const classesForYear = await ClassModel.find({ 
       school_id: schoolId, 
-      academy_care_id: resolvedYearId ? new Types.ObjectId(resolvedYearId) : { $exists: true } 
+      academic_year_id: resolvedYearId ? new Types.ObjectId(resolvedYearId) : { $exists: true } 
     }).select("_id name").lean();
     
     const classesWithTimetable = await TimetableModel.distinct("class_id", { 

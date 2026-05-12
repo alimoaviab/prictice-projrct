@@ -1,18 +1,25 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { DataTable, DataTableColumn, RowAction, Badge, DataState, Skeleton, TableSkeleton } from "../../../components/ui";
 import { useResults } from "../hooks/useResults";
 import { ResultRow } from "../types/result.types";
 import { showToast } from "../../../utils/toast";
+import { useQueryParams } from "../../../hooks/useQueryParams";
 
 export function ResultListPage({ filters }: { filters?: { exam_id?: string; student_id?: string } }) {
   const pathname = usePathname();
+  const { currentParams, updateQuery, withQuery } = useQueryParams();
   const { state, updateResult, deleteResult } = useResults(filters);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [gradeFilter, setGradeFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState(currentParams.get("search") || "");
+  const [gradeFilter, setGradeFilter] = useState<string>(currentParams.get("grade") || "all");
+
+  useEffect(() => {
+    setSearchQuery(currentParams.get("search") || "");
+    setGradeFilter(currentParams.get("grade") || "all");
+  }, [currentParams.toString()]);
 
   const filteredRows = useMemo(() => {
     const rows = state.data || [];
@@ -164,7 +171,11 @@ export function ResultListPage({ filters }: { filters?: { exam_id?: string; stud
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
             <input
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setSearchQuery(value);
+                updateQuery({ search: value });
+              }}
               placeholder="Search student, exam or admission ID..."
               className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-xs font-medium text-slate-700 outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-600/5 placeholder:text-slate-400"
             />
@@ -172,7 +183,11 @@ export function ResultListPage({ filters }: { filters?: { exam_id?: string; stud
           <div className="h-6 w-px bg-slate-200" />
           <select
             value={gradeFilter}
-            onChange={(e) => setGradeFilter(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              setGradeFilter(value);
+              updateQuery({ grade: value });
+            }}
             className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none cursor-pointer transition-all hover:border-slate-300 focus:border-blue-400"
           >
             <option value="all">Evaluation: All</option>
@@ -190,7 +205,7 @@ export function ResultListPage({ filters }: { filters?: { exam_id?: string; stud
           <div className="h-6 w-px bg-slate-200" />
           {!pathname.includes("/parent") && (
             <Link
-              href={pathname.includes("/teacher") ? "/teacher/results/create" : "/admin/results/create"}
+              href={withQuery(pathname.includes("/teacher") ? "/teacher/results/create" : "/admin/results/create")}
               className="inline-flex h-9 items-center gap-2 px-5 text-[11px] font-bold normal-case  text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
             >
               <span className="material-symbols-outlined text-lg">add_chart</span>

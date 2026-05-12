@@ -17,8 +17,8 @@ export interface ClassRow {
     code?: string;
     display_order?: number;
     passing_percentage?: number;
-    academy_care_id: string;
-    academy_care_year: string;
+    academic_year_id: string;
+    academic_year: string;
     subjects: string[] | ClassSubject[];
     teacher_ids: string[];
     teacher_names: string[];
@@ -35,7 +35,7 @@ export interface ClassFormInput {
     code: string;
     display_order: number;
     passing_percentage: number;
-    academy_care_id: string;
+    academic_year_id: string;
     teacher_ids: string[];
     subjects: ClassSubject[];
     grade_thresholds: GradeThreshold[];

@@ -28,17 +28,17 @@ export function TimetableCreatePage() {
     return Promise.all([
       runClasses(async () => {
         const result = await serviceRequest<Array<{ _id: string; name: string }>>("/api/classes");
-        if (!result.ok) throw new Error(result.error.message || "Failed to load classes");
+        if (!result.ok) throw new Error(result.error?.message || "Failed to load classes");
         return result.data;
       }),
       runTeachers(async () => {
         const result = await serviceRequest<Array<{ _id: string; name: string }>>("/api/teachers");
-        if (!result.ok) throw new Error(result.error.message || "Failed to load teachers");
+        if (!result.ok) throw new Error(result.error?.message || "Failed to load teachers");
         return result.data;
       }),
       runSubjects(async () => {
         const result = await serviceRequest<Array<{ _id: string; name: string }>>("/api/subjects");
-        if (!result.ok) throw new Error(result.error.message || "Failed to load subjects");
+        if (!result.ok) throw new Error(result.error?.message || "Failed to load subjects");
         return result.data;
       }),
       // academic years not fetched
@@ -68,10 +68,12 @@ export function TimetableCreatePage() {
       const result = await addTimetable(input);
       if (result.ok) {
         showToast("Timetable entry created successfully", "success");
-        router.push("/admin/timetable");
-        router.refresh();
+        const destination = input.class_id
+          ? `/admin/timetable?class_id=${encodeURIComponent(input.class_id)}`
+          : "/admin/timetable";
+        router.replace(destination);
       } else {
-        showToast(result.error.message || "Failed to create entry", "error");
+        showToast(result.error?.message || "Failed to create entry", "error");
       }
       return result;
     } catch (error: any) {

@@ -1,10 +1,12 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+export const dynamic = "force-dynamic";
 import { SchoolShell } from "../../../layouts/SchoolShell";
 import { ResultListPage } from "../../../modules/results/pages/ResultListPage";
 
-export default function TeacherResultsPage() {
+function TeacherResultsContent() {
   const searchParams = useSearchParams();
   const exam_id = searchParams.get("exam_id");
   
@@ -14,5 +16,13 @@ export default function TeacherResultsPage() {
     <SchoolShell eyebrow="Teacher Dashboard" title="Results">
       <ResultListPage filters={filters} />
     </SchoolShell>
+  );
+}
+
+export default function TeacherResultsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <TeacherResultsContent />
+    </Suspense>
   );
 }

@@ -126,7 +126,7 @@ export async function listBehavior(
     // Clean query to remove undefined/null filters
     const cleanQuery = {};
     Object.keys(query).forEach(key => {
-        if (query[key] !== undefined && query[key] !== null && key !== 'academy_care_id') {
+        if (query[key] !== undefined && query[key] !== null && key !== 'Academy_year_id') {
             cleanQuery[key] = query[key];
         }
     });

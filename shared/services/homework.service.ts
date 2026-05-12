@@ -10,7 +10,7 @@ import { SubjectModel } from "../models/subject.model";
 import { RequestContext, ServiceResult } from "../types/core";
 import { serviceTry } from "../utils/result";
 import { HomeworkCreateInput, HomeworkUpdateInput, homeworkCreateSchema, homeworkUpdateSchema } from "../validation/homework.schema";
-import { resolveClassIdsForAcademyCare } from "./_academy-care-filter";
+import { resolveClassIdsForAcademicYear } from "./_academic-year-filter";
 import { writeAuditLog } from "./audit.service";
 
 export async function getHomework(
@@ -40,13 +40,13 @@ export async function getHomework(
 
 export async function listHomework(
   ctx: RequestContext,
-  filter: { academy_care_id?: string } = {}
+  filter: { Academy_year_id?: string } = {}
 ): Promise<ServiceResult<unknown[]>> {
   return serviceTry(async () => {
     await connectDb();
     assertPermission(ctx, "homework", "view");
 
-    const classIds = await resolveClassIdsForAcademyCare(ctx, filter.academy_care_id);
+    const classIds = await resolveClassIdsForAcademicYear(ctx, filter.Academy_year_id);
 
     const query: any = tenantFilter(ctx);
     if (classIds.length > 0) {
@@ -155,7 +155,7 @@ export async function createHomework(
 
     const created = await HomeworkModel.create({
       school_id: ctx.school_id,
-      academic_year_id: ctx.active_academic_year_id || (classroom as any).academy_care_id,
+      academic_year_id: ctx.active_academic_year_id || (classroom as any).Academy_year_id,
       class_id: new Types.ObjectId(parsed.class_id),
       teacher_id: new Types.ObjectId(parsed.teacher_id),
       subject_id: subject._id,

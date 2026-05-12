@@ -9,7 +9,7 @@ const classSchema = new Schema(
     display_order: { type: Number, default: 1 },
     passing_percentage: { type: Number, default: 33 },
     capacity: { type: Number, min: 0, default: 0 },
-    academy_care_id: { type: Types.ObjectId, ref: "AcademicYear", required: true, index: true },
+    academic_year_id: { type: Types.ObjectId, ref: "AcademicYear", required: true, index: true },
     subject_ids: [{ type: Types.ObjectId, ref: "Subject", index: true }],
     subjects: [
       {
@@ -56,7 +56,7 @@ const classSchema = new Schema(
 );
 
 classSchema.index(
-  { school_id: 1, name: 1, academy_care_id: 1 },
+  { school_id: 1, name: 1, academic_year_id: 1 },
   { unique: true }
 );
 classSchema.index({ school_id: 1, teacher_ids: 1 });

@@ -21,7 +21,17 @@ const teacherSchema = new Schema(
       default: "active",
       index: true
     },
-    joined_at: { type: Date, default: Date.now }
+    joined_at: { type: Date, default: Date.now },
+    // Google Calendar Integration
+    googleCalendar: {
+      isConnected: { type: Boolean, default: false },
+      refreshToken: { type: String, select: false }, // Encrypted, not returned by default
+      accessToken: { type: String, select: false },  // Temporary, will be refreshed
+      tokenExpiryDate: { type: Number, select: false }, // Timestamp
+      email: { type: String }, // Google account email
+      connectedAt: { type: Date },
+      lastSyncedAt: { type: Date }
+    }
   },
   { ...schemaOptions, collection: "teachers" }
 );

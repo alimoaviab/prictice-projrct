@@ -17,7 +17,7 @@ export function ExamForm({
   showFooter?: boolean;
 }) {
     const [form, setForm] = useState<ExamFormInput>({
-        academy_care_id: typeof window !== "undefined" ? window.localStorage.getItem("academy_care_id") || "" : "",
+        academic_year_id: typeof window !== "undefined" ? window.localStorage.getItem("academic_year_id") || "" : "",
         class_id: "",
         subject: "",
         teacher_id: "",
@@ -113,7 +113,7 @@ export function ExamForm({
             const result = await onCreate(form);
             if (result.ok) {
                 setForm({
-                    academy_care_id: typeof window !== "undefined" ? window.localStorage.getItem("academy_care_id") || "" : "",
+                    academic_year_id: typeof window !== "undefined" ? window.localStorage.getItem("academic_year_id") || "" : "",
                     class_id: "",
                     subject: "",
                     teacher_id: "",

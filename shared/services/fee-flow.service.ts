@@ -30,7 +30,7 @@ import {
     monthlyFeeDuplicateSchema,
     monthlyFeeGenerateSchema,
 } from "../validation/fee.schema";
-import { resolveClassIdsForAcademyCare } from "./_academy-care-filter";
+import { resolveClassIdsForAcademicYear } from "./_academic-year-filter";
 import { writeAuditLog } from "./audit.service";
 
 type FeeTypeDoc = {
@@ -257,7 +257,7 @@ async function resolveParentStudentIds(ctx: RequestContext): Promise<string[]> {
 async function loadStudentForContext(ctx: RequestContext, studentId?: string) {
     if (studentId) {
         const student = await StudentModel.findOne(tenantFilter(ctx, { _id: studentId }))
-            .populate("class_id", "name section academic_year grade_thresholds academy_care_id")
+            .populate("class_id", "name section academic_year grade_thresholds academic_year_id")
             .lean();
         if (!student) throw new ControlledError("NOT_FOUND", "Student not found.", 404);
         return student as any;
@@ -266,14 +266,14 @@ async function loadStudentForContext(ctx: RequestContext, studentId?: string) {
     const parentStudentIds = await resolveParentStudentIds(ctx);
     if (parentStudentIds.length > 0) {
         const student = await StudentModel.findOne(tenantFilter(ctx, { _id: { $in: parentStudentIds } }))
-            .populate("class_id", "name section academic_year grade_thresholds academy_care_id")
+            .populate("class_id", "name section academic_year grade_thresholds academic_year_id")
             .lean();
         if (!student) throw new ControlledError("NOT_FOUND", "Student not found.", 404);
         return student as any;
     }
 
     const student = await StudentModel.findOne(tenantFilter(ctx, { user_id: ctx.user_id }))
-        .populate("class_id", "name section academic_year grade_thresholds academy_care_id")
+        .populate("class_id", "name section academic_year grade_thresholds academic_year_id")
         .lean();
     if (!student) throw new ControlledError("NOT_FOUND", "Student not found.", 404);
     return student as any;
@@ -439,7 +439,7 @@ export async function setClassFees(ctx: RequestContext, classId: string, input: 
         assertPermission(ctx, "fees", "create");
 
         const parsed = classFeeSetSchema.parse(input);
-        const classroom = await ClassModel.findOne(tenantFilter(ctx, { _id: classId, academy_care_id: parsed.academic_year_id })).populate("academy_care_id", "year").lean();
+        const classroom = await ClassModel.findOne(tenantFilter(ctx, { _id: classId, academic_year_id: parsed.academic_year_id })).populate("academic_year_id", "year").lean();
         if (!classroom) throw new ControlledError("NOT_FOUND", "Class not found.", 404);
 
         await ClassFeeModel.deleteMany(tenantFilter(ctx, { class_id: classId, academic_year_id: parsed.academic_year_id }));
@@ -473,7 +473,7 @@ export async function setClassFees(ctx: RequestContext, classId: string, input: 
         return {
             class_id: classId,
             class_name: classroom.name,
-            academic_year: (classroom as any).academy_care_id?.year ?? parsed.academic_year_id,
+            academic_year: (classroom as any).academic_year_id?.year ?? parsed.academic_year_id,
             fees_set: created.length,
             total_annual_fee: totalAnnualFee,
             fees: created.map((fee) => mapFeeConfig(fee as any, feeTypeMap.get(String((fee as any).fee_type_id)) ?? ""))
@@ -487,11 +487,11 @@ export async function getClassFees(ctx: RequestContext, classId: string): Promis
         assertPermission(ctx, "fees", "view");
 
         const classroom = await ClassModel.findOne(tenantFilter(ctx, { _id: classId }))
-            .populate("academy_care_id", "year")
+            .populate("academic_year_id", "year")
             .lean();
         if (!classroom) throw new ControlledError("NOT_FOUND", "Class not found.", 404);
 
-        const configs = await ClassFeeModel.find(tenantFilter(ctx, { class_id: classId, academic_year_id: (classroom as any).academy_care_id?._id ?? (classroom as any).academy_care_id }))
+        const configs = await ClassFeeModel.find(tenantFilter(ctx, { class_id: classId, academic_year_id: (classroom as any).academic_year_id?._id ?? (classroom as any).academic_year_id }))
             .populate("fee_type_id", "name")
             .sort({ due_date: 1 })
             .lean();
@@ -504,7 +504,7 @@ export async function getClassFees(ctx: RequestContext, classId: string): Promis
         return {
             class_id: classId,
             class_name: classroom.name,
-            academic_year: (classroom as any).academy_care_id?.year ?? "",
+            academic_year: (classroom as any).academic_year_id?.year ?? "",
             total_annual: totalAnnual,
             monthly_recurring: monthlyRecurring,
             one_time_fees: oneTimeFees,
@@ -528,13 +528,13 @@ export async function addClassFee(ctx: RequestContext, classId: string, input: u
         const saved = await ClassFeeModel.findOneAndUpdate(
             tenantFilter(ctx, {
                 class_id: classId,
-                academic_year_id: (classroom as any).academy_care_id,
+                academic_year_id: (classroom as any).academic_year_id,
                 fee_type_id: parsed.fee_type_id,
             }),
             {
                 $set: {
                     class_id: new Types.ObjectId(classId),
-                    academic_year_id: new Types.ObjectId(String((classroom as any).academy_care_id)),
+                    academic_year_id: new Types.ObjectId(String((classroom as any).academic_year_id)),
                     fee_type_id: new Types.ObjectId(parsed.fee_type_id),
                     amount: parsed.amount,
                     due_date: parsed.due_date,
@@ -595,7 +595,7 @@ export async function checkFeeDuplicates(ctx: RequestContext, input: unknown): P
         if (!academicYearId) throw new ControlledError("NOT_FOUND", "Academic year not found.", 404);
 
         const { start, end } = monthBounds(parsed.month, parsed.year);
-        const classes = await resolveClassIdsForAcademyCare(ctx, academicYearId);
+        const classes = await resolveClassIdsForAcademicYear(ctx, academicYearId);
         const total = await FeeModel.countDocuments(
             tenantFilter(ctx, {
                 academic_year_id: academicYearId,
@@ -622,15 +622,15 @@ export async function generateMonthlyFees(ctx: RequestContext, input: unknown): 
         if (!academicYearId) throw new ControlledError("NOT_FOUND", "Academic year not found.", 404);
 
         const { start, end } = monthBounds(parsed.month, parsed.year);
-        const classIds = await resolveClassIdsForAcademyCare(ctx, academicYearId);
+        const classIds = await resolveClassIdsForAcademicYear(ctx, academicYearId);
         const classes = await ClassModel.find(tenantFilter(ctx, { _id: { $in: classIds } }))
-            .populate("academy_care_id", "year")
+            .populate("academic_year_id", "year")
             .lean();
 
         const students = await StudentModel.find(
             tenantFilter(ctx, { class_id: { $in: classIds }, status: "active" })
         )
-            .populate("class_id", "name section academy_care_id")
+            .populate("class_id", "name section academic_year_id")
             .lean();
 
         let classesProcessed = 0;
@@ -777,8 +777,8 @@ export async function listMonthlyFees(ctx: RequestContext, filters: unknown): Pr
         assertPermission(ctx, "fees", "view");
 
         const parsed = feeFilterSchema.parse(filters ?? {});
-        const academyCareId = (filters as any).academy_care_id;
-        const resolvedYearId = await resolveAcademicYearId(ctx, academyCareId);
+        const academicYearId = parsed.academic_year_id;
+        const resolvedYearId = await resolveAcademicYearId(ctx, academicYearId);
 
         const query: Record<string, unknown> = tenantFilter(ctx);
         if (resolvedYearId) {
@@ -938,7 +938,7 @@ export async function getFeeBreakdown(ctx: RequestContext, filters: Record<strin
         const student = await loadStudentForContext(ctx, String(filters.student_id ?? ""));
         const studentId = String(student._id);
         const classId = String(student.class_id?._id ?? student.class_id);
-        const academicYearId = String(student.class_id?.academy_care_id?._id ?? student.class_id?.academy_care_id ?? student.class_id?.academy_care_id ?? "");
+        const academicYearId = String(student.class_id?.Academy_year_id?._id ?? student.class_id?.Academy_year_id ?? student.class_id?.Academy_year_id ?? "");
         const academicYear = academicYearId ? await AcademicYearModel.findOne(tenantFilter(ctx, { _id: academicYearId })).lean() : null;
         const fees = (await FeeModel.find(tenantFilter(ctx, { student_id: studentId, academic_year_id: academicYearId || undefined }))
             .sort({ due_at: 1 })
@@ -993,11 +993,11 @@ async function allocatePayment(ctx: RequestContext, input: AllocatePaymentInput)
     const { studentId, amount, paymentMethod, referenceNo, notes, paymentDate } = input;
 
     const student = await StudentModel.findOne(tenantFilter(ctx, { _id: studentId }))
-        .populate("class_id", "name section academy_care_id")
+        .populate("class_id", "name section Academy_year_id")
         .lean();
     if (!student) throw new ControlledError("NOT_FOUND", "Student not found.", 404);
 
-    const academicYearId = String((student as any).class_id?.academy_care_id?._id ?? (student as any).class_id?.academy_care_id ?? "");
+    const academicYearId = String((student as any).class_id?.Academy_year_id?._id ?? (student as any).class_id?.Academy_year_id ?? "");
     const fees = (await FeeModel.find(tenantFilter(ctx, {
         student_id: studentId,
         academic_year_id: academicYearId || undefined,
@@ -1251,7 +1251,7 @@ export async function getFeeSummary(ctx: RequestContext, filters: Record<string,
         assertPermission(ctx, "fees", "view");
 
         const academicYearId = (filters.academic_year_id ? String(filters.academic_year_id) : undefined) ?? (await resolveAcademicYearId(ctx));
-        const classIds = academicYearId ? await resolveClassIdsForAcademyCare(ctx, academicYearId) : [];
+        const classIds = academicYearId ? await resolveClassIdsForAcademicYear(ctx, academicYearId) : [];
         const studentCount = await StudentModel.countDocuments(tenantFilter(ctx, { class_id: { $in: classIds }, status: "active" }));
         const fees = (await FeeModel.find(tenantFilter(ctx, academicYearId ? { academic_year_id: academicYearId } : {})).lean()) as MonthlyFeeDoc[];
 
@@ -1416,7 +1416,7 @@ export async function getStudentFees(ctx: RequestContext, studentId?: string): P
         const allStudentIds = ctx.role === "parent" && parentStudentIds.length > 0 ? parentStudentIds : [String(student._id)];
 
         const students = await StudentModel.find(tenantFilter(ctx, { _id: { $in: allStudentIds } }))
-            .populate("class_id", "name section academic_year grade_thresholds academy_care_id")
+            .populate("class_id", "name section academic_year grade_thresholds Academy_year_id")
             .lean();
 
         const academicYearId = await resolveAcademicYearId(ctx);
@@ -1469,5 +1469,141 @@ export async function getStudentFees(ctx: RequestContext, studentId?: string): P
             monthly_fees: children[0]?.monthly_fees ?? [],
             due_notices: children[0]?.due_notices ?? []
         };
+    });
+}
+
+export async function getFeeDashboardStats(ctx: RequestContext): Promise<ServiceResult<unknown>> {
+    return serviceTry(async () => {
+        await connectDb();
+        assertPermission(ctx, "fees", "view");
+
+        const academicYearId = await resolveAcademicYearId(ctx);
+        const fees = (await FeeModel.find(tenantFilter(ctx, academicYearId ? { academic_year_id: academicYearId } : {})).lean()) as MonthlyFeeDoc[];
+        const classIds = academicYearId ? await resolveClassIdsForAcademicYear(ctx, academicYearId) : [];
+
+        const now = new Date();
+        const currentMonth = monthLabelFromDate(now).split(" ")[0].toLowerCase();
+        const currentYear = now.getFullYear();
+
+        const currentMonthFees = fees.filter(f => f.month === currentMonth && f.year === currentYear);
+        const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const prevMonth = monthLabelFromDate(prevMonthDate).split(" ")[0].toLowerCase();
+        const prevYear = prevMonthDate.getFullYear();
+        const prevMonthFees = fees.filter(f => f.month === prevMonth && f.year === prevYear);
+
+        const currentTotal = currentMonthFees.reduce((acc, f) => acc + (Number(f.paid_amount) || 0), 0);
+        const prevTotal = prevMonthFees.reduce((acc, f) => acc + (Number(f.paid_amount) || 0), 0);
+        
+        let growth = 0;
+        if (prevTotal > 0) {
+            growth = Number((((currentTotal - prevTotal) / prevTotal) * 100).toFixed(1));
+        }
+
+        const currentPending = currentMonthFees.reduce((acc, f) => acc + Math.max(0, (Number(f.amount) || 0) + (Number(f.adjustment_amount) || 0) - (Number(f.paid_amount) || 0)), 0);
+        const ratio = currentPending === 0 ? "All Paid" : `${currentTotal}:${currentPending}`;
+
+        const defaultersFees = fees.filter(f => {
+            const due = new Date(String(f.due_at));
+            const isUnpaid = ((Number(f.amount) || 0) + (Number(f.adjustment_amount) || 0)) > (Number(f.paid_amount) || 0);
+            return isUnpaid && due < now;
+        });
+
+        const defaulterCount = new Set(defaultersFees.map(f => String(f.student_id))).size;
+        const overdueAmount = defaultersFees.reduce((acc, f) => acc + Math.max(0, (Number(f.amount) || 0) + (Number(f.adjustment_amount) || 0) - (Number(f.paid_amount) || 0)), 0);
+
+        const totalExpected = fees.reduce((acc, f) => acc + (Number(f.amount) || 0) + (Number(f.adjustment_amount) || 0), 0);
+        const totalPaid = fees.reduce((acc, f) => acc + (Number(f.paid_amount) || 0), 0);
+        const paidPercentage = totalExpected > 0 ? Number(((totalPaid / totalExpected) * 100).toFixed(1)) : 0;
+        const remainingPercentage = totalExpected > 0 ? Number((100 - paidPercentage).toFixed(1)) : 0;
+
+        const classFees = await ClassFeeModel.find(tenantFilter(ctx, academicYearId ? { academic_year_id: academicYearId } : {})).lean();
+        const recurring = classFees.filter((f: any) => f.is_monthly).length;
+        const onetime = classFees.filter((f: any) => !f.is_monthly).length;
+        const activeClasses = new Set(classFees.map((f: any) => String(f.class_id))).size;
+
+        return {
+            monthly_collection: {
+                total: currentTotal,
+                growth_percentage: growth,
+                paid_vs_pending_ratio: ratio,
+            },
+            defaulters: {
+                count: defaulterCount,
+                overdue_amount: overdueAmount,
+                high_priority: Math.floor(defaulterCount * 0.2), // Mock value
+            },
+            collection_progress: {
+                paid_percentage: paidPercentage,
+                remaining_percentage: remainingPercentage,
+            },
+            active_components: {
+                recurring,
+                onetime,
+                active_classes: activeClasses,
+            }
+        };
+    });
+}
+
+export async function getFeeClassesSummary(ctx: RequestContext): Promise<ServiceResult<unknown>> {
+    return serviceTry(async () => {
+        await connectDb();
+        assertPermission(ctx, "fees", "view");
+
+        const academicYearId = await resolveAcademicYearId(ctx);
+        const classIds = academicYearId ? await resolveClassIdsForAcademicYear(ctx, academicYearId) : [];
+
+        const classes = await ClassModel.find(tenantFilter(ctx, { _id: { $in: classIds } })).populate("academic_year_id", "year").lean();
+        const fees = (await FeeModel.find(tenantFilter(ctx, academicYearId ? { academic_year_id: academicYearId } : {})).lean()) as MonthlyFeeDoc[];
+        const classFees = await ClassFeeModel.find(tenantFilter(ctx, academicYearId ? { academic_year_id: academicYearId } : {})).lean();
+        
+        const now = new Date();
+        const currentMonth = monthLabelFromDate(now).split(" ")[0].toLowerCase();
+        const currentYear = now.getFullYear();
+
+        const results = [];
+        for (const c of classes as any[]) {
+            const classId = String(c._id);
+            const studentCount = await StudentModel.countDocuments(tenantFilter(ctx, { class_id: classId, status: "active" }));
+            
+            const classConfigFees = classFees.filter((f: any) => String(f.class_id) === classId);
+            const monthlyFee = classConfigFees.filter((f: any) => f.is_monthly).reduce((acc, f: any) => acc + (Number(f.amount) || 0), 0);
+            
+            const cFees = fees.filter(f => String(f.class_id) === classId);
+            const cCurrentFees = cFees.filter(f => f.month === currentMonth && f.year === currentYear);
+            
+            const collectedThisMonth = cCurrentFees.reduce((acc, f) => acc + (Number(f.paid_amount) || 0), 0);
+            const expectedThisMonth = cCurrentFees.reduce((acc, f) => acc + (Number(f.amount) || 0) + (Number(f.adjustment_amount) || 0), 0);
+            const pendingThisMonth = Math.max(0, expectedThisMonth - collectedThisMonth);
+
+            const cDefaulters = cFees.filter(f => {
+                const due = new Date(String(f.due_at));
+                const isUnpaid = ((Number(f.amount) || 0) + (Number(f.adjustment_amount) || 0)) > (Number(f.paid_amount) || 0);
+                return isUnpaid && due < now;
+            });
+            const defaultersCount = new Set(cDefaulters.map(f => String(f.student_id))).size;
+
+            let colPercentage = 0;
+            if (expectedThisMonth > 0) {
+                colPercentage = Number(((collectedThisMonth / expectedThisMonth) * 100).toFixed(1));
+            }
+
+            results.push({
+                _id: classId,
+                name: c.name,
+                section: c.section,
+                academic_year: c.academic_year_id?.year || "",
+                total_students: studentCount,
+                monthly_fee: monthlyFee,
+                collected_this_month: collectedThisMonth,
+                pending_amount: pendingThisMonth,
+                defaulters_count: defaultersCount,
+                recurring_components: classConfigFees.filter((f: any) => f.is_monthly).length,
+                onetime_components: classConfigFees.filter((f: any) => !f.is_monthly).length,
+                collection_percentage: colPercentage,
+            });
+        }
+
+        return { classes: results };
     });
 }

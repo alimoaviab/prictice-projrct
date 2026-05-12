@@ -4,6 +4,16 @@ import { tenantFilter } from "../db/tenant-query";
 import { serviceTry } from "../utils/result";
 import { ControlledError, RequestContext, ServiceResult } from "../types/core";
 
+function extractId(val: any): string {
+  if (!val) return "";
+  if (typeof val === "object") {
+    const id = val._id ?? val.id;
+    return id ? String(id) : "";
+  }
+  const s = String(val);
+  return s === "[object Object]" ? "" : s;
+}
+
 function toClassName(classRow: any): string {
   const section = classRow.section ? `-${classRow.section}` : "";
   return `${classRow.name ?? ""}${section}`.trim();
@@ -26,8 +36,8 @@ function toClassSummary(classRow: any) {
     : classRow.class_teacher_id;
 
   return {
-    id: String(classRow._id),
-    _id: String(classRow._id),
+    id: extractId(classRow._id),
+    _id: extractId(classRow._id),
     name: classRow.name,
     code: classRow.code ?? "",
     display_order: Number(classRow.display_order ?? 1),
@@ -35,11 +45,10 @@ function toClassSummary(classRow: any) {
     section: classRow.section ?? "",
     capacity: Number(classRow.capacity ?? 0),
     enrolled_students: Number(classRow.enrolled_students ?? 0),
-    academy_care_id: String(classRow.academy_care_id ?? ""),
-    academy_care_year: classRow.academic_year ?? classRow.academy_care_year ?? "",
-    academic_year: classRow.academic_year ?? classRow.academy_care_year ?? "",
-    class_teacher_id: classTeacher ? String(classTeacher) : "",
-    teacher_ids: (classRow.teacher_ids ?? []).map((value: unknown) => String(value)),
+    academic_year_id: extractId(classRow.academic_year_id),
+    academic_year: classRow.academic_year ?? "",
+    class_teacher_id: classTeacher ? extractId(classTeacher) : "",
+    teacher_ids: (classRow.teacher_ids ?? []).map((value: unknown) => extractId(value)),
     subjects: normalizeSubjects(classRow),
     room_number: classRow.room_number ?? "",
     description: classRow.description ?? "",
@@ -48,8 +57,8 @@ function toClassSummary(classRow: any) {
 }
 
 async function hydrateClassRows(ctx: RequestContext, rows: any[]) {
-  const academicYearIds = rows.map((row) => String(row.academy_care_id || row.academic_year_id || "")).filter(Boolean);
-  const teacherIds = rows.flatMap((row) => (row.teacher_ids ?? []).map((value: unknown) => String(value))).filter(Boolean);
+  const academicYearIds = rows.map((row) => extractId(row.academic_year_id)).filter(Boolean);
+  const teacherIds = rows.flatMap((row) => (row.teacher_ids ?? []).map((value: unknown) => extractId(value))).filter(Boolean);
 
   const [academicYears, teachers] = await Promise.all([
     academicYearIds.length > 0
@@ -64,14 +73,13 @@ async function hydrateClassRows(ctx: RequestContext, rows: any[]) {
   const teacherMap = new Map(teachers.map((teacher: any) => [String(teacher._id), teacher]));
 
   return rows.map((row) => {
-    const academicYear = academicYearMap.get(String(row.academy_care_id || row.academic_year_id || ""));
+    const academicYear = academicYearMap.get(extractId(row.academic_year_id));
     const teacherId = row.class_teacher_id || (row.teacher_ids ?? [])[0];
-    const teacher = teacherId ? teacherMap.get(String(teacherId)) : null;
+    const teacher = teacherId ? teacherMap.get(extractId(teacherId)) : null;
 
     return {
       ...toClassSummary(row),
-      academic_year: academicYear?.year ?? row.academic_year ?? row.academy_care_year ?? "",
-      academy_care_year: academicYear?.year ?? row.academic_year ?? row.academy_care_year ?? "",
+      academic_year: academicYear?.year ?? row.academic_year ?? "",
       class_teacher: teacher
         ? {
           id: String(teacher._id),
@@ -92,7 +100,7 @@ export async function listClasses(ctx: RequestContext, query: any = {}): Promise
     Object.assign(filter, query);
 
     const rows = await ClassModel.find(filter)
-      .populate("academy_care_id", "year start_date end_date is_active")
+      .populate("academic_year_id", "year start_date end_date is_active")
       .populate("teacher_ids", "first_name last_name phone")
       .populate("class_teacher_id", "first_name last_name phone")
       .populate("subject_ids", "name code")
@@ -107,8 +115,7 @@ export async function listClasses(ctx: RequestContext, query: any = {}): Promise
 
     return rows.map((row: any) => ({
       ...toClassSummary({ ...row, enrolled_students: countMap.get(String(row._id)) ?? 0 }),
-      academic_year: row.academy_care_id?.year ?? row.academic_year ?? "",
-      academy_care_year: row.academy_care_id?.year ?? row.academic_year ?? "",
+      academic_year: row.academic_year_id?.year ?? row.academic_year ?? "",
       class_teacher: row.class_teacher_id
         ? {
           id: String(row.class_teacher_id._id ?? row.class_teacher_id),
@@ -126,7 +133,7 @@ export async function getClass(ctx: RequestContext, id: string): Promise<Service
     const filter = tenantFilter(ctx);
     Object.assign(filter, { _id: new Types.ObjectId(id) });
     const cls = await ClassModel.findOne(filter)
-      .populate("academy_care_id", "year start_date end_date is_active")
+      .populate("academic_year_id", "year start_date end_date is_active")
       .populate("teacher_ids", "first_name last_name phone")
       .populate("class_teacher_id", "first_name last_name phone")
       .populate("subject_ids", "name code")
@@ -151,8 +158,7 @@ export async function getClass(ctx: RequestContext, id: string): Promise<Service
 
     return {
       ...toClassSummary({ ...cls, enrolled_students: students.length }),
-      academic_year: (cls as any).academy_care_id?.year ?? (cls as any).academic_year ?? "",
-      academy_care_year: (cls as any).academy_care_id?.year ?? (cls as any).academic_year ?? "",
+      academic_year: (cls as any).academic_year_id?.year ?? (cls as any).academic_year ?? "",
       class_teacher: (cls as any).class_teacher_id
         ? {
           id: String((cls as any).class_teacher_id._id ?? (cls as any).class_teacher_id),
@@ -177,19 +183,20 @@ export async function getClass(ctx: RequestContext, id: string): Promise<Service
 export async function createClass(ctx: RequestContext, data: any): Promise<ServiceResult<any>> {
   return serviceTry(async () => {
     try {
-      const classTeacherId = data.class_teacher_id ? new Types.ObjectId(data.class_teacher_id) : undefined;
+      const classTeacherIdStr = extractId(data.class_teacher_id);
+      const classTeacherId = classTeacherIdStr ? new Types.ObjectId(classTeacherIdStr) : undefined;
       const newClass = new ClassModel({
         school_id: ctx.school_id,
         ...data,
-        academy_care_id: data.academy_care_id ?? data.academic_year_id,
+        academic_year_id: extractId(data.academic_year_id),
         capacity: Number(data.capacity ?? 0),
         class_teacher_id: classTeacherId,
         teacher_ids: Array.isArray(data.teacher_ids)
-          ? data.teacher_ids.map((value: string) => new Types.ObjectId(value))
+          ? data.teacher_ids.map((value: string) => new Types.ObjectId(extractId(value)))
           : classTeacherId
             ? [classTeacherId]
             : [],
-        subject_ids: Array.isArray(data.subject_ids) ? data.subject_ids.map((value: string) => new Types.ObjectId(value)) : [],
+        subject_ids: Array.isArray(data.subject_ids) ? data.subject_ids.map((value: string) => new Types.ObjectId(extractId(value))) : [],
         subjects: Array.isArray(data.subjects) ? data.subjects : [],
         grade_thresholds: data.grade_thresholds ?? {},
         fee_structure: data.fee_structure ?? undefined
@@ -215,17 +222,32 @@ export async function updateClass(ctx: RequestContext, id: string, data: any): P
     const filter = tenantFilter(ctx);
     Object.assign(filter, { _id: new Types.ObjectId(id) });
     const patch: any = { ...data };
-    if (data.academic_year_id && !data.academy_care_id) {
-      patch.academy_care_id = data.academic_year_id;
+    const academicYearId = extractId(data.academic_year_id).trim();
+    const teacherIds = Array.isArray(data.teacher_ids)
+      ? data.teacher_ids.map((value: any) => extractId(value).trim()).filter(Boolean)
+      : [];
+    const subjectIds = Array.isArray(data.subject_ids)
+      ? data.subject_ids.map((value: any) => extractId(value).trim()).filter(Boolean)
+      : [];
+
+    if (academicYearId) {
+      patch.academic_year_id = academicYearId;
+    } else {
+      delete patch.academic_year_id;
     }
+    delete patch.teacher_ids;
+    delete patch.subject_ids;
+
     if (data.class_teacher_id) {
-      patch.class_teacher_id = new Types.ObjectId(data.class_teacher_id);
-      patch.teacher_ids = Array.isArray(data.teacher_ids)
-        ? data.teacher_ids.map((value: string) => new Types.ObjectId(value))
+      patch.class_teacher_id = new Types.ObjectId(extractId(data.class_teacher_id));
+      patch.teacher_ids = teacherIds.length > 0
+        ? teacherIds.map((value: string) => new Types.ObjectId(value))
         : [patch.class_teacher_id];
+    } else if (teacherIds.length > 0) {
+      patch.teacher_ids = teacherIds.map((value: string) => new Types.ObjectId(value));
     }
-    if (Array.isArray(data.subject_ids)) {
-      patch.subject_ids = data.subject_ids.map((value: string) => new Types.ObjectId(value));
+    if (subjectIds.length > 0) {
+      patch.subject_ids = subjectIds.map((value: string) => new Types.ObjectId(value));
     }
     const updated = await ClassModel.findOneAndUpdate(filter, patch, { new: true, runValidators: true });
     if (!updated) throw new Error("Class not found");

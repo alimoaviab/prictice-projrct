@@ -1,0 +1,81 @@
+
+> build
+> turbo run build
+
+• turbo 2.9.6
+
+   • Packages in scope: @edu/shared, school-app, super-admin-app
+   • Running build in 3 packages
+   • Remote caching disabled
+
+@edu/shared:build: cache miss, executing a378f4201de135cf
+@edu/shared:build: 
+@edu/shared:build: > @edu/shared@0.1.0 build
+@edu/shared:build: > tsc -p tsconfig.json
+@edu/shared:build: 
+school-app:build: cache miss, executing 39af689e1a3fa551
+super-admin-app:build: cache miss, executing 942d8f3ef883ad62
+school-app:build: 
+school-app:build: > school-app@0.1.0 build
+school-app:build: > next build
+school-app:build: 
+super-admin-app:build: 
+super-admin-app:build: > super-admin-app@0.1.0 build
+super-admin-app:build: > next build
+super-admin-app:build: 
+super-admin-app:build:    ▲ Next.js 15.5.15
+super-admin-app:build: 
+school-app:build:    ▲ Next.js 15.5.15
+school-app:build:    - Environments: .env.local
+school-app:build: 
+super-admin-app:build:    Creating an optimized production build ...
+school-app:build:    Creating an optimized production build ...
+super-admin-app:build:  ✓ Compiled successfully in 4.9s
+super-admin-app:build:    Linting and checking validity of types ...
+school-app:build:  ✓ Compiled successfully in 15.4s
+school-app:build:    Linting and checking validity of types ...
+super-admin-app:build:    Collecting page data ...
+super-admin-app:build:    Generating static pages (0/7) ...
+super-admin-app:build:    Generating static pages (1/7) 
+super-admin-app:build:    Generating static pages (3/7) 
+super-admin-app:build:    Generating static pages (5/7) 
+super-admin-app:build:  ✓ Generating static pages (7/7)
+super-admin-app:build:    Finalizing page optimization ...
+super-admin-app:build:    Collecting build traces ...
+super-admin-app:build: 
+super-admin-app:build: Route (app)                                 Size  First Load JS
+super-admin-app:build: ┌ ○ /                                      129 B         101 kB
+super-admin-app:build: ├ ○ /_not-found                            995 B         102 kB
+super-admin-app:build: ├ ƒ /api/schools                           129 B         101 kB
+super-admin-app:build: ├ ƒ /api/schools/[schoolId]/block          129 B         101 kB
+super-admin-app:build: ├ ○ /dashboard                           1.31 kB         103 kB
+super-admin-app:build: └ ○ /schools                              3.3 kB         105 kB
+super-admin-app:build: + First Load JS shared by all             101 kB
+super-admin-app:build:   ├ chunks/131-483aa35927058112.js       45.2 kB
+super-admin-app:build:   ├ chunks/c7879cf7-b5ab1053c1d9a2e7.js  54.2 kB
+super-admin-app:build:   └ other shared chunks (total)          1.89 kB
+super-admin-app:build: 
+super-admin-app:build: 
+super-admin-app:build: ○  (Static)   prerendered as static content
+super-admin-app:build: ƒ  (Dynamic)  server-rendered on demand
+super-admin-app:build: 
+school-app:build: Failed to compile.
+school-app:build: 
+school-app:build: Type error: File '/Users/ali/Desktop/EDUEXPLO/Eduplexo/school-app/app/admin/classes/[id]/fees/page.tsx' is not a module.
+school-app:build: 
+school-app:build: Next.js build worker exited with code: 1 and signal: null
+school-app:build: npm error Lifecycle script `build` failed with error:
+school-app:build: npm error code 1
+school-app:build: npm error path /Users/ali/Desktop/EDUEXPLO/Eduplexo/school-app
+school-app:build: npm error workspace school-app@0.1.0
+school-app:build: npm error location /Users/ali/Desktop/EDUEXPLO/Eduplexo/school-app
+school-app:build: npm error command failed
+school-app:build: npm error command sh -c next build
+ ERROR  school-app#build: command (/Users/ali/Desktop/EDUEXPLO/Eduplexo/school-app) /opt/homebrew/bin/npm run build exited (1)
+
+ Tasks:    2 successful, 3 total
+Cached:    0 cached, 3 total
+  Time:    1m11.147s 
+Failed:    school-app#build
+
+ ERROR  run failed: command  exited (1)

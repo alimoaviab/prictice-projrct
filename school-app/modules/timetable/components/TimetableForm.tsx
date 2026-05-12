@@ -182,7 +182,7 @@ export function TimetableForm({
     setSaving(true);
     try {
       const result = await onCreate(form);
-      if (result) {
+      if (result && typeof result === "object" && "ok" in result && result.ok) {
         showToast("Success!", "success");
       }
     } catch (err: any) {

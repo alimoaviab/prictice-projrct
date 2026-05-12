@@ -18,7 +18,7 @@ const initialForm: ClassFormInput = {
     code: "",
     display_order: 1,
     passing_percentage: 33,
-    academy_care_id: "",
+    academic_year_id: "",
     teacher_ids: [],
     subjects: [],
     grade_thresholds: [...defaultGrades],
@@ -28,7 +28,7 @@ const initialForm: ClassFormInput = {
 
 export function ClassForm({
     onCreate,
-    academyCareOptions,
+    academicYearOptions,
     teacherOptions,
     subjectOptions,
     onAddSubject,
@@ -39,7 +39,7 @@ export function ClassForm({
     onSelectionHandled
 }: {
     onCreate: (input: ClassFormInput) => Promise<unknown>;
-    academyCareOptions: Array<{ id: string; label: string }>;
+    academicYearOptions: Array<{ id: string; label: string }>;
     teacherOptions: Array<{ id: string; label: string }>;
     subjectOptions: Array<{ id: string; label: string }>;
     onAddSubject?: (name: string) => Promise<void>;
@@ -57,7 +57,7 @@ export function ClassForm({
     // Auto-select logic for contextual creation
     useEffect(() => {
         if (autoSelectAcademicYear) {
-            setForm(prev => ({ ...prev, academy_care_id: autoSelectAcademicYear }));
+            setForm(prev => ({ ...prev, academic_year_id: autoSelectAcademicYear }));
             onSelectionHandled?.();
         }
     }, [autoSelectAcademicYear, onSelectionHandled]);
@@ -80,7 +80,7 @@ export function ClassForm({
         const newErrors: Record<string, string> = {};
         if (!form.name.trim()) newErrors.name = "Class name is required";
         if (!form.code.trim()) newErrors.code = "Class code is required";
-        if (!form.academy_care_id.trim()) newErrors.academy_care_id = "Academy Year is required";
+        if (!form.academic_year_id.trim()) newErrors.academic_year_id = "Academic Year is required";
         if (form.subjects.length === 0) newErrors.subjects = "At least one subject is required";
         
         // Validate subjects
@@ -235,16 +235,16 @@ export function ClassForm({
                             )}
                         </div>
                         <Select
-                            value={form.academy_care_id}
-                            onChange={(e) => setForm({ ...form, academy_care_id: e.target.value })}
+                            value={form.academic_year_id}
+                            onChange={(e) => setForm({ ...form, academic_year_id: e.target.value })}
                             options={[
                                 { label: "Select Academic Cycle", value: "" },
-                                ...academyCareOptions.map((o: { id: string; label: string }) => ({ label: o.label, value: o.id }))
+                                ...academicYearOptions.map((o: { id: string; label: string }) => ({ label: o.label, value: o.id }))
                             ]}
-                            error={errors.academy_care_id}
+                            error={errors.academic_year_id}
                             className="h-11 rounded-xl"
                         />
-                        {academyCareOptions.length === 0 && (
+                        {academicYearOptions.length === 0 && (
                             <p className="text-[10px] font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100 flex items-center gap-2">
                                 <span className="material-symbols-outlined text-[14px]">warning</span>
                                 No academic year found. Please create one to proceed.

@@ -8,15 +8,30 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAttendance } from "../hooks/useAttendance";
 import { AttendanceRecordRow } from "../types/attendance.types";
 import { showToast } from "../../../utils/toast";
+import { useQueryParams } from "../../../hooks/useQueryParams";
 
 export function AttendanceListPage({ filters: initialFilters }: { filters?: { class_id?: string; student_id?: string; date?: string } }) {
+  const { currentParams, updateQuery, withQuery } = useQueryParams();
   const [activeFilters, setActiveFilters] = React.useState({
-    class_id: initialFilters?.class_id || "",
-    date: initialFilters?.date || new Date().toISOString().split('T')[0],
-    status: "",
-    search: "",
+    class_id: currentParams.get("class_id") || initialFilters?.class_id || "",
+    date: currentParams.get("date") || initialFilters?.date || new Date().toISOString().split('T')[0],
+    status: currentParams.get("status") || "",
+    search: currentParams.get("search") || "",
   });
   const [viewMode, setViewMode] = React.useState<"grid" | "list">("list");
+
+  React.useEffect(() => {
+    setActiveFilters({
+      class_id: currentParams.get("class_id") || initialFilters?.class_id || "",
+      date: currentParams.get("date") || initialFilters?.date || new Date().toISOString().split('T')[0],
+      status: currentParams.get("status") || "",
+      search: currentParams.get("search") || "",
+    });
+    const nextView = currentParams.get("view");
+    if (nextView === "grid" || nextView === "list") {
+      setViewMode(nextView);
+    }
+  }, [currentParams.toString(), initialFilters?.class_id, initialFilters?.date]);
 
   const { state, updateAttendance, deleteAttendance } = useAttendance({
     class_id: activeFilters.class_id || undefined,
@@ -164,7 +179,11 @@ export function AttendanceListPage({ filters: initialFilters }: { filters?: { cl
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
             <input
               value={activeFilters.search}
-              onChange={(e) => setActiveFilters(prev => ({ ...prev, search: e.target.value }))}
+              onChange={(e) => {
+                const value = e.target.value;
+                setActiveFilters(prev => ({ ...prev, search: value }));
+                updateQuery({ search: value });
+              }}
               placeholder="Search student, admission no..."
               className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-xs font-medium text-slate-700 outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-600/5 placeholder:text-slate-400"
             />
@@ -172,7 +191,11 @@ export function AttendanceListPage({ filters: initialFilters }: { filters?: { cl
           <div className="h-6 w-px bg-slate-200" />
           <select
             value={activeFilters.class_id}
-            onChange={(e) => setActiveFilters(prev => ({ ...prev, class_id: e.target.value }))}
+            onChange={(e) => {
+              const value = e.target.value;
+              setActiveFilters(prev => ({ ...prev, class_id: value }));
+              updateQuery({ class_id: value });
+            }}
             className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none cursor-pointer transition-all hover:border-slate-300 focus:border-blue-400"
           >
             <option value="">Class: All</option>
@@ -181,12 +204,20 @@ export function AttendanceListPage({ filters: initialFilters }: { filters?: { cl
           <input 
             type="date"
             value={activeFilters.date}
-            onChange={(e) => setActiveFilters(prev => ({ ...prev, date: e.target.value }))}
+            onChange={(e) => {
+              const value = e.target.value;
+              setActiveFilters(prev => ({ ...prev, date: value }));
+              updateQuery({ date: value });
+            }}
             className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none transition-all hover:border-slate-300 focus:border-blue-400"
           />
           <select 
             value={activeFilters.status}
-            onChange={(e) => setActiveFilters(prev => ({ ...prev, status: e.target.value }))}
+            onChange={(e) => {
+              const value = e.target.value;
+              setActiveFilters(prev => ({ ...prev, status: value }));
+              updateQuery({ status: value });
+            }}
             className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none transition-all hover:border-slate-300 focus:border-blue-400"
           >
             <option value="">Status: All</option>
@@ -199,7 +230,10 @@ export function AttendanceListPage({ filters: initialFilters }: { filters?: { cl
         <div className="flex items-center gap-3">
           <div className="flex items-center rounded-lg bg-slate-100 p-1 shadow-inner">
             <button
-              onClick={() => setViewMode("grid")}
+              onClick={() => {
+                setViewMode("grid");
+                updateQuery({ view: "grid" });
+              }}
               className={`flex h-7 items-center gap-2 rounded-md px-3 text-[11px] font-bold transition-all ${
                 viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
               }`}
@@ -208,7 +242,10 @@ export function AttendanceListPage({ filters: initialFilters }: { filters?: { cl
               Grid
             </button>
             <button
-              onClick={() => setViewMode("list")}
+              onClick={() => {
+                setViewMode("list");
+                updateQuery({ view: "list" });
+              }}
               className={`flex h-7 items-center gap-2 rounded-md px-3 text-[11px] font-bold transition-all ${
                 viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
               }`}
@@ -221,7 +258,7 @@ export function AttendanceListPage({ filters: initialFilters }: { filters?: { cl
           <button 
              onClick={() => {
                 const basePath = pathname.includes("/teacher") ? "/teacher/attendance" : "/admin/attendance";
-                router.push(`${basePath}/create?class_id=${activeFilters.class_id}`);
+               router.push(withQuery(`${basePath}/create`, { class_id: activeFilters.class_id }));
              }}
              disabled={!activeFilters.class_id}
              className="inline-flex h-9 items-center gap-2 px-5 text-[11px] font-bold normal-case  text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95 disabled:opacity-50 disabled:shadow-none whitespace-nowrap"

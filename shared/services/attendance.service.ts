@@ -10,14 +10,14 @@ import { TeacherModel } from "../models/teacher.model";
 import { ControlledError, RequestContext, ServiceResult } from "../types/core";
 import { serviceTry } from "../utils/result";
 import { AttendanceCreateInput, AttendanceUpdateInput, attendanceCreateSchema, attendanceUpdateSchema } from "../validation/attendance.schema";
-import { resolveClassIdsForAcademyCare } from "./_academy-care-filter";
+import { resolveClassIdsForAcademicYear } from "./_academic-year-filter";
 import { resolveTeacherClassIds } from "./teacher.service";
 import { writeAuditLog } from "./audit.service";
 
 type AttendanceFilter = {
   class_id?: string;
   student_id?: string;
-  academy_care_id?: string;
+  academic_year_id?: string;
   date?: string;
 };
 
@@ -71,8 +71,8 @@ export async function listAttendance(
         query.class_id = new Types.ObjectId(filter.class_id);
     }
 
-    if (filter.academy_care_id) {
-      query.academic_year_id = new Types.ObjectId(filter.academy_care_id);
+    if (filter.academic_year_id) {
+      query.academic_year_id = new Types.ObjectId(filter.academic_year_id);
     }
 
     if (ctx.role !== "student" && filter.student_id) {

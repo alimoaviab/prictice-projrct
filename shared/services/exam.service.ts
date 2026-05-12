@@ -7,7 +7,7 @@ import { ExamModel } from "../models/exam.model";
 import { RequestContext, ServiceResult } from "../types/core";
 import { serviceTry } from "../utils/result";
 import { ExamCreateInput, ExamUpdateInput, examCreateSchema, examUpdateSchema } from "../validation/exam.schema";
-import { resolveClassIdsForAcademyCare } from "./_academy-care-filter";
+import { resolveClassIdsForAcademicYear } from "./_academic-year-filter";
 import { writeAuditLog } from "./audit.service";
 
 type ExamRecord = {
@@ -35,13 +35,13 @@ function mapExamRecord(row: Record<string, any>) {
 
 export async function listExams(
   ctx: RequestContext,
-  filter: { academy_care_id?: string } = {}
+  filter: { Academy_year_id?: string } = {}
 ): Promise<ServiceResult<unknown[]>> {
   return serviceTry(async () => {
     await connectDb();
     assertPermission(ctx, "exams", "view");
 
-    const classIds = await resolveClassIdsForAcademyCare(ctx, filter.academy_care_id);
+    const classIds = await resolveClassIdsForAcademicYear(ctx, filter.Academy_year_id);
 
     const rows = await ExamModel.find(tenantFilter(ctx, { class_id: { $in: classIds } }))
       .populate("class_id", "name")

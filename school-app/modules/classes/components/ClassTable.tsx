@@ -11,9 +11,9 @@ export function ClassTable({ rows }: { rows: ClassRow[] }) {
             render: (row: ClassRow) => <div className="font-bold text-slate-900">{row.name}</div>
         },
         {
-            key: "academy_care_year",
-            label: "Academy Year",
-            render: (row: ClassRow) => <div className="text-[13px] font-medium text-slate-500">{row.academy_care_year}</div>
+            key: "academic_year",
+            label: "Academic Year",
+            render: (row: ClassRow) => <div className="text-[13px] font-medium text-slate-500">{row.academic_year}</div>
         },
         {
             key: "subjects",

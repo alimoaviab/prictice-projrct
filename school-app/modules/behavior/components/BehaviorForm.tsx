@@ -67,16 +67,16 @@ export default function BehaviorForm({ initial, onSubmit, onCancel, students, cl
 
     void (async () => {
       try {
-        const result = await serviceRequest<{
-          data?: Array<{ id?: string; _id?: string; name?: string; first_name?: string; last_name?: string }>;
-        }>(`/api/students?class_id=${form.class_id}&status=active`);
+        const result = await serviceRequest<Array<{ id?: string; _id?: string; name?: string; first_name?: string; last_name?: string }>>(
+          `/api/students?class_id=${form.class_id}&status=active`
+        );
 
         if (!result.ok || cancelled) {
           if (!cancelled) setClassStudents([]);
           return;
         }
 
-        const rows = (result.data?.students ?? []).map((student) => ({
+        const rows = (result.data ?? []).map((student) => ({
           _id: String(student.id ?? student._id ?? ""),
           name: String(student.name ?? "Unnamed Student").trim() || "Unnamed Student",
           class_id: form.class_id

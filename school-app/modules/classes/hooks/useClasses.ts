@@ -3,7 +3,7 @@
 import { useCallback, useEffect } from "react";
 import { useSafeAsync } from "../../../hooks/useSafeAsync";
 import { showToast } from "../../../utils/toast";
-import { setSelectedAcademyCareId } from "../../../services/academy-care-context";
+import { setSelectedAcademicYearId } from "../../../services/academic-year-context";
 import { ClassFormInput, ClassRow } from "../types/class.types";
 import * as service from "../services/class.service";
 
@@ -30,8 +30,8 @@ export function useClasses() {
             }
 
             // Keep list filter aligned with the just-created class year so it appears immediately.
-            if (input.academy_care_id) {
-                setSelectedAcademyCareId(input.academy_care_id);
+            if (input.academic_year_id) {
+                setSelectedAcademicYearId(input.academic_year_id);
             }
 
             showToast("Class created.", "success");

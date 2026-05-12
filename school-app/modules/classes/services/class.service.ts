@@ -1,9 +1,9 @@
 import { serviceRequest } from "../../../services/service-client";
-import { getAcademyCareQuery } from "../../../services/academy-care-context";
+import { getAcademicYearQuery } from "../../../services/academic-year-context";
 import { ClassFormInput, ClassRow } from "../types/class.types";
 
 export function listClasses() {
-    const query = getAcademyCareQuery();
+    const query = getAcademicYearQuery();
 
     return (async () => {
     return serviceRequest<ClassRow[]>(`/api/classes${query}`);
