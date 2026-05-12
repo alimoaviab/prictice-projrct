@@ -19,6 +19,7 @@ type AttendanceFilter = {
   student_id?: string;
   academic_year_id?: string;
   date?: string;
+  period?: number | string;
 };
 
 function hasClassAccess(classIds: Types.ObjectId[], classId: string): boolean {
@@ -86,6 +87,10 @@ export async function listAttendance(
       const end = new Date(d);
       end.setHours(23, 59, 59, 999);
       query.date = { $gte: start, $lte: end };
+    }
+
+    if (filter.period !== undefined) {
+      query.period = Number(filter.period);
     }
 
     const rows = await AttendanceModel.find(query)
@@ -186,6 +191,62 @@ export async function createAttendance(
     });
 
     return created.toObject();
+  });
+}
+
+export async function markAttendanceBulk(
+  ctx: RequestContext,
+  input: any
+): Promise<ServiceResult<{ saved: number }>> {
+  return serviceTry(async () => {
+    await connectDb();
+    assertPermission(ctx, "attendance", "create");
+
+    const { attendanceBulkMarkSchema } = await import("../validation/attendance.schema");
+    const parsed = attendanceBulkMarkSchema.parse(input);
+    const { class_id, date, records, remarks, period } = parsed;
+
+    // Resolve academic year if not provided
+    let ayId = parsed.academic_year_id;
+    if (!ayId) {
+      const { AcademicYearModel } = await import("../models/academic-year.model");
+      const ay = await AcademicYearModel.findOne(tenantFilter(ctx, { is_active: true })).select("_id").lean();
+      if (!ay) throw new Error("No active academic year found.");
+      ayId = String(ay._id);
+    }
+
+    const attendanceDate = new Date(date);
+    attendanceDate.setHours(0, 0, 0, 0);
+
+    const studentIds = Object.keys(records);
+    const operations = studentIds.map((studentId) => ({
+      updateOne: {
+        filter: {
+          school_id: ctx.school_id,
+          academic_year_id: new Types.ObjectId(ayId),
+          class_id: new Types.ObjectId(class_id),
+          student_id: new Types.ObjectId(studentId),
+          date: attendanceDate,
+          period: period || 1
+        },
+        update: {
+          $set: {
+            status: records[studentId],
+            note: remarks?.[studentId] || "",
+            marked_by: new Types.ObjectId(ctx.user_id),
+            source: "manual",
+            updatedAt: new Date()
+          }
+        },
+        upsert: true
+      }
+    }));
+
+    if (operations.length > 0) {
+      await AttendanceModel.bulkWrite(operations);
+    }
+
+    return { saved: operations.length };
   });
 }
 

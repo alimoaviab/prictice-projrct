@@ -26,7 +26,10 @@ export async function listResults(
 
     if (filter.academic_year_id) {
       query.academic_year_id = new Types.ObjectId(filter.academic_year_id);
+    } else if (ctx.active_academic_year_id) {
+      query.academic_year_id = new Types.ObjectId(ctx.active_academic_year_id);
     }
+
     if (filter.exam_id) {
       query.exam_id = new Types.ObjectId(filter.exam_id);
     }

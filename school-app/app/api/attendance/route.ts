@@ -1,36 +1,39 @@
 import { NextResponse } from "next/server";
+import { authenticateRequest } from "@edu/shared/auth/middleware";
+import { listAttendance, createAttendance } from "@edu/shared/services/attendance.service";
+
+function parseCookies(cookieHeader: string | null) {
+  return Object.fromEntries(
+    (cookieHeader?.split("; ") ?? []).map((entry) => {
+      const separatorIndex = entry.indexOf("=");
+      return separatorIndex >= 0 ? [entry.slice(0, separatorIndex), entry.slice(separatorIndex + 1)] : [entry, ""];
+    })
+  );
+}
+
+function getRequestContext(request: Request) {
+  return authenticateRequest(
+    {
+      cookies: parseCookies(request.headers.get("cookie")),
+      headers: Object.fromEntries(request.headers.entries())
+    },
+    "school"
+  );
+}
+
+function getQuery(request: Request) {
+  return Object.fromEntries(new URL(request.url).searchParams.entries());
+}
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const date = searchParams.get("date");
-  const classId = searchParams.get("classId");
-
-  // Mock attendance data
-  const data = {
-    date: date || new Date().toISOString().split('T')[0],
-    classId: classId || null,
-    records: [],
-    summary: {
-      total: 0,
-      present: 0,
-      absent: 0,
-      late: 0,
-      excused: 0
-    }
-  };
-
-  return NextResponse.json({ ok: true, data });
+  const ctx = getRequestContext(request);
+  const result = await listAttendance(ctx, getQuery(request));
+  return NextResponse.json(result, { status: result.ok ? 200 : result.error.status ?? 400 });
 }
 
 export async function POST(request: Request) {
-  const body = await request.json();
-  
-  return NextResponse.json({ 
-    ok: true, 
-    data: { 
-      success: true,
-      message: "Attendance marked successfully",
-      ...body
-    } 
-  });
+  const ctx = getRequestContext(request);
+  const result = await createAttendance(ctx, await request.json());
+  return NextResponse.json(result, { status: result.ok ? 200 : result.error.status ?? 400 });
 }
+

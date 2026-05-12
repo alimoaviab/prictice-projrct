@@ -38,10 +38,17 @@ export function ResultListPage({ filters }: { filters?: { exam_id?: string; stud
   const stats = useMemo(() => {
     const data = state.data || [];
     const passCount = data.filter(r => r.grade !== 'F').length;
+    
+    let avg = 0;
+    if (data.length > 0) {
+      const sum = data.reduce((acc, r) => acc + (r.obtained_marks / (r.max_marks || 100)), 0);
+      avg = Math.round((sum / data.length) * 100);
+    }
+
     return {
       total: data.length,
       passRate: data.length > 0 ? `${Math.round((passCount / data.length) * 100)}%` : "0%",
-      avgMarks: "74.5",
+      avgMarks: `${avg}%`,
       topGrades: data.filter(r => r.grade === 'A' || r.grade === 'A+').length,
     };
   }, [state.data]);

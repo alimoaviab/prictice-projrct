@@ -1,5 +1,5 @@
 import { serviceRequest } from "../../../services/service-client";
-import { getAcademicYearQuery } from "../../../services/academic-year-context";
+import { getSelectedAcademicYearId } from "../../../services/academic-year-context";
 import {
   AttendanceBulkInput,
   AttendanceBulkResult,
@@ -10,14 +10,17 @@ import {
 } from "../types/attendance.types";
 
 export function listAttendance(filters?: { class_id?: string; student_id?: string; date?: string; period?: number }) {
-  const baseQuery = getAcademicYearQuery();
-  let filterQuery = "";
-  if (filters?.class_id) filterQuery += `&class_id=${filters.class_id}`;
-  if (filters?.student_id) filterQuery += `&student_id=${filters.student_id}`;
-  if (filters?.date) filterQuery += `&date=${filters.date}`;
-  if (filters?.period !== undefined) filterQuery += `&period=${filters.period}`;
+  const params = new URLSearchParams();
+  const academicYearId = getSelectedAcademicYearId();
+  if (academicYearId) params.append("academic_year_id", academicYearId);
+  
+  if (filters?.class_id) params.append("class_id", filters.class_id);
+  if (filters?.student_id) params.append("student_id", filters.student_id);
+  if (filters?.date) params.append("date", filters.date);
+  if (filters?.period !== undefined) params.append("period", String(filters.period));
 
-  return serviceRequest<AttendanceRecordRow[]>(`/api/attendance${baseQuery}${filterQuery}`);
+  const query = params.toString();
+  return serviceRequest<AttendanceRecordRow[]>(`/api/attendance${query ? `?${query}` : ""}`);
 }
 
 export function createAttendance(input: AttendanceFormInput) {

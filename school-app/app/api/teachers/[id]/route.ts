@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { authenticateRequest } from "@edu/shared/auth/middleware";
 import { deleteTeacher, updateTeacher } from "@edu/shared/services/teacher.service";
+import { getTeacherDashboardData } from "@edu/shared/services/teacher-portal.service";
 import { connectDb } from "@edu/shared/db/connect";
 import { tenantFilter } from "@edu/shared/db/tenant-query";
 import { TeacherModel } from "@edu/shared/models/teacher.model";
@@ -27,6 +28,13 @@ function getRequestContext(request: Request) {
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   const ctx = getRequestContext(request);
   const { id } = await context.params;
+  
+  // If role is teacher, return full dashboard payload
+  if (ctx.role === "teacher" || id === "session") {
+     const result = await getTeacherDashboardData(ctx, id);
+     return NextResponse.json(result, { status: result.ok ? 200 : result.error.status ?? 400 });
+  }
+
   await connectDb();
   const result = await TeacherModel.findOne(tenantFilter(ctx, { _id: id })).lean();
   if (!result) {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { authenticateRequest } from "@edu/shared/auth/middleware";
-import { getAdminDashboardStats } from "@edu/shared/services/analytics.service";
+import { updateAttendance, deleteAttendance } from "@edu/shared/services/attendance.service";
 
 function parseCookies(cookieHeader: string | null) {
   return Object.fromEntries(
@@ -21,12 +21,14 @@ function getRequestContext(request: Request) {
   );
 }
 
-export async function GET(request: Request) {
+export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   const ctx = getRequestContext(request);
-  const { searchParams } = new URL(request.url);
-  const ayId = searchParams.get("academic_year_id") || undefined;
-  
-  const result = await getAdminDashboardStats(ctx, ayId);
+  const result = await updateAttendance(ctx, params.id, await request.json());
   return NextResponse.json(result, { status: result.ok ? 200 : result.error.status ?? 400 });
 }
 
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+  const ctx = getRequestContext(request);
+  const result = await deleteAttendance(ctx, params.id);
+  return NextResponse.json(result, { status: result.ok ? 200 : result.error.status ?? 400 });
+}

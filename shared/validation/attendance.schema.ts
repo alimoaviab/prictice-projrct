@@ -23,7 +23,8 @@ export const attendanceBulkMarkSchema = z.object({
   date: attendanceDateSchema,
   period: z.number().int().min(1).max(12).optional(),
   academic_year_id: z.string().min(12).optional().or(z.literal("")),
-  records: z.record(attendanceStatusSchema)
+  records: z.record(attendanceStatusSchema),
+  remarks: z.record(z.string().optional()).optional()
 });
 
 export const attendanceUpdateSchema = attendanceCreateSchema.partial();

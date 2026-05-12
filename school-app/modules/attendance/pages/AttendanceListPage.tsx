@@ -38,13 +38,13 @@ export function AttendanceListPage({ filters: initialFilters }: { filters?: { cl
     date: activeFilters.date || undefined
   });
 
-  const { state: classState, run: runClasses } = useSafeAsync<Array<{ _id: string; name: string }>>();
+  const { state: classState, run: runClasses } = useSafeAsync<Array<{ _id: string; name: string; enrolled_students?: number }>>();
   const router = useRouter();
   const pathname = usePathname();
 
   const loadClasses = () =>
     runClasses(async () => {
-      const res = await serviceRequest<Array<{ _id: string; name: string }>>("/api/classes");
+      const res = await serviceRequest<Array<{ _id: string; name: string; enrolled_students?: number }>>("/api/classes");
       if (!res.ok) throw new Error(res.error.message || "Failed to load classes");
       return res.data;
     });
@@ -74,13 +74,15 @@ export function AttendanceListPage({ filters: initialFilters }: { filters?: { cl
 
   const stats = useMemo(() => {
     const data = state.data || [];
+    const selectedClass = (classState.data ?? []).find(c => c._id === activeFilters.class_id);
+    
     return {
-      total: data.length,
+      total: activeFilters.class_id ? (selectedClass?.enrolled_students ?? 0) : data.length,
       present: data.filter(r => r.status === 'present').length,
       absent: data.filter(r => r.status === 'absent').length,
       late: data.filter(r => r.status === 'late').length,
     };
-  }, [state.data]);
+  }, [state.data, classState.data, activeFilters.class_id]);
 
   const columns: DataTableColumn<AttendanceRecordRow>[] = [
     {
@@ -276,8 +278,14 @@ export function AttendanceListPage({ filters: initialFilters }: { filters?: { cl
         ) : filteredData.length === 0 ? (
           <DataState 
             variant="empty" 
-            title="No Attendance Records" 
-            message={activeFilters.search ? "Adjust your filters to see more results." : "Start tracking attendance for your active classes today."} 
+            title={activeFilters.class_id && stats.total > 0 ? "Attendance Not Marked" : "No Attendance Records"} 
+            message={
+              activeFilters.class_id && stats.total > 0 
+                ? "Students are enrolled but attendance hasn't been recorded for this date yet." 
+                : activeFilters.search 
+                  ? "Adjust your filters to see more results." 
+                  : "Start tracking attendance for your active classes today."
+            } 
           />
         ) : (
           viewMode === "grid" ? (

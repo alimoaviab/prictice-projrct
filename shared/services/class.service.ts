@@ -99,6 +99,12 @@ export async function listClasses(ctx: RequestContext, query: any = {}): Promise
     const filter = tenantFilter(ctx);
     Object.assign(filter, query);
 
+    if (ctx.role === "teacher") {
+      const { resolveTeacherClassIds } = await import("./teacher.service");
+      const teacherClassIds = await resolveTeacherClassIds(ctx);
+      filter._id = { $in: teacherClassIds };
+    }
+
     const rows = await ClassModel.find(filter)
       .populate("academic_year_id", "year start_date end_date is_active")
       .populate("teacher_ids", "first_name last_name phone")

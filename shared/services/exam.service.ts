@@ -41,9 +41,20 @@ export async function listExams(
     await connectDb();
     assertPermission(ctx, "exams", "view");
 
-    const classIds = await resolveClassIdsForAcademicYear(ctx, filter.Academy_year_id);
+    const query = tenantFilter(ctx);
+    
+    if (ctx.role === "teacher") {
+      const { resolveTeacherClassIds } = await import("./teacher.service");
+      const teacherClassIds = await resolveTeacherClassIds(ctx);
+      query.class_id = { $in: teacherClassIds };
+    } else if (filter.Academy_year_id) {
+       const classIds = await resolveClassIdsForAcademicYear(ctx, filter.Academy_year_id);
+       query.class_id = { $in: classIds };
+    } else if (ctx.active_academic_year_id) {
+       query.academic_year_id = new Types.ObjectId(ctx.active_academic_year_id);
+    }
 
-    const rows = await ExamModel.find(tenantFilter(ctx, { class_id: { $in: classIds } }))
+    const rows = await ExamModel.find(query)
       .populate("class_id", "name")
       .sort({ starts_at: -1 })
       .lean();
@@ -79,7 +90,9 @@ export async function createExam(ctx: RequestContext, input: ExamCreateInput): P
 
     const created = await ExamModel.create({
       school_id: ctx.school_id,
+      academic_year_id: ctx.active_academic_year_id ? new Types.ObjectId(ctx.active_academic_year_id) : undefined,
       class_id: new Types.ObjectId(parsed.class_id),
+      teacher_id: ctx.role === "teacher" ? new Types.ObjectId(ctx.user_id) : undefined,
       subject: parsed.subject,
       title: parsed.title,
       starts_at: parsed.starts_at,
