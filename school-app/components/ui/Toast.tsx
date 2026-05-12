@@ -42,7 +42,7 @@ const toneStyles: Record<ToastTone, { icon: string; iconColor: string; progress:
 export function Toast({ id, message, tone, onClose, duration = 2000 }: ToastProps) {
   const [progress, setProgress] = useState(100);
   const [isExiting, setIsExiting] = useState(false);
-  const styles = toneStyles[tone];
+  const styles = toneStyles[tone] || toneStyles.info;
 
   useEffect(() => {
     const startTime = Date.now();

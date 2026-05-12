@@ -6,6 +6,7 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     
     const filters = {
+        status: searchParams.get("status") || "all",
         class_id: searchParams.get("class_id") || undefined,
         month: searchParams.get("month") || undefined,
         year: searchParams.get("year") || undefined,

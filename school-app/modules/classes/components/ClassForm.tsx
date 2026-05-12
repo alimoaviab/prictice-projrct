@@ -356,48 +356,8 @@ export function ClassForm({
                                     </select>
                                 </div>
 
-                                {/* Day */}
-                                <div className="w-20">
-                                    <select
-                                        value={subject.day_of_week ?? 1}
-                                        onChange={(e) => updateSubject(index, "day_of_week", parseInt(e.target.value))}
-                                        className="w-full h-8 rounded-lg border border-slate-200 bg-white px-1 text-[9px] font-bold text-slate-600 outline-none focus:border-blue-300"
-                                    >
-                                        <option value={0}>Every Day</option>
-                                        <option value={1}>Mon</option>
-                                        <option value={2}>Tue</option>
-                                        <option value={3}>Wed</option>
-                                        <option value={4}>Thu</option>
-                                        <option value={5}>Fri</option>
-                                        <option value={6}>Sat</option>
-                                        <option value={7}>Sun</option>
-                                    </select>
-                                </div>
-
-                                {/* Start Time */}
-                                <div className="w-24">
-                                    <input
-                                        type="time"
-                                        value={subject.starts_at || ""}
-                                        onChange={(e) => updateSubject(index, "starts_at", e.target.value)}
-                                        className="w-full h-8 rounded-lg border border-slate-200 bg-white px-1 text-[9px] font-bold text-slate-600 outline-none focus:border-blue-300"
-                                        title="Start Time"
-                                    />
-                                </div>
-
-                                {/* End Time */}
-                                <div className="w-24">
-                                    <input
-                                        type="time"
-                                        value={subject.ends_at || ""}
-                                        onChange={(e) => updateSubject(index, "ends_at", e.target.value)}
-                                        className="w-full h-8 rounded-lg border border-slate-200 bg-white px-1 text-[9px] font-bold text-slate-600 outline-none focus:border-blue-300"
-                                        title="End Time"
-                                    />
-                                </div>
-
                                 {/* Marks */}
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1 ml-auto">
                                     <input
                                         type="number"
                                         value={subject.total_marks}

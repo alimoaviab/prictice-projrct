@@ -1757,9 +1757,14 @@ export async function getFeeLedgerDashboard(ctx: RequestContext, filters: Record
         const targetYear = Number(filters.year || now.getFullYear());
         const academicYearId = filters.academic_year_id ? String(filters.academic_year_id) : (await resolveAcademicYearId(ctx));
 
-        // 1. Build Student Query
+        const MONTHS_ORDER = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+        const targetMonthIndex = MONTHS_ORDER.indexOf(targetMonth);
+
+        // 2. Build Student Query
         const studentQuery: any = tenantFilter(ctx, { status: "active" });
+
         if (filters.class_id) studentQuery.class_id = new Types.ObjectId(String(filters.class_id));
+        
         if (filters.search) {
             const search = String(filters.search);
             studentQuery.$or = [
@@ -1769,46 +1774,66 @@ export async function getFeeLedgerDashboard(ctx: RequestContext, filters: Record
             ];
         }
 
-        const page = Math.max(1, Number(filters.page || 1));
-        const limit = Math.max(1, Number(filters.limit || 20));
-        const skip = (page - 1) * limit;
+        const students = await StudentModel.find(studentQuery).sort({ first_name: 1 }).lean();
 
-        const [students, totalStudents] = await Promise.all([
-            StudentModel.find(studentQuery).sort({ first_name: 1 }).skip(skip).limit(limit).populate("class_id", "name").lean(),
-            StudentModel.countDocuments(studentQuery)
-        ]);
+        // 3. Process each student to get their CURRENT state
+        const allLedgerEntries = await Promise.all(students.map(async (student) => {
+            // A. Fetch Class Fees (The "Expected" structure for this student's class)
+            const classFees = await ClassFeeModel.find(tenantFilter(ctx, {
+                class_id: student.class_id,
+                status: "active"
+            })).lean() as any[];
 
-        const MONTHS_ORDER = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
-        const targetMonthIndex = MONTHS_ORDER.indexOf(targetMonth);
+            // Calculate Projected Fee (Recurring + One-time due this month)
+            const projectedAmount = classFees.reduce((sum, f) => {
+                if (f.type === "recurring") return sum + Number(f.amount || 0);
+                if (f.type === "onetime" && f.due_month?.toLowerCase() === targetMonth) return sum + Number(f.amount || 0);
+                return sum;
+            }, 0);
 
-        // 2. Process each student
-        const rawEntries = await Promise.all(students.map(async (student) => {
-            // Find current month fee
-            const currentFee = await FeeModel.findOne(tenantFilter(ctx, {
+            // B. Fetch Formal Fees for CURRENT month (Case-insensitive)
+            const currentFees = await FeeModel.find(tenantFilter(ctx, {
                 student_id: student._id,
-                month: targetMonth,
+                month: { $regex: new RegExp(`^${targetMonth}$`, "i") },
                 year: targetYear
-            })).lean();
+            })).lean() as any[];
 
-            // Find Carry Forward (Unpaid from previous months/years)
+            let currentAmount = 0;
+            let currentPaid = 0;
+
+            if (currentFees.length > 0) {
+                // If formal records exist, use them as they represent actual billing
+                currentAmount = currentFees.reduce((sum, f) => sum + (Number(f.amount || 0) + Number(f.adjustment_amount || 0)), 0);
+                currentPaid = currentFees.reduce((sum, f) => sum + Number(f.paid_amount || 0), 0);
+            } else {
+                // If no formal record yet, show what is expected for this month
+                currentAmount = projectedAmount;
+            }
+
+            // C. Fetch all UNPAID fees from PREVIOUS months (Case-insensitive month list)
             const previousUnpaid = await FeeModel.find(tenantFilter(ctx, {
                 student_id: student._id,
                 $or: [
                     { year: { $lt: targetYear } },
-                    { year: targetYear, month: { $in: MONTHS_ORDER.slice(0, targetMonthIndex) } }
+                    { year: targetYear, month: { $in: MONTHS_ORDER.slice(0, targetMonthIndex).map(m => new RegExp(`^${m}$`, "i")) } }
                 ],
                 status: { $in: ["unpaid", "partial"] }
             })).lean();
 
             const carryForward = previousUnpaid.reduce((sum, f) => sum + (Number(f.amount || 0) + Number(f.adjustment_amount || 0) - Number(f.paid_amount || 0)), 0);
             
-            const currentAmount = Number(currentFee?.amount || 0);
-            const currentPaid = Number(currentFee?.paid_amount || 0);
             const totalDue = currentAmount + carryForward;
-            const totalPaid = currentPaid; // In this view, we only show what was paid for THIS month's record? 
-            // Actually, in ERP, "Paid" often means total paid in the period.
+            const remaining = Math.max(0, totalDue - currentPaid);
             
-            const entryStatus = currentFee ? currentFee.status : (carryForward > 0 ? "overdue" : "paid");
+            // STRICT STATUS DEFINITIONS
+            let entryStatus = "unpaid";
+            if (totalDue === 0 || (totalDue > 0 && remaining === 0)) {
+                entryStatus = "paid";
+            } else if (currentPaid > 0 && remaining > 0) {
+                entryStatus = "partial";
+            } else {
+                entryStatus = "unpaid";
+            }
 
             return {
                 student: {
@@ -1818,49 +1843,71 @@ export async function getFeeLedgerDashboard(ctx: RequestContext, filters: Record
                     class_name: (student.class_id as any)?.name ?? "N/A",
                     avatar: student.photo_url || ""
                 },
-                current_fee: currentFee ? {
-                    id: String(currentFee._id),
+                current_fee: currentFees.length > 0 ? {
+                    id: String(currentFees[0]._id),
                     amount: currentAmount,
                     paid: currentPaid,
-                    status: currentFee.status,
-                    components: (currentFee as any).fee_components || []
-                } : null,
+                    status: entryStatus,
+                    components: currentFees.flatMap(f => (f as any).fee_components || [])
+                } : {
+                    id: null,
+                    amount: currentAmount,
+                    paid: 0,
+                    status: entryStatus,
+                    components: classFees.filter(f => f.type === "recurring" || f.due_month?.toLowerCase() === targetMonth).map(f => ({
+                        fee_type: "Projected Fee",
+                        amount: f.amount
+                    }))
+                },
                 carry_forward: carryForward,
                 total_payable: totalDue,
                 paid_total: currentPaid,
-                remaining: totalDue - currentPaid,
+                remaining: remaining,
                 status: entryStatus
             };
         }));
 
-        // Filter by status if requested
-        let ledgerEntries = rawEntries;
+        // 4. Calculate GLOBAL STATS (Total = Current + Carry Forward context)
+        const globalCarryForward = allLedgerEntries.reduce((sum, e) => sum + e.carry_forward, 0);
+        const globalMonthlyBilled = allLedgerEntries.reduce((sum, e) => sum + (e.current_fee?.amount || 0), 0);
+        const globalTotalDue = globalMonthlyBilled + globalCarryForward;
+        
+        const globalMonthlyCollection = allLedgerEntries.reduce((sum, e) => sum + e.paid_total, 0);
+        const globalPending = Math.max(0, globalTotalDue - globalMonthlyCollection);
+        
+        const globalPaidCount = allLedgerEntries.filter(e => e.status === "paid" && e.total_payable > 0).length;
+        const globalPartialCount = allLedgerEntries.filter(e => e.status === "partial").length;
+        const globalUnpaidCount = allLedgerEntries.filter(e => e.status === "unpaid" && e.total_payable > 0).length;
+
+        // 5. Apply Status Filter and Paginate
+        let filteredEntries = allLedgerEntries;
         if (filters.status && filters.status !== "all") {
-            ledgerEntries = rawEntries.filter(e => e.status === filters.status);
+            filteredEntries = allLedgerEntries.filter(e => e.status === filters.status);
         }
 
-        // 3. Overall Stats (Horizontal Row)
-        // We calculate stats based on the processed ledger entries to be consistent
-        const monthlyCollection = rawEntries.reduce((sum, e) => sum + e.paid_total, 0);
-        const monthlyTotal = rawEntries.reduce((sum, e) => sum + e.total_payable, 0);
-        const pending = Math.max(0, monthlyTotal - monthlyCollection);
-        const defaulters = rawEntries.filter(e => e.status !== "paid").length;
+        const page = Math.max(1, Number(filters.page || 1));
+        const limit = Math.max(1, Number(filters.limit || 20));
+        const total = filteredEntries.length;
+        const paginatedEntries = filteredEntries.slice((page - 1) * limit, page * limit);
 
         return {
             stats: {
-                monthly_total: monthlyTotal,
-                monthly_collection: monthlyCollection,
-                pending_amount: pending,
-                defaulters: defaulters,
-                overdue_amount: pending, // For now
-                collection_rate: monthlyTotal > 0 ? Number(((monthlyCollection / monthlyTotal) * 100).toFixed(1)) : 0
+                monthly_total: globalMonthlyBilled,
+                monthly_collection: globalMonthlyCollection,
+                pending_amount: globalPending, // Now includes Carry Forward
+                paid_count: globalPaidCount,
+                partial_count: globalPartialCount,
+                unpaid_count: globalUnpaidCount,
+                collection_rate: globalTotalDue > 0 
+                    ? Math.round((globalMonthlyCollection / globalTotalDue) * 100) 
+                    : 0
             },
-            students: ledgerEntries,
+            students: paginatedEntries,
             pagination: {
-                total: totalStudents,
+                total,
                 page,
                 limit,
-                pages: Math.ceil(totalStudents / limit)
+                pages: Math.ceil(total / limit)
             }
         };
     });
