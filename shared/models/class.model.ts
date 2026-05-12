@@ -15,7 +15,12 @@ const classSchema = new Schema(
       {
         name: { type: String, trim: true },
         total_marks: { type: Number, default: 100 },
-        passing_marks: { type: Number, default: 33 }
+        passing_marks: { type: Number, default: 33 },
+        teacher_id: { type: Types.ObjectId, ref: "Teacher" },
+        starts_at: { type: String, trim: true, default: "" },
+        ends_at: { type: String, trim: true, default: "" },
+        day_of_week: { type: Number, default: 1 },
+        timetable: { type: String, trim: true, default: "" }
       }
     ],
     grade: { type: String, trim: true, default: "" },

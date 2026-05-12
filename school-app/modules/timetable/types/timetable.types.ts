@@ -24,6 +24,7 @@ export interface TimetableRecord {
   start_time: string; // HH:mm
   end_time: string;   // HH:mm
   room?: string;
+  is_class_schedule?: boolean;
   created_at: string;
   updated_at: string;
 }

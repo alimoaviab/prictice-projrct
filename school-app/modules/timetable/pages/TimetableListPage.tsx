@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { DataTable, DataTableColumn, RowAction, Badge, DataState, TableSkeleton } from "../../../components/ui";
 import { useTimetable } from "../hooks/useTimetable";
 import { TimetableRecord, getDayLabel } from "../types/timetable.types";
@@ -9,14 +9,27 @@ import { showToast } from "../../../utils/toast";
 
 export function TimetableListPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { state, deleteTimetable, refresh } = useTimetable();
-  const [selectedClass, setSelectedClass] = useState<string>("");
+  const [selectedClass, setSelectedClass] = useState<string>(searchParams.get("class_id") || "");
+
+  useEffect(() => {
+    const classId = searchParams.get("class_id");
+    if (classId) setSelectedClass(classId);
+  }, [searchParams]);
 
   const columns: DataTableColumn<TimetableRecord>[] = useMemo(() => [
     {
       key: "day_of_week",
-      label: "Day",
-      render: (row) => <span className="font-medium">{getDayLabel(row.day_of_week)}</span>,
+      label: "Day / Type",
+      render: (row) => (
+        <div className="flex flex-col gap-1">
+          <span className="font-medium text-[11px]">{getDayLabel(row.day_of_week)}</span>
+          <Badge variant={row.is_class_schedule ? "primary" : "secondary"} className="text-[8px] h-4 px-1.5 font-bold uppercase tracking-tighter">
+            {row.is_class_schedule ? "Class Schedule" : "Registry Record"}
+          </Badge>
+        </div>
+      ),
       sortable: true,
     },
     {
@@ -52,6 +65,7 @@ export function TimetableListPage() {
       label: "Delete",
       variant: "danger",
       requireConfirm: true,
+      hidden: (row) => !!row.is_class_schedule,
       confirmTitle: "Delete Timetable Entry",
       confirmMessage: (row) => `Delete ${row.class_name} - ${row.subject_name} on ${getDayLabel(row.day_of_week)}?`,
       onClick: async (row) => {

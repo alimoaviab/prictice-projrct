@@ -101,6 +101,7 @@ export function AcademicYearTable({
                     >
                         <span className="material-symbols-outlined text-[18px]">edit_note</span>
                     </button>
+                    {/* 
                     <button 
                         onClick={() => onDelete(row)}
                         className="h-7 w-7 flex items-center justify-center rounded text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"
@@ -108,6 +109,7 @@ export function AcademicYearTable({
                     >
                         <span className="material-symbols-outlined text-[18px]">delete</span>
                     </button>
+                    */}
                     <div className="w-px h-3 bg-slate-100 mx-0.5" />
                     <button 
                         onClick={() => onEdit(row)}

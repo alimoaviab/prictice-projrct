@@ -20,20 +20,26 @@ function toClassName(classRow: any): string {
 }
 
 function normalizeSubjects(classRow: any) {
-  const source = Array.isArray(classRow.subject_ids) && classRow.subject_ids.length > 0
-    ? classRow.subject_ids
-    : classRow.subjects ?? [];
+  const source = Array.isArray(classRow.subjects) && classRow.subjects.length > 0
+    ? classRow.subjects
+    : [];
 
   return source.map((subject: any) => {
-    if (typeof subject === "string") return subject;
-    return subject?.name || String(subject?._id ?? subject?.id ?? subject ?? "");
-  }).filter(Boolean);
+    return {
+      name: subject.name || "",
+      total_marks: Number(subject.total_marks || 100),
+      passing_marks: Number(subject.passing_marks || 33),
+      teacher_id: extractId(subject.teacher_id),
+      starts_at: subject.starts_at || "",
+      ends_at: subject.ends_at || "",
+      day_of_week: Number(subject.day_of_week || 1),
+      timetable: subject.timetable || ""
+    };
+  });
 }
 
 function toClassSummary(classRow: any) {
-  const classTeacher = Array.isArray(classRow.teacher_ids) && classRow.teacher_ids.length > 0
-    ? classRow.teacher_ids[0]
-    : classRow.class_teacher_id;
+  const classTeacher = classRow.class_teacher_id;
 
   return {
     id: extractId(classRow._id),
@@ -49,10 +55,12 @@ function toClassSummary(classRow: any) {
     academic_year: classRow.academic_year ?? "",
     class_teacher_id: classTeacher ? extractId(classTeacher) : "",
     teacher_ids: (classRow.teacher_ids ?? []).map((value: unknown) => extractId(value)),
+    teacher_names: (classRow.teacher_ids ?? []).map((t: any) => t.first_name ? `${t.first_name} ${t.last_name || ""}`.trim() : "Teacher"),
     subjects: normalizeSubjects(classRow),
     room_number: classRow.room_number ?? "",
     description: classRow.description ?? "",
-    status: classRow.status ?? "active"
+    status: classRow.status ?? "active",
+    fee_status: Number(classRow.fee_status || 0)
   };
 }
 
@@ -85,7 +93,7 @@ export async function listClasses(ctx: RequestContext, query: any = {}): Promise
       filter._id = { $in: teacherClassIds };
     }
 
-    const [rows, total] = await Promise.all([
+    const [rows, total, studentCounts, feeStats] = await Promise.all([
       ClassModel.find(filter)
         .populate("academic_year_id", "year start_date end_date is_active")
         .populate("teacher_ids", "first_name last_name phone")
@@ -95,27 +103,46 @@ export async function listClasses(ctx: RequestContext, query: any = {}): Promise
         .skip(skip)
         .limit(limit)
         .lean(),
-      ClassModel.countDocuments(filter)
-    ]);
-
-    const studentCounts = await StudentModel.aggregate([
-      { $match: tenantFilter(ctx, query as any) },
-      { $group: { _id: "$class_id", count: { $sum: 1 } } }
-    ]);
-    const countMap = new Map(studentCounts.map((item) => [String(item._id), Number(item.count || 0)]));
-
-    const items = rows.map((row: any) => ({
-      ...toClassSummary({ ...row, enrolled_students: countMap.get(String(row._id)) ?? 0 }),
-      academic_year: row.academic_year_id?.year ?? row.academic_year ?? "",
-      class_teacher: row.class_teacher_id
-        ? {
-          id: String(row.class_teacher_id._id ?? row.class_teacher_id),
-          name: `${row.class_teacher_id.first_name || ""} ${row.class_teacher_id.last_name || ""}`.trim(),
-          phone: row.class_teacher_id.phone ?? ""
+      ClassModel.countDocuments(filter),
+      StudentModel.aggregate([
+        { $match: tenantFilter(ctx) },
+        { $group: { _id: "$class_id", count: { $sum: 1 } } }
+      ]),
+      FeeModel.aggregate([
+        { $match: tenantFilter(ctx) },
+        {
+          $group: {
+            _id: "$class_id",
+            total_amount: { $sum: "$amount" },
+            paid_amount: { $sum: "$paid_amount" }
+          }
         }
-        : null,
-      subjects: normalizeSubjects(row)
+      ])
+    ]);
+
+    const countMap = new Map(studentCounts.map((item) => [String(item._id), Number(item.count || 0)]));
+    const feeMap = new Map(feeStats.map((item) => {
+        const percentage = item.total_amount > 0 ? Math.round((item.paid_amount / item.total_amount) * 100) : 0;
+        return [String(item._id), percentage];
     }));
+
+    const items = rows.map((row: any) => {
+      const enrolled_students = countMap.get(String(row._id)) ?? 0;
+      const fee_status = feeMap.get(String(row._id)) ?? 0;
+      
+      return {
+        ...toClassSummary({ ...row, enrolled_students, fee_status }),
+        academic_year: row.academic_year_id?.year ?? row.academic_year ?? "",
+        class_teacher: row.class_teacher_id
+          ? {
+            id: String(row.class_teacher_id._id ?? row.class_teacher_id),
+            name: `${row.class_teacher_id.first_name || ""} ${row.class_teacher_id.last_name || ""}`.trim(),
+            phone: row.class_teacher_id.phone ?? ""
+          }
+          : null,
+        subjects: normalizeSubjects(row)
+      };
+    });
 
     // Return paginated structure if page/limit were provided, otherwise just data for backward compatibility
     if (query.page || query.limit) {

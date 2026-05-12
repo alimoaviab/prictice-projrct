@@ -2,6 +2,11 @@ export interface ClassSubject {
     name: string;
     total_marks: number;
     passing_marks: number;
+    teacher_id?: string;
+    starts_at?: string;
+    ends_at?: string;
+    day_of_week?: number;
+    timetable?: string;
 }
 
 export interface GradeThreshold {
@@ -20,8 +25,14 @@ export interface ClassRow {
     passing_percentage?: number;
     academic_year_id: string;
     academic_year: string;
-    subjects: string[];
+    subjects: ClassSubject[];
     subject_ids?: string[];
+    class_teacher_id?: string;
+    class_teacher?: {
+        id: string;
+        name: string;
+        phone?: string;
+    };
     teacher_ids: string[];
     teacher_names: string[];
     room_number?: string;
@@ -30,7 +41,9 @@ export interface ClassRow {
     grade_thresholds?: GradeThreshold[];
     status: "active" | "inactive" | "archived";
     student_count?: number;
+    enrolled_students?: number;
     attendance_percentage?: number;
+    fee_status?: number;
 }
 
 export interface ClassFormInput {
@@ -40,9 +53,10 @@ export interface ClassFormInput {
     display_order: number;
     passing_percentage: number;
     academic_year_id: string;
+    class_teacher_id?: string;
     teacher_ids: string[];
     subject_ids?: string[];
-    subjects?: any[];
+    subjects?: ClassSubject[];
     grade_thresholds?: GradeThreshold[];
     room_number?: string;
     capacity?: number;

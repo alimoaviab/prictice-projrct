@@ -258,6 +258,7 @@ export function AcademicYearListPage() {
                               >
                                 <span className="material-symbols-outlined text-[18px]">edit_note</span>
                               </Link>
+                              {/* 
                               <button 
                                 onClick={(e) => { e.preventDefault(); setDeletingYear(row); }}
                                 className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all"
@@ -265,6 +266,7 @@ export function AcademicYearListPage() {
                               >
                                 <span className="material-symbols-outlined text-[18px]">delete</span>
                               </button>
+                              */}
                             </div>
                           </div>
 

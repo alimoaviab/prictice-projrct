@@ -35,13 +35,6 @@ export function ClassCard({ classItem, onEdit, onDelete, onFee }: ClassCardProps
         </div>
         
         <div className="flex items-center gap-0.5">
-          <Link
-            href={`/admin/classes/${classItem._id}`}
-            className="h-9 w-9 flex items-center justify-center rounded-lg text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all"
-            title="View Class Detail"
-          >
-            <span className="material-symbols-outlined text-[20px]">visibility</span>
-          </Link>
           <button
             onClick={() => onEdit(classItem)}
             className="h-9 w-9 flex items-center justify-center rounded-lg text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all"
@@ -61,9 +54,11 @@ export function ClassCard({ classItem, onEdit, onDelete, onFee }: ClassCardProps
 
       {/* Stats Grid - High Density with generous breathing room */}
       <div className="grid grid-cols-4 gap-3 mb-8">
-        <div className="p-2.5 rounded-xl bg-slate-50/50 border border-slate-100/50 text-center">
-          <p className="text-[7.5px] font-bold text-slate-400 normal-case mb-1">Students</p>
-          <p className="text-[12px] font-bold text-slate-900">{classItem.student_count || 0}</p>
+        <div className="p-2.5 rounded-xl bg-slate-50/50 border border-slate-100/50 text-center truncate">
+          <p className="text-[7.5px] font-bold text-slate-400 normal-case mb-1">Teacher</p>
+          <p className="text-[10px] font-bold text-slate-900 truncate" title={classItem.class_teacher?.name || "No Incharge"}>
+            {classItem.class_teacher?.name?.split(' ')[0] || "None"}
+          </p>
         </div>
         <div className="p-2.5 rounded-xl bg-slate-50/50 border border-slate-100/50 text-center">
           <p className="text-[7.5px] font-bold text-slate-400 normal-case mb-1">Subjects</p>
@@ -75,7 +70,7 @@ export function ClassCard({ classItem, onEdit, onDelete, onFee }: ClassCardProps
         </div>
         <div className="p-2.5 rounded-xl bg-slate-50/50 border border-slate-100/50 text-center">
           <p className="text-[7.5px] font-bold text-slate-400 normal-case mb-1">Fee Status</p>
-          <p className="text-[12px] font-bold text-emerald-600">85%</p>
+          <p className="text-[12px] font-bold text-emerald-600">{(classItem as any).fee_status || 0}%</p>
         </div>
       </div>
 
@@ -89,20 +84,28 @@ export function ClassCard({ classItem, onEdit, onDelete, onFee }: ClassCardProps
 
       {/* Meta Info Footer */}
       <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex -space-x-2">
-            {(classItem.teacher_names || []).slice(0, 3).map((t, i) => (
-              <div key={i} className="h-6 w-6 rounded-full bg-slate-900 border-2 border-white flex items-center justify-center text-[8px] font-bold text-white shadow-sm" title={t}>
-                {t[0]}
-              </div>
-            ))}
+        <Link 
+          href={`/admin/students?class_id=${classItem._id}`}
+          className="flex items-center gap-3 group/link hover:opacity-80 transition-all"
+        >
+          <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100 group-hover/link:bg-blue-600 group-hover/link:text-white transition-all">
+            <span className="material-symbols-outlined text-base">group</span>
           </div>
-          <span className="text-[10px] font-bold text-slate-500 truncate max-w-[90px]">
-            {classItem.teacher_names?.[0] || "Unassigned"}
-          </span>
-        </div>
+          <div className="flex flex-col">
+            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Students</span>
+            <span className="text-[12px] font-bold text-slate-900 leading-none">
+              {classItem.enrolled_students || classItem.student_count || 0}
+            </span>
+          </div>
+        </Link>
         
-        <div className="flex items-center gap-1.5">
+          <Link
+            href={`/admin/timetable?class_id=${classItem._id}`}
+            className="h-8 w-8 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all border border-emerald-100/50"
+            title="Class Timetable"
+          >
+            <span className="material-symbols-outlined text-base">schedule</span>
+          </Link>
           <button
             onClick={() => onFee(classItem)}
             className="h-8 px-3 flex items-center gap-2 rounded-lg bg-violet-50 text-violet-600 text-[9px] font-bold hover:bg-violet-100 transition-all border border-violet-100/50"
@@ -119,6 +122,5 @@ export function ClassCard({ classItem, onEdit, onDelete, onFee }: ClassCardProps
           </Link>
         </div>
       </div>
-    </div>
   );
 }

@@ -9,6 +9,8 @@ import { assertPermission } from "../auth/rbac";
 import { TimetableModel } from "../models/timetable.model";
 import { SubjectModel } from "../models/subject.model";
 import { AcademicYearModel } from "../models/academic-year.model";
+import { ClassModel } from "../models/class.model";
+import { TeacherModel } from "../models/teacher.model";
 import { connectDb } from "../db/connect";
 import { tenantFilter } from "../db/tenant-query";
 import { resolveClassIdsForAcademicYear } from "./_academic-year-filter";
@@ -355,10 +357,66 @@ export async function listTimetable(
       .sort({ day_of_week: 1, start_time: 1 })
       .lean();
 
+    const records = timetable.map(toClientRecord);
+
+    // 7. Merge Class-Level Subject Schedules
+    const classFilter = tenantFilter(ctx);
+    if (academicYearId) classFilter.academic_year_id = new Types.ObjectId(academicYearId);
+    if (query.class_id) classFilter._id = toObjectId(query.class_id, "class_id");
+
+    const classes = await ClassModel.find(classFilter)
+      .populate({ path: "subjects.teacher_id", select: "first_name last_name", strictPopulate: false })
+      .select("name section subjects")
+      .lean();
+
+    classes.forEach(cls => {
+      (cls.subjects || []).forEach(sub => {
+        if (sub.starts_at && sub.ends_at) {
+          // If a day filter is active, only include if matches
+          if (filter.day && sub.day_of_week && DAY_NUMBER_TO_NAME[sub.day_of_week] !== filter.day) return;
+          if (query.day_of_week !== undefined && sub.day_of_week !== Number(query.day_of_week)) return;
+          
+          // Avoid duplicates if a specific timetable entry already exists for this slot
+          const isDuplicate = records.some(r => 
+            r.class_id === String(cls._id) && 
+            r.day_of_week === (sub.day_of_week || 1) && 
+            r.start_time === sub.starts_at
+          );
+
+          if (!isDuplicate) {
+            const teacher = sub.teacher_id as any;
+            records.push({
+              _id: `class_sub_${cls._id}_${sub.name}_${sub.day_of_week}`,
+              class_id: String(cls._id),
+              class_name: cls.name || "",
+              section: cls.section || "",
+              subject_id: "",
+              subject_name: sub.name || "",
+              subject_code: "",
+              teacher_id: teacher?._id ? String(teacher._id) : "",
+              teacher_name: teacher ? `${teacher.first_name || ""} ${teacher.last_name || ""}`.trim() : "Unassigned",
+              day_of_week: Number(sub.day_of_week || 1),
+              period_number: 0,
+              start_time: sub.starts_at,
+              end_time: sub.ends_at,
+              room: sub.timetable || "",
+              is_class_schedule: true // Marker for UI
+            });
+          }
+        }
+      });
+    });
+
+    // Final Sort
+    records.sort((a, b) => {
+      if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week;
+      return toMinutes(a.start_time) - toMinutes(b.start_time);
+    });
+
     return {
       ok: true,
       success: true,
-      data: timetable.map(toClientRecord),
+      data: records,
     };
   } catch (error) {
     console.error("[listTimetable] Error:", error);

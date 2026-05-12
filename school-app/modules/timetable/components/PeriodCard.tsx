@@ -1,6 +1,7 @@
 "use client";
 
 import { TimetableRecord } from "../types/timetable.types";
+import { Badge } from "../../../components/ui";
 import { useState } from "react";
 
 interface PeriodCardProps {
@@ -99,23 +100,28 @@ export function PeriodCard({ slot, conflicts, onEdit, onDelete, isCompact }: Per
             </p>
           </div>
           
-          <div className={`flex gap-1 transition-all duration-200 ${isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2'}`}>
-            {onEdit && (
-              <button 
-                onClick={(e) => { e.stopPropagation(); onEdit(slot); }} 
-                className="h-7 w-7 flex items-center justify-center rounded-lg bg-white/90 text-slate-500 hover:text-blue-600 shadow-sm border border-slate-100 transition-colors"
-              >
-                <span className="material-symbols-outlined text-[16px]">edit</span>
-              </button>
+          <div className="flex items-center gap-1.5 transition-all duration-200">
+            {slot.is_class_schedule && (
+              <Badge variant="primary" className="text-[8px] h-4 px-1.5 font-bold uppercase tracking-tighter">Class</Badge>
             )}
-            {onDelete && (
-              <button 
-                onClick={(e) => { e.stopPropagation(); onDelete(slot._id); }} 
-                className="h-7 w-7 flex items-center justify-center rounded-lg bg-white/90 text-slate-500 hover:text-red-600 shadow-sm border border-slate-100 transition-colors"
-              >
-                <span className="material-symbols-outlined text-[16px]">delete</span>
-              </button>
-            )}
+            <div className={`flex gap-1 transition-all duration-200 ${isHovered && !slot.is_class_schedule ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2'}`}>
+              {!slot.is_class_schedule && onEdit && (
+                <button 
+                  onClick={(e) => { e.stopPropagation(); onEdit(slot); }} 
+                  className="h-7 w-7 flex items-center justify-center rounded-lg bg-white/90 text-slate-500 hover:text-blue-600 shadow-sm border border-slate-100 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[16px]">edit</span>
+                </button>
+              )}
+              {!slot.is_class_schedule && onDelete && (
+                <button 
+                  onClick={(e) => { e.stopPropagation(); onDelete(slot._id); }} 
+                  className="h-7 w-7 flex items-center justify-center rounded-lg bg-white/90 text-slate-500 hover:text-red-600 shadow-sm border border-slate-100 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[16px]">delete</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 

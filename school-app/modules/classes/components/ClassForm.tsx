@@ -29,6 +29,7 @@ const initialForm: ClassFormInput = {
     display_order: 1,
     passing_percentage: 33,
     academic_year_id: "",
+    class_teacher_id: "",
     teacher_ids: [],
     subjects: [...defaultSubjects],
     grade_thresholds: [...defaultGrades],
@@ -67,6 +68,7 @@ export function ClassForm({
         display_order: initialData.display_order || 1,
         passing_percentage: initialData.passing_percentage || 33,
         academic_year_id: initialData.academic_year_id || "",
+        class_teacher_id: initialData.class_teacher_id || "",
         teacher_ids: initialData.teacher_ids || [],
         subjects: initialData.subjects || [...defaultSubjects],
         grade_thresholds: initialData.grade_thresholds || [...defaultGrades],
@@ -282,6 +284,21 @@ export function ClassForm({
 
                     <div className="space-y-1.5">
                         <div className="flex items-center justify-between px-0.5">
+                            <label className="text-[11px] font-bold text-slate-500 normal-case ">Academic Incharge (Head Teacher)</label>
+                        </div>
+                        <Select
+                            value={form.class_teacher_id}
+                            onChange={(e) => setForm({ ...form, class_teacher_id: e.target.value })}
+                            options={[
+                                { label: "Select Incharge", value: "" },
+                                ...teacherOptions.map((o: { id: string; label: string }) => ({ label: o.label, value: o.id }))
+                            ]}
+                            className="h-11 rounded-xl"
+                        />
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <div className="flex items-center justify-between px-0.5">
                             <label className="text-[11px] font-bold text-slate-500 normal-case ">Assigned faculty</label>
                             {onCreateTeacher && (
                                 <button 
@@ -392,57 +409,115 @@ export function ClassForm({
                     </div>
 
                     <div className="space-y-1.5">
+                    <div className="space-y-2">
                         {form.subjects?.map((subject, index) => (
-                            <div key={index} className="flex items-center gap-2 p-1.5 bg-slate-50/50 rounded-xl border border-slate-100 group transition-all hover:bg-white hover:border-blue-200">
-                                <div className="flex-1 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-[16px] text-slate-300 group-hover:text-blue-500 transition-colors">book</span>
-                                    <input
-                                        ref={el => { subjectInputRefs.current[index] = el; }}
-                                        placeholder="Subject Name"
-                                        value={subject.name}
-                                        onChange={(e) => updateSubject(index, "name", e.target.value)}
-                                        className="w-full bg-transparent border-none focus:ring-0 text-sm font-bold text-slate-700 placeholder:text-slate-300"
-                                    />
-                                    {errors[`subject_${index}_name`] && (
-                                        <p className="text-[10px] text-red-500 font-bold px-3">Required</p>
-                                    )}
+                            <div key={index} className="flex items-center gap-1.5 p-1.5 bg-slate-50/30 rounded-xl border border-slate-100 group transition-all hover:bg-white hover:border-blue-200">
+                                {/* Name */}
+                                <div className="flex-[2] min-w-[110px]">
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="material-symbols-outlined text-[14px] text-slate-300">book</span>
+                                        <input
+                                            placeholder="Subject"
+                                            value={subject.name}
+                                            onChange={(e) => updateSubject(index, "name", e.target.value)}
+                                            className="w-full bg-transparent border-none focus:ring-0 text-[10px] font-bold text-slate-900 placeholder:text-slate-300"
+                                        />
+                                    </div>
                                 </div>
-                                <div className="w-14">
+
+                                {/* Teacher */}
+                                <div className="flex-1 min-w-[80px]">
+                                    <select
+                                        value={subject.teacher_id || ""}
+                                        onChange={(e) => updateSubject(index, "teacher_id", e.target.value)}
+                                        className="w-full h-8 rounded-lg border border-slate-200 bg-white px-1 text-[9px] font-bold text-slate-600 outline-none focus:border-blue-300"
+                                    >
+                                        <option value="">Teacher</option>
+                                        {teacherOptions.map((o) => (
+                                            <option key={o.id} value={o.id}>{o.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Day */}
+                                <div className="w-20">
+                                    <select
+                                        value={subject.day_of_week || 1}
+                                        onChange={(e) => updateSubject(index, "day_of_week", parseInt(e.target.value))}
+                                        className="w-full h-8 rounded-lg border border-slate-200 bg-white px-1 text-[9px] font-bold text-slate-600 outline-none focus:border-blue-300"
+                                    >
+                                        <option value={0}>Every Day</option>
+                                        <option value={1}>Mon</option>
+                                        <option value={2}>Tue</option>
+                                        <option value={3}>Wed</option>
+                                        <option value={4}>Thu</option>
+                                        <option value={5}>Fri</option>
+                                        <option value={6}>Sat</option>
+                                        <option value={7}>Sun</option>
+                                    </select>
+                                </div>
+
+                                {/* Start Time */}
+                                <div className="w-20">
+                                    <input
+                                        type="time"
+                                        value={subject.starts_at || ""}
+                                        onChange={(e) => updateSubject(index, "starts_at", e.target.value)}
+                                        className="w-full h-8 rounded-lg border border-slate-200 bg-white px-1 text-[9px] font-bold text-slate-600 outline-none focus:border-blue-300"
+                                        title="Start Time"
+                                    />
+                                </div>
+
+                                {/* End Time */}
+                                <div className="w-20">
+                                    <input
+                                        type="time"
+                                        value={subject.ends_at || ""}
+                                        onChange={(e) => updateSubject(index, "ends_at", e.target.value)}
+                                        className="w-full h-8 rounded-lg border border-slate-200 bg-white px-1 text-[9px] font-bold text-slate-600 outline-none focus:border-blue-300"
+                                        title="End Time"
+                                    />
+                                </div>
+
+                                {/* Timetable/Room */}
+                                <div className="flex-1 min-w-[70px]">
+                                    <input
+                                        placeholder="Room"
+                                        value={subject.timetable || ""}
+                                        onChange={(e) => updateSubject(index, "timetable", e.target.value)}
+                                        className="w-full h-8 rounded-lg border border-slate-200 bg-white px-1.5 text-[9px] font-bold text-slate-600 outline-none focus:border-blue-300"
+                                    />
+                                </div>
+
+                                {/* Marks */}
+                                <div className="flex items-center gap-1">
                                     <input
                                         type="number"
                                         value={subject.total_marks}
                                         onChange={(e) => updateSubject(index, "total_marks", parseInt(e.target.value) || 0)}
-                                        className="w-full text-center bg-transparent border-none focus:ring-0 text-sm font-bold text-slate-900"
+                                        className="w-11 h-8 text-center bg-white border border-slate-200 rounded-lg text-[9px] font-bold text-slate-900"
+                                        title="Total Marks"
                                     />
-                                </div>
-                                <div className="w-14">
                                     <input
                                         type="number"
                                         value={subject.passing_marks}
                                         onChange={(e) => updateSubject(index, "passing_marks", parseInt(e.target.value) || 0)}
-                                        className="w-full text-center bg-transparent border-none focus:ring-0 text-sm font-bold text-slate-900"
+                                        className="w-11 h-8 text-center bg-white border border-slate-200 rounded-lg text-[9px] font-bold text-slate-900"
+                                        title="Pass Marks"
                                     />
                                 </div>
-                                <div className="flex items-center gap-1">
-                                    <button
-                                        type="button"
-                                        onClick={() => subjectInputRefs.current[index]?.focus()}
-                                        className="p-1.5 text-slate-300 hover:text-blue-600 transition-colors opacity-0 group-hover:opacity-100"
-                                        title="Edit subject"
-                                    >
-                                        <span className="material-symbols-outlined text-[18px]">edit_note</span>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => removeSubject(index)}
-                                        className="p-1.5 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                                        title="Delete subject"
-                                    >
-                                        <span className="material-symbols-outlined text-[18px]">delete</span>
-                                    </button>
-                                </div>
+
+                                {/* Actions */}
+                                <button
+                                    type="button"
+                                    onClick={() => removeSubject(index)}
+                                    className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-300 hover:bg-red-50 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
+                                >
+                                    <span className="material-symbols-outlined text-[14px]">delete</span>
+                                </button>
                             </div>
                         ))}
+                    </div>
                     </div>
                 </div>
 

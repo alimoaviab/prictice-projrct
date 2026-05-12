@@ -83,22 +83,27 @@ export function ClassCreatePage() {
            <Skeleton className="h-[200px] w-full rounded-2xl" />
            <Skeleton className="h-[400px] w-full rounded-2xl" />
         </div>
-      ) : !hasAcademicYears ? (
-        <div className="py-24 flex flex-col items-center text-center">
-          <div className="h-20 w-20 rounded-3xl bg-amber-50 flex items-center justify-center text-amber-600 mb-6 border border-amber-100 shadow-sm">
-            <span className="material-symbols-outlined text-4xl font-bold">priority_high</span>
-          </div>
-          <h3 className="text-2xl font-bold text-slate-900 mb-2">Academic Cycle Required</h3>
-          <p className="text-sm text-slate-500 mb-8 max-w-xs">Initialization cannot proceed without an active academic year configuration in the system core.</p>
-          <Link 
-            href="/admin/academic-years"
-            className="h-12 px-8 rounded-xl bg-slate-900 text-[11px] font-bold uppercase tracking-widest text-white hover:bg-slate-800 transition-all shadow-xl active:scale-95"
-          >
-            Configure Academic Session
-          </Link>
-        </div>
       ) : (
         <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/20">
+          {!hasAcademicYears && (
+             <div className="mb-6 p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                   <div className="h-10 w-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600">
+                      <span className="material-symbols-outlined font-bold">priority_high</span>
+                   </div>
+                   <div>
+                      <p className="text-xs font-bold text-amber-900">Academic Year Required</p>
+                      <p className="text-[10px] text-amber-600 font-medium">You need to create at least one academic session to register a class.</p>
+                   </div>
+                </div>
+                <Link 
+                  href="/admin/academic-years"
+                  className="h-9 px-4 rounded-lg bg-amber-600 text-[10px] font-bold text-white hover:bg-amber-700 transition-all shadow-sm flex items-center"
+                >
+                  Create Session
+                </Link>
+             </div>
+          )}
           <ClassForm
             onCreate={handleCreate}
             academicYearOptions={academicYearOptions}
