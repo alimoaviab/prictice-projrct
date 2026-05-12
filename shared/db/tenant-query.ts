@@ -5,7 +5,12 @@ type TenantScoped = { school_id: string };
 type AcademicYearScoped = { school_id: string; academic_year_id?: unknown };
 
 export function assertTenantContext(ctx: RequestContext): void {
-  // Dev mode allows empty/dev school_id for testing
+  // CRITICAL: Never allow dev bypass in production
+  if (process.env.NODE_ENV === "production" && ctx.school_id === "dev-school-id") {
+    throw new ControlledError("INVALID_TENANT", "Development tenant not allowed in production.", 403);
+  }
+
+  // Dev mode allows empty/dev school_id for testing ONLY in development
   const isDevContext = process.env.NODE_ENV === "development" && ctx.school_id === "dev-school-id";
   if (!ctx.school_id && !isDevContext) {
     throw new ControlledError("TENANT_REQUIRED", "A school context is required.", 400);
@@ -17,12 +22,6 @@ export function tenantFilter<T extends TenantScoped>(
   filter: FilterQuery<T> = {}
 ): FilterQuery<T> {
   assertTenantContext(ctx);
-
-  // Dev mode with dev-school-id: allow queries to work without filtering by school_id
-  // This enables testing without needing a real school in the database
-  if (process.env.NODE_ENV === "development" && ctx.school_id === "dev-school-id") {
-    return filter;
-  }
 
   const requestedSchool = (filter as Record<string, unknown>).school_id;
   if (requestedSchool && requestedSchool !== ctx.school_id) {
@@ -55,11 +54,6 @@ export function academicYearFilter<T extends AcademicYearScoped>(
   filter: FilterQuery<T> = {}
 ): FilterQuery<T> {
   assertTenantContext(ctx);
-
-  // Dev mode bypass
-  if (process.env.NODE_ENV === "development" && ctx.school_id === "dev-school-id") {
-    return filter;
-  }
 
   // Validate school_id
   const requestedSchool = (filter as Record<string, unknown>).school_id;

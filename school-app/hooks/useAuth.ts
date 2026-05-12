@@ -66,10 +66,34 @@ export function useAuth() {
   }, []);
 
   const logout = () => {
+    // CRITICAL: Clear all caches to prevent data leakage between schools
     localStorage.removeItem("token");
     localStorage.removeItem("profile_id");
     localStorage.removeItem("class_id");
     localStorage.removeItem("student_id");
+    localStorage.removeItem("last_school_id");
+    
+    // Clear all other localStorage items except theme/language
+    const keysToKeep = ["theme", "language"];
+    const preserved: Record<string, string> = {};
+    keysToKeep.forEach(key => {
+      const value = localStorage.getItem(key);
+      if (value) preserved[key] = value;
+    });
+    localStorage.clear();
+    Object.entries(preserved).forEach(([key, value]) => {
+      localStorage.setItem(key, value);
+    });
+    
+    // Clear sessionStorage
+    sessionStorage.clear();
+    
+    // Clear cookies
+    document.cookie.split(";").forEach(cookie => {
+      const name = cookie.split("=")[0].trim();
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+    });
+    
     setUser(null);
     router.push("/auth/login");
   };

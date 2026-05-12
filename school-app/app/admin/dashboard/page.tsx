@@ -116,7 +116,7 @@ export default function AdminDashboardPage() {
     : 0;
 
   return (
-    <SchoolShell eyebrow="System Intelligence" title="Admin Command Center">
+    <SchoolShell eyebrow="School Overview" title="Admin Dashboard">
       
       {/* 1. KPI Cards Row - Refined Density */}
       <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
@@ -150,7 +150,7 @@ export default function AdminDashboardPage() {
             <span className="material-symbols-outlined text-[14px]">checklist</span>
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-700">Attendance Completion</p>
+            <p className="text-[10px] font-bold text-slate-700">Attendance Tracker</p>
               <p className="text-[8px] font-medium text-slate-500 normal-case tracking-tighter">
               {data?.classAttendance?.length ?? 0} of {data?.overview?.totalClasses ?? 0} classes registered today
             </p>
@@ -174,7 +174,7 @@ export default function AdminDashboardPage() {
               {/* Today Overview Widget */}
               <div className="premium-card p-3.5">
                  <div className="mb-3 flex items-center justify-between">
-                    <h3 className="text-[10px] font-bold normal-case  text-slate-400">Today Overview</h3>
+                    <h3 className="text-[10px] font-bold normal-case  text-slate-400">Today's Attendance</h3>
                     <span className="material-symbols-outlined text-slate-300 text-base">today</span>
                  </div>
                  <div className="grid grid-cols-2 gap-2.5">
@@ -205,7 +205,7 @@ export default function AdminDashboardPage() {
               {/* Pending Tasks Widget */}
               <div className="premium-card p-3.5">
                  <div className="mb-3 flex items-center justify-between">
-                    <h3 className="text-[10px] font-bold normal-case  text-slate-400">Pending Tasks</h3>
+                    <h3 className="text-[10px] font-bold normal-case  text-slate-400">Things to Do</h3>
                     <span className="material-symbols-outlined text-slate-300 text-base">task_alt</span>
                  </div>
                  <div className="space-y-1.5">
@@ -281,7 +281,7 @@ export default function AdminDashboardPage() {
         <div className="space-y-4">
            <div className="premium-card p-3.5 h-full flex flex-col">
               <div className="mb-4 flex items-center justify-between">
-                 <h3 className="text-[10px] font-bold normal-case  text-slate-400">Recent Activity Feed</h3>
+                 <h3 className="text-[10px] font-bold normal-case  text-slate-400">Recent Updates</h3>
                  <span className="material-symbols-outlined text-slate-300 text-base">rss_feed</span>
               </div>
               <div className="flex-1 space-y-2 overflow-y-auto custom-scrollbar max-h-[520px] pr-1">

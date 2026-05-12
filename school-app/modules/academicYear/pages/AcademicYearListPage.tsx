@@ -113,7 +113,7 @@ export function AcademicYearListPage() {
         {/* Stats Section - Compact ERP Style */}
         <div className={`grid gap-3 transition-all duration-500 ease-in-out ${isDrawerOpen ? "grid-cols-1 md:grid-cols-2" : "grid-cols-2 md:grid-cols-4"}`}>
           {[
-            { label: "Total Sessions", value: years.length, icon: "calendar_today", color: "text-slate-500", bg: "bg-slate-500/5" },
+            { label: "Total Years", value: years.length, icon: "calendar_today", color: "text-slate-500", bg: "bg-slate-500/5" },
             { label: "Active Year", value: activeYear?.year || "None", icon: "auto_awesome", color: "text-blue-600", bg: "bg-blue-600/5" },
             { label: "Completed", value: years.filter(y => y.status === "completed").length, icon: "verified", color: "text-emerald-600", bg: "bg-emerald-600/5" },
           ].map((stat) => (
@@ -132,7 +132,7 @@ export function AcademicYearListPage() {
             className={`premium-card p-3 flex items-center justify-between bg-white border-slate-200 group hover:bg-blue-600 hover:border-blue-600 transition-all shadow-sm ${isDrawerOpen ? "hidden md:flex" : ""}`}
           >
             <div>
-              <span className="text-[8px] font-bold normal-case text-slate-400 tracking-[0.2em] block mb-0.5 group-hover:text-blue-100 transition-colors">Setup Control</span>
+              <span className="text-[8px] font-bold normal-case text-slate-400 tracking-[0.2em] block mb-0.5 group-hover:text-blue-100 transition-colors">Actions</span>
               <span className="text-[13px] font-bold text-slate-900 block group-hover:text-white transition-colors tracking-tight">Add New Year</span>
             </div>
             <div className="h-8 w-8 rounded-lg bg-slate-50 flex items-center justify-center group-hover:bg-white/10 group-hover:rotate-90 transition-all border border-slate-100 group-hover:border-transparent">
@@ -232,7 +232,7 @@ export function AcademicYearListPage() {
                           <div className="flex items-start justify-between gap-4 mb-3.5">
                             <div className="space-y-0.5 flex-1 min-w-0">
                               <h3 className="text-base font-bold text-slate-900 tracking-tight leading-none truncate">{row.year}</h3>
-                              <p className="text-[9px] font-bold text-slate-400 normal-case  mt-1">Academic Session</p>
+                              <p className="text-[9px] font-bold text-slate-400 normal-case  mt-1">Academic Year</p>
                             </div>
                             
                             <div className="flex items-center gap-0.5">
@@ -322,11 +322,11 @@ export function AcademicYearListPage() {
             {/* Refined Pagination - Professional ERP Alignment */}
             <div className="mt-8 flex items-center justify-between border-t border-slate-100 pt-6 pb-8">
               <div className="flex flex-col gap-0.5">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Session Index</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Page Navigation</p>
                 <p className="text-[11px] font-medium text-slate-600">
-                  Displaying page <span className="font-bold text-slate-900">{page}</span> of <span className="font-bold text-slate-900">{meta?.pages || 1}</span> 
+                  Page <span className="font-bold text-slate-900">{page}</span> of <span className="font-bold text-slate-900">{meta?.pages || 1}</span> 
                   <span className="mx-2 text-slate-300">|</span> 
-                  <span className="font-bold text-slate-900">{meta?.total || years.length}</span> total entries
+                  <span className="font-bold text-slate-900">{meta?.total || years.length}</span> total years listed
                 </p>
               </div>
 
