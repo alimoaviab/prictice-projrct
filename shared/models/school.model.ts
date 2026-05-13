@@ -19,18 +19,27 @@ const schoolSchema = new Schema(
     domains: [{ type: String, trim: true, lowercase: true }],
     status: {
       type: String,
-      enum: ["active", "suspended", "blocked"],
-      default: "active",
+      enum: ["pending", "approved", "rejected", "suspended"],
+      default: "pending",
       index: true
     },
+    rejection_reason: { type: String, trim: true, default: "" },
+    approved_by: { type: String, default: "" },
+    approved_at: { type: Date },
     plan: {
-      key: { type: String, default: "starter" },
+      key: { 
+        type: String, 
+        enum: ["free", "basic", "premium", "enterprise"],
+        default: "free" 
+      },
       seats: { type: Number, default: 0 },
       expires_at: Date
     },
     usage: {
       users: { type: Number, default: 0 },
       students: { type: Number, default: 0 },
+      teachers: { type: Number, default: 0 },
+      classes: { type: Number, default: 0 },
       storage_mb: { type: Number, default: 0 }
     },
     settings: {

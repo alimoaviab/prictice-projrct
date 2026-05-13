@@ -1,5 +1,7 @@
 export {
-  createSchool,
   listSchools,
-  setSchoolBlocked
+  createSchool,
+  getSuperAdminDashboardStats,
+  updateSchoolStatus,
+  getSchoolFullDetails
 } from "@edu/shared/services/school.service";

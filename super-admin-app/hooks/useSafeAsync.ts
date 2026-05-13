@@ -9,7 +9,9 @@ export type AsyncState<T> =
   | { status: "empty"; data: T; error?: undefined }
   | { status: "error"; data?: T; error: string };
 
-export function useSafeAsync<T>(isEmpty: (value: T) => boolean = (value) => Array.isArray(value) && value.length === 0) {
+const defaultIsEmpty = (value: any) => Array.isArray(value) && value.length === 0;
+
+export function useSafeAsync<T>(isEmpty: (value: T) => boolean = defaultIsEmpty) {
   const [state, setState] = useState<AsyncState<T>>({ status: "idle" });
 
   const run = useCallback(

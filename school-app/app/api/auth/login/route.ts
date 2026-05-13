@@ -27,6 +27,36 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, message: "Invalid email or password" }, { status: 401 });
     }
 
+    // Check school status for non-super_admin users
+    if (user.role !== "super_admin") {
+      const school = await SchoolModel.findOne({ school_id: user.school_id }).lean();
+      
+      if (!school) {
+        return NextResponse.json({ ok: false, message: "School registration not found." }, { status: 403 });
+      }
+
+      if (school.status === "pending") {
+        return NextResponse.json({ 
+          ok: false, 
+          message: "Your school account is under review. Please wait for approval." 
+        }, { status: 403 });
+      }
+
+      if (school.status === "rejected") {
+        return NextResponse.json({ 
+          ok: false, 
+          message: "Your school registration was rejected. Contact support." 
+        }, { status: 403 });
+      }
+
+      if (school.status === "suspended") {
+        return NextResponse.json({ 
+          ok: false, 
+          message: "Your school account has been suspended. Please contact administration." 
+        }, { status: 403 });
+      }
+    }
+
     if (requestedRole && user.role !== requestedRole && user.role !== "super_admin") {
        // Allow mismatch for super_admin or handle gracefully
     }

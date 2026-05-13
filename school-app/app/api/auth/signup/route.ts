@@ -112,11 +112,14 @@ export async function POST(request: NextRequest) {
                 school_id,
                 name: schoolName,
                 code: uniqueSchoolCode,
-                status: "active",
-                subscription: {
-                    plan: "trial",
-                    status: "active",
-                    trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+                status: "pending", // Default status for new registrations
+                admin_profile: {
+                    name: fullName,
+                    email: email,
+                },
+                plan: {
+                    key: "free",
+                    seats: 0
                 }
             });
 
@@ -176,10 +179,25 @@ export async function POST(request: NextRequest) {
             status: "active"
         });
 
-        // STEP 5: Generate JWT with school_id
+        if (role === "admin") {
+            return NextResponse.json(
+                {
+                    ok: true,
+                    success: true,
+                    message: "Your school account is under review. Please wait for approval.",
+                    data: {
+                        status: "pending",
+                        school_id
+                    }
+                },
+                { status: 201 }
+            );
+        }
+
+        // STEP 5: Generate JWT with school_id (for students/teachers joining existing school)
         const token = signAuthToken({
             sub: String(createdUser._id),
-            school_id, // CRITICAL: All future requests will use this school_id
+            school_id,
             role,
             permissions: role === "admin" ? ["*"] : [],
             active_academic_year_id: activeAcademicYearId,
