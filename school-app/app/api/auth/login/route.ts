@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectDb } from "@edu/shared/db/connect";
-import { UserModel } from "@edu/shared/models";
+import { UserModel, SchoolModel } from "@edu/shared/models";
 import { AcademicYearModel } from "@edu/shared/models/academic-year.model";
 import { verifyPassword } from "@edu/shared/auth/password";
 import { signAuthToken } from "@edu/shared/auth/jwt";
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
 
     // Check school status for non-super_admin users
     if (user.role !== "super_admin") {
-      const school = await SchoolModel.findOne({ school_id: user.school_id }).lean();
+      const school = await SchoolModel.findOne({ school_id: user.school_id }).lean() as any;
       
       if (!school) {
         return NextResponse.json({ ok: false, message: "School registration not found." }, { status: 403 });

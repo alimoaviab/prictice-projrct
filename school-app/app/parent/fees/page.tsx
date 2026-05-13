@@ -46,6 +46,7 @@ export default function ParentFeesPage() {
         async function fetchData() {
             setLoading(true);
             try {
+                if (!selectedChild) return;
                 const res = await serviceRequest<FeesResponse>(`/api/parent/fees?student_id=${selectedChild.student_id}`);
                 if (res.ok && res.data) {
                     setData(res.data);

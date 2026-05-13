@@ -39,6 +39,7 @@ export default function ParentStudentProfilePage() {
         async function fetchData() {
             setLoading(true);
             try {
+                if (!selectedChild) return;
                 const res = await serviceRequest<ProfileResponse>(`/api/parent/student-info?student_id=${selectedChild.student_id}`);
                 if (res.ok && res.data) {
                     setData(res.data);

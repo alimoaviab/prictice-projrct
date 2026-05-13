@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
+import { serviceRequest } from "../../../services/service-client";
 import { useRouter } from "next/navigation";
 import { Button, DataState, Skeleton, Badge } from "../../../components/ui";
 import { showToast } from "../../../utils/toast";
@@ -33,7 +34,7 @@ export function HomeworkPage({ role, studentId }: HomeworkPageProps) {
         const data = res.data.homework_list || res.data || [];
         setHomeworks(data);
       } else {
-        showToast(res.error?.message || "Failed to load homeworks", "error");
+        showToast(res.message || "Failed to load homeworks", "error");
       }
     } catch (error) {
       console.error(error);

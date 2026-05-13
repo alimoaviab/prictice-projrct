@@ -20,15 +20,22 @@ import { hashPassword } from "../auth/password";
 export async function checkParentEmail(
   ctx: RequestContext,
   email: string
-): Promise<ServiceResult<{ exists: boolean; parent_user_id?: string; children_count?: number }>> {
+): Promise<ServiceResult<{ 
+  exists: boolean; 
+  role_mismatch?: boolean; 
+  existing_role?: string; 
+  parent_user_id?: string; 
+  children_count?: number;
+  parent?: any;
+}>> {
   return serviceTry(async () => {
     await connectDb();
     const normalizedEmail = email.trim().toLowerCase();
 
     // Check for ANY user with this email in the same school
-    const existingUser = await UserModel.findOne(
+    const existingUser = (await UserModel.findOne(
       tenantFilter(ctx, { email: normalizedEmail })
-    ).lean();
+    ).lean()) as any;
 
     if (!existingUser) {
       return { exists: false };

@@ -35,6 +35,7 @@ export default function ParentDashboardPage() {
     async function fetchData() {
       setLoading(true);
       try {
+        if (!selectedChild) return;
         const [statsRes, infoRes] = await Promise.all([
           serviceRequest<{ dashboard: { children_overview: DashboardStats[] } }>(
             `/api/parent/dashboard/stats?student_id=${selectedChild.student_id}`

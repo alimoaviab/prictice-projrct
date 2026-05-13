@@ -33,6 +33,7 @@ export default function ParentAttendancePage() {
     async function fetchData() {
       setLoading(true);
       try {
+        if (!selectedChild) return;
         const res = await serviceRequest<any>(
           `/api/parent/student-attendance?student_id=${selectedChild.student_id}`
         );

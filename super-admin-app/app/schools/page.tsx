@@ -36,7 +36,9 @@ type Modal = {
   school: School | null;
 };
 
-export default function SchoolsPage() {
+import { Suspense } from "react";
+
+function SchoolsContent() {
   const searchParams = useSearchParams();
   const initialStatus = searchParams.get("status") || "";
   
@@ -353,5 +355,20 @@ export default function SchoolsPage() {
         />
       )}
     </PlatformShell>
+  );
+}
+
+export default function SchoolsPage() {
+  return (
+    <Suspense fallback={
+      <PlatformShell eyebrow="Tenant Management" title="All Schools">
+        <div className="p-8 space-y-4 animate-pulse">
+           <div className="h-20 bg-slate-100 rounded-xl" />
+           <div className="h-64 bg-slate-50 rounded-xl" />
+        </div>
+      </PlatformShell>
+    }>
+      <SchoolsContent />
+    </Suspense>
   );
 }

@@ -1,3 +1,7 @@
+import React from "react";
+import { DataTableColumn } from "../../../components/ui/DataTable";
+import { SchoolRow } from "../types/school.types";
+
 export const schoolStatuses = ["pending", "approved", "rejected", "suspended"] as const;
 
 export const schoolTableColumns: DataTableColumn<SchoolRow>[] = [

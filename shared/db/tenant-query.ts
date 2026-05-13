@@ -127,7 +127,14 @@ export function teacherFilter<T extends { school_id: string; academic_year_id?: 
 }
 
 export function requirePlatformContext(ctx: RequestContext): void {
-  if (ctx.app !== "super_admin" || ctx.role !== "super_admin" || ctx.school_id !== "platform") {
+  const validApps = ["super_admin", "super-admin"];
+  const validSchoolIds = ["platform", "PLATFORM"];
+  
+  if (
+    !validApps.includes(ctx.app as string) ||
+    ctx.role !== "super_admin" ||
+    !validSchoolIds.includes(ctx.school_id as string)
+  ) {
     throw new ControlledError("PLATFORM_ONLY", "This operation requires platform access.", 403);
   }
 }

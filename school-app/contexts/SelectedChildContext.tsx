@@ -65,7 +65,7 @@ export function SelectedChildProvider({ children: reactChildren }: { children: R
           }
         }
       } else {
-        setError(result.error?.message || "Failed to load children");
+        setError(result.message || "Failed to load children");
       }
     } catch (err) {
       setError("Failed to load children");
