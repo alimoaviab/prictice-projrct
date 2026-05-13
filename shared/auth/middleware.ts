@@ -34,7 +34,8 @@ export function authenticateRequest(request: SessionRequest, expectedApp: AppNam
     throw new Error("Authentication required.");
   }
 
-  // Extract academic year from header
+  // Extract academic year from header (client override; will be validated against
+  // the JWT-bound school_id by academicYearFilter at the query layer).
   const academicYearId = request.headers?.["x-academic-year-id"];
 
     // Production requires valid token
@@ -44,7 +45,11 @@ export function authenticateRequest(request: SessionRequest, expectedApp: AppNam
             user_agent: request.headers?.["user-agent"]
         });
 
-        if (academicYearId && academicYearId !== "undefined") {
+        // CRITICAL: Allow client to switch academic year via header, but only
+        // accept syntactically valid IDs. The header value is later cross-checked
+        // against the tenant in academicYearFilter() to prevent cross-school
+        // year selection. If no JWT-bound year exists, fall back to header.
+        if (academicYearId && academicYearId !== "undefined" && academicYearId.trim().length > 0) {
             ctx.active_academic_year_id = academicYearId;
         }
 

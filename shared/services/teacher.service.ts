@@ -4,6 +4,7 @@ import { assertPermission } from "../auth/rbac";
 import { hashPassword } from "../auth/password";
 import { connectDb } from "../db/connect";
 import { tenantFilter } from "../db/tenant-query";
+import { buildPaginatedResponse, parsePagination, type Paginated } from "../db/pagination";
 import { ClassModel } from "../models/class.model";
 import { TeacherModel } from "../models/teacher.model";
 import { UserModel } from "../models/user.model";
@@ -32,10 +33,19 @@ export async function resolveTeacherClassIds(ctx: RequestContext): Promise<Types
   return teacher.class_ids.map((id) => new Types.ObjectId(String(id)));
 }
 
+const TEACHER_LIST_PROJECTION =
+  "first_name last_name email phone employee_no qualification subjects class_ids subject_ids status user_id academic_year_id joined_at";
+
 export async function listTeachers(
   ctx: RequestContext,
-  filter: { academic_year_id?: string } = {}
-): Promise<ServiceResult<unknown[]>> {
+  filter: {
+    academic_year_id?: string;
+    status?: string;
+    page?: string | number;
+    limit?: string | number;
+    search?: string;
+  } = {}
+): Promise<ServiceResult<unknown[] | Paginated<unknown>>> {
   return serviceTry(async () => {
     await connectDb();
     assertPermission(ctx, "teachers", "view");
@@ -47,29 +57,65 @@ export async function listTeachers(
       academicYearId = await resolveAcademicYearId(ctx);
     }
 
-    const query = tenantFilter(ctx, {
-      ...(academicYearId ? { academic_year_id: new Types.ObjectId(academicYearId) } : {})
+    const query: any = tenantFilter(ctx, {
+      ...(academicYearId ? { academic_year_id: new Types.ObjectId(academicYearId) } : {}),
+      ...(filter.status ? { status: filter.status } : {})
     });
 
-    const teachers = await TeacherModel.find(query)
-      .sort({ first_name: 1, last_name: 1 })
-      .lean();
+    if (filter.search && String(filter.search).trim()) {
+      const term = String(filter.search).trim();
+      const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const rx = new RegExp(escaped, "i");
+      query.$or = [
+        { first_name: rx },
+        { last_name: rx },
+        { email: rx },
+        { employee_no: rx }
+      ];
+    }
 
+    const pagination = parsePagination(filter);
+
+    const baseQuery = TeacherModel.find(query)
+      .select(TEACHER_LIST_PROJECTION)
+      .sort({ first_name: 1, last_name: 1 });
+
+    const [teachersRaw, total] = pagination.enabled
+      ? await Promise.all([
+          baseQuery.skip(pagination.skip).limit(pagination.limit).lean(),
+          TeacherModel.countDocuments(query)
+        ])
+      : [await baseQuery.lean(), 0];
+
+    const teachers = teachersRaw as any[];
     const userIds = teachers.map((teacher) => teacher.user_id).filter(Boolean);
-    const users = await UserModel.find({ _id: { $in: userIds } }).lean();
-    const usersById = new Map(users.map((user) => [String(user._id), user]));
+    const users = userIds.length
+      ? await UserModel.find({
+          school_id: ctx.school_id,
+          _id: { $in: userIds }
+        })
+          .select("email profile.phone")
+          .lean()
+      : [];
+    const usersById = new Map(users.map((user: any) => [String(user._id), user]));
 
-    return teachers.map((teacher) => {
+    const items = teachers.map((teacher) => {
       const user = teacher.user_id ? usersById.get(String(teacher.user_id)) : undefined;
       return {
         ...teacher,
         _id: String(teacher._id),
-        email: user?.email ?? "",
-        phone: teacher.phone ?? user?.profile?.phone ?? "",
+        email: user?.email ?? teacher.email ?? "",
+        phone: teacher.phone ?? (user as any)?.profile?.phone ?? "",
         qualification: teacher.qualification ?? "",
         class_ids: (teacher.class_ids ?? []).map((value: unknown) => String(value))
       };
     });
+
+    if (!pagination.enabled) {
+      return items;
+    }
+
+    return buildPaginatedResponse(items, total, pagination);
   });
 }
 
@@ -191,7 +237,7 @@ export async function updateTeacher(
 
       if (Object.keys(userPatch).length > 0) {
         await UserModel.updateOne(
-          { _id: existing.user_id },
+          { school_id: ctx.school_id, _id: existing.user_id },
           { $set: userPatch }
         );
       }
@@ -222,7 +268,9 @@ export async function getTeacher(
       throw new Error("Teacher not found.");
     }
 
-    const user = teacher.user_id ? await UserModel.findById(teacher.user_id).lean() : null;
+    const user = teacher.user_id
+      ? await UserModel.findOne({ school_id: ctx.school_id, _id: teacher.user_id }).lean()
+      : null;
 
     return {
       ...teacher,
@@ -259,7 +307,7 @@ export async function deleteTeacher(
 
     // Delete associated user
     if (existing.user_id) {
-      await UserModel.deleteOne({ _id: existing.user_id });
+      await UserModel.deleteOne({ school_id: ctx.school_id, _id: existing.user_id });
     }
 
     await TeacherModel.findOneAndDelete(tenantFilter(ctx, { _id: id }));

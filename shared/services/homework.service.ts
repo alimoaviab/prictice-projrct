@@ -58,8 +58,15 @@ export async function getHomework(
 
 export async function listHomework(
   ctx: RequestContext,
-  filter: { academic_year_id?: string } = {}
-): Promise<ServiceResult<unknown[]>> {
+  filter: {
+    academic_year_id?: string;
+    student_id?: string;
+    class_id?: string;
+    status?: string;
+    page?: string | number;
+    limit?: string | number;
+  } = {}
+): Promise<ServiceResult<unknown[] | { items: unknown[]; total: number; page: number; limit: number; pages: number }>> {
   return serviceTry(async () => {
     await connectDb();
     assertPermission(ctx, "homework", "view");
@@ -111,14 +118,30 @@ export async function listHomework(
       }
     }
 
-    const rows = await HomeworkModel.find(query)
+    const { parsePagination, buildPaginatedResponse } = await import("../db/pagination");
+    const pagination = parsePagination(filter, { defaultLimit: 30, maxLimit: 200 });
+
+    if (filter.class_id && !query.class_id) {
+      query.class_id = new Types.ObjectId(filter.class_id);
+    }
+    if (filter.status && !query.status) {
+      query.status = filter.status;
+    }
+
+    const baseQuery = HomeworkModel.find(query)
       .populate("class_id", "name")
       .populate("teacher_id", "employee_no first_name last_name")
       .populate({ path: "subject_id", select: "name", strictPopulate: false })
-      .sort({ due_at: 1, createdAt: -1 })
-      .lean();
+      .sort({ due_at: 1, createdAt: -1 });
 
-    return rows.map((row) => {
+    const [rowsRaw, total] = pagination.enabled
+      ? await Promise.all([
+          baseQuery.skip(pagination.skip).limit(pagination.limit).lean(),
+          HomeworkModel.countDocuments(query)
+        ])
+      : [await baseQuery.lean(), 0];
+
+    const items = (rowsRaw as any[]).map((row) => {
       const classroom = row.class_id as { _id?: unknown; name?: string };
       const teacher = row.teacher_id as {
         _id?: unknown;
@@ -141,6 +164,9 @@ export async function listHomework(
         due_at: row.due_at instanceof Date ? row.due_at.toISOString().split("T")[0] : row.due_at
       };
     });
+
+    if (!pagination.enabled) return items;
+    return buildPaginatedResponse(items, total, pagination);
   });
 }
 
@@ -289,9 +315,9 @@ export async function updateHomework(
         subject = await SubjectModel.findOne(tenantFilter(ctx, { _id: parsed.subject_id })).lean();
       }
       if (!subject) {
-        const homework = existing || await HomeworkModel.findById(id).lean();
+        const homework = existing || await HomeworkModel.findOne(tenantFilter(ctx, { _id: id })).lean();
         if (homework) {
-          const classroom = await ClassModel.findById(homework.class_id).lean();
+          const classroom = await ClassModel.findOne(tenantFilter(ctx, { _id: homework.class_id })).lean();
           const embedded = (classroom?.subjects || [])?.find(
             (s: any) => s.name === parsed.subject_id || String(s._id) === parsed.subject_id
           );

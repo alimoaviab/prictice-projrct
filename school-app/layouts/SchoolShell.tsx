@@ -508,10 +508,28 @@ export function SchoolShell({
               <select
                 value={selectedAcademyCareId}
                 disabled={user.role === "student"}
-                onChange={(event) => {
+                onChange={async (event) => {
                   const nextId = event.target.value;
                   setSelectedAcademicYearIdState(nextId);
                   setSelectedAcademicYearId(nextId);
+                  // CRITICAL: Re-issue JWT with the new active_academic_year_id
+                  // so the server (not the client) controls the active year.
+                  try {
+                    const response = await fetch("/api/academic-years/switch", {
+                      method: "POST",
+                      credentials: "include",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ academic_year_id: nextId })
+                    });
+                    const result = await response.json();
+                    if (result?.ok && result?.data?.token) {
+                      localStorage.setItem("token", result.data.token);
+                    }
+                  } catch (err) {
+                    console.warn("[AcademicYear] switch failed", err);
+                  }
+                  // Force a clean re-render so all SWR/React Query caches refetch
+                  // with the new active year context.
                   window.location.reload();
                 }}
                 className={`bg-transparent text-[10px] font-black uppercase tracking-widest text-slate-500 focus:outline-none ${user.role === "student" ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}

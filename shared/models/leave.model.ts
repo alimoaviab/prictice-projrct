@@ -4,6 +4,7 @@ import { schemaOptions, tenantField, requiredString } from "./base";
 const leaveSchema = new Schema(
   {
     school_id: tenantField,
+    academic_year_id: { type: Types.ObjectId, ref: "AcademicYear", index: true },
     requester_type: {
       type: String,
       required: true,
@@ -34,5 +35,6 @@ const leaveSchema = new Schema(
 );
 
 leaveSchema.index({ school_id: 1, requester_id: 1, start_date: -1 });
+leaveSchema.index({ school_id: 1, academic_year_id: 1, status: 1 });
 
 export const LeaveModel = models.Leave || model("Leave", leaveSchema);

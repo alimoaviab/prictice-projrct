@@ -4,6 +4,7 @@ import { schemaOptions, tenantField, requiredString } from "./base";
 const eventSchema = new Schema(
   {
     school_id: tenantField,
+    academic_year_id: { type: Types.ObjectId, ref: "AcademicYear", index: true },
     title: requiredString,
     description: String,
     event_type: {
@@ -34,5 +35,6 @@ const eventSchema = new Schema(
 );
 
 eventSchema.index({ school_id: 1, start_date: 1 });
+eventSchema.index({ school_id: 1, academic_year_id: 1, start_date: 1 });
 
 export const EventModel = models.Event || model("Event", eventSchema);

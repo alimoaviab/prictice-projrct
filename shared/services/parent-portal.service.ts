@@ -109,7 +109,7 @@ async function resolveLinkedStudents(ctx: RequestContext, studentId?: string) {
     return students;
 }
 
-async function resolveStudentAcademicYear(student: ParentStudentDoc) {
+async function resolveStudentAcademicYear(ctx: RequestContext, student: ParentStudentDoc) {
     const classDoc = student.class_id as { academic_year_id?: any; academic_year?: string } | undefined;
     if (!classDoc?.academic_year_id) {
         return null;
@@ -119,7 +119,8 @@ async function resolveStudentAcademicYear(student: ParentStudentDoc) {
         return classDoc.academic_year_id;
     }
 
-    const record = await AcademicYearModel.findOne({ _id: classDoc.academic_year_id }).lean();
+    // CRITICAL: Always scope AY lookup to the requesting tenant.
+    const record = await AcademicYearModel.findOne(tenantFilter(ctx, { _id: classDoc.academic_year_id })).lean();
     return record ?? null;
 }
 
@@ -263,7 +264,7 @@ export async function listLinkedStudents(ctx: RequestContext): Promise<ServiceRe
                     class: classDisplayName(student),
                     section: student.section ?? (student.class_id as any)?.section ?? "",
                     status: student.status ?? "active",
-                    academic_year: (await resolveStudentAcademicYear(student))?.year ?? ""
+                    academic_year: (await resolveStudentAcademicYear(ctx, student))?.year ?? ""
                 }))
             )
         };
@@ -276,9 +277,11 @@ export async function getStudentInfo(ctx: RequestContext, studentId?: string): P
         assertPermission(ctx, "results", "view");
         const students = await resolveLinkedStudents(ctx, studentId);
         const student = students[0];
-        const academicYear = await resolveStudentAcademicYear(student);
+        const academicYear = await resolveStudentAcademicYear(ctx, student);
         const subjects = await resolveSubjectsForStudent(ctx, student);
-        const user = student.user_id ? await UserModel.findOne({ _id: student.user_id }).select("email").lean() : null;
+        const user = student.user_id
+            ? await UserModel.findOne(tenantFilter(ctx, { _id: student.user_id })).select("email").lean()
+            : null;
 
         return {
             student: {
@@ -317,7 +320,7 @@ export async function getDashboardStats(ctx: RequestContext, studentId?: string)
         const childrenOverview = await Promise.all(
             students.map(async (student) => {
                 const classId = String((student.class_id as any)?._id ?? student.class_id);
-                const academicYear = await resolveStudentAcademicYear(student);
+                const academicYear = await resolveStudentAcademicYear(ctx, student);
 
                 const attendanceRecords = await AttendanceModel.find(tenantFilter(ctx, { student_id: student._id }))
                     .select("date status")
@@ -388,7 +391,7 @@ export async function getStudentResultsReport(ctx: RequestContext, studentId?: s
         assertPermission(ctx, "results", "view");
         const students = await resolveLinkedStudents(ctx, studentId);
         const student = students[0];
-        const academicYear = await resolveStudentAcademicYear(student);
+        const academicYear = await resolveStudentAcademicYear(ctx, student);
         const examResults = await buildResultBreakdown(ctx, student);
 
         return {
@@ -429,7 +432,7 @@ export async function getAttendanceReport(ctx: RequestContext, studentId?: strin
         assertPermission(ctx, "attendance", "view");
         const students = await resolveLinkedStudents(ctx, studentId);
         const student = students[0];
-        const academicYear = await resolveStudentAcademicYear(student);
+        const academicYear = await resolveStudentAcademicYear(ctx, student);
         const attendanceRows = (await AttendanceModel.find(tenantFilter(ctx, { student_id: student._id }))
             .sort({ date: -1, createdAt: -1 })
             .lean()) as Array<{ date?: Date | string; status?: string }>;
@@ -546,7 +549,7 @@ export async function getPerformanceChart(ctx: RequestContext, studentId?: strin
         assertPermission(ctx, "results", "view");
         const students = await resolveLinkedStudents(ctx, studentId);
         const student = students[0];
-        const academicYear = await resolveStudentAcademicYear(student);
+        const academicYear = await resolveStudentAcademicYear(ctx, student);
         const results = await ResultModel.find(tenantFilter(ctx, { student_id: student._id }))
             .populate({ path: "exam_id", populate: [{ path: "schedule.subject_id", select: "name" }] })
             .populate("class_id", "name grade_thresholds")
@@ -733,7 +736,7 @@ export async function getFeesReport(ctx: RequestContext, studentId?: string): Pr
         return {
             student: studentDisplayName(student),
             class: classDisplayName(student),
-            academic_year: (await resolveStudentAcademicYear(student))?.year ?? "",
+            academic_year: (await resolveStudentAcademicYear(ctx, student))?.year ?? "",
             fee_summary: {
                 total_fee: totalFee,
                 collected,

@@ -100,6 +100,7 @@ export async function POST(request: NextRequest) {
 
         let school_id = "";
         let createdSchoolCode = "";
+        let activeAcademicYearId: string | undefined = undefined;
 
         if (role === "admin") {
             // STEP 1: Generate unique school_id
@@ -121,7 +122,7 @@ export async function POST(request: NextRequest) {
 
             // STEP 3: Create default academic year
             const currentYear = new Date().getFullYear();
-            await AcademicYearModel.create({
+            const createdYear = await AcademicYearModel.create({
                 school_id,
                 year: `${currentYear}-${currentYear + 1}`,
                 start_date: new Date(currentYear, 3, 1), // April 1
@@ -130,6 +131,7 @@ export async function POST(request: NextRequest) {
                 status: "active",
                 description: "Default academic year"
             });
+            activeAcademicYearId = String(createdYear._id);
 
             createdSchoolCode = school_id;
         } else {
@@ -151,6 +153,13 @@ export async function POST(request: NextRequest) {
                     { status: 400 }
                 );
             }
+
+            // Resolve the active academic year for this school
+            const activeYear = await AcademicYearModel.findOne({
+                school_id,
+                is_active: true
+            }).select("_id").lean() as { _id: unknown } | null;
+            activeAcademicYearId = activeYear?._id ? String(activeYear._id) : undefined;
         }
 
         // STEP 4: Create user with school_id
@@ -173,6 +182,7 @@ export async function POST(request: NextRequest) {
             school_id, // CRITICAL: All future requests will use this school_id
             role,
             permissions: role === "admin" ? ["*"] : [],
+            active_academic_year_id: activeAcademicYearId,
             session_id: randomUUID(),
             app: "school",
             actor_email: email
@@ -187,7 +197,8 @@ export async function POST(request: NextRequest) {
                     token,
                     email,
                     school_id,
-                    schoolCode: createdSchoolCode || undefined
+                    schoolCode: createdSchoolCode || undefined,
+                    active_academic_year_id: activeAcademicYearId
                 }
             },
             { status: 201 }

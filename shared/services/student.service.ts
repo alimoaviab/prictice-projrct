@@ -3,6 +3,7 @@ import { hashPassword } from "../auth/password";
 import { assertPermission } from "../auth/rbac";
 import { connectDb } from "../db/connect";
 import { tenantFilter } from "../db/tenant-query";
+import { buildPaginatedResponse, parsePagination, type Paginated } from "../db/pagination";
 import { StudentModel } from "../models/student.model";
 import { UserModel } from "../models/user.model";
 import { RequestContext, ServiceResult } from "../types/core";
@@ -28,10 +29,19 @@ async function nextAdmissionNumber(schoolId: string): Promise<string> {
   }
 }
 
+const STUDENT_LIST_PROJECTION = "first_name last_name admission_no email status class_id section guardian academic_year_id roll_no date_of_birth gender created_at";
+
 export async function listStudents(
   ctx: RequestContext,
-  filter: { class_id?: string; status?: string; academic_year_id?: string } = {}
-): Promise<ServiceResult<unknown[]>> {
+  filter: {
+    class_id?: string;
+    status?: string;
+    academic_year_id?: string;
+    page?: string | number;
+    limit?: string | number;
+    search?: string;
+  } = {}
+): Promise<ServiceResult<unknown[] | Paginated<unknown>>> {
   return serviceTry(async () => {
     await connectDb();
     assertPermission(ctx, "students", "view");
@@ -43,7 +53,7 @@ export async function listStudents(
       academicYearId = await resolveAcademicYearId(ctx);
     }
 
-    const query = tenantFilter(ctx, {
+    const query: any = tenantFilter(ctx, {
       ...(filter.status ? { status: filter.status } : {}),
       ...(academicYearId ? { academic_year_id: new Types.ObjectId(academicYearId) } : {})
     });
@@ -52,7 +62,41 @@ export async function listStudents(
       query.class_id = new Types.ObjectId(filter.class_id);
     }
 
-    return StudentModel.find(query).sort({ last_name: 1, first_name: 1 }).lean();
+    // Server-side search (debounced from the frontend) — index-friendly
+    // because we always filter by school_id + academic_year_id first.
+    if (filter.search && String(filter.search).trim()) {
+      const term = String(filter.search).trim();
+      const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const rx = new RegExp(escaped, "i");
+      query.$or = [
+        { first_name: rx },
+        { last_name: rx },
+        { admission_no: rx },
+        { email: rx }
+      ];
+    }
+
+    const pagination = parsePagination(filter);
+
+    if (!pagination.enabled) {
+      // Legacy callers — return a plain array exactly as before, just leaner.
+      return StudentModel.find(query)
+        .select(STUDENT_LIST_PROJECTION)
+        .sort({ last_name: 1, first_name: 1 })
+        .lean();
+    }
+
+    const [items, total] = await Promise.all([
+      StudentModel.find(query)
+        .select(STUDENT_LIST_PROJECTION)
+        .sort({ last_name: 1, first_name: 1 })
+        .skip(pagination.skip)
+        .limit(pagination.limit)
+        .lean(),
+      StudentModel.countDocuments(query)
+    ]);
+
+    return buildPaginatedResponse(items, total, pagination);
   });
 }
 

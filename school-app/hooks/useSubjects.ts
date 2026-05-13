@@ -1,36 +1,42 @@
 'use client';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { serviceRequest } from '../services/service-client';
+import { useTenantContext } from './useTenantContext';
 
-const SUBJECTS_QUERY_KEY = ['subjects'];
+const SUBJECTS_QUERY_KEY = ['subjects'] as const;
 
-export function useSubjects(academyYearId?: string) {
-  const url = academyYearId 
+export function useSubjects(academyYearIdLegacy?: string) {
+  const { schoolId, academicYearId: ctxYear } = useTenantContext();
+  const academyYearId = academyYearIdLegacy || ctxYear;
+  const url = academyYearId
     ? `/api/subjects?academic_year_id=${academyYearId}`
     : '/api/subjects';
 
   return useQuery({
-    queryKey: [...SUBJECTS_QUERY_KEY, academyYearId],
+    queryKey: [...SUBJECTS_QUERY_KEY, schoolId, academyYearId],
     queryFn: async () => {
       const result = await serviceRequest<any[]>(url);
       if (!result.ok) throw new Error(result.error?.message || 'Failed to fetch subjects');
       return result.data || [];
     },
+    placeholderData: keepPreviousData,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
+    enabled: !!schoolId,
   });
 }
 
 export function useSubject(subjectId: string) {
+  const { schoolId } = useTenantContext();
   return useQuery({
-    queryKey: [...SUBJECTS_QUERY_KEY, subjectId],
+    queryKey: [...SUBJECTS_QUERY_KEY, schoolId, 'detail', subjectId],
     queryFn: async () => {
       const result = await serviceRequest<any>(`/api/subjects/${subjectId}`);
       if (!result.ok) throw new Error(result.error?.message || 'Failed to fetch subject');
       return result.data;
     },
-    enabled: !!subjectId,
+    enabled: !!subjectId && !!schoolId,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
@@ -38,6 +44,7 @@ export function useSubject(subjectId: string) {
 
 export function useCreateSubject() {
   const queryClient = useQueryClient();
+  const { schoolId } = useTenantContext();
 
   return useMutation({
     mutationFn: async (data: any) => {
@@ -49,13 +56,14 @@ export function useCreateSubject() {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: SUBJECTS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: [...SUBJECTS_QUERY_KEY, schoolId] });
     },
   });
 }
 
 export function useUpdateSubject() {
   const queryClient = useQueryClient();
+  const { schoolId } = useTenantContext();
 
   return useMutation({
     mutationFn: async ({ subjectId, data }: { subjectId: string; data: any }) => {
@@ -66,15 +74,16 @@ export function useUpdateSubject() {
       if (!result.ok) throw new Error(result.error?.message || 'Failed to update subject');
       return result.data;
     },
-    onSuccess: (data) => {
-      queryClient.setQueryData([...SUBJECTS_QUERY_KEY, data._id], data);
-      queryClient.invalidateQueries({ queryKey: SUBJECTS_QUERY_KEY });
+    onSuccess: (data: any) => {
+      queryClient.setQueryData([...SUBJECTS_QUERY_KEY, schoolId, 'detail', data?._id], data);
+      queryClient.invalidateQueries({ queryKey: [...SUBJECTS_QUERY_KEY, schoolId] });
     },
   });
 }
 
 export function useDeleteSubject() {
   const queryClient = useQueryClient();
+  const { schoolId } = useTenantContext();
 
   return useMutation({
     mutationFn: async (subjectId: string) => {
@@ -85,7 +94,7 @@ export function useDeleteSubject() {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: SUBJECTS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: [...SUBJECTS_QUERY_KEY, schoolId] });
     },
   });
 }

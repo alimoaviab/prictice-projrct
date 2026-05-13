@@ -31,5 +31,10 @@ const studentSchema = new Schema(
 studentSchema.index({ school_id: 1, admission_no: 1 }, { unique: true });
 studentSchema.index({ school_id: 1, class_id: 1, section: 1, status: 1 });
 studentSchema.index({ school_id: 1, user_id: 1 }, { sparse: true });
+// Pagination + sort: school_id + academic_year_id + status with name sort key
+studentSchema.index({ school_id: 1, academic_year_id: 1, status: 1, last_name: 1, first_name: 1 });
+// Search-friendly: most search inputs filter by school + academic year then match name/email
+studentSchema.index({ school_id: 1, academic_year_id: 1, last_name: 1 });
+studentSchema.index({ school_id: 1, academic_year_id: 1, first_name: 1 });
 
 export const StudentModel = models.Student || model("Student", studentSchema);

@@ -40,5 +40,7 @@ teacherSchema.index({ school_id: 1, employee_no: 1 }, { unique: true });
 teacherSchema.index({ school_id: 1, user_id: 1 }, { sparse: true });
 teacherSchema.index({ school_id: 1, academic_year_id: 1, status: 1 });
 teacherSchema.index({ school_id: 1, subjects: 1, status: 1 });
+// Pagination sort key for teacher list page
+teacherSchema.index({ school_id: 1, academic_year_id: 1, first_name: 1, last_name: 1 });
 
 export const TeacherModel = models.Teacher || model("Teacher", teacherSchema);

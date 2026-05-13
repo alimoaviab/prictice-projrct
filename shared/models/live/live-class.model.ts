@@ -3,6 +3,7 @@ import { tenantField, schemaOptions, requiredString } from "../base";
 
 export interface ILiveClass extends Document {
   school_id: string;
+  academic_year_id?: mongoose.Types.ObjectId;
   title: string;
   description?: string;
   teacherId: mongoose.Types.ObjectId;
@@ -25,6 +26,7 @@ export interface ILiveClass extends Document {
 const LiveClassSchema = new Schema(
   {
     school_id: tenantField,
+    academic_year_id: { type: Schema.Types.ObjectId, ref: "AcademicYear", index: true },
     title: requiredString,
     description: { type: String, default: "" },
     teacherId: { type: Schema.Types.ObjectId, ref: "Teacher", required: true },
@@ -60,5 +62,6 @@ const LiveClassSchema = new Schema(
 LiveClassSchema.index({ school_id: 1, classId: 1, startTime: 1 });
 LiveClassSchema.index({ school_id: 1, teacherId: 1, status: 1 });
 LiveClassSchema.index({ school_id: 1, meetingProvider: 1, meetingStatus: 1 });
+LiveClassSchema.index({ school_id: 1, academic_year_id: 1, startTime: 1 });
 
 export const LiveClass = mongoose.models.LiveClass || mongoose.model<ILiveClass>("LiveClass", LiveClassSchema);

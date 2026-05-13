@@ -4,6 +4,11 @@ import { schemaOptions, tenantField } from "./base";
 const announcementSchema = new Schema(
   {
     school_id: tenantField,
+    academic_year_id: {
+      type: Types.ObjectId,
+      ref: "AcademicYear",
+      index: true,
+    },
     title: {
       type: String,
       required: true,
@@ -24,6 +29,7 @@ const announcementSchema = new Schema(
 );
 
 announcementSchema.index({ school_id: 1, created_at: -1 });
+announcementSchema.index({ school_id: 1, academic_year_id: 1, created_at: -1 });
 
 export interface AnnouncementModel {
   title: string;

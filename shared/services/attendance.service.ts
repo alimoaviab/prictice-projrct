@@ -3,6 +3,7 @@ import { Types } from "mongoose";
 import { assertPermission } from "../auth/rbac";
 import { connectDb } from "../db/connect";
 import { tenantFilter } from "../db/tenant-query";
+import { buildPaginatedResponse, parsePagination, type Paginated } from "../db/pagination";
 import { AttendanceModel } from "../models/attendance.model";
 import { ClassModel } from "../models/class.model";
 import { StudentModel } from "../models/student.model";
@@ -20,6 +21,9 @@ type AttendanceFilter = {
   academic_year_id?: string;
   date?: string;
   period?: number | string;
+  status?: string;
+  page?: string | number;
+  limit?: string | number;
 };
 
 function hasClassAccess(classIds: Types.ObjectId[], classId: string): boolean {
@@ -34,7 +38,7 @@ function intersectClassIds(a: Types.ObjectId[], b: Types.ObjectId[]): Types.Obje
 export async function listAttendance(
   ctx: RequestContext,
   filter: AttendanceFilter = {}
-): Promise<ServiceResult<unknown[]>> {
+): Promise<ServiceResult<unknown[] | Paginated<unknown>>> {
   return serviceTry(async () => {
     await connectDb();
     assertPermission(ctx, "attendance", "view");
@@ -97,13 +101,25 @@ export async function listAttendance(
       query.period = Number(filter.period);
     }
 
-    const rows = await AttendanceModel.find(query)
+    if (filter.status) {
+      query.status = filter.status;
+    }
+
+    const pagination = parsePagination(filter, { defaultLimit: 50, maxLimit: 200 });
+
+    const baseQuery = AttendanceModel.find(query)
       .populate("student_id", "admission_no first_name last_name")
       .populate("class_id", "name")
-      .sort({ date: -1, createdAt: -1 })
-      .lean();
+      .sort({ date: -1, createdAt: -1 });
 
-    return rows.map((row) => {
+    const [rowsRaw, total] = pagination.enabled
+      ? await Promise.all([
+          baseQuery.skip(pagination.skip).limit(pagination.limit).lean(),
+          AttendanceModel.countDocuments(query)
+        ])
+      : [await baseQuery.lean(), 0];
+
+    const items = (rowsRaw as any[]).map((row) => {
       const student = row.student_id as {
         _id?: unknown;
         admission_no?: string;
@@ -124,6 +140,12 @@ export async function listAttendance(
         date: row.date instanceof Date ? row.date.toISOString().split("T")[0] : row.date
       };
     });
+
+    if (!pagination.enabled) {
+      return items;
+    }
+
+    return buildPaginatedResponse(items, total, pagination);
   });
 }
 

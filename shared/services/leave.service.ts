@@ -64,8 +64,16 @@ export async function createLeave(
 // LIST ALL (with filters)
 export async function listLeave(
   ctx: RequestContext,
-  query: { status?: string; requester_type?: string; requester_id?: string; start_date?: string; end_date?: string } = {}
-): Promise<ServiceResult<unknown[]>> {
+  query: {
+    status?: string;
+    requester_type?: string;
+    requester_id?: string;
+    start_date?: string;
+    end_date?: string;
+    page?: string | number;
+    limit?: string | number;
+  } = {}
+): Promise<ServiceResult<unknown[] | { items: unknown[]; total: number; page: number; limit: number; pages: number }>> {
   return serviceTry(async () => {
     await connectDb();
     assertPermission(ctx, "leave", "view");
@@ -80,13 +88,22 @@ export async function listLeave(
       if (query.end_date) (filter.start_date as any).$lte = new Date(query.end_date);
     }
 
-    const rows = await LeaveModel.find(filter)
+    const { parsePagination, buildPaginatedResponse } = await import("../db/pagination");
+    const pagination = parsePagination(query, { defaultLimit: 25, maxLimit: 200 });
+
+    const baseQuery = LeaveModel.find(filter)
       .populate("requester_id", "first_name last_name")
       .populate("approved_by", "first_name last_name")
-      .sort({ created_at: -1 })
-      .lean();
+      .sort({ created_at: -1 });
 
-    return rows.map(row => ({
+    const [rowsRaw, total] = pagination.enabled
+      ? await Promise.all([
+          baseQuery.skip(pagination.skip).limit(pagination.limit).lean(),
+          LeaveModel.countDocuments(filter)
+        ])
+      : [await baseQuery.lean(), 0];
+
+    const items = (rowsRaw as any[]).map(row => ({
       ...row,
       _id: String((row as any)._id),
       requester_id: String((row as any).requester_id),
@@ -96,6 +113,9 @@ export async function listLeave(
       start_date: (row as any).start_date instanceof Date ? (row as any).start_date.toISOString().split("T")[0] : (row as any).start_date,
       end_date: (row as any).end_date instanceof Date ? (row as any).end_date.toISOString().split("T")[0] : (row as any).end_date
     }));
+
+    if (!pagination.enabled) return items;
+    return buildPaginatedResponse(items, total, pagination);
   });
 }
 

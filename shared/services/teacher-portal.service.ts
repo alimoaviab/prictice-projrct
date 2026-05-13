@@ -228,7 +228,10 @@ export async function getTeacherDashboardData(ctx: RequestContext, teacherId: st
     // Fetch dependencies
     const school = (await SchoolModel.findOne({ school_id: effectiveCtx.school_id }).select("name").lean()) as any;
     const ay = (effectiveCtx.active_academic_year_id
-      ? await AcademicYearModel.findById(effectiveCtx.active_academic_year_id).select("year").lean()
+      ? await AcademicYearModel.findOne({
+          school_id: effectiveCtx.school_id,
+          _id: effectiveCtx.active_academic_year_id
+        }).select("year").lean()
       : null) as any;
 
     // Today's schedule

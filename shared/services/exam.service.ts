@@ -35,8 +35,8 @@ function mapExamRecord(row: Record<string, any>) {
 
 export async function listExams(
   ctx: RequestContext,
-  filter: { academic_year_id?: string } = {}
-): Promise<ServiceResult<unknown[]>> {
+  filter: { academic_year_id?: string; page?: string | number; limit?: string | number; class_id?: string; status?: string } = {}
+): Promise<ServiceResult<unknown[] | { items: unknown[]; total: number; page: number; limit: number; pages: number }>> {
   return serviceTry(async () => {
     await connectDb();
     assertPermission(ctx, "exams", "view");
@@ -126,12 +126,19 @@ export async function listExams(
       { $sort: { starts_at: -1 } }
     ]);
 
-    return rows.map(row => ({
+    const items = rows.map(row => ({
       ...row,
       _id: String(row._id),
       class_id: String(row.class_id),
       starts_at: row.starts_at instanceof Date ? row.starts_at.toISOString().split("T")[0] : String(row.starts_at)
     }));
+
+    const { parsePagination, buildPaginatedResponse } = await import("../db/pagination");
+    const pagination = parsePagination(filter, { defaultLimit: 25, maxLimit: 200 });
+    if (!pagination.enabled) return items;
+    const total = items.length;
+    const sliced = items.slice(pagination.skip, pagination.skip + pagination.limit);
+    return buildPaginatedResponse(sliced, total, pagination);
   });
 }
 

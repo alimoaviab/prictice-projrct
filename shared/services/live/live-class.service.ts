@@ -108,6 +108,9 @@ export class LiveClassService {
 
     const liveClass = new LiveClass({
       school_id: ctx.school_id,
+      academic_year_id: ctx.active_academic_year_id
+        ? new mongoose.Types.ObjectId(ctx.active_academic_year_id)
+        : undefined,
       title: data.title,
       teacherId: new mongoose.Types.ObjectId(data.teacherId),
       classId: new mongoose.Types.ObjectId(data.classId),
@@ -224,6 +227,12 @@ export class LiveClassService {
     filters: { teacherId?: string; classId?: string; status?: string; date?: string } = {}
   ): Promise<ILiveClass[]> {
     const query: any = tenantFilter(ctx, {});
+
+    // CRITICAL: Scope to the active academic year so old-year live classes are
+    // hidden when an admin or teacher switches years (without deleting them).
+    if (ctx.active_academic_year_id) {
+      query.academic_year_id = new mongoose.Types.ObjectId(ctx.active_academic_year_id);
+    }
 
     if (filters.teacherId) query.teacherId = new mongoose.Types.ObjectId(filters.teacherId);
     if (filters.classId) query.classId = new mongoose.Types.ObjectId(filters.classId);

@@ -2,6 +2,7 @@ import { Types } from "mongoose";
 import { assertPermission } from "../auth/rbac";
 import { connectDb } from "../db/connect";
 import { tenantFilter } from "../db/tenant-query";
+import { buildPaginatedResponse, parsePagination, type Paginated } from "../db/pagination";
 import { ResultModel } from "../models/result.model";
 import { ExamModel } from "../models/exam.model";
 import { RequestContext, ServiceResult } from "../types/core";
@@ -11,8 +12,15 @@ import { writeAuditLog } from "./audit.service";
 
 export async function listResults(
   ctx: RequestContext,
-  filter: { academic_year_id?: string; exam_id?: string; student_id?: string }
-): Promise<ServiceResult<unknown[]>> {
+  filter: {
+    academic_year_id?: string;
+    exam_id?: string;
+    student_id?: string;
+    class_id?: string;
+    page?: string | number;
+    limit?: string | number;
+  }
+): Promise<ServiceResult<unknown[] | Paginated<unknown>>> {
   return serviceTry(async () => {
     await connectDb();
     assertPermission(ctx, "exams", "view");
@@ -36,15 +44,26 @@ export async function listResults(
     if (filter.student_id) {
       query.student_id = new Types.ObjectId(filter.student_id);
     }
+    if (filter.class_id) {
+      query.class_id = new Types.ObjectId(filter.class_id);
+    }
 
-    const rows = await ResultModel.find(query)
+    const pagination = parsePagination(filter, { defaultLimit: 50, maxLimit: 200 });
+
+    const baseQuery = ResultModel.find(query)
       .populate("student_id", "first_name last_name admission_no")
       .populate("exam_id", "title subject max_marks")
       .populate("class_id", "name")
-      .sort({ graded_at: -1 })
-      .lean();
+      .sort({ graded_at: -1 });
 
-    return rows.map(row => ({
+    const [rowsRaw, total] = pagination.enabled
+      ? await Promise.all([
+          baseQuery.skip(pagination.skip).limit(pagination.limit).lean(),
+          ResultModel.countDocuments(query)
+        ])
+      : [await baseQuery.lean(), 0];
+
+    const items = (rowsRaw as any[]).map(row => ({
       ...row,
       _id: String(row._id),
       student_id: String((row.student_id as any)?._id || row.student_id),
@@ -58,6 +77,9 @@ export async function listResults(
       class_name: (row.class_id as any)?.name || "N/A",
       grade: calculateGrade(row.obtained_marks, (row.exam_id as any)?.max_marks || 100)
     }));
+
+    if (!pagination.enabled) return items;
+    return buildPaginatedResponse(items, total, pagination);
   });
 }
 
@@ -110,7 +132,7 @@ export async function listExamResults(
   ctx: RequestContext,
   examId: string
 ): Promise<ServiceResult<unknown[]>> {
-  return listResults(ctx, { exam_id: examId });
+  return listResults(ctx, { exam_id: examId }) as Promise<ServiceResult<unknown[]>>;
 }
 
 export async function saveExamResults(

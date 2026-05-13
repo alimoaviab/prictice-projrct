@@ -1,86 +1,118 @@
 import { NextResponse } from "next/server";
+import { connectDb } from "@edu/shared/db/connect";
+import { authenticateRequest } from "@edu/shared/auth/middleware";
+import { LiveClassService } from "@edu/shared/services/live/live-class.service";
 
-// In-memory storage for demo (in production, use database)
-let scheduledClasses: any[] = [];
+function parseCookies(cookieHeader: string | null) {
+  if (!cookieHeader) return {};
+  return Object.fromEntries(
+    cookieHeader.split("; ").map((entry) => {
+      const i = entry.indexOf("=");
+      return i >= 0 ? [entry.slice(0, i), entry.slice(i + 1)] : [entry, ""];
+    })
+  );
+}
 
+function getContext(request: Request) {
+  return authenticateRequest(
+    {
+      cookies: parseCookies(request.headers.get("cookie")),
+      headers: Object.fromEntries(request.headers.entries())
+    },
+    "school"
+  );
+}
+
+/**
+ * Live Classes API — tenant-isolated.
+ *
+ * Replaces the previous in-memory mock that shared a single array across
+ * every request and tenant. All reads/writes now go through
+ * LiveClassService which enforces tenantFilter(ctx).
+ */
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const status = searchParams.get("status");
-  const teacherId = searchParams.get("teacherId");
+  try {
+    await connectDb();
+    const ctx = getContext(request);
+    const { searchParams } = new URL(request.url);
 
-  // Filter classes based on query params
-  let filtered = [...scheduledClasses];
-  
-  if (status) {
-    filtered = filtered.filter(c => c.status === status);
-  }
-  
-  if (teacherId) {
-    filtered = filtered.filter(c => c.teacherId === teacherId);
-  }
+    const status = searchParams.get("status") || undefined;
+    const teacherId = searchParams.get("teacherId") || undefined;
+    const classId = searchParams.get("classId") || undefined;
+    const date = searchParams.get("date") || undefined;
 
-  return NextResponse.json({ 
-    ok: true,
-    success: true,
-    data: filtered
-  });
+    const data = await LiveClassService.getClasses(ctx, {
+      ...(status ? { status } : {}),
+      ...(teacherId ? { teacherId } : {}),
+      ...(classId ? { classId } : {}),
+      ...(date ? { date } : {})
+    });
+
+    return NextResponse.json({ ok: true, success: true, data });
+  } catch (error: any) {
+    return NextResponse.json(
+      {
+        ok: false,
+        success: false,
+        message: error?.message || "Failed to load live classes",
+        error: { message: error?.message || "Failed to load live classes", status: error?.status || 500 }
+      },
+      { status: error?.status || 401 }
+    );
+  }
 }
 
 export async function POST(request: Request) {
   try {
+    await connectDb();
+    const ctx = getContext(request);
     const body = await request.json();
-    
-    // Validate required fields
+
     if (!body.title || !body.classId || !body.subjectId || !body.startTime || !body.endTime) {
       return NextResponse.json(
-        { 
+        {
           ok: false,
           success: false,
-          error: "Missing required fields: title, classId, subjectId, startTime, endTime"
+          message: "Missing required fields: title, classId, subjectId, startTime, endTime",
+          error: { message: "Missing required fields", status: 400 }
         },
         { status: 400 }
       );
     }
 
-    const mockMeetingLink = `https://meet.google.com/mock-${Date.now()}`;
-    
-    // Create new live class object
-    const newLiveClass = {
-      _id: `live-class-${Date.now()}`,
-      id: `live-class-${Date.now()}`,
+    // Resolve teacherId — if requester is a teacher, lock to their own profile
+    let teacherId = String(body.teacherId || "");
+    if (ctx.role === "teacher" && !teacherId) {
+      teacherId = ctx.user_id;
+    }
+    if (!teacherId) {
+      return NextResponse.json(
+        { ok: false, success: false, message: "teacherId is required", error: { message: "teacherId is required", status: 400 } },
+        { status: 400 }
+      );
+    }
+
+    const created = await LiveClassService.createClass(ctx, {
       title: body.title,
+      teacherId,
       classId: body.classId,
       subjectId: body.subjectId,
-      teacherId: body.teacherId || null,
+      sectionId: body.sectionId,
       startTime: body.startTime,
-      endTime: body.endTime,
-      meetingLink: mockMeetingLink,
-      meetingProvider: "google_meet",
-      status: "SCHEDULED",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    // Store in memory (in production, save to database)
-    scheduledClasses.push(newLiveClass);
-    
-    console.log("Live class created:", newLiveClass);
-    console.log("Total scheduled classes:", scheduledClasses.length);
-    
-    return NextResponse.json({ 
-      ok: true,
-      success: true,
-      data: newLiveClass
+      endTime: body.endTime
     });
-  } catch (error) {
+
+    return NextResponse.json({ ok: true, success: true, data: created });
+  } catch (error: any) {
     console.error("Error creating live class:", error);
     return NextResponse.json(
-      { 
+      {
         ok: false,
         success: false,
-        error: error instanceof Error ? error.message : "Failed to create live class"
+        message: error?.message || "Failed to create live class",
+        error: { message: error?.message || "Failed to create live class", status: error?.status || 500 }
       },
-      { status: 500 }
+      { status: error?.status || 500 }
     );
   }
 }

@@ -9,31 +9,28 @@ import { TimetableModel } from "../models/timetable.model";
 import { ClassModel } from "../models/class.model";
 import { AuditLogModel } from "../models/audit-log.model";
 import { resolveClassIdsForAcademicYear, resolveAcademicYearId } from "./_academic-year-filter";
+import { tenantFilter } from "../db/tenant-query";
 import { RequestContext } from "../types/core";
 
 export class DashboardAnalyticsService {
   static async getOverviewStats(ctx: RequestContext, academicYearId?: string) {
-    const schoolId = ctx.school_id;
     const classIds = await resolveClassIdsForAcademicYear(ctx, academicYearId);
     const resolvedYearId = await resolveAcademicYearId(ctx, academicYearId);
 
     const [totalStudents, totalTeachers, activeExams, pendingLeave] = await Promise.all([
-      StudentModel.countDocuments({ 
-        school_id: schoolId, 
+      StudentModel.countDocuments(tenantFilter(ctx, {
         status: "active",
         class_id: { $in: classIds }
-      }),
-      TeacherModel.countDocuments({ 
-        school_id: schoolId, 
+      })),
+      TeacherModel.countDocuments(tenantFilter(ctx, {
         status: "active",
         class_ids: { $in: classIds }
-      }),
-      ExamModel.countDocuments({ 
-        school_id: schoolId, 
+      })),
+      ExamModel.countDocuments(tenantFilter(ctx, {
         status: { $in: ["created", "scheduled"] },
         class_id: { $in: classIds }
-      }),
-      LeaveModel.countDocuments({ school_id: schoolId, status: "pending" })
+      })),
+      LeaveModel.countDocuments(tenantFilter(ctx, { status: "pending" }))
     ]);
 
     // Attendance Today
@@ -43,12 +40,11 @@ export class DashboardAnalyticsService {
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     const attendanceStats = await AttendanceModel.aggregate([
-      { 
-        $match: { 
-          school_id: schoolId, 
+      {
+        $match: tenantFilter(ctx, {
           date: { $gte: today, $lt: tomorrow },
           class_id: { $in: classIds }
-        } 
+        })
       },
       {
         $group: {
@@ -75,11 +71,10 @@ export class DashboardAnalyticsService {
 
     // Fee collection
     const feeStats = await FeeModel.aggregate([
-      { 
-        $match: { 
-          school_id: schoolId,
+      {
+        $match: tenantFilter(ctx, {
           academic_year_id: resolvedYearId ? new Types.ObjectId(resolvedYearId) : null
-        } 
+        })
       },
       {
         $group: {
@@ -112,18 +107,16 @@ export class DashboardAnalyticsService {
   }
 
   static async getClassAttendance(ctx: RequestContext, academicYearId?: string) {
-    const schoolId = ctx.school_id;
     const classIds = await resolveClassIdsForAcademicYear(ctx, academicYearId);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const stats = await AttendanceModel.aggregate([
-      { 
-        $match: { 
-          school_id: schoolId, 
+      {
+        $match: tenantFilter(ctx, {
           date: { $gte: today },
           class_id: { $in: classIds }
-        } 
+        })
       },
       {
         $group: {
@@ -137,8 +130,13 @@ export class DashboardAnalyticsService {
       {
         $lookup: {
           from: "classes",
-          localField: "_id",
-          foreignField: "_id",
+          let: { cid: "$_id" },
+          pipeline: [
+            { $match: { $expr: { $and: [
+              { $eq: ["$_id", "$$cid"] },
+              { $eq: ["$school_id", ctx.school_id] }
+            ] } } }
+          ],
           as: "class_info"
         }
       },
@@ -162,7 +160,6 @@ export class DashboardAnalyticsService {
   }
 
   static async getAttendanceTrends(ctx: RequestContext, academicYearId?: string, days: number = 7) {
-    const schoolId = ctx.school_id;
     const classIds = await resolveClassIdsForAcademicYear(ctx, academicYearId);
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
@@ -170,11 +167,10 @@ export class DashboardAnalyticsService {
 
     const trends = await AttendanceModel.aggregate([
       {
-        $match: {
-          school_id: schoolId,
+        $match: tenantFilter(ctx, {
           date: { $gte: startDate },
           class_id: { $in: classIds }
-        }
+        })
       },
       {
         $group: {
@@ -195,7 +191,6 @@ export class DashboardAnalyticsService {
   }
 
   static async getSystemAlerts(ctx: RequestContext, academicYearId?: string) {
-    const schoolId = ctx.school_id;
     const classIds = await resolveClassIdsForAcademicYear(ctx, academicYearId);
     const alerts = [];
 
@@ -203,7 +198,7 @@ export class DashboardAnalyticsService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const attendanceStats = await AttendanceModel.aggregate([
-      { $match: { school_id: schoolId, date: { $gte: today }, class_id: { $in: classIds } } },
+      { $match: tenantFilter(ctx, { date: { $gte: today }, class_id: { $in: classIds } }) },
       { $group: { _id: "$class_id", total: { $sum: 1 }, present: { $sum: { $cond: [{ $eq: ["$status", "present"] }, 1, 0] } } } }
     ]);
 
@@ -221,7 +216,7 @@ export class DashboardAnalyticsService {
     }
 
     // 2. Check for pending leave requests
-    const pendingLeave = await LeaveModel.countDocuments({ school_id: schoolId, status: "pending" });
+    const pendingLeave = await LeaveModel.countDocuments(tenantFilter(ctx, { status: "pending" }));
     if (pendingLeave > 0) {
       alerts.push({
         severity: "warning",
@@ -234,15 +229,13 @@ export class DashboardAnalyticsService {
 
     // 4. Missing Timetable Alert
     const resolvedYearId = await resolveAcademicYearId(ctx, academicYearId);
-    const classesForYear = await ClassModel.find({ 
-      school_id: schoolId, 
-      academic_year_id: resolvedYearId ? new Types.ObjectId(resolvedYearId) : { $exists: true } 
-    }).select("_id name").lean();
-    
-    const classesWithTimetable = await TimetableModel.distinct("class_id", { 
-      school_id: schoolId,
+    const classesForYear = await ClassModel.find(tenantFilter(ctx, {
+      academic_year_id: resolvedYearId ? new Types.ObjectId(resolvedYearId) : { $exists: true }
+    })).select("_id name").lean();
+
+    const classesWithTimetable = await TimetableModel.distinct("class_id", tenantFilter(ctx, {
       class_id: { $in: classIds }
-    });
+    }));
     const classesWithoutTimetable = classesForYear.filter(c => !classesWithTimetable.map(id => String(id)).includes(String(c._id)));
 
     if (classesWithoutTimetable.length > 0) {
@@ -256,11 +249,10 @@ export class DashboardAnalyticsService {
     }
 
     // 5. Upcoming exams
-    const upcomingExams = await ExamModel.countDocuments({
-      school_id: schoolId,
+    const upcomingExams = await ExamModel.countDocuments(tenantFilter(ctx, {
       starts_at: { $gte: new Date(), $lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
       class_id: { $in: classIds }
-    });
+    }));
     if (upcomingExams > 0) {
       alerts.push({
         severity: "info",
@@ -275,8 +267,7 @@ export class DashboardAnalyticsService {
   }
 
   static async getRecentActivity(ctx: RequestContext) {
-    const schoolId = ctx.school_id;
-    return AuditLogModel.find({ school_id: schoolId })
+    return AuditLogModel.find(tenantFilter(ctx))
       .sort({ created_at: -1 })
       .limit(10)
       .lean();

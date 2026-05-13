@@ -1,5 +1,6 @@
 import { assertPermission } from "../auth/rbac";
 import { connectDb } from "../db/connect";
+import { tenantFilter } from "../db/tenant-query";
 import { AttendanceModel } from "../models/attendance.model";
 import { ExamModel } from "../models/exam.model";
 import { FeeModel } from "../models/fee.model";
@@ -16,7 +17,7 @@ export async function attendancePercentage(
     assertPermission(ctx, "reports", "view");
 
     const [result] = await AttendanceModel.aggregate([
-      { $match: { school_id: ctx.school_id, date: { $gte: from, $lte: to } } },
+      { $match: tenantFilter(ctx, { date: { $gte: from, $lte: to } }) },
       {
         $group: {
           _id: null,
@@ -47,7 +48,7 @@ export async function financialSummary(ctx: RequestContext): Promise<ServiceResu
     assertPermission(ctx, "fees", "view");
 
     return FeeModel.aggregate([
-      { $match: { school_id: ctx.school_id } },
+      { $match: tenantFilter(ctx) },
       {
         $group: {
           _id: "$status",
@@ -66,7 +67,7 @@ export async function performanceTrends(ctx: RequestContext): Promise<ServiceRes
     assertPermission(ctx, "exams", "view");
 
     return ExamModel.aggregate([
-      { $match: { school_id: ctx.school_id, status: "completed" } },
+      { $match: tenantFilter(ctx, { status: "completed" }) },
       { $unwind: "$marks" },
       {
         $group: {

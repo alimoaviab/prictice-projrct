@@ -143,50 +143,69 @@ export async function getBehavior(
 export async function listBehavior(
   ctx: RequestContext,
   query: any = {}
-): Promise<ServiceResult<any[]>> {
+): Promise<ServiceResult<any>> {
   assertPermission(ctx, FEATURE, "view");
 
   try {
     await connectDb();
 
-    // Clean query to remove undefined/null filters
-    const cleanQuery = {};
+    // Clean query to remove undefined/null filters and pagination params
+    const cleanQuery: any = {};
     Object.keys(query).forEach(key => {
-        if (query[key] !== undefined && query[key] !== null && key !== 'academic_year_id') {
-            cleanQuery[key] = query[key];
-        }
+      if (
+        query[key] !== undefined &&
+        query[key] !== null &&
+        key !== 'academic_year_id' &&
+        key !== 'page' &&
+        key !== 'limit'
+      ) {
+        cleanQuery[key] = query[key];
+      }
     });
 
-    const behaviors = await BehaviorModel.find(tenantFilter(ctx, cleanQuery))
+    const filter = tenantFilter(ctx, cleanQuery);
+    const { parsePagination, buildPaginatedResponse } = await import("../db/pagination");
+    const pagination = parsePagination(query, { defaultLimit: 25, maxLimit: 200 });
+
+    const baseQuery = BehaviorModel.find(filter)
       .populate("student_id", "first_name last_name admission_no")
       .populate("class_id", "name")
       .populate("teacher_id", "first_name last_name")
-      .sort({ created_at: -1 })
-      .lean();
+      .sort({ created_at: -1 });
+
+    const [rowsRaw, total] = pagination.enabled
+      ? await Promise.all([
+          baseQuery.skip(pagination.skip).limit(pagination.limit).lean(),
+          BehaviorModel.countDocuments(filter)
+        ])
+      : [await baseQuery.lean(), 0];
+
+    const behaviors = rowsRaw as any[];
+    const items = behaviors.map(b => ({
+      _id: b._id,
+      id: b._id,
+      student_id: b.student_id?._id || b.student_id,
+      student_name: b.student_id ? `${(b.student_id as any).first_name ?? ""} ${(b.student_id as any).last_name ?? ""}`.trim() : "",
+      class_id: b.class_id?._id || b.class_id,
+      class_name: (b.class_id as any)?.name ?? "",
+      teacher_id: b.teacher_id?._id || b.teacher_id,
+      teacher_name: b.teacher_id ? `${(b.teacher_id as any).first_name ?? ""} ${(b.teacher_id as any).last_name ?? ""}`.trim() : "",
+      incident_type: b.incident_type,
+      description: b.description,
+      severity: b.severity,
+      action_taken: b.action_taken,
+      status: b.status,
+      warning_count: b.warning_count,
+      parent_notified: b.parent_notified,
+      notes: b.notes,
+      created_at: b.created_at,
+    }));
 
     return {
       ok: true,
       success: true,
-      data: behaviors.map(b => ({
-        _id: b._id,
-        id: b._id,
-        student_id: b.student_id?._id || b.student_id,
-        student_name: b.student_id ? `${(b.student_id as any).first_name ?? ""} ${(b.student_id as any).last_name ?? ""}`.trim() : "",
-        class_id: b.class_id?._id || b.class_id,
-        class_name: (b.class_id as any)?.name ?? "",
-        teacher_id: b.teacher_id?._id || b.teacher_id,
-        teacher_name: b.teacher_id ? `${(b.teacher_id as any).first_name ?? ""} ${(b.teacher_id as any).last_name ?? ""}`.trim() : "",
-        incident_type: b.incident_type,
-        description: b.description,
-        severity: b.severity,
-        action_taken: b.action_taken,
-        status: b.status,
-        warning_count: b.warning_count,
-        parent_notified: b.parent_notified,
-        notes: b.notes,
-        created_at: b.created_at,
-      })),
-      meta: { count: behaviors.length },
+      data: pagination.enabled ? buildPaginatedResponse(items, total, pagination) : items,
+      meta: { count: pagination.enabled ? total : items.length },
     };
   } catch (error) {
     return {

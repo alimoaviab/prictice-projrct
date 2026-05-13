@@ -1,8 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { DomainManagerService } from "../../../../../shared/services/domain/domain-manager.service";
+import { authenticateRequest } from "@edu/shared/auth/middleware";
+
+function parseCookies(cookieHeader: string | null) {
+  if (!cookieHeader) return {};
+  return Object.fromEntries(
+    cookieHeader.split("; ").map((entry) => {
+      const i = entry.indexOf("=");
+      return i >= 0 ? [entry.slice(0, i), entry.slice(i + 1)] : [entry, ""];
+    })
+  );
+}
 
 export async function GET(request: NextRequest) {
   try {
+    // CRITICAL: Require auth so domain enumeration cannot be used to map
+    // tenants on the platform.
+    authenticateRequest(
+      {
+        cookies: parseCookies(request.headers.get("cookie")),
+        headers: Object.fromEntries(request.headers.entries())
+      },
+      "school"
+    );
+
     const { searchParams } = new URL(request.url);
     const domain = searchParams.get("domain");
 

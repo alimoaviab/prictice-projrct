@@ -1,9 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 import { DomainManagerService } from "../../../../../shared/services/domain/domain-manager.service";
+import { authenticateRequest } from "@edu/shared/auth/middleware";
+
+function parseCookies(cookieHeader: string | null) {
+  if (!cookieHeader) return {};
+  return Object.fromEntries(
+    cookieHeader.split("; ").map((entry) => {
+      const i = entry.indexOf("=");
+      return i >= 0 ? [entry.slice(0, i), entry.slice(i + 1)] : [entry, ""];
+    })
+  );
+}
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('\n🔵 Domain Setup API called');
+    // CRITICAL: Domain provisioning mutates platform infrastructure
+    // (Cloudflare DNS + ACME). Restrict to authenticated school admins.
+    const ctx = authenticateRequest(
+      {
+        cookies: parseCookies(request.headers.get("cookie")),
+        headers: Object.fromEntries(request.headers.entries())
+      },
+      "school"
+    );
+
+    if (ctx.role !== "admin" && ctx.role !== "super_admin") {
+      return NextResponse.json(
+        { success: false, message: "Admin role required to configure domains." },
+        { status: 403 }
+      );
+    }
+
+    console.log('\n🔵 Domain Setup API called', { school_id: ctx.school_id, actor: ctx.actor_email });
     const body = await request.json();
     console.log('📦 Request body:', body);
     const { domain, serverIP, email } = body;

@@ -1,5 +1,6 @@
 import { assertPermission } from "../auth/rbac";
 import { connectDb } from "../db/connect";
+import { tenantFilter } from "../db/tenant-query";
 import { AttendanceModel } from "../models/attendance.model";
 import { FeeModel } from "../models/fee.model";
 import { StudentModel } from "../models/student.model";
@@ -17,7 +18,7 @@ export async function evaluateAttendanceRules(
     assertPermission(ctx, "attendance", "view");
 
     const lowAttendance = await AttendanceModel.aggregate([
-      { $match: { school_id: ctx.school_id, date: { $gte: from, $lte: to } } },
+      { $match: tenantFilter(ctx, { date: { $gte: from, $lte: to } }) },
       {
         $group: {
           _id: "$student_id",
@@ -47,11 +48,10 @@ export async function evaluateFeeDueRules(ctx: RequestContext): Promise<ServiceR
     await connectDb();
     assertPermission(ctx, "fees", "view");
 
-    const overdueFees = await FeeModel.find({
-      school_id: ctx.school_id,
+    const overdueFees = await FeeModel.find(tenantFilter(ctx, {
       status: { $in: ["unpaid", "partial"] },
       due_at: { $lt: new Date() }
-    })
+    }))
       .limit(100)
       .lean();
 
@@ -68,10 +68,9 @@ export async function notifyRepeatedAbsenceInsight(
     await connectDb();
     assertPermission(ctx, "attendance", "view");
 
-    const students = await StudentModel.find({
-      school_id: ctx.school_id,
+    const students = await StudentModel.find(tenantFilter(ctx, {
       _id: { $in: studentIds }
-    })
+    }))
       .select("_id first_name last_name")
       .lean();
 

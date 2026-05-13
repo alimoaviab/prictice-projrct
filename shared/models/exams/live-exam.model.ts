@@ -4,6 +4,7 @@ import { schemaOptions, tenantField, requiredString } from "../base";
 const liveExamSchema = new Schema(
   {
     school_id: tenantField,
+    academic_year_id: { type: Types.ObjectId, ref: "AcademicYear", index: true },
     title: requiredString,
     class_id: { type: Types.ObjectId, ref: "Class", index: true },
     section_id: { type: Types.ObjectId, ref: "Class" }, // Using Class for section/grouping if needed
@@ -29,5 +30,6 @@ const liveExamSchema = new Schema(
 
 liveExamSchema.index({ school_id: 1, class_id: 1, start_time: 1 });
 liveExamSchema.index({ school_id: 1, status: 1 });
+liveExamSchema.index({ school_id: 1, academic_year_id: 1, start_time: 1 });
 
 export const LiveExamModel = models.LiveExam || model("LiveExam", liveExamSchema);
