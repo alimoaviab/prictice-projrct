@@ -452,12 +452,16 @@ export function SchoolShell({
             className={`flex w-full items-center gap-2 rounded border border-slate-50 bg-slate-50/30 px-2 py-1 transition-colors group ${isCollapsed ? "justify-center" : ""}`}
           >
             <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded bg-blue-600 shadow-sm">
-              <span className="text-[9px] font-bold text-white">{user.email.substring(0, 2).toUpperCase()}</span>
+              <span className="text-[9px] font-bold text-white">
+                {(user.email || "--").substring(0, 2).toUpperCase()}
+              </span>
             </div>
             {!isCollapsed && (
               <>
                 <div className="flex flex-col min-w-0 text-left flex-1">
-                  <span className="truncate text-[10px] font-bold text-slate-900">{user.email.split('@')[0]}</span>
+                  <span className="truncate text-[10px] font-bold text-slate-900">
+                    {(user.email || "user").split('@')[0]}
+                  </span>
                   <span className="text-[8px] font-bold normal-case  text-slate-400">{user.role === 'student' ? 'Parent/Student' : user.role.replace('_', ' ')}</span>
                 </div>
                 <button
