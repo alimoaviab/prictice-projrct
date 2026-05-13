@@ -6,6 +6,10 @@ export function hashPassword(password: string): string {
   return `${salt}:${hash}`;
 }
 
+// Pre-computed dummy hash to mitigate timing attacks during user enumeration.
+// Generated via hashPassword("dummy_password_for_timing_attack_mitigation").
+export const DUMMY_HASH = hashPassword("dummy_password_for_timing_attack_mitigation");
+
 export function verifyPassword(password: string, stored: string): boolean {
   const [salt, hash] = stored.split(":");
   if (!salt || !hash) {

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { connectDb } from "@edu/shared/db/connect";
 import { UserModel, SchoolModel } from "@edu/shared/models";
 import { AcademicYearModel } from "@edu/shared/models/academic-year.model";
-import { verifyPassword } from "@edu/shared/auth/password";
+import { verifyPassword, DUMMY_HASH } from "@edu/shared/auth/password";
 import { signAuthToken } from "@edu/shared/auth/jwt";
 
 export async function POST(req: Request) {
@@ -10,13 +10,15 @@ export async function POST(req: Request) {
     await connectDb();
     const { email, password, role: requestedRole } = await req.json();
 
-    if (!email || !password) {
+    if (!email || !password || typeof email !== "string" || typeof password !== "string") {
       return NextResponse.json({ ok: false, message: "Email and password are required" }, { status: 400 });
     }
 
     const user = await UserModel.findOne({ email: email.toLowerCase() });
     if (!user) {
       console.warn(`[Login] User not found: ${email}`);
+      // Mitigate timing attacks by running the password verification against a dummy hash
+      verifyPassword(password, DUMMY_HASH);
       return NextResponse.json({ ok: false, message: "Invalid email or password" }, { status: 401 });
     }
 
