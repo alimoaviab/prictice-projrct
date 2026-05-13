@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { randomBytes, createHash } from "node:crypto";
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { assertPermission } from "../auth/rbac";
 import { connectDb } from "../db/connect";
 import { tenantFilter } from "../db/tenant-query";
@@ -231,8 +231,10 @@ function makeReceiptNo() {
 }
 
 function feeStatus(total: number, paid: number) {
-    if (paid <= 0) return "unpaid";
-    if (paid >= total) return "paid";
+    const safeTotal = Math.round(total * 100);
+    const safePaid = Math.round(paid * 100);
+    if (safePaid <= 0) return "unpaid";
+    if (safePaid >= safeTotal) return "paid";
     return "partial";
 }
 
@@ -782,6 +784,18 @@ export async function generateMonthlyFees(ctx: RequestContext, input: unknown): 
             studentsByClass.get(classId)!.push(student);
         }
 
+        const allExistingFees = await FeeModel.find(
+            tenantFilter(ctx, {
+                student_id: { $in: students.map((s: any) => s._id) },
+                academic_year_id: academicYearId,
+                month: parsed.month.toLowerCase(),
+                year: parsed.year,
+            })
+        ).lean();
+
+        const existingFeesMap = new Map(allExistingFees.map((f: any) => [String(f.student_id), f]));
+        const bulkOps = [];
+
         for (const classId of classIds) {
             const classroom = classMap.get(String(classId));
             if (!classroom) continue;
@@ -795,14 +809,7 @@ export async function generateMonthlyFees(ctx: RequestContext, input: unknown): 
             for (const student of classStudents) {
                 studentsProcessed += 1;
 
-                const existing = await FeeModel.findOne(
-                    tenantFilter(ctx, {
-                        student_id: student._id,
-                        academic_year_id: academicYearId,
-                        month: parsed.month.toLowerCase(),
-                        year: parsed.year,
-                    })
-                ).lean();
+                const existing = existingFeesMap.get(String(student._id));
 
                 if (existing && !parsed.force_regenerate) {
                     feesSkipped += 1;
@@ -821,60 +828,51 @@ export async function generateMonthlyFees(ctx: RequestContext, input: unknown): 
                     paid_amount: 0,
                 }));
 
-                const baseAmount = feeComponents.reduce((sum, component) => sum + Number(component.amount ?? 0), 0);
-                const invoiceAmount = Math.max(0, baseAmount + adjustmentAmount);
+                const baseAmount = feeComponents.reduce((sum, component) => sum + Math.round(Number(component.amount ?? 0) * 100), 0);
+                const invoiceAmount = Math.max(0, (baseAmount + Math.round(adjustmentAmount * 100)) / 100);
 
-                if (existing) {
-                    await FeeModel.findOneAndUpdate(
-                        tenantFilter(ctx, { _id: existing._id }),
-                        {
+                const invoiceNo = makeInvoiceNo(String(student._id), parsed.month, parsed.year);
+
+                bulkOps.push({
+                    updateOne: {
+                        filter: tenantFilter(ctx, {
+                            student_id: student._id,
+                            academic_year_id: academicYearId,
+                            month: parsed.month.toLowerCase(),
+                            year: parsed.year
+                        }),
+                        update: {
                             $set: {
                                 class_id: student.class_id,
-                                academic_year_id: academicYearId,
                                 fee_type_id: applicableFees[0]?.fee_type_id ?? undefined,
                                 title: `Fees for ${monthYearLabel(parsed.month, parsed.year)}`,
                                 amount: invoiceAmount,
                                 due_at: end,
-                                month: parsed.month.toLowerCase(),
-                                year: parsed.year,
-                                status: feeStatus(invoiceAmount, Number(existing.paid_amount ?? 0)),
+                                status: existing ? feeStatus(invoiceAmount, Number(existing.paid_amount ?? 0)) : "unpaid",
                                 fee_components: feeComponents,
                                 adjustment_amount: adjustmentAmount,
+                            },
+                            $setOnInsert: {
+                                school_id: ctx.school_id,
+                                invoice_no: invoiceNo,
+                                currency: "USD",
+                                paid_amount: 0,
+                                generated_at: new Date(),
+                                generated_by: new Types.ObjectId(ctx.user_id),
+                                payments: [],
                             }
                         },
-                        { new: true }
-                    );
-                    feesGenerated += 1;
-                    totalAmountGenerated += invoiceAmount;
-                    continue;
-                }
-
-                const invoiceNo = makeInvoiceNo(String(student._id), parsed.month, parsed.year);
-                await FeeModel.create({
-                    school_id: ctx.school_id,
-                    student_id: student._id,
-                    class_id: student.class_id,
-                    academic_year_id: academicYearId,
-                    fee_type_id: applicableFees[0]?.fee_type_id ?? undefined,
-                    invoice_no: invoiceNo,
-                    title: `Fees for ${monthYearLabel(parsed.month, parsed.year)}`,
-                    amount: invoiceAmount,
-                    currency: "USD",
-                    due_at: end,
-                    status: "unpaid",
-                    paid_amount: 0,
-                    month: parsed.month.toLowerCase(),
-                    year: parsed.year,
-                    generated_at: new Date(),
-                    generated_by: new Types.ObjectId(ctx.user_id),
-                    fee_components: feeComponents,
-                    payments: [],
-                    adjustment_amount: adjustmentAmount,
+                        upsert: true
+                    }
                 });
 
                 feesGenerated += 1;
                 totalAmountGenerated += invoiceAmount;
             }
+        }
+
+        if (bulkOps.length > 0) {
+            await FeeModel.bulkWrite(bulkOps, { ordered: false });
         }
 
         await writeAuditLog(ctx, {
@@ -1151,20 +1149,24 @@ async function allocatePayment(ctx: RequestContext, input: AllocatePaymentInput)
         throw new ControlledError("INVALID_AMOUNT", "Payment amount exceeds outstanding balance.", 400, { outstanding: totalOutstanding });
     }
 
-    let remaining = amount;
+    let remainingCents = Math.round(amount * 100);
     const allocations: Array<{ fee_id: unknown; fee_type_id?: unknown; month?: string; amount: number }> = [];
 
-    for (let index = 0; index < fees.length && remaining > 0; index += 1) {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+        for (let index = 0; index < fees.length && remainingCents > 0; index += 1) {
         const fee = fees[index];
-        const currentOutstanding = outstanding[index];
-        if (currentOutstanding <= 0) continue;
+        const currentOutstandingCents = Math.round(outstanding[index] * 100);
+        if (currentOutstandingCents <= 0) continue;
 
-        const allocated = Math.min(remaining, currentOutstanding);
-        remaining -= allocated;
+        const allocatedCents = Math.min(remainingCents, currentOutstandingCents);
+        remainingCents -= allocatedCents;
+        const allocated = allocatedCents / 100;
 
         const totalAfterAdjustment = Number(fee.amount ?? 0) + Number(fee.adjustment_amount ?? 0);
         const paidBefore = Number(fee.paid_amount ?? 0);
-        const paidAfter = paidBefore + allocated;
+        const paidAfter = (Math.round(paidBefore * 100) + allocatedCents) / 100;
         const newStatus = feeStatus(totalAfterAdjustment, paidAfter);
 
         const updated = await FeeModel.findOneAndUpdate(
@@ -1181,7 +1183,7 @@ async function allocatePayment(ctx: RequestContext, input: AllocatePaymentInput)
                     }
                 }
             },
-            { new: true }
+            { new: true, session }
         ).lean();
 
         allocations.push({
@@ -1196,7 +1198,7 @@ async function allocatePayment(ctx: RequestContext, input: AllocatePaymentInput)
         }
     }
 
-    const paymentDoc = await FeePaymentModel.create({
+    const paymentDocs = await FeePaymentModel.create([{
         school_id: ctx.school_id,
         receipt_no: makeReceiptNo(),
         student_id: new Types.ObjectId(studentId),
@@ -1210,7 +1212,12 @@ async function allocatePayment(ctx: RequestContext, input: AllocatePaymentInput)
         status: "completed",
         allocations,
         received_by: new Types.ObjectId(ctx.user_id)
-    });
+    }], { session });
+
+    const paymentDoc = paymentDocs[0];
+
+    await session.commitTransaction();
+    session.endSession();
 
     return {
         id: String(paymentDoc._id),
@@ -1227,6 +1234,11 @@ async function allocatePayment(ctx: RequestContext, input: AllocatePaymentInput)
             amount: allocation.amount,
         }))
     };
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
+    }
 }
 
 export async function recordPayment(ctx: RequestContext, input: unknown): Promise<ServiceResult<unknown>> {
