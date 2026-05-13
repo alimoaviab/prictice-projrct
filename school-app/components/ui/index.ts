@@ -21,3 +21,5 @@ export * from "./NoAccess";
 export * from "./FormSection";
 export * from "./ListToolbar";
 export * from "./Pagination";
+export * from "./ErrorBoundary";
+export * from "./ErrorFallback";

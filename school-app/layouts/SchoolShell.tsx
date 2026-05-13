@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
 import { PageHeader, Breadcrumb } from "../components/ui";
+import { ErrorBoundary } from "../components/ui/ErrorBoundary";
 import { AIAssistant } from "../components/ai/AIAssistant";
 import { getSelectedAcademicYearId, setSelectedAcademicYearId } from "../services/academic-year-context";
 import { useAuth, Role } from "../hooks/useAuth";
@@ -576,7 +577,12 @@ export function SchoolShell({
               )}
             </div>
           </div>
-          {children}
+          <ErrorBoundary
+            title="This page ran into a problem"
+            message="A part of this page failed to render. Try the action again, or refresh the page."
+          >
+            {children}
+          </ErrorBoundary>
         </div>
       </main>
     </div>

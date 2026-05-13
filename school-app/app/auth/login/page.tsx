@@ -96,7 +96,15 @@ export default function LoginPage() {
       const payload = result?.data && typeof result.data === "object" ? result.data : result;
 
       if (!response.ok) {
-        throw new Error(result.message || "Login failed");
+        const friendly =
+          response.status === 401
+            ? "The email or password you entered is incorrect."
+            : response.status === 429
+              ? "Too many sign-in attempts. Please wait a moment and try again."
+              : response.status >= 500
+                ? "We can't reach the sign-in service right now. Please try again shortly."
+                : (result?.message || "We couldn't sign you in. Please check your details and try again.");
+        throw new Error(friendly);
       }
 
       setSuccess(true);
@@ -115,7 +123,13 @@ export default function LoginPage() {
         router.push(resolveRoleRoute(targetRole));
       }, 1500);
     } catch (err: any) {
-      setError(err.message);
+      // Distinguish a true network failure from an API rejection
+      const isNetwork = err?.name === "TypeError" || /fetch|network/i.test(String(err?.message || ""));
+      setError(
+        isNetwork
+          ? "Couldn't reach the server. Please check your internet connection and try again."
+          : err?.message || "We couldn't sign you in. Please try again."
+      );
     } finally {
       setLoading(false);
     }
