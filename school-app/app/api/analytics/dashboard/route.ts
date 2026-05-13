@@ -1,32 +1,36 @@
 import { NextResponse } from "next/server";
-import { authenticateRequest } from "@edu/shared/auth/middleware";
+import { getRequestContext, ApiAuthError } from "../../../../lib/api-utils";
 import { getAdminDashboardStats } from "@edu/shared/services/analytics.service";
 
-function parseCookies(cookieHeader: string | null) {
-  return Object.fromEntries(
-    (cookieHeader?.split("; ") ?? []).map((entry) => {
-      const separatorIndex = entry.indexOf("=");
-      return separatorIndex >= 0 ? [entry.slice(0, separatorIndex), entry.slice(separatorIndex + 1)] : [entry, ""];
-    })
-  );
-}
-
-function getRequestContext(request: Request) {
-  return authenticateRequest(
-    {
-      cookies: parseCookies(request.headers.get("cookie")),
-      headers: Object.fromEntries(request.headers.entries())
-    },
-    "school"
-  );
-}
-
 export async function GET(request: Request) {
-  const ctx = getRequestContext(request);
-  const { searchParams } = new URL(request.url);
-  const ayId = searchParams.get("academic_year_id") || undefined;
-  
-  const result = await getAdminDashboardStats(ctx, ayId);
-  return NextResponse.json(result, { status: result.ok ? 200 : result.error.status ?? 400 });
-}
+  try {
+    const ctx = getRequestContext(request);
+    const { searchParams } = new URL(request.url);
+    const ayId = searchParams.get("academic_year_id") || undefined;
 
+    const result = await getAdminDashboardStats(ctx, ayId);
+    return NextResponse.json(result, { status: result.ok ? 200 : result.error?.status ?? 400 });
+  } catch (error: any) {
+    if (error instanceof ApiAuthError) {
+      return NextResponse.json(
+        {
+          ok: false,
+          success: false,
+          message: error.message,
+          error: { code: error.code, message: error.message, status: error.status }
+        },
+        { status: error.status }
+      );
+    }
+    console.error("[analytics/dashboard] error:", error);
+    return NextResponse.json(
+      {
+        ok: false,
+        success: false,
+        message: error?.message || "Internal error",
+        error: { code: "INTERNAL_ERROR", message: error?.message || "Internal error", status: 500 }
+      },
+      { status: 500 }
+    );
+  }
+}

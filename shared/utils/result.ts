@@ -1,5 +1,6 @@
 import { ZodError } from "zod";
 import { ControlledError, ServiceResult } from "../types/core";
+import { formatErrorMessage } from "./error-messages";
 
 export function ok<T>(data: T, meta?: Record<string, unknown>, message?: string): ServiceResult<T> {
   return { ok: true, success: true, data, meta, message };
@@ -25,9 +26,8 @@ export async function serviceTry<T>(operation: () => Promise<T>): Promise<Servic
     return ok(await operation());
   } catch (error: any) {
     if (error instanceof ZodError || error?.name === "ZodError" || Array.isArray(error?.issues)) {
-      const firstIssueMessage = error?.issues?.[0]?.message ?? error?.message ?? "Validation failed.";
-
-      return fail("VALIDATION_ERROR", firstIssueMessage, 400, error?.issues ?? error);
+      const friendly = formatErrorMessage(error, "Some of the information you entered is missing or invalid.");
+      return fail("VALIDATION_ERROR", friendly, 400, error?.issues ?? error);
     }
 
     console.error("[serviceTry] Caught error:", {
@@ -41,13 +41,22 @@ export async function serviceTry<T>(operation: () => Promise<T>): Promise<Servic
     // Some runtime bundlers can cause instanceof checks to fail when
     // the error class is re-imported across module boundaries. Detect
     // ControlledError by `name` and shape as a fallback.
-    if (error instanceof ControlledError || error?.name === "ControlledError" || (error?.code && typeof error?.status === "number")) {
-      return fail(error.code ?? error?.errorCode ?? "ERROR", error.message ?? error?.message ?? "An error occurred", error.status ?? 400, error.details ?? error?.details);
+    if (
+      error instanceof ControlledError ||
+      error?.name === "ControlledError" ||
+      (error?.code && typeof error?.status === "number")
+    ) {
+      const code = error.code ?? error?.errorCode ?? "ERROR";
+      const status = error.status ?? 400;
+      // Keep the controlled error's message verbatim (already curated by us)
+      // unless it's clearly raw (Mongo/JWT pass-through). Run through
+      // formatter for safety.
+      const friendly = formatErrorMessage(error, error.message ?? "An error occurred.");
+      return fail(code, friendly, status, error.details ?? error?.details);
     }
 
-    // Log the full error for debugging
-    console.error("[serviceTry] Full error object:", error);
-
-    return fail("INTERNAL_ERROR", error?.message || "The request could not be completed.", 500);
+    // Unknown errors → run through formatter (handles Mongo / network / etc).
+    const friendly = formatErrorMessage(error, "The request could not be completed. Please try again.");
+    return fail("INTERNAL_ERROR", friendly, error?.status ?? 500);
   }
 }

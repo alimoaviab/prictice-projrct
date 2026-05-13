@@ -24,8 +24,8 @@ if (fs.existsSync(envPath)) {
 }
 
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/eduplexo";
-
-// Password hashing (same algorithm as shared/auth/password.ts)
+const DEFAULT_ADMIN_EMAIL = process.env.DEFAULT_ADMIN_EMAIL || "admin@eduplexo.com";
+const DEFAULT_ADMIN_PASS = process.env.DEFAULT_ADMIN_PASS || "Admin@123";
 function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString("hex");
   const hash = crypto.scryptSync(password, salt, 64).toString("hex");
@@ -73,16 +73,14 @@ async function createSuperAdmin() {
   try {
     console.log("\n🔧 Super Admin Account Creator\n");
     console.log(`📦 MongoDB: ${MONGODB_URI}`);
+    console.log(`📧 Email:   ${DEFAULT_ADMIN_EMAIL}`);
     console.log("Connecting to database...");
 
     await mongoose.connect(MONGODB_URI);
     console.log("✅ Connected\n");
 
-    const email = "eduexplo@gmail.com";
-    const password = "Ni btana";
-
     // Check if user already exists
-    const existing = await UserModel.findOne({ email });
+    const existing = await UserModel.findOne({ email: DEFAULT_ADMIN_EMAIL });
 
     if (existing) {
       console.log("⚠️  User already exists. Updating...");
@@ -90,7 +88,7 @@ async function createSuperAdmin() {
       existing.permissions = ["*"];
       existing.status = "active";
       existing.school_id = "PLATFORM";
-      existing.password_hash = hashPassword(password);
+      existing.password_hash = hashPassword(DEFAULT_ADMIN_PASS);
       existing.profile = {
         first_name: "Super",
         last_name: "Admin",
@@ -100,8 +98,8 @@ async function createSuperAdmin() {
     } else {
       console.log("Creating new Super Admin account...");
       await UserModel.create({
-        email,
-        password_hash: hashPassword(password),
+        email: DEFAULT_ADMIN_EMAIL,
+        password_hash: hashPassword(DEFAULT_ADMIN_PASS),
         role: "super_admin",
         permissions: ["*"],
         profile: {
@@ -117,8 +115,8 @@ async function createSuperAdmin() {
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     console.log("🎉 SUPER ADMIN ACCOUNT READY");
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    console.log(`📧 Email:    ${email}`);
-    console.log(`🔑 Password: ${password}`);
+    console.log(`📧 Email:    ${DEFAULT_ADMIN_EMAIL}`);
+    console.log(`🔑 Password: ${DEFAULT_ADMIN_PASS}`);
     console.log(`🌐 URL:      http://localhost:3001/login`);
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 

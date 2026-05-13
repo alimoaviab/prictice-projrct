@@ -6,14 +6,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
 
 interface GoogleCalendarConnectProps {
   onConnectionChange?: (isConnected: boolean) => void;
 }
 
 export default function GoogleCalendarConnect({ onConnectionChange }: GoogleCalendarConnectProps) {
-  const { data: session } = useSession();
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

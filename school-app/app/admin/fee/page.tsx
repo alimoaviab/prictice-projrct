@@ -3,11 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SchoolShell } from "@/layouts/SchoolShell";
-import { Badge } from "@/components/ui/Badge";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { Badge, Skeleton, DataState } from "@/components/ui";
 import { serviceRequest } from "@/services/service-client";
 import { showToast } from "@/utils/toast";
-import { DataState } from "@/components/ui";
 
 interface Student {
     id: string;

@@ -4,7 +4,6 @@ import { UserModel, SchoolModel } from "@edu/shared/models";
 import { AcademicYearModel } from "@edu/shared/models/academic-year.model";
 import { verifyPassword } from "@edu/shared/auth/password";
 import { signAuthToken } from "@edu/shared/auth/jwt";
-import { ControlledError } from "@edu/shared/types/core";
 
 export async function POST(req: Request) {
   try {

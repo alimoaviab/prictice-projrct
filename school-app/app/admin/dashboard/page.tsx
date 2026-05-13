@@ -9,6 +9,7 @@ import { DashboardDrawer } from "../../../components/dashboard/DashboardDrawer";
 import { useClasses } from "../../../modules/classes/hooks/useClasses";
 import { useTeachers } from "../../../modules/teachers/hooks/useTeachers";
 import { useExams } from "../../../modules/exams/hooks/useExams";
+import { serviceRequest } from "../../../services/service-client";
 
 interface DashboardData {
   overview: {
@@ -68,16 +69,21 @@ export default function AdminDashboardPage() {
     async function fetchDashboard() {
       try {
         setLoading(true);
+        setError(null);
         const query = getAcademicYearQuery();
-        const res = await fetch(`/api/analytics/dashboard${query}`);
-        const payload = await res.json();
-        if (payload.ok) {
-          setData(payload.data);
+        const result = await serviceRequest<DashboardData>(`/api/analytics/dashboard${query}`);
+        if (result.ok && result.data) {
+          setData(result.data);
         } else {
-          setError(payload.error?.message || "Failed to load dashboard data");
+          const message =
+            (result as any)?.message ||
+            (result as any)?.error?.message ||
+            "Failed to load dashboard data";
+          setError(message);
         }
-      } catch (err) {
-        setError("Network error occurred");
+      } catch (err: any) {
+        console.error("[AdminDashboard] fetch error:", err);
+        setError(err?.message || "Network error occurred");
       } finally {
         setLoading(false);
       }

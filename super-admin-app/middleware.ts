@@ -1,36 +1,45 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
+/**
+ * Edge-runtime safe middleware.
+ * Only checks cookie existence; full JWT verification happens in API routes.
+ * See school-app/middleware.ts for full explanation.
+ */
 export function middleware(request: NextRequest) {
-  const session = request.cookies.get('session');
   const { pathname } = request.nextUrl;
+  const isApi = pathname.startsWith("/api/");
 
-  // Allow login page and API auth
-  if (pathname === '/login' || pathname.startsWith('/api/auth')) {
+  // Allow login page, auth APIs, Next internals and static assets
+  if (
+    pathname === "/login" ||
+    pathname.startsWith("/api/auth") ||
+    pathname.startsWith("/_next") ||
+    pathname.includes(".")
+  ) {
     return NextResponse.next();
   }
 
-  // Handle unauthorized access
-  if (!session) {
-    // Return 401 for API calls
-    if (pathname.startsWith('/api/')) {
-      return NextResponse.json({ ok: false, message: 'Authentication required' }, { status: 401 });
+  const hasSession = !!request.cookies.get("session")?.value;
+
+  if (!hasSession) {
+    if (isApi) {
+      return NextResponse.json(
+        {
+          ok: false,
+          success: false,
+          message: "Authentication required.",
+          error: { code: "UNAUTHENTICATED", message: "No session token.", status: 401 }
+        },
+        { status: 401 }
+      );
     }
-    // Redirect to login for pages
-    return NextResponse.redirect(new URL('/login', request.url));
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"]
 };

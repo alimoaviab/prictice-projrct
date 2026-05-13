@@ -66,12 +66,25 @@ export default function SignupPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error?.message || "Signup failed");
+        const friendly =
+          response.status === 409
+            ? (result?.error?.message || "An account with these details already exists. Please sign in instead.")
+            : response.status === 400
+              ? (result?.error?.message || "Some of the information you entered isn't valid. Please review and try again.")
+              : response.status >= 500
+                ? "We can't reach the sign-up service right now. Please try again shortly."
+                : (result?.error?.message || "We couldn't create your account. Please check your details and try again.");
+        throw new Error(friendly);
       }
 
       router.push("/auth/login");
     } catch (err: any) {
-      setError(err.message);
+      const isNetwork = err?.name === "TypeError" || /fetch|network/i.test(String(err?.message || ""));
+      setError(
+        isNetwork
+          ? "Couldn't reach the server. Please check your internet connection and try again."
+          : err?.message || "We couldn't create your account. Please try again."
+      );
     } finally {
       setLoading(false);
     }
