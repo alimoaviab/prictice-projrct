@@ -5,10 +5,27 @@ import { TimetableGrid } from "../../../modules/timetable/components/TimetableGr
 import { useTimetable } from "../../../modules/timetable/hooks/useTimetable";
 import { useAuth } from "../../../hooks/useAuth";
 import { TableSkeleton, DataState } from "../../../components/ui";
+import { useSelectedChild } from "../../../contexts/SelectedChildContext";
 
 export default function ParentTimetablePage() {
-  const { user } = useAuth();
-  const { state } = useTimetable(user?.classId ? { class_id: user.classId } : undefined);
+  const { selectedChild, loading: childLoading } = useSelectedChild();
+  const { state } = useTimetable(selectedChild?.class_id ? { class_id: selectedChild.class_id } : undefined);
+
+  if (childLoading) {
+    return (
+      <SchoolShell eyebrow="Parent Dashboard" title="Child's Timetable">
+        <TableSkeleton />
+      </SchoolShell>
+    );
+  }
+
+  if (!selectedChild) {
+    return (
+      <SchoolShell eyebrow="Parent Dashboard" title="Child's Timetable">
+        <DataState variant="empty" title="No Student Selected" message="Please select a student to view their timetable." />
+      </SchoolShell>
+    );
+  }
 
   return (
     <SchoolShell eyebrow="Parent Dashboard" title="Child's Timetable">

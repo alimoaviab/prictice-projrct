@@ -126,7 +126,10 @@ async function resolveStudentAcademicYear(student: ParentStudentDoc) {
 async function resolveSubjectsForStudent(ctx: RequestContext, student: ParentStudentDoc) {
     const classDoc = student.class_id as { subject_ids?: unknown[]; subjects?: string[] } | undefined;
     if (!classDoc?.subject_ids?.length) {
-        return (classDoc?.subjects ?? []).map((name, index) => ({ id: `${index}`, name }));
+        return (classDoc?.subjects ?? []).map((item, index) => ({ 
+            id: `${index}`, 
+            name: typeof item === "string" ? item : (item as any)?.name || "Unknown" 
+        }));
     }
 
     const subjects = await SubjectModel.find(tenantFilter(ctx, { _id: { $in: classDoc.subject_ids } }))

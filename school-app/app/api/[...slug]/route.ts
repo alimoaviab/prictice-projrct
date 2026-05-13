@@ -14,6 +14,7 @@ import * as homeworkService from "@edu/shared/services/homework.service";
 import * as eventService from "@edu/shared/services/event.service";
 import * as announcementService from "@edu/shared/services/announcement.service";
 import * as feeFlowService from "@edu/shared/services/fee-flow.service";
+import * as parentService from "@edu/shared/services/parent.service";
 
 function handleAuthUtilityRoutes(slug: string[], method: string) {
     if (slug[0] !== "auth") return null;
@@ -103,6 +104,12 @@ async function executeServiceAction(path: string[], method: string, ctx: any, qu
             
         case "fees":
             if (method === "GET" && path.includes("ledger")) return feeFlowService.getFeeLedgerDashboard(ctx, query);
+            break;
+
+        case "parents":
+            if (method === "POST" && id === "check-email") return parentService.checkParentEmail(ctx, body.email);
+            if (method === "POST" && id === "link-child") return parentService.linkStudentToParent(ctx, body);
+            if (method === "GET" && id === "children") return parentService.getParentChildren(ctx);
             break;
     }
 

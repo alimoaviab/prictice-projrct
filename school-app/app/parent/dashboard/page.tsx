@@ -5,6 +5,7 @@ import { SchoolShell } from "../../../layouts/SchoolShell";
 import { colors, spacing, typography } from "@edu/shared/design-system/tokens";
 import { TimetablePreview } from "../../../modules/timetable/components/TimetablePreview";
 import { useAuth } from "../../../hooks/useAuth";
+import { useSelectedChild } from "../../../contexts/SelectedChildContext";
 
 const summaries = [
   { title: "Daily Summary", detail: "4 classes, 1 homework due, attendance marked" },
@@ -14,6 +15,29 @@ const summaries = [
 
 export default function ParentDashboardPage() {
   const { user } = useAuth();
+  const { selectedChild, loading } = useSelectedChild();
+  
+  if (loading) {
+    return (
+      <SchoolShell eyebrow="Guardian Portal" title="Academic Oversight">
+        <div className="flex items-center justify-center h-64">
+          <div className="h-9 w-9 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
+        </div>
+      </SchoolShell>
+    );
+  }
+
+  if (!selectedChild) {
+    return (
+      <SchoolShell eyebrow="Guardian Portal" title="Academic Oversight">
+        <div className="flex flex-col items-center justify-center h-64 text-center">
+          <span className="material-symbols-outlined text-6xl text-slate-300 mb-4">family_restroom</span>
+          <h3 className="text-lg font-bold text-slate-700 mb-2">No Students Linked</h3>
+          <p className="text-sm text-slate-500">No students are linked to this parent account yet.</p>
+        </div>
+      </SchoolShell>
+    );
+  }
   
   return (
     <SchoolShell eyebrow="Guardian Portal" title="Academic Oversight">
@@ -21,10 +45,18 @@ export default function ParentDashboardPage() {
       <div className="mb-8 p-8 rounded-[2rem] bg-gradient-to-br from-indigo-900 to-slate-900 text-white shadow-2xl shadow-indigo-900/20 relative overflow-hidden">
         <div className="relative z-10">
           <p className="text-[10px] font-bold normal-case tracking-[0.3em] text-indigo-300">Welcome, Guardian</p>
-          <h2 className="text-3xl font-bold mt-2 tracking-tight">Institutional Dashboard</h2>
+          <h2 className="text-3xl font-bold mt-2 tracking-tight">
+            {selectedChild.student_name}'s Dashboard
+          </h2>
           <p className="text-slate-300 mt-2 text-sm font-medium max-w-lg leading-relaxed">
             Real-time monitoring of your ward's academic journey, attendance metrics, and institutional broadcasts.
           </p>
+          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 border border-white/20">
+            <span className="material-symbols-outlined text-[18px]">school</span>
+            <span className="text-sm font-bold">
+              {selectedChild.class_name} {selectedChild.class_section && `- Section ${selectedChild.class_section}`}
+            </span>
+          </div>
         </div>
         {/* Decorative elements */}
         <div className="absolute right-[-20px] top-[-20px] h-40 w-40 rounded-full bg-white/5 blur-3xl" />
@@ -57,7 +89,7 @@ export default function ParentDashboardPage() {
                  </div>
                  <span className="material-symbols-outlined text-slate-300">calendar_month</span>
               </div>
-              <TimetablePreview classId={user?.classId} />
+              <TimetablePreview classId={selectedChild.class_id} />
            </div>
         </div>
 

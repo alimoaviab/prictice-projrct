@@ -85,32 +85,14 @@ export async function createStudent(
 
     const academicYear = { _id: new Types.ObjectId(academicYearId) };
 
-    let userId: Types.ObjectId | undefined;
-    if (normalizedEmail) {
-      const existingUser = await UserModel.findOne({
-        school_id: ctx.school_id,
-        email: normalizedEmail
-      }).lean();
-
-      if (existingUser) {
-        throw new Error("A user with this email already exists.");
+    // Check for duplicate admission number
+    if (parsed.admission_no) {
+      const existingStudent = await StudentModel.findOne(tenantFilter(ctx, { 
+        admission_no: parsed.admission_no 
+      }));
+      if (existingStudent) {
+        throw new Error(`A student with admission number "${parsed.admission_no}" already exists in this school.`);
       }
-
-      const createdUser = await UserModel.create({
-        school_id: ctx.school_id,
-        email: normalizedEmail,
-        password_hash: hashPassword(parsed.password || "changeme123"),
-        role: "student",
-        permissions: [],
-        profile: {
-          first_name: parsed.first_name,
-          last_name: parsed.last_name,
-          phone: parsed.guardian.phone
-        },
-        status: "active"
-      });
-
-      userId = createdUser._id;
     }
 
     const created = await StudentModel.create({
@@ -118,9 +100,40 @@ export async function createStudent(
       academic_year_id: academicYear._id,
       admission_no: parsed.admission_no || (await nextAdmissionNumber(ctx.school_id)),
       class_id: new Types.ObjectId(parsed.class_id),
-      user_id: userId,
       school_id: ctx.school_id
     });
+
+    // 2. Handle Parent Account (Primary Login for Parent Portal)
+    if (parsed.email) {
+      const parentEmail = parsed.email.trim().toLowerCase();
+      const { checkParentEmail, linkStudentToParent, createParentAndLink } = await import("./parent.service");
+      
+      const checkResult = await checkParentEmail(ctx, parentEmail);
+
+      if (checkResult.ok && checkResult.data?.exists) {
+        if (checkResult.data.role_mismatch) {
+          throw new Error(`The parent email "${parentEmail}" is already registered as an ${checkResult.data.existing_role}. One email can only have one account type in the school.`);
+        }
+
+        // Parent already exists, link this student to them
+        await linkStudentToParent(ctx, {
+          parent_user_id: checkResult.data.parent_user_id!,
+          student_id: String(created._id),
+          relationship: "guardian",
+          is_primary: true
+        });
+      } else {
+        // Create new parent account and link
+        await createParentAndLink(ctx, {
+          email: parentEmail,
+          password: parsed.password || "changeme123",
+          name: parsed.guardian.name,
+          phone: parsed.guardian.phone,
+          student_id: String(created._id),
+          relationship: "guardian"
+        });
+      }
+    }
 
     await writeAuditLog(ctx, {
       action: "create",

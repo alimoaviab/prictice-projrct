@@ -7,10 +7,11 @@ import { showToast } from "../../../utils/toast";
 import { useQueryParams } from "../../../hooks/useQueryParams";
 
 interface HomeworkPageProps {
-  role: "ADMIN" | "TEACHER" | "STUDENT";
+  role: "ADMIN" | "TEACHER" | "STUDENT" | "PARENT";
+  studentId?: string;
 }
 
-export function HomeworkPage({ role }: HomeworkPageProps) {
+export function HomeworkPage({ role, studentId }: HomeworkPageProps) {
   const router = useRouter();
   const { currentParams, updateQuery, withQuery } = useQueryParams();
   const [loading, setLoading] = useState(true);
@@ -26,7 +27,8 @@ export function HomeworkPage({ role }: HomeworkPageProps) {
   const fetchHomeworks = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/homework");
+      const url = studentId ? `/api/homework?student_id=${studentId}` : "/api/homework";
+      const res = await fetch(url);
       const result = await res.json();
       if (res.ok && result.success) {
         setHomeworks(result.data || []);
@@ -41,7 +43,7 @@ export function HomeworkPage({ role }: HomeworkPageProps) {
 
   useEffect(() => {
     fetchHomeworks();
-  }, []);
+  }, [studentId]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to permanently delete this homework?")) return;
@@ -99,7 +101,7 @@ export function HomeworkPage({ role }: HomeworkPageProps) {
           <h1 className="text-3xl font-bold text-slate-900 normal-case tracking-tight">Homework Management</h1>
           <p className="text-slate-500 font-medium mt-1">Assign and manage educational content for your classes.</p>
         </div>
-        {role !== "STUDENT" && (
+        {role !== "STUDENT" && role !== "PARENT" && (
           <Button
             onClick={() => router.push(withQuery(role === "ADMIN" ? "/admin/homework/create" : "/teacher/homework/create"))}
             className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-600/10 text-[10px] font-bold normal-case transition-all active:scale-95"
@@ -141,7 +143,7 @@ export function HomeworkPage({ role }: HomeworkPageProps) {
               className="h-10 w-full rounded-lg border border-slate-100 bg-slate-50/50 pl-10 pr-3 text-xs font-medium text-slate-700 outline-none transition-all focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-600/5 placeholder:text-slate-400"
             />
           </div>
-          {role !== "STUDENT" && (
+          {role !== "STUDENT" && role !== "PARENT" && (
             <>
               <div className="h-6 w-px bg-slate-100" />
               <select
@@ -201,15 +203,19 @@ export function HomeworkPage({ role }: HomeworkPageProps) {
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => {
-                        const baseUrl = role === "ADMIN" ? "/admin/homework" : role === "TEACHER" ? "/teacher/homework" : "/student/homework";
+                        const baseUrl = 
+                            role === "ADMIN" ? "/admin/homework" : 
+                            role === "TEACHER" ? "/teacher/homework" : 
+                            role === "PARENT" ? "/parent/homework" :
+                            "/student/homework";
                         router.push(`${baseUrl}/${hw._id}/review`);
                     }}
                     className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 transition-all"
-                    title={role === "STUDENT" ? "View Details" : "Review Submissions"}
+                    title={role === "STUDENT" || role === "PARENT" ? "View Details" : "Review Submissions"}
                   >
-                    <span className="material-symbols-outlined text-lg">{role === "STUDENT" ? "visibility" : "grading"}</span>
+                    <span className="material-symbols-outlined text-lg">{role === "STUDENT" || role === "PARENT" ? "visibility" : "grading"}</span>
                   </button>
-                  {role !== "STUDENT" && (
+                  {role !== "STUDENT" && role !== "PARENT" && (
                     <>
                       <button
                         onClick={() => router.push(role === "ADMIN" ? `/admin/homework/edit/${hw._id}` : `/teacher/homework/edit/${hw._id}`)}

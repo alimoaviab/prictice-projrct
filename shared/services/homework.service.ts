@@ -72,15 +72,42 @@ export async function listHomework(
       ...(academicYearId ? { academic_year_id: new Types.ObjectId(academicYearId) } : {})
     });
 
-    // Student-specific filtering
+    // Role-specific filtering
     if (ctx.role === "student") {
       const { StudentModel } = await import("../models/student.model");
       const student = await StudentModel.findOne(tenantFilter(ctx, { user_id: ctx.user_id })).select("class_id").lean();
       if (student?.class_id) {
         query.class_id = student.class_id;
-        query.status = "assigned"; // Students only see assigned homework
+        query.status = "assigned"; 
       } else {
-        return []; // No class assigned, no homework visible
+        return []; 
+      }
+    } else if (ctx.role === "parent") {
+      const studentId = filter.student_id;
+      if (!studentId) {
+        throw new Error("student_id is required for parent access.");
+      }
+      
+      // Verify link
+      const { ParentModel } = await import("../models/parent.model");
+      const link = await ParentModel.findOne(tenantFilter(ctx, { 
+        user_id: ctx.user_id, 
+        student_id: studentId,
+        status: "active" 
+      })).lean();
+      
+      if (!link) {
+        throw new Error("You do not have permission to view this student's homework.");
+      }
+      
+      const { StudentModel } = await import("../models/student.model");
+      const student = await StudentModel.findOne(tenantFilter(ctx, { _id: studentId })).select("class_id").lean();
+      
+      if (student?.class_id) {
+        query.class_id = student.class_id;
+        query.status = "assigned";
+      } else {
+        return [];
       }
     }
 

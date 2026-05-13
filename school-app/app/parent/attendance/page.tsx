@@ -6,8 +6,10 @@ import { Card, DataState, Skeleton, Badge } from "../../../components/ui";
 import { useSafeAsync } from "../../../hooks/useSafeAsync";
 import { getParentAttendance } from "../../../modules/attendance/services/attendance.service";
 import { ParentAttendanceReport } from "../../../modules/attendance/types/attendance.types";
+import { useSelectedChild } from "../../../contexts/SelectedChildContext";
 
 export default function ParentAttendancePage() {
+  const { selectedChild, loading: childLoading } = useSelectedChild();
   const { state, run } = useSafeAsync<ParentAttendanceReport>();
 
   useEffect(() => {
@@ -43,13 +45,17 @@ export default function ParentAttendancePage() {
     );
   }
 
-  if (state.status === "empty" || !state.data?.students?.length) {
+  const filteredStudents = (state.data?.students ?? []).filter(
+    (s) => s.student_id === selectedChild?.student_id
+  );
+
+  if (state.status === "empty" || !filteredStudents.length) {
     return (
       <SchoolShell eyebrow="Parent Dashboard" title="Child's Attendance">
         <DataState
           variant="empty"
           title="No attendance records"
-          message="We could not find any children linked to this parent account yet."
+          message={`We could not find any attendance records for ${selectedChild?.student_name || "this student"} yet.`}
         />
       </SchoolShell>
     );
@@ -58,7 +64,7 @@ export default function ParentAttendancePage() {
   return (
     <SchoolShell eyebrow="Parent Dashboard" title="Child's Attendance">
       <div className="space-y-6">
-        {state.data.students.map((student) => (
+        {filteredStudents.map((student) => (
           <Card key={student.student_id} className="space-y-4">
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>

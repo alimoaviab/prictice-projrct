@@ -7,6 +7,8 @@ import { PageHeader, Breadcrumb } from "../components/ui";
 import { AIAssistant } from "../components/ai/AIAssistant";
 import { getSelectedAcademicYearId, setSelectedAcademicYearId } from "../services/academic-year-context";
 import { useAuth, Role } from "../hooks/useAuth";
+import { ChildSwitcher } from "../components/parent/ChildSwitcher";
+import { SelectedChildProvider } from "../contexts/SelectedChildContext";
 
 type NavItem = {
   label: string;
@@ -118,6 +120,8 @@ const parentNavGroups: NavGroup[] = [
       { label: "Exams", href: "/parent/exams", icon: "quiz" },
       { label: "Results", href: "/parent/results", icon: "leaderboard" },
       { label: "Attendance", href: "/parent/attendance", icon: "fact_check" },
+      { label: "Homework", href: "/parent/homework", icon: "assignment" },
+      { label: "Fee Ledger", href: "/parent/fees", icon: "receipt_long" },
     ],
   },
   {
@@ -352,7 +356,7 @@ export function SchoolShell({
     }));
   };
 
-  return (
+  const content = (
     <div className="flex h-screen bg-background text-slate-900 font-sans overflow-hidden">
       {showAIAssistant ? (
         <div className="fixed inset-0 z-50 pointer-events-none">
@@ -430,13 +434,13 @@ export function SchoolShell({
                       <Link
                         key={item.href}
                         href={item.href}
-                        className={`premium-nav-item group flex h-6.5 items-center gap-2 px-2.5 py-1 text-[11px] font-bold ${isActive ? "premium-nav-item-active" : "text-blue-950 hover:bg-blue-50/50"}`}
+                        className={`premium-nav-item group flex h-6.5 items-center gap-2 px-2.5 py-1 text-[11px] font-bold ${isActive ? "bg-blue-600 text-white shadow-md shadow-blue-600/20" : "text-slate-600 hover:bg-blue-50/50 hover:text-blue-600"}`}
                       >
-                        <span className={`material-symbols-outlined text-[14px] transition-colors ${isActive ? "font-bold text-white" : "text-blue-600/50 group-hover:text-blue-600"}`}>
+                        <span className={`material-symbols-outlined text-[14px] transition-colors ${isActive ? "font-bold text-white" : "text-slate-400 group-hover:text-blue-600"}`}>
                           {item.icon}
                         </span>
                         <span className="truncate tracking-tight">{item.label}</span>
-                        {isActive && !isCollapsed && <span className="ml-auto h-0.5 w-0.5 rounded-full bg-white/80" />}
+                        {isActive && !isCollapsed && <span className="ml-auto h-1 w-1 rounded-full bg-white/60" />}
                       </Link>
                     );
                   })}
@@ -496,7 +500,9 @@ export function SchoolShell({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 relative z-[100]">
+            {user.role === "parent" && <ChildSwitcher />}
+            
             <div className="hidden sm:flex items-center gap-2 rounded-md border border-slate-100 bg-white px-2 py-1">
               <span className="material-symbols-outlined text-[14px] text-slate-400">calendar_today</span>
               <select
@@ -557,4 +563,11 @@ export function SchoolShell({
       </main>
     </div>
   );
+
+  // Wrap with SelectedChildProvider for parent role
+  if (user.role === "parent") {
+    return <SelectedChildProvider>{content}</SelectedChildProvider>;
+  }
+
+  return content;
 }

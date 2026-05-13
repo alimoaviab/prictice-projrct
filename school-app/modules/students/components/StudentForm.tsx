@@ -19,6 +19,13 @@ const initialForm: StudentFormInput = {
   }
 };
 
+type ExistingParent = {
+  _id: string;
+  name: string;
+  email: string;
+  phone: string;
+};
+
 export function StudentForm({
   onCreate,
   classOptions
@@ -29,6 +36,9 @@ export function StudentForm({
   const [form, setForm] = useState<StudentFormInput>(initialForm);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [existingParent, setExistingParent] = useState<ExistingParent | null>(null);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [linkMode, setLinkMode] = useState(false);
 
   function validate() {
     const newErrors: Record<string, string> = {};
@@ -38,11 +48,41 @@ export function StudentForm({
     if (!form.section?.trim()) newErrors.section = "Section is required";
     if (!form.guardian.name?.trim()) newErrors.guardian_name = "Guardian name is required";
     if (!form.guardian.phone?.trim()) newErrors.guardian_phone = "Guardian phone is required";
-    if (!form.email?.trim()) newErrors.email = "Student email is required";
+    if (!form.email?.trim()) newErrors.email = "Parent email is required";
     if (!form.password || form.password.length < 8) newErrors.password = "Password must be at least 8 characters";
     
+    if (existingParent && (existingParent as any).role_mismatch) {
+      newErrors.email = "This email is already in use by another role";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  }
+
+  async function checkParentEmail(email: string) {
+    if (!email || !email.includes('@')) return;
+    
+    setCheckingEmail(true);
+    try {
+      const response = await fetch('/api/parents/check-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email })
+      });
+      
+      const result = await response.json();
+      if (result.ok && result.data?.exists) {
+        setExistingParent(result.data.parent);
+      } else {
+        setExistingParent(null);
+      }
+    } catch (error) {
+      console.error('Failed to check parent email:', error);
+      setExistingParent(null);
+    } finally {
+      setCheckingEmail(false);
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -161,6 +201,7 @@ export function StudentForm({
             onChange={(e) => setForm({ ...form, guardian: { ...form.guardian, name: e.target.value } })}
             error={errors.guardian_name}
             required
+            disabled={linkMode && !!existingParent}
             className="h-11 rounded-xl bg-white"
           />
 
@@ -172,19 +213,10 @@ export function StudentForm({
             onChange={(e) => setForm({ ...form, guardian: { ...form.guardian, phone: e.target.value } })}
             error={errors.guardian_phone}
             required
+            disabled={linkMode && !!existingParent}
             className="h-11 rounded-xl bg-white"
           />
 
-          <div className="md:col-span-2">
-            <Input
-              label="Guardian Email"
-              placeholder="Contact email address"
-              type="email"
-              value={form.guardian.email || ""}
-              onChange={(e) => setForm({ ...form, guardian: { ...form.guardian, email: e.target.value } })}
-              className="h-11 rounded-xl bg-white"
-            />
-          </div>
         </div>
       </div>
 
@@ -197,18 +229,25 @@ export function StudentForm({
             </div>
             <div>
                 <h3 className="text-sm font-black text-indigo-900 normal-case tracking-tight">Account Credentials</h3>
-                <p className="text-[10px] font-bold text-indigo-400 normal-case  tracking-wide">Student Portal Access Configuration</p>
+                <p className="text-[10px] font-bold text-indigo-400 normal-case  tracking-wide">Parent Portal Access Configuration</p>
             </div>
           </div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <Input
-            label="Student Email Address"
-            placeholder="e.g., student@school.com"
+            label="Parent Email Address"
+            placeholder="Email used for Parent Portal login"
             type="email"
             value={form.email || ""}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            onChange={(e) => {
+              setForm({ ...form, email: e.target.value });
+              if (existingParent) {
+                setExistingParent(null);
+                setLinkMode(false);
+              }
+            }}
+            onBlur={(e) => checkParentEmail(e.target.value)}
             error={errors.email}
             required
             className="h-11 rounded-xl bg-white border-indigo-100 focus:border-indigo-400"
@@ -224,10 +263,115 @@ export function StudentForm({
             required
             className="h-11 rounded-xl bg-white border-indigo-100 focus:border-indigo-400"
           />
+
+          <div className="md:col-span-2">
+            {checkingEmail && (
+              <p className="text-[10px] text-blue-600 mt-1 flex items-center gap-1 px-1">
+                <span className="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>
+                Checking school records for existing parent account...
+              </p>
+            )}
+            {existingParent && !linkMode && (
+              <div className={`mt-4 p-5 rounded-[1.5rem] border shadow-sm animate-fade-in ${
+                (existingParent as any).role_mismatch ? 'bg-rose-50 border-rose-100' : 'bg-blue-50 border-blue-100'
+              }`}>
+                <div className="flex items-start gap-4">
+                  <div className={`h-10 w-10 rounded-full flex items-center justify-center text-white shadow-md ${
+                    (existingParent as any).role_mismatch ? 'bg-rose-600 shadow-rose-200' : 'bg-blue-600 shadow-blue-200'
+                  }`}>
+                    <span className="material-symbols-outlined text-[20px]">
+                      {(existingParent as any).role_mismatch ? 'warning' : 'person_check'}
+                    </span>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className={`text-[12px] font-black tracking-tight ${
+                        (existingParent as any).role_mismatch ? 'text-rose-900' : 'text-blue-900'
+                      }`}>
+                        {(existingParent as any).role_mismatch ? 'Role Conflict Detected' : 'Existing Parent Found'}
+                      </p>
+                      <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase ${
+                        (existingParent as any).role_mismatch ? 'bg-rose-100 text-rose-700' : 'bg-blue-100 text-blue-700'
+                      }`}>
+                        {(existingParent as any).existing_role || 'Verified'}
+                      </span>
+                    </div>
+                    
+                    {(existingParent as any).role_mismatch ? (
+                      <p className="text-[10px] font-medium text-rose-700/80 leading-relaxed mb-4">
+                        This email is already registered as <strong>{(existingParent as any).existing_role}</strong>. 
+                        A single email cannot be reused for different roles. 
+                        Please use a dedicated email for the parent account.
+                      </p>
+                    ) : (
+                      <>
+                        <p className="text-[10px] font-medium text-blue-700/80 leading-relaxed mb-4">
+                          This email belongs to <strong>{existingParent.name}</strong> who is already registered in this school with <strong>{(existingParent as any).children_count || 0} student(s)</strong>.
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setLinkMode(true);
+                              setForm({
+                                ...form,
+                                guardian: {
+                                  name: existingParent.name,
+                                  phone: existingParent.phone,
+                                  email: existingParent.email
+                                }
+                              });
+                              setForm(prev => ({ ...prev, email: existingParent.email }));
+                            }}
+                            className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[10px] font-black transition-all shadow-lg shadow-blue-600/20 active:scale-95"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">link</span>
+                            Link Student to this Parent
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setExistingParent(null);
+                              setForm({ ...form, email: "" });
+                            }}
+                            className="px-5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-[10px] font-black transition-all active:scale-95"
+                          >
+                            Use Different Email
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            {linkMode && existingParent && (
+              <div className="mt-4 p-4 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center gap-3 animate-fade-in shadow-sm">
+                <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                  <span className="material-symbols-outlined text-[18px]">verified</span>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-emerald-900 leading-none">Smart Link Active</p>
+                  <p className="text-[9px] font-bold text-emerald-600 mt-0.5">Linked to: {existingParent.name}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLinkMode(false);
+                    setExistingParent(null);
+                    setForm({ ...form, email: "" });
+                  }}
+                  className="ml-auto h-7 w-7 flex items-center justify-center rounded-lg hover:bg-emerald-100 text-emerald-400 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[18px]">close</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2 px-1">
             <span className="material-symbols-outlined text-[14px] text-indigo-400">info</span>
-            <p className="text-[10px] font-medium text-indigo-400 italic">This email will be used for student login and academic notifications.</p>
+            <p className="text-[10px] font-medium text-indigo-400 italic">This email will be used for Parent Portal login and child updates.</p>
         </div>
       </div>
 
@@ -242,8 +386,8 @@ export function StudentForm({
         </Button>
         <Button
           type="submit"
-          disabled={saving}
-          className="h-10 px-12 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-600/20 text-[10px] font-bold normal-case  transition-all active:scale-95"
+          disabled={saving || (existingParent && (existingParent as any).role_mismatch)}
+          className="h-10 px-12 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-600/20 text-[10px] font-bold normal-case  transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {saving ? "Enrolling..." : "Enroll Student"}
         </Button>
