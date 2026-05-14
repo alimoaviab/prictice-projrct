@@ -59,7 +59,9 @@ export default function LeaveListPage() {
           </div>
           <div>
             <p className="font-bold text-slate-900 leading-none mb-1">{row.requester_name}</p>
-            <p className="text-[10px] text-slate-400 font-bold normal-case tracking-tighter normal-case">{row.requester_type}</p>
+            <p className="text-[10px] text-slate-400 font-bold normal-case tracking-tighter">
+              {row.requester_type} {row.class_name ? `• ${row.class_name}` : ""}
+            </p>
           </div>
         </div>
       ),
@@ -121,9 +123,9 @@ export default function LeaveListPage() {
        label: "Archive",
        variant: "ghost",
        requireConfirm: true,
-       onClick: (row) => deleteLeave(row._id),
+       onClick: (row: LeaveRecordRow) => deleteLeave(row._id),
     }
-  ], []);
+  ], [approveLeave, rejectLeave, deleteLeave]);
 
   const handleReject = async (id: string) => {
     if (!rejectReason.trim()) {
@@ -261,7 +263,9 @@ export default function LeaveListPage() {
 
                     <div className="mb-6">
                       <h3 className="text-lg font-bold text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors truncate">{row.requester_name}</h3>
-                      <p className="text-[10px] font-bold text-slate-400 normal-case  mt-1 normal-case">{row.requester_type} &bull; {row.leave_type}</p>
+                      <p className="text-[10px] font-bold text-slate-400 normal-case  mt-1 normal-case">
+                        {row.class_name || row.requester_type} &bull; {row.leave_type}
+                      </p>
                     </div>
 
                     <div className="bg-slate-50/50 rounded-xl p-3 border border-slate-100/50 mb-6">

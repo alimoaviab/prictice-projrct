@@ -26,42 +26,55 @@ export function HomeworkForm({
   const [formData, setFormData] = useState({
     title: initialValues?.title || "",
     class_id: initialValues?.class_id || "",
+    section_id: initialValues?.section_id || "", // Added
     subject_id: initialValues?.subject_id || "",
     teacher_id: initialValues?.teacher_id || initialTeacherId,
     due_at: initialValues?.due_at || "",
     instructions: initialValues?.instructions || "",
-    status: initialValues?.status || "assigned"
+    status: initialValues?.status || "assigned",
+    attachments: initialValues?.attachments || [], // Added
+    visibility: initialValues?.visibility || "all" // Added
   });
 
   const [classSubjects, setClassSubjects] = useState<any[]>([]);
+  const [classSections, setClassSections] = useState<any[]>([]); // Added
   const [loadingSubjects, setLoadingSubjects] = useState(false);
 
-  // Fetch subjects when class changes
+  // Fetch subjects and sections when class changes
   React.useEffect(() => {
     if (formData.class_id) {
       setLoadingSubjects(true);
+      // Fetch subjects
       (async () => {
         try {
           const res = await fetch(`/api/school/subjects/class/${formData.class_id}`, { credentials: "include" });
-          if (!res.ok) {
-            setClassSubjects([]);
-            return;
+          if (res.ok) {
+             const data = await res.json();
+             const subjects = (data?.subjects) || (data?.data?.subjects) || [];
+             setClassSubjects(subjects);
           }
-          const data = await res.json();
-          const subjects =
-            (Array.isArray(data?.subjects) && data.subjects) ||
-            (Array.isArray(data?.data?.subjects) && data.data.subjects) ||
-            [];
-          setClassSubjects(subjects);
         } catch (err) {
-          console.error("Failed to fetch subjects for class", err);
-          setClassSubjects([]);
+          console.error("Failed to fetch subjects", err);
         } finally {
           setLoadingSubjects(false);
         }
       })();
+
+      // Fetch sections
+      (async () => {
+        try {
+          const res = await fetch(`/api/sections?class_id=${formData.class_id}`, { credentials: "include" });
+          if (res.ok) {
+            const data = await res.json();
+            setClassSections(data?.data || data || []);
+          }
+        } catch (err) {
+          console.error("Failed to fetch sections", err);
+        }
+      })();
     } else {
       setClassSubjects([]);
+      setClassSections([]);
     }
   }, [formData.class_id]);
 
@@ -84,6 +97,11 @@ export function HomeworkForm({
   const classOptions = [
     { label: "Select Class", value: "" },
     ...classes.map(c => ({ label: c.name || c.label, value: c.id || c._id }))
+  ];
+
+  const sectionOptions = [
+    { label: "All Sections", value: "" },
+    ...classSections.map(s => ({ label: s.name, value: s.id || s._id }))
   ];
 
   // Use class-specific subjects if available, otherwise fallback to initialSubjects
@@ -121,13 +139,24 @@ export function HomeworkForm({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <Select
-              label="Class Section"
+              label="Class"
               required
               value={formData.class_id}
-              onChange={(e) => setFormData({ ...formData, class_id: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, class_id: e.target.value, section_id: "" })}
               options={classOptions}
               className="h-14 text-base rounded-2xl"
             />
+            <Select
+              label="Section (Optional)"
+              value={formData.section_id}
+              onChange={(e) => setFormData({ ...formData, section_id: e.target.value })}
+              options={sectionOptions}
+              disabled={!formData.class_id}
+              className="h-14 text-base rounded-2xl"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <Select
               label="Subject"
               required
@@ -136,6 +165,14 @@ export function HomeworkForm({
               options={subjectOptions}
               disabled={loadingSubjects || !formData.class_id}
               className="h-14 text-base rounded-2xl"
+            />
+            <Input
+              label="Due Date"
+              type="date"
+              required
+              value={formData.due_at}
+              onChange={(e) => setFormData({ ...formData, due_at: e.target.value })}
+              className="h-14 text-base rounded-2xl px-4"
             />
           </div>
 
@@ -149,15 +186,6 @@ export function HomeworkForm({
               className="h-14 text-base rounded-2xl"
             />
           )}
-
-          <Input
-            label="Due Date"
-            type="date"
-            required
-            value={formData.due_at}
-            onChange={(e) => setFormData({ ...formData, due_at: e.target.value })}
-            className="h-14 text-base rounded-2xl px-4"
-          />
         </div>
 
         <div className="space-y-6">

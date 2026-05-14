@@ -3,6 +3,7 @@ export interface LeaveRecordRow {
   requester_type: "student" | "teacher";
   requester_id: string;
   requester_name: string;
+  class_name?: string;
   leave_type: "sick" | "personal" | "family" | "vacation" | "other";
   start_date: string;
   end_date: string;

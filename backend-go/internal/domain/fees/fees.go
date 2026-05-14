@@ -579,7 +579,23 @@ func (h *Handler) Generate(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			return nil, api.NewControlledError("VALIDATION_ERROR", "Invalid month.", 400, nil)
 		}
-		yearID := tenant.ResolveAcademicYearID(h.Store, ctx, "")
+		
+		// Find the academic year that contains this month/year.
+		targetDate := time.Date(body.Year, time.Month(mn), 15, 0, 0, 0, 0, time.UTC)
+		var yearID string
+		h.Store.RLock()
+		for _, y := range h.Store.AcademicYears {
+			if y.SchoolID == ctx.SchoolID && !targetDate.Before(y.StartDate) && !targetDate.After(y.EndDate) {
+				yearID = y.ID
+				break
+			}
+		}
+		h.Store.RUnlock()
+
+		// Fallback to active year if no date-match found (e.g. creating for future year not yet in DB)
+		if yearID == "" {
+			yearID = tenant.ResolveAcademicYearID(h.Store, ctx, "")
+		}
 
 		h.Store.Lock()
 		defer h.Store.Unlock()
@@ -1177,6 +1193,38 @@ func (h *Handler) ClassesSummary(w http.ResponseWriter, r *http.Request) {
 //
 // Filters: status (all|paid|partial|unpaid), class_id, month, year, search,
 // page, limit.
+func isEarlier(m1 string, y1 int, m2 string, y2 int) bool {
+	n1, _ := monthToNum(m1)
+	n2, _ := monthToNum(m2)
+	if y1 < y2 {
+		return true
+	}
+	if y1 == y2 && n1 < n2 {
+		return true
+	}
+	return false
+}
+
+func (h *Handler) resolveExpectedComponents(schoolID, classID, yearID, month string, year int) []*store.ClassFee {
+	out := make([]*store.ClassFee, 0)
+	for _, cf := range h.Store.ClassFees {
+		if cf.SchoolID != schoolID || cf.ClassID != classID || cf.Status != "active" {
+			continue
+		}
+		if yearID != "" && cf.AcademicYearID != yearID {
+			continue
+		}
+		if cf.Type == "recurring" && cf.RecurringCycle == "monthly" {
+			out = append(out, cf)
+			continue
+		}
+		if cf.Type == "onetime" && strings.EqualFold(cf.DueMonth, month) && cf.DueYear == year {
+			out = append(out, cf)
+		}
+	}
+	return out
+}
+
 func (h *Handler) LedgerDashboard(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	q := r.URL.Query()
@@ -1206,6 +1254,22 @@ func (h *Handler) LedgerDashboard(w http.ResponseWriter, r *http.Request) {
 		h.Store.RLock()
 		defer h.Store.RUnlock()
 
+		mn, _ := monthToNum(monthQ)
+		yearNum, _ := strconv.Atoi(yearQ)
+		if yearNum == 0 {
+			yearNum = time.Now().Year()
+		}
+
+		// Resolve correct yearID for the requested period (mirroring Generate logic)
+		targetDate := time.Date(yearNum, time.Month(mn), 15, 0, 0, 0, 0, time.UTC)
+		activeYearID := yearID
+		for _, y := range h.Store.AcademicYears {
+			if y.SchoolID == ctx.SchoolID && !targetDate.Before(y.StartDate) && !targetDate.After(y.EndDate) {
+				activeYearID = y.ID
+				break
+			}
+		}
+
 		// Index helpers.
 		studentByID := map[string]*store.Student{}
 		for _, s := range h.Store.Students {
@@ -1220,13 +1284,39 @@ func (h *Handler) LedgerDashboard(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		// Cache expected class fees for the selected period
+		expectedByClass := map[string]struct {
+			amount     float64
+			components []store.FeeComponent
+		}{}
+		for _, c := range h.Store.Classes {
+			if c.SchoolID != ctx.SchoolID {
+				continue
+			}
+			comps := h.resolveExpectedComponents(ctx.SchoolID, c.ID, activeYearID, monthQ, yearNum)
+			total := 0.0
+			fc := make([]store.FeeComponent, 0, len(comps))
+			for _, cp := range comps {
+				total += cp.Amount
+				fc = append(fc, store.FeeComponent{
+					FeeTypeID: cp.FeeTypeID,
+					FeeType:   feeTypeName(h.Store, ctx.SchoolID, cp.FeeTypeID),
+					Amount:    cp.Amount,
+				})
+			}
+			expectedByClass[c.ID] = struct {
+				amount     float64
+				components []store.FeeComponent
+			}{amount: total, components: fc}
+		}
+
 		// Bucket fees per student so we can compute carry-forward.
 		feesByStudent := map[string][]*store.Fee{}
 		for _, f := range h.Store.Fees {
 			if f.SchoolID != ctx.SchoolID {
 				continue
 			}
-			if yearID != "" && f.AcademicYearID != "" && f.AcademicYearID != yearID {
+			if activeYearID != "" && f.AcademicYearID != "" && f.AcademicYearID != activeYearID {
 				continue
 			}
 			feesByStudent[f.StudentID] = append(feesByStudent[f.StudentID], f)
@@ -1247,19 +1337,22 @@ func (h *Handler) LedgerDashboard(w http.ResponseWriter, r *http.Request) {
 		var monthlyTotal, monthlyCollection, pendingAmount float64
 		paidCount, partialCount, unpaidCount := 0, 0, 0
 
-		for studentID, fees := range feesByStudent {
-			student, ok := studentByID[studentID]
-			if !ok {
-				continue
-			}
-
+		for _, student := range studentByID {
 			// Apply class filter against the student's class.
 			if classID != "" && student.ClassID != classID {
 				continue
 			}
 
+			fees := feesByStudent[student.ID]
+
 			// Carry forward = unpaid balance from any earlier month than the
 			// requested one (or from any past fee when no month filter set).
+			monthNum, _ := monthToNum(monthQ)
+			yearNum, _ := strconv.Atoi(yearQ)
+			if yearNum == 0 {
+				yearNum = time.Now().Year()
+			}
+
 			var current *store.Fee
 			var carry, paidTotal, totalPayable, remaining float64
 
@@ -1270,9 +1363,15 @@ func (h *Handler) LedgerDashboard(w http.ResponseWriter, r *http.Request) {
 					outstanding = 0
 				}
 
-				isCurrent := monthQ == "" || strings.EqualFold(f.Month, monthQ)
-				if yearQ != "" && strconv.Itoa(f.Year) != yearQ {
-					isCurrent = false
+				isCurrent := monthQ == "" || (strings.EqualFold(f.Month, monthQ) && (yearQ == "" || strconv.Itoa(f.Year) == yearQ))
+				
+				isPrevious := false
+				if monthQ != "" && yearQ != "" {
+					isPrevious = isEarlier(f.Month, f.Year, monthQ, yearNum)
+				} else if monthQ != "" {
+					// If no year specified, compare months in current year context
+					fn, _ := monthToNum(f.Month)
+					isPrevious = fn < monthNum
 				}
 
 				if isCurrent {
@@ -1282,8 +1381,23 @@ func (h *Handler) LedgerDashboard(w http.ResponseWriter, r *http.Request) {
 					totalPayable += eff
 					paidTotal += f.PaidAmount
 					remaining += outstanding
-				} else {
+				} else if isPrevious {
 					carry += outstanding
+				}
+			}
+
+			// ROOT FIX: If no invoice exists for current month, resolve from class config.
+			var virtualCurrent map[string]any
+			if current == nil && monthQ != "" {
+				exp := expectedByClass[student.ClassID]
+				totalPayable += exp.amount
+				remaining += exp.amount
+				virtualCurrent = map[string]any{
+					"id":         "virtual_" + student.ID,
+					"amount":     exp.amount,
+					"paid":       0.0,
+					"status":     "unpaid",
+					"components": exp.components,
 				}
 			}
 
@@ -1322,6 +1436,7 @@ func (h *Handler) LedgerDashboard(w http.ResponseWriter, r *http.Request) {
 					"class_name":   className,
 					"avatar":       "",
 				},
+				CurrentFee:   virtualCurrent,
 				CarryForward: carry,
 				TotalPayable: totalPayable,
 				PaidTotal:    paidTotal,

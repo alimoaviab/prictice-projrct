@@ -77,10 +77,12 @@ export function LeaveCreatePage() {
   const students = (studentState.data ?? []).map((s) => ({
     _id: s._id,
     name: s.name + " (Student)",
+    type: "student" as const,
   }));
   const teachers = (teacherState.data ?? []).map((t) => ({
     _id: t._id,
     name: t.name + " (Teacher)",
+    type: "teacher" as const,
   }));
   const requesters = [...students, ...teachers];
 

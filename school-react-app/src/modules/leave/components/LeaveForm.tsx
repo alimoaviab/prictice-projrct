@@ -5,7 +5,7 @@ interface Props {
   initial?: Partial<LeaveFormInput>;
   onSubmit: (data: LeaveFormInput) => void;
   onCancel: () => void;
-  requesters: { _id: string; name: string }[];
+  requesters: { _id: string; name: string; type: "student" | "teacher" }[];
 }
 
 export default function LeaveForm({ initial, onSubmit, onCancel, requesters }: Props) {
@@ -19,8 +19,17 @@ export default function LeaveForm({ initial, onSubmit, onCancel, requesters }: P
   });
 
   const handleChange = (field: keyof LeaveFormInput, value: any) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+    setForm(prev => {
+      const next = { ...prev, [field]: value };
+      // Reset requester ID if type changes
+      if (field === "requester_type") {
+        next.requester_id = "";
+      }
+      return next;
+    });
   };
+
+  const filteredRequesters = requesters.filter(r => r.type === form.requester_type);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +59,7 @@ export default function LeaveForm({ initial, onSubmit, onCancel, requesters }: P
             required
           >
             <option value="">Select Requester</option>
-            {requesters.map(r => (
+            {filteredRequesters.map(r => (
               <option key={r._id} value={r._id}>{r.name}</option>
             ))}
           </select>

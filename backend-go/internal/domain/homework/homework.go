@@ -24,6 +24,7 @@ func (h *Handler) hydrate(rows []*store.Homework) []map[string]any {
 	classByID := map[string]*store.Class{}
 	teacherByID := map[string]*store.Teacher{}
 	subjectByID := map[string]*store.Subject{}
+	h.Store.RLock()
 	for _, c := range h.Store.Classes {
 		classByID[c.ID] = c
 	}
@@ -33,6 +34,8 @@ func (h *Handler) hydrate(rows []*store.Homework) []map[string]any {
 	for _, s := range h.Store.Subjects {
 		subjectByID[s.ID] = s
 	}
+	h.Store.RUnlock()
+
 	out := make([]map[string]any, 0, len(rows))
 	for _, hw := range rows {
 		cls := classByID[hw.ClassID]
@@ -52,24 +55,30 @@ func (h *Handler) hydrate(rows []*store.Homework) []map[string]any {
 			subjectName = sub.Name
 		}
 		out = append(out, map[string]any{
-			"_id":                  hw.ID,
-			"school_id":            hw.SchoolID,
-			"academic_year_id":     hw.AcademicYearID,
-			"class_id":             hw.ClassID,
-			"class_name":           className,
-			"teacher_id":           hw.TeacherID,
-			"teacher_name":         teacherName,
-			"teacher_employee_no":  employeeNo,
-			"subject_id":           subjectID,
-			"subject_name":         subjectName,
-			"subject":              subjectName,
-			"title":                hw.Title,
-			"instructions":         hw.Instructions,
-			"due_at":               api.FormatDate(hw.DueAt),
-			"status":               hw.Status,
-			"submissions":          hw.Submissions,
-			"created_at":           hw.CreatedAt,
-			"updated_at":           hw.UpdatedAt,
+			"_id":                 hw.ID,
+			"id":                  hw.ID,
+			"school_id":           hw.SchoolID,
+			"academic_year_id":    hw.AcademicYearID,
+			"class_id":            hw.ClassID,
+			"section":             hw.Section,
+			"class_name":          className,
+			"teacher_id":          hw.TeacherID,
+			"teacher_name":        teacherName,
+			"teacher_employee_no": employeeNo,
+			"subject_id":          subjectID,
+			"subject_name":        subjectName,
+			"subject":             subjectName,
+			"title":               hw.Title,
+			"instructions":        hw.Instructions,
+			"due_at":              api.FormatDate(hw.DueAt),
+			"status":              hw.Status,
+			"submissions":         hw.Submissions,
+			"attachments":         hw.Attachments,
+			"visibility":          hw.Visibility,
+			"created_by":          hw.CreatedBy,
+			"created_by_role":     hw.CreatedByRole,
+			"created_at":          hw.CreatedAt,
+			"updated_at":          hw.UpdatedAt,
 		})
 	}
 	return out
@@ -85,25 +94,48 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		}
 		yearID := tenant.ResolveAcademicYearID(h.Store, ctx, q.Get("academic_year_id"))
 		classID := q.Get("class_id")
+		section := q.Get("section")
 		statusQ := q.Get("status")
+		teacherID := q.Get("teacher_id")
 
-		// Student scoping: only show their class's "assigned" homework.
+		h.Store.RLock()
+		var studentProfile *store.Student
+		var teacherProfile *store.Teacher
+
 		if ctx.Role == "student" {
-			h.Store.RLock()
-			var self *store.Student
 			for _, s := range h.Store.Students {
 				if s.SchoolID == ctx.SchoolID && s.UserID == ctx.UserID {
-					self = s
+					studentProfile = s
 					break
 				}
 			}
-			h.Store.RUnlock()
-			if self == nil {
+		} else if ctx.Role == "teacher" {
+			for _, t := range h.Store.Teachers {
+				if t.SchoolID == ctx.SchoolID && t.UserID == ctx.UserID {
+					teacherProfile = t
+					break
+				}
+			}
+		}
+		h.Store.RUnlock()
+
+		// Scoping for non-admins
+		if ctx.Role == "student" {
+			if studentProfile == nil {
 				return []any{}, nil
 			}
-			classID = self.ClassID
+			classID = studentProfile.ClassID
+			section = studentProfile.Section
 			if statusQ == "" {
 				statusQ = "assigned"
+			}
+		} else if ctx.Role == "teacher" {
+			if teacherProfile == nil {
+				return []any{}, nil
+			}
+			// If no explicit filter, teachers see what they created or are assigned to
+			if teacherID == "" && classID == "" {
+				teacherID = teacherProfile.ID
 			}
 		}
 
@@ -119,9 +151,29 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 			if classID != "" && hw.ClassID != classID {
 				continue
 			}
-			if statusQ != "" && hw.Status != statusQ {
+			if section != "" && hw.Section != "" && hw.Section != section {
 				continue
 			}
+			if statusQ != "" && statusQ != "all" && hw.Status != statusQ {
+				continue
+			}
+
+			// Role-based visibility
+			if ctx.Role == "student" {
+				if hw.Status == "draft" {
+					continue
+				}
+			} else if ctx.Role == "teacher" {
+				// Teachers see homework they created OR were assigned as teacher
+				if teacherID != "" && hw.TeacherID != teacherID && hw.CreatedBy != ctx.UserID {
+					continue
+				}
+			} else if ctx.Role == "admin" {
+				if teacherID != "" && hw.TeacherID != teacherID {
+					continue
+				}
+			}
+
 			rows = append(rows, hw)
 		}
 		h.Store.RUnlock()
@@ -180,13 +232,16 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 type createInput struct {
-	ClassID      string `json:"class_id"`
-	TeacherID    string `json:"teacher_id"`
-	SubjectID    string `json:"subject_id"`
-	Title        string `json:"title"`
-	Instructions string `json:"instructions"`
-	DueAt        string `json:"due_at"`
-	Status       string `json:"status"`
+	ClassID      string   `json:"class_id"`
+	Section      string   `json:"section"`
+	TeacherID    string   `json:"teacher_id"`
+	SubjectID    string   `json:"subject_id"`
+	Title        string   `json:"title"`
+	Instructions string   `json:"instructions"`
+	DueAt        string   `json:"due_at"`
+	Status       string   `json:"status"`
+	Attachments  []string `json:"attachments"`
+	Visibility   string   `json:"visibility"`
 }
 
 // Create implements POST /api/homework.
@@ -201,19 +256,19 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		if err := auth.AssertPermission(ctx, "homework", auth.ActionCreate); err != nil {
 			return nil, err
 		}
-		if body.ClassID == "" || body.TeacherID == "" || body.Title == "" {
-			return nil, api.NewControlledError("VALIDATION_ERROR", "class_id, teacher_id and title are required.", 400, nil)
+		if body.ClassID == "" || body.Title == "" {
+			return nil, api.NewControlledError("VALIDATION_ERROR", "class_id and title are required.", 400, nil)
 		}
 		dueAt, ok := api.ParseDate(body.DueAt)
 		if !ok {
 			return nil, api.NewControlledError("VALIDATION_ERROR", "Invalid due_at date.", 400, nil)
 		}
-		// 23:59 same day, mirroring `dueAt.setHours(23,59,0,0)`.
+		// 23:59 same day
 		dueAt = time.Date(dueAt.Year(), dueAt.Month(), dueAt.Day(), 23, 59, 0, 0, time.UTC)
 
 		h.Store.Lock()
 		defer h.Store.Unlock()
-		// Validate class + teacher exist.
+		
 		var class *store.Class
 		for _, c := range h.Store.Classes {
 			if c.ID == body.ClassID && c.SchoolID == ctx.SchoolID {
@@ -224,32 +279,24 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		if class == nil {
 			return nil, api.NewControlledError("NOT_FOUND", "Selected class was not found.", 404, nil)
 		}
-		var teacher *store.Teacher
-		for _, t := range h.Store.Teachers {
-			if t.ID == body.TeacherID && t.SchoolID == ctx.SchoolID {
-				teacher = t
-				break
-			}
-		}
-		if teacher == nil {
-			return nil, api.NewControlledError("NOT_FOUND", "Selected teacher was not found.", 404, nil)
-		}
 
-		// Resolve subject (by ID, or by name fallback / auto-create).
-		var subject *store.Subject
-		if body.SubjectID != "" {
-			for _, s := range h.Store.Subjects {
-				if s.ID == body.SubjectID && s.SchoolID == ctx.SchoolID {
-					subject = s
+		teacherID := body.TeacherID
+		if teacherID == "" && ctx.Role == "teacher" {
+			// Resolve teacher profile for current user
+			for _, t := range h.Store.Teachers {
+				if t.SchoolID == ctx.SchoolID && t.UserID == ctx.UserID {
+					teacherID = t.ID
 					break
 				}
 			}
-			if subject == nil {
-				for _, s := range h.Store.Subjects {
-					if s.SchoolID == ctx.SchoolID && s.Name == body.SubjectID {
-						subject = s
-						break
-					}
+		}
+
+		var subject *store.Subject
+		if body.SubjectID != "" {
+			for _, s := range h.Store.Subjects {
+				if (s.ID == body.SubjectID || s.Name == body.SubjectID) && s.SchoolID == ctx.SchoolID {
+					subject = s
+					break
 				}
 			}
 			if subject == nil && len(body.SubjectID) >= 2 {
@@ -267,10 +314,13 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 			yearID = ctx.ActiveAcademicYearID
 		}
 
-		// Initialize a `pending` submission row per active student in the class.
 		submissions := make([]store.HomeworkSubmission, 0)
 		for _, s := range h.Store.Students {
 			if s.SchoolID == ctx.SchoolID && s.ClassID == body.ClassID && s.Status == "active" {
+				// Optional section filter
+				if body.Section != "" && s.Section != body.Section {
+					continue
+				}
 				submissions = append(submissions, store.HomeworkSubmission{
 					StudentID:      s.ID,
 					Status:         "pending",
@@ -285,12 +335,17 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 			SchoolID:       ctx.SchoolID,
 			AcademicYearID: yearID,
 			ClassID:        body.ClassID,
-			TeacherID:      body.TeacherID,
+			Section:        body.Section,
+			TeacherID:      teacherID,
 			Title:          body.Title,
 			Instructions:   body.Instructions,
 			DueAt:          dueAt,
 			Status:         orDefault(body.Status, "assigned"),
 			Submissions:    submissions,
+			Attachments:    body.Attachments,
+			Visibility:     orDefault(body.Visibility, "all"),
+			CreatedBy:      ctx.UserID,
+			CreatedByRole:  ctx.Role,
 			CreatedAt:      now,
 			UpdatedAt:      now,
 		}
@@ -337,6 +392,9 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 				if v, ok := body["class_id"]; ok {
 					_ = json.Unmarshal(v, &hw.ClassID)
 				}
+				if v, ok := body["section"]; ok {
+					_ = json.Unmarshal(v, &hw.Section)
+				}
 				if v, ok := body["teacher_id"]; ok {
 					_ = json.Unmarshal(v, &hw.TeacherID)
 				}
@@ -346,6 +404,12 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 					if d, ok := api.ParseDate(s); ok {
 						hw.DueAt = time.Date(d.Year(), d.Month(), d.Day(), 23, 59, 0, 0, time.UTC)
 					}
+				}
+				if v, ok := body["attachments"]; ok {
+					_ = json.Unmarshal(v, &hw.Attachments)
+				}
+				if v, ok := body["visibility"]; ok {
+					_ = json.Unmarshal(v, &hw.Visibility)
 				}
 				hw.UpdatedAt = time.Now()
 				audit.Write(h.Store, ctx, audit.Input{

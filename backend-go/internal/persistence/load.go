@@ -450,9 +450,9 @@ func (p *Persister) loadResults(ctx context.Context, s *store.MemStore) error {
 
 func (p *Persister) loadHomework(ctx context.Context, s *store.MemStore) error {
 	rows, err := p.pool.Query(ctx, `
-		SELECT id, school_id, COALESCE(academic_year_id,''), class_id, teacher_id,
-			COALESCE(subject_id,''), subject, title, instructions, due_at, status,
-			created_at, updated_at
+		SELECT id, school_id, COALESCE(academic_year_id,''), class_id, COALESCE(section,''), teacher_id,
+			COALESCE(subject_id,''), subject, title, instructions, due_at, status, attachments,
+			visibility, created_by, created_by_role, created_at, updated_at
 		FROM homework`)
 	if err != nil {
 		return err
@@ -461,10 +461,14 @@ func (p *Persister) loadHomework(ctx context.Context, s *store.MemStore) error {
 	hwById := map[string]*store.Homework{}
 	for rows.Next() {
 		v := &store.Homework{}
-		if err := rows.Scan(&v.ID, &v.SchoolID, &v.AcademicYearID, &v.ClassID, &v.TeacherID,
-			&v.SubjectID, &v.Subject, &v.Title, &v.Instructions, &v.DueAt, &v.Status,
-			&v.CreatedAt, &v.UpdatedAt); err != nil {
+		var attachmentsRaw []byte
+		if err := rows.Scan(&v.ID, &v.SchoolID, &v.AcademicYearID, &v.ClassID, &v.Section, &v.TeacherID,
+			&v.SubjectID, &v.Subject, &v.Title, &v.Instructions, &v.DueAt, &v.Status, &attachmentsRaw,
+			&v.Visibility, &v.CreatedBy, &v.CreatedByRole, &v.CreatedAt, &v.UpdatedAt); err != nil {
 			return err
+		}
+		if len(attachmentsRaw) > 0 {
+			_ = json.Unmarshal(attachmentsRaw, &v.Attachments)
 		}
 		hwById[v.ID] = v
 		s.Homework = append(s.Homework, v)

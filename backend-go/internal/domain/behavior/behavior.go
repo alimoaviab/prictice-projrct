@@ -23,6 +23,7 @@ func (h *Handler) hydrate(rows []*store.Behavior) []map[string]any {
 	studentByID := map[string]*store.Student{}
 	classByID := map[string]*store.Class{}
 	teacherByID := map[string]*store.Teacher{}
+	h.Store.RLock()
 	for _, s := range h.Store.Students {
 		studentByID[s.ID] = s
 	}
@@ -32,6 +33,8 @@ func (h *Handler) hydrate(rows []*store.Behavior) []map[string]any {
 	for _, t := range h.Store.Teachers {
 		teacherByID[t.ID] = t
 	}
+	h.Store.RUnlock()
+
 	out := make([]map[string]any, 0, len(rows))
 	for _, b := range rows {
 		stu := studentByID[b.StudentID]
@@ -59,6 +62,7 @@ func (h *Handler) hydrate(rows []*store.Behavior) []map[string]any {
 			"class_name":      className,
 			"teacher_id":      b.TeacherID,
 			"teacher_name":    teacherName,
+			"category":        b.Category,
 			"incident_type":   b.IncidentType,
 			"description":     b.Description,
 			"severity":        b.Severity,
@@ -67,6 +71,7 @@ func (h *Handler) hydrate(rows []*store.Behavior) []map[string]any {
 			"warning_count":   b.WarningCount,
 			"parent_notified": b.ParentNotified,
 			"notes":           b.Notes,
+			"attachments":     b.Attachments,
 			"created_at":      b.CreatedAt,
 			"updated_at":      b.UpdatedAt,
 		})
@@ -83,8 +88,10 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		}
 		studentID := q.Get("student_id")
 		classID := q.Get("class_id")
+		teacherID := q.Get("teacher_id")
 		statusQ := q.Get("status")
 		severity := q.Get("severity")
+		category := q.Get("category")
 
 		h.Store.RLock()
 		rows := make([]*store.Behavior, 0)
@@ -98,12 +105,32 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 			if classID != "" && b.ClassID != classID {
 				continue
 			}
-			if statusQ != "" && b.Status != statusQ {
+			if teacherID != "" && b.TeacherID != teacherID {
+				continue
+			}
+			if statusQ != "" && statusQ != "all" && b.Status != statusQ {
 				continue
 			}
 			if severity != "" && b.Severity != severity {
 				continue
 			}
+			if category != "" && b.Category != category {
+				continue
+			}
+
+			// Visibility rules for parents/students
+			if ctx.Role == "parent" || ctx.Role == "student" {
+				if b.Status == "dismissed" || b.Status == "reviewing" {
+					continue
+				}
+				// Only show critical/major or positive achievements
+				isCritical := b.Severity == "critical" || b.Severity == "major" || b.Severity == "high"
+				isPositive := b.Category == "achievement" || b.Category == "positive_behavior"
+				if !isCritical && !isPositive {
+					continue
+				}
+			}
+
 			rows = append(rows, b)
 		}
 		h.Store.RUnlock()
@@ -138,16 +165,18 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 type createInput struct {
-	StudentID      string `json:"student_id"`
-	ClassID        string `json:"class_id"`
-	IncidentType   string `json:"incident_type"`
-	Description    string `json:"description"`
-	Severity       string `json:"severity"`
-	ActionTaken    string `json:"action_taken"`
-	Status         string `json:"status,omitempty"`
-	WarningCount   int    `json:"warning_count,omitempty"`
-	ParentNotified bool   `json:"parent_notified,omitempty"`
-	Notes          string `json:"notes,omitempty"`
+	StudentID      string   `json:"student_id"`
+	ClassID        string   `json:"class_id"`
+	Category       string   `json:"category"`
+	IncidentType   string   `json:"incident_type"`
+	Description    string   `json:"description"`
+	Severity       string   `json:"severity"`
+	ActionTaken    string   `json:"action_taken"`
+	Status         string   `json:"status,omitempty"`
+	WarningCount   int      `json:"warning_count,omitempty"`
+	ParentNotified bool     `json:"parent_notified,omitempty"`
+	Notes          string   `json:"notes,omitempty"`
+	Attachments    []string `json:"attachments,omitempty"`
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
@@ -161,8 +190,15 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		if err := auth.AssertPermission(ctx, "behavior", auth.ActionCreate); err != nil {
 			return nil, err
 		}
-		if body.StudentID == "" || body.ClassID == "" || body.IncidentType == "" || body.Description == "" || body.Severity == "" {
-			return nil, api.NewControlledError("VALIDATION_ERROR", "student_id, class_id, incident_type, description and severity are required.", 400, nil)
+		if body.StudentID == "" || body.ClassID == "" || body.Description == "" || body.Severity == "" {
+			return nil, api.NewControlledError("VALIDATION_ERROR", "student_id, class_id, description and severity are required.", 400, nil)
+		}
+
+		if body.Category == "" {
+			body.Category = body.IncidentType
+		}
+		if body.Category == "" {
+			body.Category = "conduct"
 		}
 
 		h.Store.Lock()
@@ -177,8 +213,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		if stu == nil {
 			return nil, api.NewControlledError("STUDENT_NOT_FOUND", "Student not found in this school context.", 404, nil)
 		}
-		// Resolve teacher_id: if caller is teacher, prefer their teacher
-		// profile; otherwise use the user_id verbatim.
+
 		teacherID := ctx.UserID
 		if ctx.Role == "teacher" {
 			for _, t := range h.Store.Teachers {
@@ -204,7 +239,8 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 			StudentID:      body.StudentID,
 			ClassID:        body.ClassID,
 			TeacherID:      teacherID,
-			IncidentType:   body.IncidentType,
+			Category:       body.Category,
+			IncidentType:   body.Category,
 			Description:    body.Description,
 			Severity:       body.Severity,
 			ActionTaken:    body.ActionTaken,
@@ -212,12 +248,13 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 			WarningCount:   warning,
 			ParentNotified: body.ParentNotified,
 			Notes:          body.Notes,
+			Attachments:    body.Attachments,
 			CreatedAt:      now,
 			UpdatedAt:      now,
 		}
 		h.Store.Behaviors = append(h.Store.Behaviors, row)
 		audit.Write(h.Store, ctx, audit.Input{
-			Action: "create", EntityType: "user", EntityID: row.ID, After: row,
+			Action: "create", EntityType: "behavior", EntityID: row.ID, After: row,
 		})
 		return h.hydrate([]*store.Behavior{row})[0], nil
 	}))
@@ -240,8 +277,12 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		for _, b := range h.Store.Behaviors {
 			if b.ID == id && b.SchoolID == ctx.SchoolID {
 				before := *b
-				if v, ok := body["incident_type"]; ok {
+				if v, ok := body["category"]; ok {
+					_ = json.Unmarshal(v, &b.Category)
+					b.IncidentType = b.Category
+				} else if v, ok := body["incident_type"]; ok {
 					_ = json.Unmarshal(v, &b.IncidentType)
+					b.Category = b.IncidentType
 				}
 				if v, ok := body["description"]; ok {
 					_ = json.Unmarshal(v, &b.Description)
@@ -264,9 +305,12 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 				if v, ok := body["notes"]; ok {
 					_ = json.Unmarshal(v, &b.Notes)
 				}
+				if v, ok := body["attachments"]; ok {
+					_ = json.Unmarshal(v, &b.Attachments)
+				}
 				b.UpdatedAt = time.Now()
 				audit.Write(h.Store, ctx, audit.Input{
-					Action: "update", EntityType: "user", EntityID: id, Before: before, After: *b,
+					Action: "update", EntityType: "behavior", EntityID: id, Before: before, After: *b,
 				})
 				return h.hydrate([]*store.Behavior{b})[0], nil
 			}

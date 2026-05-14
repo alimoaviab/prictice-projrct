@@ -313,17 +313,38 @@ func (h *Handler) ChildHomework(w http.ResponseWriter, r *http.Request) {
 		}
 		h.Store.RLock()
 		defer h.Store.RUnlock()
+		
+		teacherByID := map[string]*store.Teacher{}
+		for _, t := range h.Store.Teachers {
+			teacherByID[t.ID] = t
+		}
+
 		out := make([]map[string]any, 0)
 		for _, hw := range h.Store.Homework {
 			if hw.SchoolID != ctx.SchoolID || hw.ClassID != s.ClassID {
 				continue
 			}
+			if hw.Section != "" && hw.Section != s.Section {
+				continue
+			}
+			if hw.Status == "draft" {
+				continue
+			}
+
+			teacherName := "Teacher"
+			if t := teacherByID[hw.TeacherID]; t != nil {
+				teacherName = t.FirstName + " " + t.LastName
+			}
+
 			out = append(out, map[string]any{
-				"_id":     hw.ID,
-				"title":   hw.Title,
-				"subject": hw.Subject,
-				"due_at":  api.FormatDate(hw.DueAt),
-				"status":  hw.Status,
+				"_id":          hw.ID,
+				"id":           hw.ID,
+				"title":        hw.Title,
+				"subject":      hw.Subject,
+				"subject_name": hw.Subject,
+				"due_at":       api.FormatDate(hw.DueAt),
+				"status":       hw.Status,
+				"teacher_name": teacherName,
 			})
 		}
 		sort.SliceStable(out, func(i, j int) bool {

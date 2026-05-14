@@ -171,10 +171,13 @@ export function StudentFeeDashboard() {
         }
     };
 
-    const CompactPill = ({ label, value, color = "text-slate-900", bg = "bg-slate-50/50" }: any) => (
-        <div className={`${bg} border border-slate-100 rounded-lg px-2 py-1 flex flex-col items-center justify-center text-center`}>
+    const CompactPill = ({ label, value, color = "text-slate-900", bg = "bg-slate-50/50", subtext }: any) => (
+        <div className={`${bg} border border-slate-100 rounded-lg px-2 py-1 flex flex-col items-center justify-center text-center relative overflow-hidden group/pill`}>
             <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{label}</span>
-            <span className={`text-[10px] font-black ${color} leading-none tracking-tight`}>Rs {Number(value || 0).toLocaleString()}</span>
+            <span className={`text-[10px] font-black ${color} leading-none tracking-tight`}>
+                {typeof value === 'number' ? `Rs ${value.toLocaleString()}` : value}
+            </span>
+            {subtext && <span className="text-[6px] font-medium text-slate-400 mt-0.5">{subtext}</span>}
         </div>
     );
 
@@ -290,11 +293,11 @@ export function StudentFeeDashboard() {
                                 {/* HEADER */}
                                 <div className="flex items-center justify-between mb-3 relative z-10">
                                     <div className="flex items-center gap-2 min-w-0">
-                                        <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-black text-[10px] flex-shrink-0 shadow-sm">
+                                        <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-black text-[10px] flex-shrink-0 shadow-sm group-hover:scale-110 transition-transform">
                                             {entry.student.name.substring(0, 1).toUpperCase()}
                                         </div>
                                         <div className="min-w-0">
-                                            <p className="font-black text-slate-900 text-[11px] truncate leading-none mb-1">{entry.student.name}</p>
+                                            <p className="font-black text-slate-900 text-[11px] truncate leading-none mb-1 group-hover:text-blue-600 transition-colors">{entry.student.name}</p>
                                             <div className="flex items-center gap-1">
                                                 <span className="text-[7px] font-black text-blue-600 bg-blue-50 px-1 rounded-sm uppercase">{entry.student.class_name}</span>
                                                 <span className="text-[7px] font-bold text-slate-400">#{entry.student.admission_no}</span>
@@ -308,10 +311,15 @@ export function StudentFeeDashboard() {
 
                                 {/* FINANCIAL PILLS */}
                                 <div className="grid grid-cols-2 gap-1 mb-3">
-                                    <CompactPill label="Billed" value={entry.current_fee?.amount || 0} />
-                                    <CompactPill label="Prev." value={entry.carry_forward} color="text-amber-600" />
+                                    <CompactPill 
+                                        label="Monthly" 
+                                        value={entry.current_fee?.amount || 0} 
+                                        subtext={!entry.current_fee ? "Not Generated" : undefined}
+                                        color={!entry.current_fee ? "text-slate-300" : "text-slate-900"}
+                                     />
+                                    <CompactPill label="Previous" value={entry.carry_forward} color="text-amber-600" />
                                     <CompactPill label="Paid" value={entry.paid_total} color="text-emerald-600" />
-                                    <CompactPill label="Balance" value={entry.remaining} color="text-blue-600" bg="bg-blue-50/50" />
+                                    <CompactPill label="Total Amount" value={entry.remaining} color="text-blue-600" bg="bg-blue-50/50" />
                                 </div>
 
                                 {/* ACTIONS */}
@@ -390,7 +398,7 @@ export function StudentFeeDashboard() {
                                     <p className="text-sm font-black text-slate-900">Rs {isPaying.total_payable.toLocaleString()}</p>
                                 </div>
                                 <div className="p-3 rounded-2xl bg-white border border-blue-100 flex flex-col items-center text-center shadow-sm">
-                                    <p className="text-[8px] font-black text-blue-400 uppercase tracking-widest mb-1">Remaining</p>
+                                    <p className="text-[8px] font-black text-blue-400 uppercase tracking-widest mb-1">Total Amount</p>
                                     <p className="text-sm font-black text-blue-600">Rs {isPaying.remaining.toLocaleString()}</p>
                                 </div>
                             </div>

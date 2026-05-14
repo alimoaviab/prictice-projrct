@@ -19,9 +19,9 @@ import { useQueryParams } from "@/hooks/useQueryParams";
 export function BehaviorListPage({ filters }: { filters?: { student_id?: string; teacher_id?: string; status?: string } }) {
   const pathname = useLocation().pathname;
   const { currentParams, updateQuery, withQuery } = useQueryParams();
-  const { state, deleteBehavior } = useBehavior(filters);
+  const { state, deleteBehavior, updateBehavior } = useBehavior(filters);
   const [searchQuery, setSearchQuery] = useState(currentParams.get("search") || "");
-  const [statusFilter, setStatusFilter] = useState<"all" | "open" | "resolved" | "under_review">((currentParams.get("status") as any) || "all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "open" | "reviewing" | "resolved" | "escalated" | "dismissed">((currentParams.get("status") as any) || "all");
   const [viewMode, setViewMode] = useState<"grid" | "list">((currentParams.get("view") as any) || "grid");
 
   useEffect(() => {
@@ -30,12 +30,10 @@ export function BehaviorListPage({ filters }: { filters?: { student_id?: string;
     setViewMode((currentParams.get("view") as any) || "grid");
   }, [currentParams.toString()]);
 
-  const handleDelete = async (id: string) => {
-    const result = await deleteBehavior(id);
-    if (!result.success) {
-      showToast(result.message || "Failed to delete record", "error");
-    } else {
-      showToast("Record deleted", "success");
+  const handleStatusUpdate = async (id: string, status: string) => {
+    const res = await updateBehavior(id, { status } as any);
+    if (res.ok) {
+      showToast(`Incident marked as ${status.replace("_", " ")}`, "success");
     }
   };
 
@@ -53,10 +51,14 @@ export function BehaviorListPage({ filters }: { filters?: { student_id?: string;
       sortFn: (a, b) => a.student_name.localeCompare(b.student_name),
     },
     {
-      key: "incident_type",
-      label: "Type",
-      render: (row) => <span className="normal-case">{row.incident_type.replace("_", " ")}</span>,
-      sortable: true,
+      key: "teacher",
+      label: "Reported By",
+      render: (row) => <span className="text-xs font-medium text-slate-600">{row.teacher_name || "Admin"}</span>,
+    },
+    {
+      key: "category",
+      label: "Category",
+      render: (row) => <span className="capitalize">{row.category || row.incident_type}</span>,
     },
     {
       key: "severity",
@@ -66,7 +68,7 @@ export function BehaviorListPage({ filters }: { filters?: { student_id?: string;
           variant={
             row.severity === "critical" ? "error" :
               row.severity === "major" ? "warning" :
-                row.severity === "moderate" ? "primary" :
+                row.severity === "moderate" || row.severity === "medium" ? "primary" :
                   "success"
           }
           className="normal-case"
@@ -84,8 +86,9 @@ export function BehaviorListPage({ filters }: { filters?: { student_id?: string;
           variant={
             row.status === "resolved" ? "success" :
               row.status === "open" ? "warning" :
-                row.status === "under_review" ? "primary" :
-                  "error"
+                row.status === "reviewing" ? "primary" :
+                  row.status === "escalated" ? "error" :
+                    "gray"
           }
           className="normal-case"
         >
@@ -94,40 +97,42 @@ export function BehaviorListPage({ filters }: { filters?: { student_id?: string;
       ),
       sortable: true,
     },
-    {
-      key: "warnings",
-      label: "Warnings",
-      render: (row) => <span>{row.warning_count}</span>,
-      sortable: true,
-    },
-    {
-      key: "parent_notified",
-      label: "Parent Notified",
-      render: (row) => (
-        <Badge variant={row.parent_notified ? "success" : "gray"}>
-          {row.parent_notified ? "Yes" : "No"}
-        </Badge>
-      ),
-    },
   ], []);
 
   const rowActions: RowAction<BehaviorRecordRow>[] = useMemo(() => [
     {
-      icon: "visibility",
-      label: "View Details",
+      icon: "play_arrow",
+      label: "Review",
+      showIf: (row: BehaviorRecordRow) => row.status === "open",
+      onClick: (row) => handleStatusUpdate(row._id, "reviewing"),
+    },
+    {
+      icon: "check_circle",
+      label: "Resolve",
       variant: "primary",
-      onClick: (row) => {
-        alert(`Student: ${row.student_name}\nType: ${row.incident_type}\nSeverity: ${row.severity}\nStatus: ${row.status}\n\nDescription: ${row.description || "N/A"}`);
-      },
+      showIf: (row: BehaviorRecordRow) => row.status === "reviewing",
+      onClick: (row) => handleStatusUpdate(row._id, "resolved"),
+    },
+    {
+      icon: "trending_up",
+      label: "Escalate",
+      variant: "primary",
+      showIf: (row: BehaviorRecordRow) => row.status === "reviewing",
+      onClick: (row) => handleStatusUpdate(row._id, "escalated"),
+    },
+    {
+      icon: "cancel",
+      label: "Dismiss",
+      variant: "ghost",
+      showIf: (row: BehaviorRecordRow) => row.status === "reviewing",
+      onClick: (row) => handleStatusUpdate(row._id, "dismissed"),
     },
     {
       icon: "delete",
       label: "Delete",
       variant: "danger",
       requireConfirm: true,
-      confirmTitle: "Delete Record",
-      confirmMessage: (row) => `Are you sure you want to delete the behavior record for ${row.student_name}?`,
-      onClick: (row) => handleDelete(row._id),
+      onClick: (row) => deleteBehavior(row._id),
     },
   ], [pathname]);
 
@@ -138,8 +143,9 @@ export function BehaviorListPage({ filters }: { filters?: { student_id?: string;
       const queryMatch =
         q.length === 0 ||
         row.student_name.toLowerCase().includes(q) ||
-        row.incident_type.toLowerCase().includes(q) ||
+        (row.category || row.incident_type || "").toLowerCase().includes(q) ||
         (row.description || "").toLowerCase().includes(q) ||
+        (row.teacher_name || "").toLowerCase().includes(q) ||
         (row.class_name || "").toLowerCase().includes(q);
       const statusMatch = statusFilter === "all" ? true : row.status === statusFilter;
       return queryMatch && statusMatch;
@@ -170,8 +176,8 @@ export function BehaviorListPage({ filters }: { filters?: { student_id?: string;
       <StatCardGrid
         items={[
           { label: "Total Incidents", value: stats.total, icon: "gavel", accent: "blue" },
-          { label: "Open Issues", value: stats.open, icon: "assignment_late", accent: "amber" },
-          { label: "Critical", value: stats.critical, icon: "error", accent: "rose" },
+          { label: "New / Open", value: stats.open, icon: "assignment_late", accent: "amber" },
+          { label: "Critical Priority", value: stats.critical, icon: "error", accent: "rose" },
           { label: "Resolved", value: stats.resolved, icon: "task_alt", accent: "emerald" },
         ]}
       />
@@ -188,7 +194,7 @@ export function BehaviorListPage({ filters }: { filters?: { student_id?: string;
                 setSearchQuery(value);
                 updateQuery({ search: value });
               }}
-              placeholder="Search student, incident or description..."
+              placeholder="Search student, teacher, or category..."
               className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-xs font-medium text-slate-700 outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-600/5 placeholder:text-slate-400"
             />
           </div>
@@ -202,10 +208,12 @@ export function BehaviorListPage({ filters }: { filters?: { student_id?: string;
             }}
             className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none cursor-pointer transition-all hover:border-slate-300 focus:border-blue-400"
           >
-            <option value="all">Lifecycle: All</option>
-            <option value="open">Open Priority</option>
-            <option value="under_review">Under Review</option>
-            <option value="resolved">Resolved Cycles</option>
+            <option value="all">Status: All</option>
+            <option value="open">New / Open</option>
+            <option value="reviewing">In Review</option>
+            <option value="resolved">Resolved</option>
+            <option value="escalated">Escalated</option>
+            <option value="dismissed">Dismissed</option>
           </select>
         </div>
 
@@ -261,7 +269,7 @@ export function BehaviorListPage({ filters }: { filters?: { student_id?: string;
           <DataState 
             variant="empty" 
             title="No Incidents Found" 
-            message={searchQuery ? "Try refining your search parameters." : "Start by recording your first behavioral incident or achievement."} 
+            message={searchQuery ? "Try refining your search parameters." : "No behavioral incidents have been reported yet."} 
           />
         ) : (
           viewMode === "grid" ? (
@@ -281,26 +289,21 @@ export function BehaviorListPage({ filters }: { filters?: { student_id?: string;
                       <Badge
                         variant={
                           row.status === "resolved" ? "success" :
-                          row.status === "open" ? "warning" : "primary"
+                          row.status === "open" ? "warning" : 
+                          row.status === "reviewing" ? "primary" : 
+                          row.status === "escalated" ? "error" : "gray"
                         }
                         className="text-[8px] font-bold normal-case  px-2 py-0"
                       >
                         {row.status.replace("_", " ")}
                       </Badge>
-                      <button 
-                        onClick={() => handleDelete(row._id)}
-                        className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-300 hover:bg-red-50 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
-                        title="Archive Record"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">archive</span>
-                      </button>
                     </div>
                   </div>
 
                   {/* Middle Row: Incident Detail (Pill Style) */}
                   <div className="mb-4 p-3 rounded-xl bg-slate-50/50 border border-slate-100/50 flex items-center justify-between">
                     <div className="flex-1">
-                      <p className="text-[8px] font-bold text-slate-400 normal-case  mb-1.5">Incident Context</p>
+                      <p className="text-[8px] font-bold text-slate-400 normal-case  mb-1.5">Category: {row.category || row.incident_type}</p>
                       <div className="flex items-center gap-2 text-[10px] font-bold text-slate-700">
                         <span className={`px-1.5 py-0.5 rounded-md border ${
                           row.severity === 'critical' ? 'bg-red-50 text-red-600 border-red-100' : 
@@ -308,10 +311,6 @@ export function BehaviorListPage({ filters }: { filters?: { student_id?: string;
                           'bg-white border-slate-100'
                         }`}>
                           {row.severity.toUpperCase()}
-                        </span>
-                        <span className="text-slate-300">/</span>
-                        <span className="bg-white px-1.5 py-0.5 rounded-md border border-slate-100 truncate max-w-[100px]">
-                          {row.incident_type.replace("_", " ")}
                         </span>
                       </div>
                     </div>
@@ -324,27 +323,55 @@ export function BehaviorListPage({ filters }: { filters?: { student_id?: string;
                   {/* Narrative Preview */}
                   <div className="mb-4 px-0.5">
                      <p className="text-[10px] font-medium text-slate-500 line-clamp-2 leading-relaxed italic">
-                       "{row.description || "No detailed description provided for this incident."}"
+                       "{row.description || "No detailed description provided."}"
                      </p>
+                     <p className="text-[8px] font-bold text-slate-400 normal-case  mt-2">Reported by: {row.teacher_name || "Admin"}</p>
                   </div>
 
-                  {/* Bottom Row: Notifications & Action */}
-                  <div className="mt-auto pt-3 border-t border-slate-50 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className={`h-6 w-6 rounded-full flex items-center justify-center ${row.parent_notified ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
-                        <span className="material-symbols-outlined text-[14px]">{row.parent_notified ? 'notifications_active' : 'notifications_off'}</span>
+                  {/* Bottom Row: Actions */}
+                  <div className="mt-auto pt-3 border-t border-slate-50 flex items-center justify-between gap-2">
+                    {row.status === "open" && !pathname.includes("/parent") && (
+                      <button 
+                        onClick={() => handleStatusUpdate(row._id, "reviewing")}
+                        className="flex-1 h-7 rounded-lg bg-blue-600 text-[9px] font-bold text-white normal-case  hover:bg-blue-700 transition-all flex items-center justify-center gap-1 shadow-md active:scale-95"
+                      >
+                          Review Incident
+                          <span className="material-symbols-outlined text-[14px]">play_arrow</span>
+                      </button>
+                    )}
+                    {row.status === "reviewing" && !pathname.includes("/parent") && (
+                      <div className="flex gap-1 w-full">
+                        <button 
+                          onClick={() => handleStatusUpdate(row._id, "resolved")}
+                          className="flex-1 h-7 rounded-lg bg-emerald-600 text-[9px] font-bold text-white normal-case  hover:bg-emerald-700 transition-all flex items-center justify-center gap-1 shadow-md active:scale-95"
+                          title="Mark Resolved"
+                        >
+                            Resolve
+                            <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                        </button>
+                        <button 
+                          onClick={() => handleStatusUpdate(row._id, "escalated")}
+                          className="flex-1 h-7 rounded-lg bg-amber-600 text-[9px] font-bold text-white normal-case  hover:bg-amber-700 transition-all flex items-center justify-center gap-1 shadow-md active:scale-95"
+                          title="Escalate Issue"
+                        >
+                            Escalate
+                            <span className="material-symbols-outlined text-[14px]">trending_up</span>
+                        </button>
+                        <button 
+                          onClick={() => handleStatusUpdate(row._id, "dismissed")}
+                          className="h-7 w-7 rounded-lg bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-all flex items-center justify-center shadow-sm active:scale-95"
+                          title="Dismiss Incident"
+                        >
+                            <span className="material-symbols-outlined text-[16px]">close</span>
+                        </button>
                       </div>
-                      <span className="text-[8px] font-bold text-slate-400 normal-case ">
-                        {row.parent_notified ? 'Parent Notified' : 'Unnotified'}
-                      </span>
-                    </div>
-                    <button 
-                      onClick={() => alert(`Review: ${row.description}`)}
-                      className="h-7 px-3 rounded-lg bg-slate-900 text-[9px] font-bold text-white normal-case  hover:bg-slate-800 transition-all flex items-center gap-1 shadow-md active:scale-95"
-                    >
-                        Review
-                        <span className="material-symbols-outlined text-[14px]">visibility</span>
-                    </button>
+                    )}
+                    {(row.status === "resolved" || row.status === "dismissed" || row.status === "escalated") && (
+                      <div className="flex items-center gap-2 text-slate-400 py-1">
+                        <span className="material-symbols-outlined text-sm">history</span>
+                        <span className="text-[9px] font-bold normal-case ">Finalized Status</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

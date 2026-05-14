@@ -356,12 +356,16 @@ CREATE TABLE homework (
     school_id           TEXT        NOT NULL REFERENCES schools(school_id) ON DELETE CASCADE,
     academic_year_id    TEXT        REFERENCES academic_years(id) ON DELETE RESTRICT,
     class_id            TEXT        NOT NULL REFERENCES classes(id)  ON DELETE CASCADE,
+    section             TEXT,
     teacher_id          TEXT        NOT NULL REFERENCES teachers(id) ON DELETE RESTRICT,
     subject_id          TEXT        REFERENCES subjects(id) ON DELETE SET NULL,
     subject             TEXT        NOT NULL DEFAULT '',
     title               TEXT        NOT NULL,
     instructions        TEXT        NOT NULL DEFAULT '',
-    attachment_urls     TEXT[]      NOT NULL DEFAULT '{}',
+    attachments         TEXT[]      NOT NULL DEFAULT '{}',
+    visibility          TEXT        NOT NULL DEFAULT 'all',
+    created_by          TEXT,
+    created_by_role     TEXT        NOT NULL DEFAULT 'admin',
     max_score           NUMERIC(8,2) NOT NULL DEFAULT 100,
     submission_type     TEXT        NOT NULL DEFAULT 'both',
     assigned_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -371,6 +375,8 @@ CREATE TABLE homework (
     updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT homework_status_chk
         CHECK (status IN ('draft','assigned','closed')),
+    CONSTRAINT homework_visibility_chk
+        CHECK (visibility IN ('all','student','parent')),
     CONSTRAINT homework_submission_type_chk
         CHECK (submission_type IN ('online','offline','both'))
 );

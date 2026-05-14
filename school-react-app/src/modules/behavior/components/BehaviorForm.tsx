@@ -27,14 +27,16 @@ export default function BehaviorForm({ initial, onSubmit, onCancel, students, cl
   const [form, setForm] = useState<BehaviorFormInput>({
     student_id: initial?.student_id ?? "",
     class_id: initial?.class_id ?? "",
-    incident_type: initial?.incident_type ?? "conduct",
-    severity: initial?.severity ?? "minor",
+    category: initial?.category ?? "discipline",
+    incident_type: initial?.incident_type ?? "discipline",
+    severity: (initial?.severity as any) ?? "low",
     description: initial?.description ?? "",
     action_taken: initial?.action_taken ?? "",
     status: initial?.status ?? "open",
     warning_count: initial?.warning_count ?? 1,
     parent_notified: initial?.parent_notified ?? false,
-    notes: initial?.notes ?? ""
+    notes: initial?.notes ?? "",
+    attachments: initial?.attachments ?? []
   });
   const [classStudents, setClassStudents] = useState<Array<{ _id: string; name: string; class_id?: string }>>([]);
   const [loadingClassStudents, setLoadingClassStudents] = useState(false);
@@ -51,7 +53,10 @@ export default function BehaviorForm({ initial, onSubmit, onCancel, students, cl
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(form);
+    onSubmit({
+      ...form,
+      incident_type: form.category // Keep in sync
+    });
   };
 
   useEffect(() => {
@@ -154,15 +159,17 @@ export default function BehaviorForm({ initial, onSubmit, onCancel, students, cl
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-5 rounded-[2rem] bg-slate-50/50 border border-slate-100">
                 <Select
-                    label="Incident Type"
-                    value={form.incident_type}
-                    onChange={e => handleChange("incident_type", e.target.value)}
+                    label="Incident Category"
+                    value={form.category}
+                    onChange={e => handleChange("category", e.target.value)}
                     options={[
-                        { label: "Attendance", value: "attendance" },
-                        { label: "Conduct", value: "conduct" },
-                        { label: "Academic Dishonesty", value: "academic_dishonesty" },
-                        { label: "Bullying", value: "bullying" },
-                        { label: "Vandalism", value: "vandalism" },
+                        { label: "Discipline", value: "discipline" },
+                        { label: "Misconduct", value: "misconduct" },
+                        { label: "Fighting", value: "fighting" },
+                        { label: "Late Behavior", value: "late_behavior" },
+                        { label: "Achievement", value: "achievement" },
+                        { label: "Warning", value: "warning" },
+                        { label: "Positive Behavior", value: "positive_behavior" },
                         { label: "Other", value: "other" },
                     ]}
                     className="h-11 rounded-xl bg-white"
@@ -172,9 +179,8 @@ export default function BehaviorForm({ initial, onSubmit, onCancel, students, cl
                     value={form.severity}
                     onChange={e => handleChange("severity", e.target.value)}
                     options={[
-                        { label: "Minor", value: "minor" },
-                        { label: "Moderate", value: "moderate" },
-                        { label: "Major", value: "major" },
+                        { label: "Low", value: "low" },
+                        { label: "Medium", value: "medium" },
                         { label: "Critical", value: "critical" },
                     ]}
                     className="h-11 rounded-xl bg-white"
@@ -194,27 +200,15 @@ export default function BehaviorForm({ initial, onSubmit, onCancel, students, cl
                     className="h-11 rounded-xl"
                 />
                 <Input
-                    label="Action Taken"
-                    placeholder="Describe the disciplinary action or intervention performed..."
+                    label="Initial Action Taken (Optional)"
+                    placeholder="Describe any immediate disciplinary action or intervention performed..."
                     value={form.action_taken}
                     onChange={e => handleChange("action_taken", e.target.value)}
                     className="h-11 rounded-xl"
                 />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Select
-                    label="Current Status"
-                    value={form.status}
-                    onChange={e => handleChange("status", e.target.value)}
-                    options={[
-                        { label: "Open", value: "open" },
-                        { label: "Under Review", value: "under_review" },
-                        { label: "Resolved", value: "resolved" },
-                        { label: "Escalated", value: "escalated" },
-                    ]}
-                    className="h-11 rounded-xl"
-                />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Input
                     label="Warning Count"
                     type="number"
@@ -237,8 +231,8 @@ export default function BehaviorForm({ initial, onSubmit, onCancel, students, cl
             </div>
 
             <Input
-                label="Internal Notes"
-                placeholder="Private notes for staff and administrators..."
+                label="Internal Notes / Proof (Optional)"
+                placeholder="Private notes or links to proof/images..."
                 value={form.notes}
                 onChange={e => handleChange("notes", e.target.value)}
                 className="h-11 rounded-xl"

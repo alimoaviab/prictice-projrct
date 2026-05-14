@@ -73,6 +73,7 @@ type Homework struct {
 	SchoolID       string               `json:"school_id"`
 	AcademicYearID string               `json:"academic_year_id,omitempty"`
 	ClassID        string               `json:"class_id"`
+	Section        string               `json:"section,omitempty"` // Renamed from SectionID to match Student/Class
 	TeacherID      string               `json:"teacher_id"`
 	SubjectID      string               `json:"subject_id,omitempty"`
 	Subject        string               `json:"subject,omitempty"`
@@ -81,6 +82,10 @@ type Homework struct {
 	DueAt          time.Time            `json:"due_at"`
 	Status         string               `json:"status"` // draft | assigned | closed
 	Submissions    []HomeworkSubmission `json:"submissions,omitempty"`
+	Attachments    []string             `json:"attachments,omitempty"`     // Added
+	Visibility     string               `json:"visibility,omitempty"`      // Added: all | student | parent
+	CreatedBy      string               `json:"created_by,omitempty"`      // Added: UserID
+	CreatedByRole  string               `json:"created_by_role,omitempty"` // Added: admin | teacher
 	CreatedAt      time.Time            `json:"created_at"`
 	UpdatedAt      time.Time            `json:"updated_at"`
 }
@@ -106,6 +111,7 @@ type Behavior struct {
 	StudentID      string    `json:"student_id"`
 	ClassID        string    `json:"class_id"`
 	TeacherID      string    `json:"teacher_id"`
+	Category       string    `json:"category"` // New field
 	IncidentType   string    `json:"incident_type"`
 	Description    string    `json:"description"`
 	Severity       string    `json:"severity"`
@@ -114,6 +120,7 @@ type Behavior struct {
 	WarningCount   int       `json:"warning_count"`
 	ParentNotified bool      `json:"parent_notified"`
 	Notes          string    `json:"notes,omitempty"`
+	Attachments    []string  `json:"attachments,omitempty"` // New field
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
 }
@@ -151,6 +158,8 @@ type Leave struct {
 	EndDate         time.Time  `json:"end_date"`
 	Reason          string     `json:"reason"`
 	Status          string     `json:"status"` // pending | approved | rejected | cancelled
+	ClassID         string     `json:"class_id,omitempty"`
+	ClassName       string     `json:"class_name,omitempty"`
 	Attachments     []string   `json:"attachments,omitempty"`
 	ApprovedBy      string     `json:"approved_by,omitempty"`
 	ApprovedAt      *time.Time `json:"approved_at,omitempty"`

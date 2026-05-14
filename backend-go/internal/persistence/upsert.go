@@ -368,19 +368,23 @@ func upsertResult(ctx context.Context, tx pgx.Tx, v *store.Result) error {
 }
 
 func upsertHomework(ctx context.Context, tx pgx.Tx, v *store.Homework) error {
+	attachments, _ := jsonOrArray(v.Attachments)
 	_, err := tx.Exec(ctx, `
-		INSERT INTO homework (id, school_id, academic_year_id, class_id, teacher_id,
-			subject_id, subject, title, instructions, due_at, status,
-			created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+		INSERT INTO homework (id, school_id, academic_year_id, class_id, section, teacher_id,
+			subject_id, subject, title, instructions, due_at, status, attachments,
+			visibility, created_by, created_by_role, created_at, updated_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
 		ON CONFLICT (id) DO UPDATE SET
+			class_id=EXCLUDED.class_id, section=EXCLUDED.section, teacher_id=EXCLUDED.teacher_id,
 			subject_id=EXCLUDED.subject_id, subject=EXCLUDED.subject,
 			title=EXCLUDED.title, instructions=EXCLUDED.instructions,
 			due_at=EXCLUDED.due_at, status=EXCLUDED.status,
+			attachments=EXCLUDED.attachments, visibility=EXCLUDED.visibility,
+			created_by=EXCLUDED.created_by, created_by_role=EXCLUDED.created_by_role,
 			updated_at=EXCLUDED.updated_at
-	`, v.ID, v.SchoolID, nullableString(v.AcademicYearID), v.ClassID, v.TeacherID,
-		nullableString(v.SubjectID), v.Subject, v.Title, v.Instructions, v.DueAt, v.Status,
-		v.CreatedAt, v.UpdatedAt)
+	`, v.ID, v.SchoolID, nullableString(v.AcademicYearID), v.ClassID, nullableString(v.Section), v.TeacherID,
+		nullableString(v.SubjectID), v.Subject, v.Title, v.Instructions, v.DueAt, v.Status, attachments,
+		v.Visibility, v.CreatedBy, v.CreatedByRole, v.CreatedAt, v.UpdatedAt)
 	if err != nil {
 		return err
 	}

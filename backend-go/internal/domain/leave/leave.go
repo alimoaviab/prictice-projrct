@@ -28,6 +28,8 @@ func (h *Handler) hydrate(rows []*store.Leave) []map[string]any {
 			"requester_type":   l.RequesterType,
 			"requester_id":     l.RequesterID,
 			"requester_name":   l.RequesterName,
+			"class_id":         l.ClassID,
+			"class_name":       l.ClassName,
 			"leave_type":       l.LeaveType,
 			"start_date":       api.FormatDate(l.StartDate),
 			"end_date":         api.FormatDate(l.EndDate),
@@ -54,6 +56,20 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		statusQ := q.Get("status")
 		requesterType := q.Get("requester_type")
 		requesterID := q.Get("requester_id")
+
+		// If student, force filter to their own requests.
+		if ctx.Role == "student" {
+			h.Store.RLock()
+			for _, s := range h.Store.Students {
+				if s.UserID == ctx.UserID {
+					requesterID = s.ID
+					break
+				}
+			}
+			h.Store.RUnlock()
+			requesterType = "student"
+		}
+
 		startDate, hasStart := api.ParseDate(q.Get("start_date"))
 		endDate, hasEnd := api.ParseDate(q.Get("end_date"))
 
@@ -133,6 +149,24 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		if err := auth.AssertPermission(ctx, "leave", auth.ActionCreate); err != nil {
 			return nil, err
 		}
+
+		// If student is creating, force requester info to themselves.
+		if ctx.Role == "student" {
+			body.RequesterType = "student"
+			h.Store.RLock()
+			for _, s := range h.Store.Students {
+				if s.UserID == ctx.UserID && s.SchoolID == ctx.SchoolID {
+					body.RequesterID = s.ID
+					body.RequesterName = s.FirstName + " " + s.LastName
+					break
+				}
+			}
+			h.Store.RUnlock()
+			if body.RequesterID == "" {
+				return nil, api.NewControlledError("NOT_FOUND", "Student profile not found.", 404, nil)
+			}
+		}
+
 		if body.RequesterType != "student" && body.RequesterType != "teacher" {
 			return nil, api.NewControlledError("VALIDATION_ERROR", "requester_type must be student or teacher.", 400, nil)
 		}
@@ -148,7 +182,8 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 			return nil, api.NewControlledError("VALIDATION_ERROR", "End date must be after start date.", 400, nil)
 		}
 
-		// Validate requester exists.
+		// Resolve requester and class info.
+		var classID, className string
 		h.Store.RLock()
 		exists := false
 		switch body.RequesterType {
@@ -158,6 +193,17 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 					exists = true
 					if body.RequesterName == "" {
 						body.RequesterName = s.FirstName + " " + s.LastName
+					}
+					classID = s.ClassID
+					// Find class name
+					for _, c := range h.Store.Classes {
+						if c.ID == s.ClassID {
+							className = c.Name
+							if s.Section != "" {
+								className += " (" + s.Section + ")"
+							}
+							break
+						}
 					}
 					break
 				}
@@ -174,6 +220,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		h.Store.RUnlock()
+
 		if !exists {
 			return nil, api.NewControlledError("NOT_FOUND", "Requester not found.", 404, nil)
 		}
@@ -185,6 +232,8 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 			RequesterType: body.RequesterType,
 			RequesterID:   body.RequesterID,
 			RequesterName: body.RequesterName,
+			ClassID:       classID,
+			ClassName:     className,
 			LeaveType:     body.LeaveType,
 			StartDate:     startDate,
 			EndDate:       endDate,

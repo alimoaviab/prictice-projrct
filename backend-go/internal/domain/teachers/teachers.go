@@ -1,5 +1,3 @@
-// Package teachers implements /api/teachers endpoints. Mirrors
-// old-app/shared/services/teacher.service.ts.
 package teachers
 
 import (
@@ -12,7 +10,6 @@ import (
 	"github.com/eduplexo/backend-go/internal/api"
 	"github.com/eduplexo/backend-go/internal/audit"
 	"github.com/eduplexo/backend-go/internal/auth"
-	authpkg "github.com/eduplexo/backend-go/internal/auth"
 	"github.com/eduplexo/backend-go/internal/domain/tenant"
 	"github.com/eduplexo/backend-go/internal/store"
 	"github.com/go-chi/chi/v5"
@@ -33,6 +30,11 @@ func New(s *store.MemStore, save func(string, any)) *Handler {
 // List implements GET /api/teachers.
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
+	if ctx == nil {
+		api.WriteResult(w, api.Fail("UNAUTHENTICATED", "Authentication required.", 401, nil))
+		return
+	}
+
 	q := r.URL.Query()
 	api.WriteResult(w, api.ServiceTry(func() (any, error) {
 		if err := auth.AssertPermission(ctx, "teachers", auth.ActionView); err != nil {
@@ -68,25 +70,33 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 			return rows[i].FirstName < rows[j].FirstName
 		})
 
-		// Ensure list/array fields are never null on the wire so the
-		// frontend can safely call .map / .slice / .length on them.
+		// Return hydrated objects to ensure frontend doesn't crash on null fields.
+		// We do NOT modify the pointers in the store directly here to avoid races.
+		hydrated := make([]map[string]any, 0, len(rows))
 		for _, t := range rows {
-			if t.Subjects == nil {
-				t.Subjects = []string{}
-			}
-			if t.SubjectIDs == nil {
-				t.SubjectIDs = []string{}
-			}
-			if t.ClassIDs == nil {
-				t.ClassIDs = []string{}
-			}
+			hydrated = append(hydrated, map[string]any{
+				"_id":             t.ID,
+				"employee_no":     t.EmployeeNo,
+				"first_name":      t.FirstName,
+				"last_name":       t.LastName,
+				"email":           t.Email,
+				"phone":           t.Phone,
+				"qualification":   t.Qualification,
+				"subjects":        orEmpty(t.Subjects),
+				"subject_ids":     orEmpty(t.SubjectIDs),
+				"class_ids":       orEmpty(t.ClassIDs),
+				"status":          t.Status,
+				"joined_at":       t.JoinedAt,
+				"academic_year_id": t.AcademicYearID,
+				"user_id":          t.UserID,
+			})
 		}
 
 		page := api.ParsePagination(q)
 		if !page.Enabled {
-			return rows, nil
+			return hydrated, nil
 		}
-		total := len(rows)
+		total := len(hydrated)
 		start := page.Skip
 		end := start + page.Limit
 		if start > total {
@@ -95,7 +105,7 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		if end > total {
 			end = total
 		}
-		return api.BuildPaginated(rows[start:end], total, page), nil
+		return api.BuildPaginated(hydrated[start:end], total, page), nil
 	}))
 }
 
@@ -166,7 +176,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		// Optional companion User account so the teacher can sign in.
 		var userID string
 		if body.Password != "" {
-			hash, err := authpkg.HashPassword(body.Password)
+			hash, err := auth.HashPassword(body.Password)
 			if err != nil {
 				h.Store.Unlock()
 				return nil, err

@@ -100,6 +100,7 @@ import { StudentLiveExamPage as StudentLiveExamPage_RoleStudentLiveExam } from "
 import { StudentProfilePage as StudentProfilePage_RoleStudentProfile } from "@/pages/role/student/profile";
 import { StudentResultsPage as StudentResultsPage_RoleStudentResults } from "@/pages/role/student/results";
 import { StudentTimetablePage as StudentTimetablePage_RoleStudentTimetable } from "@/pages/role/student/timetable";
+import StudentLeavePage from "@/pages/role/student/leave";
 
 export const adminRoutes: RouteObject[] = [
       { path: "/admin/academic-years/:id/edit", element: <AdminAcademicYearEditPage_RoleAdminAcademicYearsParamIdEdit /> },
@@ -209,5 +210,6 @@ export const studentRoutes: RouteObject[] = [
       { path: "/student/live-exam", element: <StudentLiveExamPage_RoleStudentLiveExam /> },
       { path: "/student/profile", element: <StudentProfilePage_RoleStudentProfile /> },
       { path: "/student/results", element: <StudentResultsPage_RoleStudentResults /> },
-      { path: "/student/timetable", element: <StudentTimetablePage_RoleStudentTimetable /> }
+      { path: "/student/timetable", element: <StudentTimetablePage_RoleStudentTimetable /> },
+      { path: "/student/leave", element: <StudentLeavePage /> }
 ];
