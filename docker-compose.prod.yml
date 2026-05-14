@@ -1,0 +1,35 @@
+# Production overlay. Applied with:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Differences from the base file:
+#   * Postgres is not exposed on the host
+#   * JWT secret is required from the env (no dev fallback)
+#   * Cookies set Secure flag
+#   * Frontend nginx is fronted by an optional reverse proxy
+
+services:
+  postgres:
+    ports: []   # don't expose 5432 outside the network
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+  migrate:
+    command:
+      [
+        "-path",
+        "/migrations",
+        "-database",
+        "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable",
+        "up",
+      ]
+
+  backend-go:
+    environment:
+      PORT: "8080"
+      APP_NAME: school
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      COOKIE_SECURE: "true"
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required in production}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable

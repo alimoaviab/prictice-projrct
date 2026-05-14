@@ -1,0 +1,366 @@
+// Package store is the Phase-2 in-memory data layer. It is intentionally
+// kept simple — the public types are repository interfaces that Phase 3 will
+// reimplement against PostgreSQL without touching the service layer.
+//
+// Documents look very close to the Mongoose lean-doc shapes returned by
+// old-app/shared/services/*. Field naming and JSON tags match the original
+// frontend expectations exactly so the React app doesn't change.
+package store
+
+import (
+	"crypto/rand"
+	"encoding/hex"
+	"os"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+)
+
+// MemStore is the singleton in-memory data store. Every collection lives in
+// its own slice protected by a single RWMutex; that's sufficient for Phase 2
+// (no concurrency benchmarks, single-process server). Phase 3 swaps this for
+// PostgreSQL via the repository interfaces below.
+type MemStore struct {
+	mu sync.RWMutex
+
+	Schools         []*School
+	Users           []*User
+	AcademicYears   []*AcademicYear
+	Students        []*Student
+	Teachers        []*Teacher
+	Classes         []*Class
+	Subjects        []*Subject
+	Parents         []*Parent
+	StudentParents  []*StudentParent
+	AuditLogs       []*AuditLog
+
+	// Phase 2.1 collections.
+	Attendance     []*Attendance
+	Exams          []*Exam
+	Results        []*Result
+	Homework       []*Homework
+	Announcements  []*Announcement
+	Behaviors      []*Behavior
+	Events         []*Event
+	Leaves         []*Leave
+	Timetables     []*Timetable
+	LiveClasses    []*LiveClass
+	Notifications  []*Notification
+	FeeTypes       []*FeeType
+	SchoolSettings []*SchoolSettings
+
+	// Phase 3 fees collections.
+	Fees           []*Fee
+	FeePayments    []*FeePayment
+	FeeAdjustments []*FeeAdjustment
+	ClassFees      []*ClassFee
+}
+
+// New returns an empty MemStore. The system bootstraps a fresh school via
+// the signup flow; everything else is created by the user. To re-enable
+// development seed data, set the EDUPLEXO_SEED_DEV=1 environment variable.
+//
+// The original phase-2 seed used hard-coded "Demo Academy" data which made
+// every fresh boot look like it already had real records. That made it
+// impossible for the user to verify their own data. Now the store starts
+// clean and only `bootstrapAdmin` (called once when no users exist) creates
+// the very first administrative login.
+func New() *MemStore {
+	store := &MemStore{}
+	if os.Getenv("EDUPLEXO_SEED_DEV") == "1" {
+		seedDev(store)
+	} else {
+		bootstrapAdmin(store)
+	}
+	return store
+}
+
+// EnsureBootstrapUsers checks that the platform has at least one super_admin
+// and one school admin. If either is missing (e.g. after loading from a fresh
+// or partially-seeded database), they are created. This guarantees the
+// platform can always be logged into.
+func EnsureBootstrapUsers(s *MemStore) {
+	now := time.Now()
+
+	// Default credentials
+	schoolEmail := strings.ToLower(strings.TrimSpace(os.Getenv("EDUPLEXO_ADMIN_EMAIL")))
+	if schoolEmail == "" {
+		schoolEmail = "school@gmail.com"
+	}
+	schoolPassword := os.Getenv("EDUPLEXO_ADMIN_PASSWORD")
+	if schoolPassword == "" {
+		schoolPassword = "Test@123"
+	}
+
+	// Super admin credentials (read from DEFAULT_ADMIN_EMAIL/DEFAULT_ADMIN_PASS or fallback)
+	superEmail := strings.ToLower(strings.TrimSpace(os.Getenv("DEFAULT_ADMIN_EMAIL")))
+	if superEmail == "" {
+		superEmail = "super@gmail.com"
+	}
+	superPassword := os.Getenv("DEFAULT_ADMIN_PASS")
+	if superPassword == "" {
+		superPassword = "Test@123"
+	}
+
+	s.Lock()
+	defer s.Unlock()
+
+	schoolID := "school_default"
+
+	// Check existing users and update passwords if they exist, or create them
+	var superUser *User
+	var schoolUser *User
+	for _, u := range s.Users {
+		if u.Email == superEmail && u.Role == "super_admin" {
+			superUser = u
+		}
+		if u.Email == schoolEmail && u.Role == "admin" {
+			schoolUser = u
+		}
+	}
+
+	// Ensure default school exists
+	hasDefaultSchool := false
+	for _, sch := range s.Schools {
+		if sch.SchoolID == schoolID {
+			hasDefaultSchool = true
+			break
+		}
+	}
+	if !hasDefaultSchool {
+		s.Schools = append(s.Schools, &School{
+			ID:        NewID("sch"),
+			SchoolID:  schoolID,
+			Name:      "Eduplexo Academy",
+			Code:      "MAIN",
+			Status:    "active",
+			CreatedAt: now,
+			UpdatedAt: now,
+		})
+
+		// Also create a default academic year for this school
+		startYear := now.Year()
+		if now.Month() < time.April {
+			startYear = startYear - 1
+		}
+		s.AcademicYears = append(s.AcademicYears, &AcademicYear{
+			ID:        NewID("ay"),
+			SchoolID:  schoolID,
+			Year:      formatAcademicYear(startYear),
+			StartDate: time.Date(startYear, 4, 1, 0, 0, 0, 0, time.UTC),
+			EndDate:   time.Date(startYear+1, 3, 31, 0, 0, 0, 0, time.UTC),
+			IsActive:  true,
+			Status:    "active",
+			CreatedAt: now,
+			UpdatedAt: now,
+		})
+	}
+
+	if superUser != nil {
+		superUser.PasswordHash = superPassword
+		superUser.Password = superPassword
+	} else {
+		// Super admins need a "system" school record to satisfy database FKs
+		hasSystemSchool := false
+		for _, sch := range s.Schools {
+			if sch.SchoolID == "system" {
+				hasSystemSchool = true
+				break
+			}
+		}
+		if !hasSystemSchool {
+			s.Schools = append(s.Schools, &School{
+				ID:        "sch_system",
+				SchoolID:  "system",
+				Name:      "System Administration",
+				Code:      "SYS",
+				Status:    "active",
+				CreatedAt: now,
+				UpdatedAt: now,
+			})
+		}
+
+		s.Users = append(s.Users, &User{
+			ID:           NewID("user"),
+			SchoolID:     "system",
+			Email:        superEmail,
+			PasswordHash: superPassword,
+			Password:     superPassword,
+			Role:         "super_admin",
+			Permissions:  []string{"*"},
+			Status:       "active",
+			Profile:      UserProfile{FirstName: "Platform", LastName: "SuperAdmin"},
+			CreatedAt:    now,
+			UpdatedAt:    now,
+		})
+	}
+
+	if schoolUser != nil {
+		schoolUser.PasswordHash = schoolPassword
+		schoolUser.Password = schoolPassword
+	} else {
+		s.Users = append(s.Users, &User{
+			ID:           NewID("user"),
+			SchoolID:     schoolID,
+			Email:        schoolEmail,
+			PasswordHash: schoolPassword,
+			Password:     schoolPassword,
+			Role:         "admin",
+			Permissions:  []string{"*"},
+			Status:       "active",
+			Profile:      UserProfile{FirstName: "School", LastName: "Admin"},
+			CreatedAt:    now,
+			UpdatedAt:    now,
+		})
+	}
+}
+
+// bootstrapAdmin guarantees there is at least one school + admin user so the
+// application can be logged into on first boot. The credentials come from
+// EDUPLEXO_ADMIN_EMAIL / EDUPLEXO_ADMIN_PASSWORD when set, otherwise default
+// to admin@school.test / admin123 (matching the original seed convention).
+func bootstrapAdmin(s *MemStore) {
+	now := time.Now()
+
+	// 1. School Admin
+	schoolEmail := strings.ToLower(strings.TrimSpace(os.Getenv("EDUPLEXO_ADMIN_EMAIL")))
+	if schoolEmail == "" {
+		schoolEmail = "school@gmail.com"
+	}
+	schoolPassword := os.Getenv("EDUPLEXO_ADMIN_PASSWORD")
+	if schoolPassword == "" {
+		schoolPassword = "Test@123"
+	}
+
+	schoolID := "school_default"
+	s.Schools = append(s.Schools, &School{
+		ID:        NewID("sch"),
+		SchoolID:  schoolID,
+		Name:      "Eduplexo Academy",
+		Code:      "MAIN",
+		Status:    "active",
+		CreatedAt: now,
+		UpdatedAt: now,
+	})
+
+	yearID := NewID("ay")
+	startYear := now.Year()
+	if now.Month() < time.April {
+		startYear = startYear - 1
+	}
+	s.AcademicYears = append(s.AcademicYears, &AcademicYear{
+		ID:        yearID,
+		SchoolID:  schoolID,
+		Year:      formatAcademicYear(startYear),
+		StartDate: time.Date(startYear, 4, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:   time.Date(startYear+1, 3, 31, 0, 0, 0, 0, time.UTC),
+		IsActive:  true,
+		Status:    "active",
+		CreatedAt: now,
+		UpdatedAt: now,
+	})
+
+	s.Users = append(s.Users, &User{
+		ID:           NewID("user"),
+		SchoolID:     schoolID,
+		Email:        schoolEmail,
+		PasswordHash: schoolPassword,
+		Password:     schoolPassword,
+		Role:         "admin",
+		Permissions:  []string{"*"},
+		Status:       "active",
+		Profile:      UserProfile{FirstName: "School", LastName: "Admin"},
+		CreatedAt:    now,
+		UpdatedAt:    now,
+	})
+
+	// 2. Super Admin (read from DEFAULT_ADMIN_EMAIL/DEFAULT_ADMIN_PASS env vars or fallback)
+	superEmail := strings.ToLower(strings.TrimSpace(os.Getenv("DEFAULT_ADMIN_EMAIL")))
+	if superEmail == "" {
+		superEmail = "super@gmail.com"
+	}
+	superPassword := os.Getenv("DEFAULT_ADMIN_PASS")
+	if superPassword == "" {
+		superPassword = "Test@123"
+	}
+
+	// Super admins need a "system" school record to satisfy database FKs
+	s.Schools = append(s.Schools, &School{
+		ID:        "sch_system",
+		SchoolID:  "system",
+		Name:      "System Administration",
+		Code:      "SYS",
+		Status:    "active",
+		CreatedAt: now,
+		UpdatedAt: now,
+	})
+
+	s.Users = append(s.Users, &User{
+		ID:           NewID("user"),
+		SchoolID:     "system", // Super admins are system-wide
+		Email:        superEmail,
+		PasswordHash: superPassword,
+		Password:     superPassword,
+		Role:         "super_admin",
+		Permissions:  []string{"*"},
+		Status:       "active",
+		Profile:      UserProfile{FirstName: "Platform", LastName: "SuperAdmin"},
+		CreatedAt:    now,
+		UpdatedAt:    now,
+	})
+}
+
+// seedDev keeps the original demo data so existing tests / fixtures keep
+// working when EDUPLEXO_SEED_DEV=1 is set. Production never reaches this.
+func seedDev(s *MemStore) {
+	now := time.Now()
+	schoolID := "school_seed_1"
+	s.Schools = append(s.Schools, &School{
+		ID: NewID("sch"), SchoolID: schoolID, Name: "Demo Academy",
+		Code: "DEMOSCH", Status: "active", CreatedAt: now, UpdatedAt: now,
+	})
+
+	yearID := "ay_2025_26"
+	s.AcademicYears = append(s.AcademicYears,
+		&AcademicYear{
+			ID: yearID, SchoolID: schoolID, Year: "2025-26",
+			StartDate: time.Date(2025, 4, 1, 0, 0, 0, 0, time.UTC),
+			EndDate:   time.Date(2026, 3, 31, 0, 0, 0, 0, time.UTC),
+			IsActive:  true, Status: "active", CreatedAt: now, UpdatedAt: now,
+		},
+		&AcademicYear{
+			ID: "ay_2024_25", SchoolID: schoolID, Year: "2024-25",
+			StartDate: time.Date(2024, 4, 1, 0, 0, 0, 0, time.UTC),
+			EndDate:   time.Date(2025, 3, 31, 0, 0, 0, 0, time.UTC),
+			IsActive:  false, Status: "completed", CreatedAt: now, UpdatedAt: now,
+		},
+	)
+
+	s.Users = append(s.Users, &User{
+		ID: "user_admin_seed", SchoolID: schoolID, Email: "school@gmail.com",
+		PasswordHash: "Test@123", Role: "admin", Permissions: []string{"*"},
+		Status:    "active",
+		Profile:   UserProfile{FirstName: "Demo", LastName: "Admin"},
+		CreatedAt: now, UpdatedAt: now,
+	})
+}
+
+func formatAcademicYear(start int) string {
+	return strconv.Itoa(start) + "-" + strconv.Itoa((start+1)%100)
+}
+
+// Lock acquires a write lock; callers must Unlock when done.
+func (s *MemStore) Lock()    { s.mu.Lock() }
+func (s *MemStore) Unlock()  { s.mu.Unlock() }
+func (s *MemStore) RLock()   { s.mu.RLock() }
+func (s *MemStore) RUnlock() { s.mu.RUnlock() }
+
+// NewID produces a short, prefix-tagged identifier. We do not use real
+// ObjectIds because Phase 3 will move to UUID/PostgreSQL — using strings
+// here keeps the migration smooth.
+func NewID(prefix string) string {
+	b := make([]byte, 8)
+	_, _ = rand.Read(b)
+	return prefix + "_" + hex.EncodeToString(b)
+}

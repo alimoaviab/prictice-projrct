@@ -1,0 +1,114 @@
+import React from "react";
+import { motion } from "framer-motion";
+import {
+  Users,
+  CalendarCheck,
+  CreditCard,
+  LayoutDashboard,
+  BookOpen,
+  BarChart3,
+  BellRing,
+  GraduationCap
+} from "lucide-react";
+
+const features = [
+  {
+    icon: Users,
+    title: "Student Management",
+    description: "Complete 360° view of student profiles, academic history, and behavioral records in one unified dashboard.",
+    color: "from-blue-500 to-indigo-500"
+  },
+  {
+    icon: CalendarCheck,
+    title: "Smart Attendance",
+    description: "Lightning-fast attendance taking with real-time syncing to parent portals and automated absence alerts.",
+    color: "from-emerald-400 to-teal-500"
+  },
+  {
+    icon: CreditCard,
+    title: "Automated Fees",
+    description: "Streamline fee collection with automated invoicing, online payment gateways, and instant receipts.",
+    color: "from-amber-400 to-orange-500"
+  },
+  {
+    icon: LayoutDashboard,
+    title: "Parent Portal",
+    description: "Keep parents engaged with real-time access to grades, attendance, and school announcements.",
+    color: "from-purple-500 to-pink-500"
+  },
+  {
+    icon: BookOpen,
+    title: "Teacher Dashboard",
+    description: "Empower educators with intuitive tools for lesson planning, grading, and classroom management.",
+    color: "from-cyan-400 to-blue-500"
+  },
+  {
+    icon: GraduationCap,
+    title: "Exams & Reports",
+    description: "Generate beautiful, compliant report cards with dynamic grading scales and customized comments.",
+    color: "from-rose-400 to-red-500"
+  },
+  {
+    icon: BarChart3,
+    title: "Advanced Analytics",
+    description: "Turn school data into actionable insights with powerful visual reporting and trend analysis.",
+    color: "from-indigo-400 to-violet-500"
+  },
+  {
+    icon: BellRing,
+    title: "Smart Notifications",
+    description: "Instant multi-channel communication via SMS, email, and push notifications for urgent updates.",
+    color: "from-yellow-400 to-amber-500"
+  }
+];
+
+export const FeaturesSection = () => {
+  return (
+    <section id="features" className="py-24 bg-slate-50">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="text-center max-w-3xl mx-auto mb-20">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight"
+          >
+            Everything you need to run a <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">modern school</span>
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ delay: 0.1 }}
+            className="text-lg text-slate-600 font-medium"
+          >
+            Say goodbye to fragmented systems. Eduplexo brings all your core operations into one beautifully designed platform.
+          </motion.p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {features.map((feature, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.4, delay: index * 0.05 }}
+              className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm hover:shadow-2xl hover:-translate-y-2 group-hover:bg-gradient-to-br group-hover:from-white group-hover:to-slate-50 transition-all duration-300 group"
+            >
+              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform duration-300`}>
+                <feature.icon className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-blue-600 transition-colors">
+                {feature.title}
+              </h3>
+              <p className="text-slate-500 text-sm leading-relaxed font-medium">
+                {feature.description}
+              </p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
