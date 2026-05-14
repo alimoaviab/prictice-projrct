@@ -32,8 +32,14 @@ func New(s *store.MemStore, save func(string, any)) *Handler {
 }
 
 // List implements GET /api/students with the same query params:
-// `class_id`, `status`, `academic_year_id`, `search`, `page`, `limit`.
-// Returns a plain array when pagination is disabled, otherwise a Paginated.
+// `class_id`, `status`, `academic_year_id`, `search`, `page`, `per_page`.
+//
+// Pagination: When `page` or `per_page` (or legacy `limit`) is provided,
+// returns a paginated response:
+//   {"data": [...], "meta": {"page": 1, "per_page": 25, "total": 487, "pages": 20}}
+//
+// Without pagination params, returns the legacy flat array for backward
+// compatibility with existing frontend code.
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	q := r.URL.Query()
@@ -71,10 +77,10 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		h.Store.RUnlock()
 
 		sort.SliceStable(rows, func(i, j int) bool {
-			if rows[i].LastName == rows[j].LastName {
-				return rows[i].FirstName < rows[j].FirstName
+			if rows[i].FirstName == rows[j].FirstName {
+				return rows[i].LastName < rows[j].LastName
 			}
-			return rows[i].LastName < rows[j].LastName
+			return rows[i].FirstName < rows[j].FirstName
 		})
 
 		page := api.ParsePagination(q)

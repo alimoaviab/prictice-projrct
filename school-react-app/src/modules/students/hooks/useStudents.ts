@@ -1,22 +1,30 @@
-import { useCallback, useEffect } from "react";
-import { useSafeAsync } from "@/hooks/useSafeAsync";
+import { useCallback } from "react";
+import { usePaginatedList } from "@/hooks/usePaginatedList";
 import { showToast } from "@/utils/toast";
 import { StudentFormInput, StudentRow, StudentPatchInput } from "../types/student.types";
-import { bindRefresh, publish } from "@/services/data-bus";
+import { publish } from "@/services/data-bus";
 import * as service from "../services/student.service";
 
-export function useStudents(filters?: { class_id?: string }) {
-	const { state, run } = useSafeAsync<StudentRow[]>();
-
-	const loadStudents = useCallback(() => {
-		return run(async () => {
-			const result = await service.listStudents(filters);
-			if (!result.success) {
-				throw new Error(result.message || "Failed to load students");
-			}
-			return result.data;
-		});
-	}, [run, filters]);
+/**
+ * useStudents — paginated student list with TanStack Query.
+ *
+ * Uses the shared `usePaginatedList` hook which provides:
+ *   - Automatic pagination (page/per_page query params)
+ *   - Debounced search (300ms)
+ *   - keepPreviousData (no flash during page change)
+ *   - staleTime: 10 minutes (students don't change frequently)
+ *   - Automatic academic_year_id scoping from tenant context
+ *
+ * @param filters - Optional filters (class_id, status)
+ */
+export function useStudents(filters?: { class_id?: string; status?: string }) {
+	const list = usePaginatedList<StudentRow>({
+		url: "/api/students",
+		resource: "students",
+		initialLimit: 25,
+		initialFilters: filters,
+		staleTime: 10 * 60 * 1000, // 10 minutes — student data is relatively stable
+	});
 
 	const addStudent = useCallback(
 		async (input: StudentFormInput) => {
@@ -26,11 +34,11 @@ export function useStudents(filters?: { class_id?: string }) {
 				return result;
 			}
 			showToast("Student created.", "success");
-			await loadStudents();
+			list.refetch();
 			publish("students");
 			return result;
 		},
-		[loadStudents]
+		[list]
 	);
 
 	const updateStudent = useCallback(
@@ -41,11 +49,11 @@ export function useStudents(filters?: { class_id?: string }) {
 				return result;
 			}
 			showToast("Student updated.", "success");
-			await loadStudents();
+			list.refetch();
 			publish("students");
 			return result;
 		},
-		[loadStudents]
+		[list]
 	);
 
 	const deleteStudent = useCallback(
@@ -56,18 +64,40 @@ export function useStudents(filters?: { class_id?: string }) {
 				return result;
 			}
 			showToast("Student deleted.", "success");
-			await loadStudents();
+			list.refetch();
 			publish("students");
 			return result;
 		},
-		[loadStudents]
+		[list]
 	);
 
-	useEffect(() => {
-		void loadStudents().catch(() => {});
-		return bindRefresh("students", loadStudents);
-	}, [loadStudents]);
+	return {
+		// Paginated list state
+		students: list.items,
+		total: list.total,
+		page: list.page,
+		perPage: list.limit,
+		pages: list.pages,
+		isLoading: list.isLoading,
+		isFetching: list.isFetching,
+		isError: list.isError,
+		error: list.error,
 
-	return { state, addStudent, updateStudent, deleteStudent };
+		// Pagination controls
+		setPage: list.setPage,
+		setPerPage: list.setLimit,
+
+		// Search
+		search: list.search,
+		setSearch: list.setSearch,
+
+		// Filters
+		setFilters: list.setFilters,
+
+		// Actions
+		addStudent,
+		updateStudent,
+		deleteStudent,
+		refetch: list.refetch,
+	};
 }
-

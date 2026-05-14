@@ -1,0 +1,2 @@
+DROP MATERIALIZED VIEW IF EXISTS mv_fee_summary;
+DROP MATERIALIZED VIEW IF EXISTS mv_school_dashboard;

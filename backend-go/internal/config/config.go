@@ -33,6 +33,15 @@ type Config struct {
 	// DatabaseURL is the PostgreSQL DSN. Leave empty to run in pure
 	// in-memory mode (development convenience only — no durability).
 	DatabaseURL string
+
+	// RedisURL is the Redis connection string (e.g. "redis://redis:6379/0").
+	// Leave empty to run without caching — the cache layer degrades gracefully.
+	RedisURL string
+
+	// UseDirectPG enables direct PostgreSQL queries instead of MemStore.
+	// Set to "true" to bypass MemStore entirely. Can also be controlled
+	// per-entity via USE_DIRECT_PG_STUDENTS, USE_DIRECT_PG_TEACHERS, etc.
+	UseDirectPG bool
 }
 
 // Load reads env vars (with sensible defaults for local development) and
@@ -45,6 +54,8 @@ func Load() Config {
 		AllowedOrigins: splitCSV(getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001,http://localhost:5173")),
 		CookieSecure:   os.Getenv("COOKIE_SECURE") == "true",
 		DatabaseURL:    os.Getenv("DATABASE_URL"),
+		RedisURL:       os.Getenv("REDIS_URL"),
+		UseDirectPG:    os.Getenv("USE_DIRECT_PG") == "true",
 	}
 
 	if cfg.JWTSecret == "" {

@@ -1,35 +1,314 @@
-# Production overlay. Applied with:
-#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# ═══════════════════════════════════════════════════════════════════════════
+# Eduplexo — Production Docker Compose
+# ═══════════════════════════════════════════════════════════════════════════
 #
-# Differences from the base file:
-#   * Postgres is not exposed on the host
-#   * JWT secret is required from the env (no dev fallback)
-#   * Cookies set Secure flag
-#   * Frontend nginx is fronted by an optional reverse proxy
+# Deploy with:
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Services:
+#   nginx       — Reverse proxy, TLS termination, static assets, rate limiting
+#   backend-go  — Go API (2 replicas behind nginx load balancer)
+#   worker      — Background job processor (matview refresh, notifications)
+#   postgres    — PostgreSQL 16 with tuned settings
+#   redis       — Cache + pub/sub + job queue
+#   migrate     — One-shot migration runner
+#
+# Architecture:
+#   Client → Nginx (443) → backend-go-1/backend-go-2 (8080) → PostgreSQL + Redis
+#                                                            → Worker (background)
 
 services:
-  postgres:
-    ports: []   # don't expose 5432 outside the network
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  # ─── Nginx Reverse Proxy ──────────────────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: eduplexo_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./school-react-app/dist:/usr/share/nginx/html/school:ro
+      - ./super-admin-app/dist:/usr/share/nginx/html/admin:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/cache:/var/cache/nginx
+      - certbot_webroot:/var/www/certbot:ro
+    depends_on:
+      backend-go-1:
+        condition: service_healthy
+      backend-go-2:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "1.0"
+        reservations:
+          memory: 64M
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
 
-  migrate:
-    command:
-      [
-        "-path",
-        "/migrations",
-        "-database",
-        "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable",
-        "up",
-      ]
-
-  backend-go:
+  # ─── Go Backend (Replica 1) ──────────────────────────────────────────
+  backend-go-1:
+    build:
+      context: ./backend-go
+      dockerfile: Dockerfile
+    container_name: eduplexo_backend_1
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
     environment:
       PORT: "8080"
       APP_NAME: school
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
       COOKIE_SECURE: "true"
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required in production}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
+      GOMAXPROCS: "4"
+      GOMEMLIMIT: "900MiB"
+    expose:
+      - "8080"
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+          cpus: "2.0"
+        reservations:
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health/live || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # ─── Go Backend (Replica 2) ──────────────────────────────────────────
+  backend-go-2:
+    build:
+      context: ./backend-go
+      dockerfile: Dockerfile
+    container_name: eduplexo_backend_2
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    environment:
+      PORT: "8080"
+      APP_NAME: school
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      COOKIE_SECURE: "true"
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
+      GOMAXPROCS: "4"
+      GOMEMLIMIT: "900MiB"
+    expose:
+      - "8080"
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+          cpus: "2.0"
+        reservations:
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health/live || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # ─── Background Worker ───────────────────────────────────────────────
+  # Runs the same binary with WORKER_MODE=true for background jobs:
+  #   - Materialized view refresh (every 5 min)
+  #   - Notification dispatch
+  #   - Fee generation processing
+  #   - Audit log cleanup
+  worker:
+    build:
+      context: ./backend-go
+      dockerfile: Dockerfile
+    container_name: eduplexo_worker
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    environment:
+      PORT: "8081"
+      APP_NAME: school
+      WORKER_MODE: "true"
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
+      GOMAXPROCS: "2"
+      GOMEMLIMIT: "512MiB"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+        reservations:
+          memory: 128M
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8081/health/live || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # ─── PostgreSQL ──────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: eduplexo_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # Do NOT expose port externally in production
+    expose:
+      - "5432"
+    command: >
+      postgres
+      -c shared_buffers=512MB
+      -c effective_cache_size=1536MB
+      -c work_mem=16MB
+      -c maintenance_work_mem=256MB
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+      -c max_connections=100
+      -c wal_buffers=16MB
+      -c checkpoint_completion_target=0.9
+      -c max_wal_size=2GB
+      -c min_wal_size=1GB
+      -c log_min_duration_statement=200
+      -c log_checkpoints=on
+      -c log_connections=on
+      -c log_disconnections=on
+      -c log_lock_waits=on
+      -c log_temp_files=0
+      -c track_activities=on
+      -c track_counts=on
+      -c track_io_timing=on
+    deploy:
+      resources:
+        limits:
+          memory: 3072M
+          cpus: "2.0"
+        reservations:
+          memory: 1536M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # ─── Redis ───────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: eduplexo_redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --appendfsync everysec
+      --tcp-keepalive 300
+      --timeout 300
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+      --requirepass ${REDIS_PASSWORD:-}
+    volumes:
+      - redis_data:/data
+    expose:
+      - "6379"
+    deploy:
+      resources:
+        limits:
+          memory: 640M
+          cpus: "0.5"
+        reservations:
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # ─── Database Migrations ─────────────────────────────────────────────
+  migrate:
+    image: migrate/migrate:v4.18.1
+    container_name: eduplexo_migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend-go/migrations:/migrations:ro
+    command:
+      [
+        "-path", "/migrations",
+        "-database", "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable",
+        "up",
+      ]
+    restart: "no"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  postgres_data:
+    name: eduplexo_prod_postgres
+  redis_data:
+    name: eduplexo_prod_redis
+  certbot_webroot:
+    name: eduplexo_certbot

@@ -1,9 +1,13 @@
 package server
 
 import (
+	"context"
 	"net/http"
+	"runtime"
+	"time"
 
 	"github.com/eduplexo/backend-go/internal/api"
+	"github.com/eduplexo/backend-go/internal/cache"
 	"github.com/eduplexo/backend-go/internal/config"
 	"github.com/eduplexo/backend-go/internal/domain/academicyear"
 	"github.com/eduplexo/backend-go/internal/domain/announcements"
@@ -28,8 +32,10 @@ import (
 	"github.com/eduplexo/backend-go/internal/domain/superadmin"
 	"github.com/eduplexo/backend-go/internal/domain/teachers"
 	"github.com/eduplexo/backend-go/internal/domain/timetable"
+	"github.com/eduplexo/backend-go/internal/metrics"
 	"github.com/eduplexo/backend-go/internal/middleware"
 	"github.com/eduplexo/backend-go/internal/persistence"
+	rt "github.com/eduplexo/backend-go/internal/realtime"
 	"github.com/eduplexo/backend-go/internal/store"
 	"github.com/eduplexo/backend-go/internal/stubs"
 	"github.com/go-chi/chi/v5"
@@ -41,20 +47,39 @@ import (
 //
 // `pg` may be nil/no-op; in that case Save is a no-op and we run in pure
 // in-memory mode (handy for unit tests and development without a database).
-func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister) http.Handler {
+func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb *cache.Client) http.Handler {
 	r := chi.NewRouter()
+
+	// Initialize WebSocket hub and job queue
+	var wsHub *rt.Hub
+	var jobQueue *rt.JobQueue
+	if rdb != nil && rdb.Available() {
+		wsHub = rt.NewHub(rdb.Raw())
+		jobQueue = rt.NewJobQueue(rdb.Raw())
+	} else {
+		wsHub = rt.NewHub(nil)
+		jobQueue = rt.NewJobQueue(nil)
+	}
 
 	r.Use(chimw.RequestID)
 	r.Use(middleware.NewCORS(cfg))
+	r.Use(middleware.Compress) // Gzip level 5 for all JSON responses
+	r.Use(metrics.Middleware)  // Prometheus request duration + status
 	r.Use(middleware.Recover)
 	r.Use(middleware.Logger)
 
-	r.Get("/health", func(w http.ResponseWriter, _ *http.Request) {
-		api.WriteJSON(w, http.StatusOK, map[string]any{
-			"ok":     true,
-			"status": "healthy",
-			"db":     pg.Available(),
-		})
+	// Prometheus metrics endpoint (no auth required — restrict via nginx in prod)
+	r.Handle("/metrics", metrics.Handler())
+
+	// ─── Health check endpoints ──────────────────────────────────────────
+	// /health       — full dependency check (PG + Redis + memory)
+	// /health/ready — same as /health (for k8s readiness probe)
+	// /health/live  — always 200 (for k8s liveness probe)
+	healthCheck := buildHealthHandler(pg, rdb)
+	r.Get("/health", healthCheck)
+	r.Get("/health/ready", healthCheck)
+	r.Get("/health/live", func(w http.ResponseWriter, _ *http.Request) {
+		api.WriteJSON(w, http.StatusOK, map[string]any{"status": "alive"})
 	})
 
 	authH := authdomain.New(cfg, s)
@@ -66,6 +91,12 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister) htt
 			pg.Save(table, doc)
 		}
 	}
+
+	// ─── WebSocket endpoint (requires auth) ──────────────────────────────
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.Authenticator(cfg, s))
+		r.Get("/ws", wsHub.ServeWS)
+	})
 
 	r.Route("/api", func(r chi.Router) {
 		// ─── Public auth endpoints ───────────────────────────────────────
@@ -123,17 +154,23 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister) htt
 			r.Get("/school/subjects", suH.List)
 			r.Get("/school/subjects/class/{classId}", suH.List)
 
-			dH := dashboard.New(s)
+			dH := dashboard.NewPG(pg.Pool(), rdb, s)
 			r.Get("/analytics/dashboard", dH.Get)
 
+			// Composite dashboard — single call replaces 4-6 separate queries
+			compH := dashboard.NewComposite(s, rdb)
+			r.Get("/dashboard/composite", compH.Get)
+
 			atH := attendance.New(s, saveFn)
+			atPG := attendance.NewPG(pg.Pool(), rdb, s)
 			r.Get("/attendance", atH.List)
 			r.Post("/attendance", atH.Create)
 			r.Get("/attendance/{id}", atH.Get)
 			r.Patch("/attendance/{id}", atH.Update)
 			r.Put("/attendance/{id}", atH.Update)
 			r.Delete("/attendance/{id}", atH.Delete)
-			r.Post("/attendance/mark", atH.MarkBulk)
+			r.Post("/attendance/mark", atPG.MarkBulkPG) // Direct PG batch insert
+			r.Get("/attendance/sheet", atPG.Sheet)       // Direct PG JOIN query
 
 			exH := exams.New(s, saveFn)
 			r.Get("/exams", exH.List)
@@ -260,6 +297,10 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister) htt
 			cbH := chatbot.New(s)
 			r.Post("/chatbot/message", cbH.Message)
 
+			// ─── Background Jobs ──────────────────────────────────────────
+			r.Get("/jobs/{id}/status", rt.JobStatusHandler(jobQueue))
+			r.Post("/fees/generate-async", rt.FeeGenerateAsyncHandler(jobQueue))
+
 			// Super Admin
 			saH := superadmin.New(s)
 			r.Get("/super-admin/dashboard", saH.DashboardStats)
@@ -308,4 +349,64 @@ func asString(v any) string {
 		return s
 	}
 	return ""
+}
+
+// buildHealthHandler creates the /health endpoint that checks all dependencies.
+func buildHealthHandler(pg *persistence.Persister, rdb *cache.Client) http.HandlerFunc {
+	const memoryLimitBytes = 800 * 1024 * 1024 // 800MB
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		checks := map[string]bool{
+			"postgres": false,
+			"redis":    false,
+			"memory":   false,
+		}
+
+		// PostgreSQL check (2s timeout)
+		if pg.Available() {
+			pgCtx, pgCancel := context.WithTimeout(r.Context(), 2*time.Second)
+			defer pgCancel()
+			if err := pg.Pool().Ping(pgCtx); err == nil {
+				checks["postgres"] = true
+			}
+		}
+
+		// Redis check (1s timeout)
+		if rdb != nil && rdb.Available() {
+			redisCtx, redisCancel := context.WithTimeout(r.Context(), 1*time.Second)
+			defer redisCancel()
+			if err := rdb.Ping(redisCtx); err == nil {
+				checks["redis"] = true
+			}
+		} else {
+			// Redis not configured — don't fail health check for optional dependency
+			checks["redis"] = true
+		}
+
+		// Memory check
+		var mem runtime.MemStats
+		runtime.ReadMemStats(&mem)
+		checks["memory"] = mem.Alloc < uint64(memoryLimitBytes)
+
+		// Determine overall health
+		healthy := checks["postgres"] && checks["memory"]
+		status := http.StatusOK
+		if !healthy {
+			status = http.StatusServiceUnavailable
+		}
+
+		api.WriteJSON(w, status, map[string]any{
+			"ok":       healthy,
+			"status":   statusText(healthy),
+			"checks":   checks,
+			"memory_mb": int(mem.Alloc / 1024 / 1024),
+		})
+	}
+}
+
+func statusText(healthy bool) string {
+	if healthy {
+		return "healthy"
+	}
+	return "unhealthy"
 }

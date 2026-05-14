@@ -49,27 +49,61 @@ type write struct {
 // New connects to the configured database. When `dsn` is empty, the
 // returned Persister is a no-op so the server can fall back to pure
 // in-memory mode (development convenience).
+//
+// Pool configuration:
+//   - MaxConns: 25 — sufficient for a 4-core VPS with SSD
+//   - MinConns: 5  — keep warm connections to avoid cold-start latency
+//   - MaxConnLifetime: 30 min — recycle connections to pick up PG config changes
+//   - MaxConnIdleTime: 5 min — release idle connections back to the OS
+//   - HealthCheckPeriod: 30s — detect broken connections before they're used
 func New(ctx context.Context, dsn string) (*Persister, error) {
 	if strings.TrimSpace(dsn) == "" {
 		log.Println("[persistence] DATABASE_URL is empty — running in pure in-memory mode (no durability).")
 		return &Persister{}, nil
 	}
 
-	pool, err := pgxpool.New(ctx, dsn)
+	poolConfig, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
-		return nil, fmt.Errorf("pgxpool.New: %w", err)
+		return nil, fmt.Errorf("pgxpool.ParseConfig: %w", err)
 	}
+
+	// Connection pool tuning for production workloads.
+	// Formula: MaxConns = (CPU cores × 2) + effective_spindle_count
+	// For 4-core VPS with SSD: (4×2)+1 = 9 minimum, 25 comfortable max.
+	poolConfig.MaxConns = 25
+	poolConfig.MinConns = 5
+	poolConfig.MaxConnLifetime = 30 * time.Minute
+	poolConfig.MaxConnIdleTime = 5 * time.Minute
+	poolConfig.HealthCheckPeriod = 30 * time.Second
+
+	pool, err := pgxpool.NewWithConfig(ctx, poolConfig)
+	if err != nil {
+		return nil, fmt.Errorf("pgxpool.NewWithConfig: %w", err)
+	}
+
 	pingCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	if err := pool.Ping(pingCtx); err != nil {
 		return nil, fmt.Errorf("postgres ping: %w", err)
 	}
-	log.Println("[persistence] connected to PostgreSQL")
+
+	log.Printf("[persistence] connected to PostgreSQL (pool: max=%d, min=%d, lifetime=%s)",
+		poolConfig.MaxConns, poolConfig.MinConns, poolConfig.MaxConnLifetime)
 	return &Persister{pool: pool, flushInterval: 1 * time.Second}, nil
 }
 
 // Available reports whether a PostgreSQL pool is configured.
 func (p *Persister) Available() bool { return p != nil && p.pool != nil }
+
+// Pool returns the underlying pgxpool.Pool for direct queries.
+// Returns nil if PostgreSQL is not configured. Domain handlers that need
+// direct PG access (bypassing MemStore) should check Available() first.
+func (p *Persister) Pool() *pgxpool.Pool {
+	if p == nil {
+		return nil
+	}
+	return p.pool
+}
 
 // Close releases the pool. Safe on nil.
 func (p *Persister) Close() {

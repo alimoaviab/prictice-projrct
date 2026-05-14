@@ -10,7 +10,7 @@ import { showToast } from "@/utils/toast";
 import { StudentEditSidebar } from "../components/StudentEditSidebar";
 
 export function StudentListPage() {
-  const { state, updateStudent, deleteStudent } = useStudents();
+  const { students, isLoading, isError, error, updateStudent, deleteStudent } = useStudents();
   const { state: classesState } = useClasses();
   const { data: subjectsData } = useSubjects();
   const { currentParams, updateQuery, withQuery } = useQueryParams();
@@ -33,9 +33,9 @@ export function StudentListPage() {
   }));
 
   const filteredRows = useMemo(() => {
-    const rows = state.data || [];
+    const rows = students || [];
     const q = searchQuery.trim().toLowerCase();
-    return rows.filter((row) => {
+    return rows.filter((row: StudentRow) => {
       const queryMatch =
         q.length === 0 ||
         row.admission_no.toLowerCase().includes(q) ||
@@ -45,7 +45,7 @@ export function StudentListPage() {
       const statusMatch = statusFilter === "all" ? true : row.status === statusFilter;
       return queryMatch && statusMatch;
     });
-  }, [state.data, searchQuery, statusFilter]);
+  }, [students, searchQuery, statusFilter]);
 
   const columns: DataTableColumn<StudentRow>[] = [
     {
@@ -132,7 +132,7 @@ export function StudentListPage() {
     },
   ];
 
-  if (state.status === "loading" || state.status === "idle") {
+  if (isLoading) {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -144,8 +144,8 @@ export function StudentListPage() {
     );
   }
 
-  if (state.status === "error") {
-    return <DataState variant="error" title="Failed to load students" message={state.error} />;
+  if (isError) {
+    return <DataState variant="error" title="Failed to load students" message={String(error)} />;
   }
 
   return (
@@ -153,10 +153,10 @@ export function StudentListPage() {
       {/* Stats Section */}
       <StatCardGrid
         items={[
-          { label: "Total Students", value: (state.data || []).length, icon: "groups", accent: "blue" },
-          { label: "Active Students", value: (state.data || []).filter(s => s.status === 'active').length, icon: "how_to_reg", accent: "emerald" },
-          { label: "Inactive", value: (state.data || []).filter(s => s.status !== 'active').length, icon: "person_off", accent: "amber" },
-          { label: "Classes", value: new Set((state.data || []).map(s => s.class_id)).size, icon: "door_front", accent: "purple" },
+          { label: "Total Students", value: (students || []).length, icon: "groups", accent: "blue" },
+          { label: "Active Students", value: (students || []).filter((s: StudentRow) => s.status === 'active').length, icon: "how_to_reg", accent: "emerald" },
+          { label: "Inactive", value: (students || []).filter((s: StudentRow) => s.status !== 'active').length, icon: "person_off", accent: "amber" },
+          { label: "Classes", value: new Set((students || []).map((s: StudentRow) => s.class_id)).size, icon: "door_front", accent: "purple" },
         ]}
       />
 
@@ -245,7 +245,7 @@ export function StudentListPage() {
         ) : (
           viewMode === "grid" ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-              {filteredRows.map((row) => (
+              {filteredRows.map((row: StudentRow) => (
                 <div key={row._id} className="premium-card group relative flex flex-col p-4 transition-all duration-300 bg-white border-slate-200/60 hover:shadow-xl hover:shadow-slate-200/30 hover:-translate-y-0.5">
                   {/* Top Row: Name & Actions */}
                   <div className="flex items-start justify-between gap-4 mb-3.5">
@@ -349,7 +349,7 @@ export function StudentListPage() {
       {/* Pagination Footer - Premium ERP Style */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100">
         <p className="text-[10px] font-bold text-slate-400 normal-case ">
-          Showing <span className="text-blue-600">1</span> to <span className="text-slate-900">{filteredRows.length}</span> of <span className="text-slate-900">{state.data?.length}</span> Student Records
+          Showing <span className="text-blue-600">1</span> to <span className="text-slate-900">{filteredRows.length}</span> of <span className="text-slate-900">{students?.length}</span> Student Records
         </p>
         <div className="flex items-center gap-2">
           <button className="h-9 px-4 rounded-xl border border-slate-200 text-[10px] font-bold normal-case  text-slate-400 cursor-not-allowed flex items-center gap-2">
