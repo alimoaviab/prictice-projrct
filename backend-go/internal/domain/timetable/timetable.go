@@ -26,24 +26,53 @@ func (h *Handler) hydrate(rows []*store.Timetable) []map[string]any {
 	for _, c := range h.Store.Classes {
 		classByID[c.ID] = c
 	}
-	out := make([]map[string]any, 0, len(rows))
+	teacherByID := map[string]*store.Teacher{}
+	for _, t := range h.Store.Teachers {
+		teacherByID[t.ID] = t
+	}
+	subjectByID := map[string]*store.Subject{}
+	for _, s := range h.Store.Subjects {
+		subjectByID[s.ID] = s
+	}
+
+	out := make([]map[string]any, 0)
 	for _, t := range rows {
 		cls := classByID[t.ClassID]
 		className := ""
 		if cls != nil {
 			className = cls.Name
 		}
-		out = append(out, map[string]any{
-			"_id":              t.ID,
-			"school_id":        t.SchoolID,
-			"academic_year_id": t.AcademicYearID,
-			"class_id":         t.ClassID,
-			"class_name":       className,
-			"sessions":         t.Sessions,
-			"status":           t.Status,
-			"created_at":       t.CreatedAt,
-			"updated_at":       t.UpdatedAt,
-		})
+
+		// Flatten: one record per session
+		for _, session := range t.Sessions {
+			teacherName := ""
+			if teacher, ok := teacherByID[session.TeacherID]; ok {
+				teacherName = teacher.FirstName + " " + teacher.LastName
+			}
+			subjectName := session.Subject
+			if subjectName == "" {
+				if subj, ok := subjectByID[session.SubjectID]; ok {
+					subjectName = subj.Name
+				}
+			}
+
+			out = append(out, map[string]any{
+				"_id":           t.ID + "_" + api.FormatInt(session.Day) + "_" + api.FormatInt(session.Period),
+				"class_id":      t.ClassID,
+				"class_name":    className,
+				"subject_id":    session.SubjectID,
+				"subject_name":  subjectName,
+				"teacher_id":    session.TeacherID,
+				"teacher_name":  teacherName,
+				"day_of_week":   session.Day,
+				"period_number": session.Period,
+				"start_time":    session.StartsAt,
+				"end_time":      session.EndsAt,
+				"room":          session.Room,
+				"created_at":    t.CreatedAt,
+				"updated_at":    t.UpdatedAt,
+			})
+		}
 	}
 	return out
 }
@@ -116,9 +145,18 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 type createInput struct {
-	ClassID  string                  `json:"class_id"`
-	Sessions []store.TimetableSession `json:"sessions"`
-	Status   string                  `json:"status"`
+	ClassID      string                   `json:"class_id"`
+	Sessions     []store.TimetableSession `json:"sessions"`
+	Status       string                   `json:"status"`
+	// Single-session fields (frontend sends one session at a time)
+	SubjectID    string `json:"subject_id"`
+	TeacherID    string `json:"teacher_id"`
+	DayOfWeek    int    `json:"day_of_week"`
+	PeriodNumber int    `json:"period_number"`
+	StartTime    string `json:"start_time"`
+	EndTime      string `json:"end_time"`
+	Room         string `json:"room"`
+	Subject      string `json:"subject"`
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
@@ -135,21 +173,81 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		if body.ClassID == "" {
 			return nil, api.NewControlledError("VALIDATION_ERROR", "class_id is required.", 400, nil)
 		}
+
+		// If frontend sends single-session fields, wrap into sessions array
+		sessions := body.Sessions
+		if len(sessions) == 0 && (body.SubjectID != "" || body.Subject != "") {
+			// Resolve subject name from ID
+			subjectName := body.Subject
+			if subjectName == "" && body.SubjectID != "" {
+				h.Store.RLock()
+				for _, s := range h.Store.Subjects {
+					if s.ID == body.SubjectID {
+						subjectName = s.Name
+						break
+					}
+				}
+				h.Store.RUnlock()
+			}
+			sessions = []store.TimetableSession{{
+				Day:       body.DayOfWeek,
+				Period:    body.PeriodNumber,
+				StartsAt:  body.StartTime,
+				EndsAt:    body.EndTime,
+				SubjectID: body.SubjectID,
+				Subject:   subjectName,
+				TeacherID: body.TeacherID,
+				Room:      body.Room,
+			}}
+		}
+
 		yearID := tenant.ResolveAcademicYearID(h.Store, ctx, "")
 		now := time.Now()
+
+		// Check if a timetable already exists for this class — if so, append session
+		h.Store.Lock()
+		defer h.Store.Unlock()
+
+		var existing *store.Timetable
+		for _, t := range h.Store.Timetables {
+			if t.SchoolID == ctx.SchoolID && t.ClassID == body.ClassID {
+				existing = t
+				break
+			}
+		}
+
+		if existing != nil {
+			// Append or update sessions in existing timetable
+			for _, newSess := range sessions {
+				found := false
+				for i, oldSess := range existing.Sessions {
+					if oldSess.Day == newSess.Day && oldSess.Period == newSess.Period {
+						existing.Sessions[i] = newSess
+						found = true
+						break
+					}
+				}
+				if !found {
+					existing.Sessions = append(existing.Sessions, newSess)
+				}
+			}
+			existing.UpdatedAt = now
+			audit.Write(h.Store, ctx, audit.Input{Action: "update", EntityType: "class", EntityID: existing.ID, After: existing, Metadata: map[string]any{"scope": "timetable"}})
+			return h.hydrate([]*store.Timetable{existing})[0], nil
+		}
+
+		// Create new timetable
 		row := &store.Timetable{
 			ID:             store.NewID("ttb"),
 			SchoolID:       ctx.SchoolID,
 			AcademicYearID: yearID,
 			ClassID:        body.ClassID,
-			Sessions:       body.Sessions,
+			Sessions:       sessions,
 			Status:         orDefault(body.Status, "active"),
 			CreatedAt:      now,
 			UpdatedAt:      now,
 		}
-		h.Store.Lock()
 		h.Store.Timetables = append(h.Store.Timetables, row)
-		h.Store.Unlock()
 		audit.Write(h.Store, ctx, audit.Input{Action: "create", EntityType: "class", EntityID: row.ID, After: row, Metadata: map[string]any{"scope": "timetable"}})
 		return h.hydrate([]*store.Timetable{row})[0], nil
 	}))

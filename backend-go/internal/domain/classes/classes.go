@@ -51,7 +51,17 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 
 		page := api.ParsePagination(q)
 		if !page.Enabled {
-			return rows, nil
+			// Always return paginated shape for consistency
+			total := len(rows)
+			return map[string]any{
+				"data": rows,
+				"meta": map[string]any{
+					"total": total,
+					"page":  1,
+					"limit": total,
+					"pages": 1,
+				},
+			}, nil
 		}
 		total := len(rows)
 		start := page.Skip
@@ -62,7 +72,22 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		if end > total {
 			end = total
 		}
-		return api.BuildPaginated(rows[start:end], total, page), nil
+		pages := total / page.Limit
+		if total%page.Limit != 0 {
+			pages++
+		}
+		if pages < 1 {
+			pages = 1
+		}
+		return map[string]any{
+			"data": rows[start:end],
+			"meta": map[string]any{
+				"total": total,
+				"page":  page.Page,
+				"limit": page.Limit,
+				"pages": pages,
+			},
+		}, nil
 	}))
 }
 

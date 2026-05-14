@@ -37,7 +37,7 @@ export function ClassListPage() {
     setViewMode((currentParams.get("view") as any) || "grid");
   }, [currentParams.toString()]);
 
-  const classes = Array.isArray(state.data) ? state.data : (state.data as any)?.data || [];
+  const classes = Array.isArray(state.data) ? state.data : (state.data as any)?.data || (state.data as any)?.items || [];
   const meta = (state.data as any)?.meta;
 
   const filteredRows = useMemo(() => {

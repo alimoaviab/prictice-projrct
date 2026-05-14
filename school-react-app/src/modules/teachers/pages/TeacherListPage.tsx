@@ -9,6 +9,7 @@ import { TeacherRow, TeacherFormInput } from "../types/teacher.types";
 import { showToast } from "@/utils/toast";
 import { TeacherEditSidebar } from "../components/TeacherEditSidebar";
 import { useQueryParams } from "@/hooks/useQueryParams";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 export function TeacherListPage() {
   const pathname = useLocation().pathname;
@@ -18,7 +19,9 @@ export function TeacherListPage() {
   const { currentParams, updateQuery, withQuery } = useQueryParams();
   
   const [editingTeacher, setEditingTeacher] = useState<TeacherRow | null>(null);
+  const [deletingTeacher, setDeletingTeacher] = useState<TeacherRow | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState(currentParams.get("search") || "");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "on_leave" | "inactive">((currentParams.get("status") as any) || "all");
   const [viewMode, setViewMode] = useState<"grid" | "list">((currentParams.get("view") as any) || "grid");
@@ -118,7 +121,7 @@ export function TeacherListPage() {
           variant={row.status === "active" ? "success" : row.status === "on_leave" ? "warning" : "gray"}
           className="normal-case text-[9px] font-bold normal-case  px-2"
         >
-          {row.status.replace("_", " ")}
+          {(row.status || "unknown").replace("_", " ")}
         </Badge>
       ),
     },
@@ -143,17 +146,26 @@ export function TeacherListPage() {
       icon: "delete",
       label: "Remove",
       variant: "danger",
-      requireConfirm: true,
-      onClick: async (row) => {
-        const result = await deleteTeacher(row._id);
-        if (!result.ok) {
-          showToast(result.error.message || "Failed to delete teacher", "error");
-        }
-      },
+      onClick: (row) => setDeletingTeacher(row),
     },
   ], []);
 
-  if (state.status === "loading" && !state.data) {
+  const handleDelete = async () => {
+    if (!deletingTeacher) return;
+    setIsDeleting(true);
+    try {
+      const result = await deleteTeacher(deletingTeacher._id);
+      if (result.ok) {
+        setDeletingTeacher(null);
+      } else {
+        showToast(result.error.message || "Failed to delete teacher", "error");
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  if ((state.status === "loading" || state.status === "idle") && !state.data) {
     return <TableSkeleton />;
   }
 
@@ -273,11 +285,7 @@ export function TeacherListPage() {
                           <span className="material-symbols-outlined text-base">edit</span>
                         </button>
                         <button 
-                          onClick={async () => {
-                            if (window.confirm(`Delete ${row.first_name}?`)) {
-                              await deleteTeacher(row._id);
-                            }
-                          }}
+                          onClick={() => setDeletingTeacher(row)}
                           className="h-7 w-7 flex items-center justify-center rounded text-slate-400 hover:bg-white hover:text-red-500 hover:shadow-sm transition-all"
                         >
                           <span className="material-symbols-outlined text-base">delete</span>
@@ -377,6 +385,16 @@ export function TeacherListPage() {
           }
         }}
         isSaving={isSaving}
+      />
+      <ConfirmModal
+        isOpen={!!deletingTeacher}
+        onCancel={() => setDeletingTeacher(null)}
+        onConfirm={handleDelete}
+        title="Confirm Deletion"
+        message={`Are you sure you want to remove ${deletingTeacher?.first_name} ${deletingTeacher?.last_name}? This action is irreversible.`}
+        confirmLabel="Remove Faculty"
+        confirmVariant="danger"
+        isLoading={isDeleting}
       />
     </div>
   );

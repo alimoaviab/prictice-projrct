@@ -25,6 +25,7 @@ import (
 	"github.com/eduplexo/backend-go/internal/domain/settings"
 	"github.com/eduplexo/backend-go/internal/domain/students"
 	"github.com/eduplexo/backend-go/internal/domain/subjects"
+	"github.com/eduplexo/backend-go/internal/domain/superadmin"
 	"github.com/eduplexo/backend-go/internal/domain/teachers"
 	"github.com/eduplexo/backend-go/internal/domain/timetable"
 	"github.com/eduplexo/backend-go/internal/middleware"
@@ -248,6 +249,18 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister) htt
 			// Chatbot
 			cbH := chatbot.New(s)
 			r.Post("/chatbot/message", cbH.Message)
+
+			// Super Admin
+			saH := superadmin.New(s)
+			r.Get("/super-admin/dashboard", saH.DashboardStats)
+			r.Get("/super-admin/schools", saH.ListSchools)
+			r.Get("/super-admin/schools/{id}", saH.GetSchool)
+			r.Patch("/super-admin/schools/{id}/status", saH.UpdateSchoolStatus)
+			r.Post("/super-admin/schools/{id}/approve", saH.ApproveSchool)
+			r.Post("/super-admin/schools/{id}/suspend", saH.SuspendSchool)
+			r.Get("/super-admin/plans", saH.ListPlans)
+			r.Get("/super-admin/users", saH.ListUsers)
+			r.Get("/super-admin/activity", saH.RecentActivity)
 
 			// Parents
 			r.Get("/parents/check-email", func(w http.ResponseWriter, _ *http.Request) {
