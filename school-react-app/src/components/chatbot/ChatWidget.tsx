@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { serviceRequest } from "@/services/service-client";
 
 interface Message {
@@ -8,6 +8,24 @@ interface Message {
   toolUsed?: string;
   data?: any;
   timestamp: Date;
+}
+
+function renderFormattedText(text: string) {
+  const lines = text.split('\n');
+  return lines.map((line, i) => {
+    const parts = line.split(/(\*\*.*?\*\*)/g);
+    return (
+      <React.Fragment key={i}>
+        {parts.map((part, j) => {
+          if (j % 2 === 1) {
+            return <strong key={j}>{part.replace(/^\*\*|\*\*$/g, '')}</strong>;
+          }
+          return part;
+        })}
+        {i < lines.length - 1 && <br />}
+      </React.Fragment>
+    );
+  });
 }
 
 const QUICK_SUGGESTIONS = [
@@ -186,11 +204,9 @@ export function ChatWidget() {
                 : "bg-white text-slate-700 rounded-2xl rounded-tl-sm border border-slate-200 shadow-sm"
             }`}>
               {msg.role === "assistant" ? (
-                <div className="whitespace-pre-wrap" dangerouslySetInnerHTML={{
-                  __html: msg.content
-                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/\n/g, '<br/>')
-                }} />
+                <div className="whitespace-pre-wrap">
+                  {renderFormattedText(msg.content)}
+                </div>
               ) : (
                 <span>{msg.content}</span>
               )}
