@@ -2,6 +2,7 @@ import { useCallback, useEffect } from "react";
 import { useSafeAsync } from "@/hooks/useSafeAsync";
 import { showToast } from "@/utils/toast";
 import { EventFormInput, EventRecordRow } from "../types/events.types";
+import { bindRefresh, publish } from "@/services/data-bus";
 import * as service from "../services/events.service";
 
 export function useEvents() {
@@ -26,6 +27,7 @@ export function useEvents() {
       }
       showToast("Event created.", "success");
       await loadEvents();
+      publish("events");
       return result;
     },
     [loadEvents]
@@ -40,6 +42,7 @@ export function useEvents() {
       }
       showToast("Event updated.", "success");
       await loadEvents();
+      publish("events");
       return result;
     },
     [loadEvents]
@@ -54,6 +57,7 @@ export function useEvents() {
       }
       showToast("Event deleted.", "success");
       await loadEvents();
+      publish("events");
       return result;
     },
     [loadEvents]
@@ -61,6 +65,12 @@ export function useEvents() {
 
   useEffect(() => {
     void loadEvents().catch(() => {});
+    const offEvents = bindRefresh("events", loadEvents);
+    const offClasses = bindRefresh("classes", loadEvents);
+    return () => {
+      offEvents();
+      offClasses();
+    };
   }, [loadEvents]);
 
   return { state, addEvent, updateEvent, deleteEvent };

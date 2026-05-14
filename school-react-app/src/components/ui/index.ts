@@ -21,7 +21,15 @@ export { PageHeader } from "./PageHeader";
 export { Pagination } from "./Pagination";
 export { Select } from "./Select";
 export { StatCard } from "./StatCard";
+export { StatCardCompact, StatCardGrid } from "./StatCardCompact";
+export type { StatCardCompactProps, StatCardGridItem, StatCardAccent } from "./StatCardCompact";
 export { StatsGrid } from "./StatsGrid";
+export {
+  EntityCreateLayout,
+  GuidanceSection,
+  GuidanceCallout,
+  GuidanceChecklist,
+} from "./EntityCreateLayout";
 export type { StatItem } from "./StatsGrid";
 export { SubjectMultiSelect } from "./SubjectMultiSelect";
 export { SubjectSelect } from "./SubjectSelect";

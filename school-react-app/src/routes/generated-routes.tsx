@@ -56,6 +56,7 @@ import { TeacherClassStudentsPage as TeacherClassStudentsPage_RoleTeacherClasses
 import { TeacherClassesPage as TeacherClassesPage_RoleTeacherClasses } from "@/pages/role/teacher/classes";
 import { TeacherDashboardPage as TeacherDashboardPage_RoleTeacherDashboard } from "@/pages/role/teacher/dashboard";
 import { TeacherEventsPage as TeacherEventsPage_RoleTeacherEvents } from "@/pages/role/teacher/events";
+import { TeacherEventCreatePage as TeacherEventCreatePage_RoleTeacherEventsCreate } from "@/pages/role/teacher/events/create";
 import { TeacherExamCreatePage as TeacherExamCreatePage_RoleTeacherExamsCreate } from "@/pages/role/teacher/exams/create";
 import { TeacherExamsPage as TeacherExamsPage_RoleTeacherExams } from "@/pages/role/teacher/exams";
 import { TeacherExamMarksPage as TeacherExamMarksPage_RoleTeacherExamsMarks } from "@/pages/role/teacher/exams/marks";
@@ -159,6 +160,7 @@ export const teacherRoutes: RouteObject[] = [
       { path: "/teacher/classes", element: <TeacherClassesPage_RoleTeacherClasses /> },
       { path: "/teacher/dashboard", element: <TeacherDashboardPage_RoleTeacherDashboard /> },
       { path: "/teacher/events", element: <TeacherEventsPage_RoleTeacherEvents /> },
+      { path: "/teacher/events/create", element: <TeacherEventCreatePage_RoleTeacherEventsCreate /> },
       { path: "/teacher/exams/create", element: <TeacherExamCreatePage_RoleTeacherExamsCreate /> },
       { path: "/teacher/exams", element: <TeacherExamsPage_RoleTeacherExams /> },
       { path: "/teacher/exams/marks", element: <TeacherExamMarksPage_RoleTeacherExamsMarks /> },

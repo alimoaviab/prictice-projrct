@@ -1,20 +1,21 @@
 import { useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { useEvents } from "../hooks/useEvents";
-import { EventRecordRow, EventFormInput } from "../types/events.types";
-import EventForm from "./EventForm";
-import { DataTable, DataTableColumn, RowAction, Badge, DataState, Skeleton, TableSkeleton } from "@/components/ui";
+import { EventRecordRow } from "../types/events.types";
+import { DataTable, DataTableColumn, RowAction, Badge, DataState, TableSkeleton, StatCardGrid } from "@/components/ui";
 
 export default function EventListPage() {
   const pathname = useLocation().pathname;
   const isParent = pathname.includes("/parent");
-  const { state, addEvent, updateEvent, deleteEvent } = useEvents();
-  
-  const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState<EventRecordRow | null>(null);
+  const { state, deleteEvent } = useEvents();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "scheduled" | "cancelled" | "completed">("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
+  const editPath = (id: string) =>
+    pathname.includes("/teacher") ? `/teacher/events/${id}/edit` : `/admin/events/${id}/edit`;
+  const createPath = pathname.includes("/teacher") ? "/teacher/events/create" : "/admin/events/create";
 
   const filteredRows = useMemo(() => {
     const rows = state.data || [];
@@ -98,8 +99,7 @@ export default function EventListPage() {
           label: "Modify",
           variant: "ghost",
           onClick: (row) => {
-            setEditing(row);
-            setShowForm(true);
+            window.location.assign(editPath(row._id));
           },
         },
         {
@@ -110,17 +110,7 @@ export default function EventListPage() {
           onClick: (row) => deleteEvent(row._id),
         },
       ];
-  }, [isParent, deleteEvent]);
-
-  const handleSubmit = async (data: EventFormInput) => {
-    if (editing) {
-      await updateEvent(editing._id, data);
-    } else {
-      await addEvent(data);
-    }
-    setShowForm(false);
-    setEditing(null);
-  };
+  }, [isParent, deleteEvent, pathname]);
 
   if (state.status === "loading" && !state.data) {
     return <TableSkeleton />;
@@ -133,48 +123,14 @@ export default function EventListPage() {
   return (
     <div className="space-y-6 relative pb-10">
       {/* Stats Section */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "Total Events", value: stats.total, icon: "event", color: "text-blue-600", bg: "bg-blue-100" },
-          { label: "Upcoming", value: stats.upcoming, icon: "upcoming", color: "text-purple-600", bg: "bg-purple-100" },
-          { label: "Academic", value: stats.academic, icon: "school", color: "text-emerald-600", bg: "bg-emerald-100" },
-          { label: "This Month", value: stats.participation, icon: "calendar_month", color: "text-amber-600", bg: "bg-amber-100" },
-        ].map((stat, i) => (
-          <div key={i} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow group">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500">{stat.label}</p>
-                <p className="mt-2 text-2xl font-bold text-slate-900 tracking-tight">{stat.value}</p>
-              </div>
-              <div className={`h-11 w-11 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center transition-transform group-hover:scale-110`}>
-                <span className="material-symbols-outlined text-xl">{stat.icon}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Form Overlay */}
-      {showForm && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[100]">
-           <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-2xl w-full border border-slate-100 max-h-[90vh] overflow-y-auto">
-             <div className="mb-6 flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-black text-slate-900 tracking-tight">{editing ? "Modify Event Milestone" : "Schedule New Milestone"}</h3>
-                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">Institutional Calendar Management</p>
-                </div>
-                <button onClick={() => { setShowForm(false); setEditing(null); }} className="h-8 w-8 rounded-full hover:bg-slate-50 flex items-center justify-center">
-                   <span className="material-symbols-outlined text-slate-400">close</span>
-                </button>
-             </div>
-             <EventForm
-               initial={editing ?? undefined}
-               onSubmit={handleSubmit}
-               onCancel={() => { setShowForm(false); setEditing(null); }}
-             />
-           </div>
-        </div>
-      )}
+      <StatCardGrid
+        items={[
+          { label: "Total Events", value: stats.total, icon: "event", accent: "blue" },
+          { label: "Upcoming", value: stats.upcoming, icon: "upcoming", accent: "purple" },
+          { label: "Academic", value: stats.academic, icon: "school", accent: "emerald" },
+          { label: "This Month", value: stats.participation, icon: "calendar_month", accent: "amber" },
+        ]}
+      />
 
       {/* Toolbar */}
       <div className="p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white border border-slate-100 shadow-sm rounded-xl">
@@ -221,14 +177,15 @@ export default function EventListPage() {
               List
             </button>
           </div>
-          
+
           {!isParent && (
-            <button
-              onClick={() => { setEditing(null); setShowForm(true); }}
-              className="h-9 px-5 text-[10px] font-black uppercase tracking-widest text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all shadow-md shadow-blue-600/10 active:scale-95"
+            <Link
+              to={createPath}
+              className="h-9 inline-flex items-center gap-2 px-5 text-[10px] font-black uppercase tracking-widest text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all shadow-md shadow-blue-600/10 active:scale-95"
             >
+              <span className="material-symbols-outlined text-[16px]">add</span>
               Add Event
-            </button>
+            </Link>
           )}
         </div>
       </div>
@@ -277,9 +234,9 @@ export default function EventListPage() {
                      </div>
                      {!isParent && (
                         <div className="flex items-center gap-1">
-                          <button onClick={() => { setEditing(row); setShowForm(true); }} className="h-7 w-7 flex items-center justify-center rounded text-slate-300 hover:text-blue-600 transition-all">
+                          <Link to={editPath(row._id)} className="h-7 w-7 flex items-center justify-center rounded text-slate-300 hover:text-blue-600 transition-all">
                              <span className="material-symbols-outlined text-[18px]">edit_square</span>
-                          </button>
+                          </Link>
                           <button onClick={() => deleteEvent(row._id)} className="h-7 w-7 flex items-center justify-center rounded text-slate-300 hover:text-rose-600 transition-all">
                              <span className="material-symbols-outlined text-[18px]">delete</span>
                           </button>

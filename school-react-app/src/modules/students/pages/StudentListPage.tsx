@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { useQueryParams } from "@/hooks/useQueryParams";
-import { DataTable, DataTableColumn, RowAction, Badge, DataState, ListToolbar, Skeleton, TableSkeleton } from "@/components/ui";
+import { DataTable, DataTableColumn, RowAction, Badge, DataState, ListToolbar, Skeleton, TableSkeleton, StatCardGrid } from "@/components/ui";
 import { useStudents } from "../hooks/useStudents";
 import { useClasses } from "../../classes/hooks/useClasses";
 import { useSubjects } from "../../subjects/hooks/useSubjects";
@@ -151,26 +151,14 @@ export function StudentListPage() {
   return (
     <div className="space-y-8 relative min-h-[80vh] pb-10">
       {/* Stats Section */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "Total Students", value: (state.data || []).length, icon: "groups", color: "text-blue-600", bg: "bg-blue-100" },
-          { label: "Active Students", value: (state.data || []).filter(s => s.status === 'active').length, icon: "how_to_reg", color: "text-emerald-600", bg: "bg-emerald-100" },
-          { label: "Inactive", value: (state.data || []).filter(s => s.status !== 'active').length, icon: "person_off", color: "text-amber-600", bg: "bg-amber-100" },
-          { label: "Classes", value: new Set((state.data || []).map(s => s.class_id)).size, icon: "door_front", color: "text-purple-600", bg: "bg-purple-100" },
-        ].map((stat, i) => (
-          <div key={i} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow group">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500">{stat.label}</p>
-                <p className="mt-2 text-2xl font-bold text-slate-900 tracking-tight">{stat.value}</p>
-              </div>
-              <div className={`h-11 w-11 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center transition-transform group-hover:scale-110`}>
-                <span className="material-symbols-outlined text-xl">{stat.icon}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      <StatCardGrid
+        items={[
+          { label: "Total Students", value: (state.data || []).length, icon: "groups", accent: "blue" },
+          { label: "Active Students", value: (state.data || []).filter(s => s.status === 'active').length, icon: "how_to_reg", accent: "emerald" },
+          { label: "Inactive", value: (state.data || []).filter(s => s.status !== 'active').length, icon: "person_off", accent: "amber" },
+          { label: "Classes", value: new Set((state.data || []).map(s => s.class_id)).size, icon: "door_front", accent: "purple" },
+        ]}
+      />
 
       {/* Toolbar Section - Unified & Sticky */}
       <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md sticky top-[72px] z-20 border-slate-200/60 shadow-sm rounded-xl">

@@ -121,34 +121,34 @@ export function AcademicYearListPage() {
     <>
       <div className="space-y-6 relative pb-6">
         {/* Stats Section */}
-        <div className={`grid gap-4 ${isDrawerOpen ? "grid-cols-1 md:grid-cols-2" : "grid-cols-2 md:grid-cols-4"}`}>
+        <div className={`grid gap-3 ${isDrawerOpen ? "grid-cols-1 md:grid-cols-2" : "grid-cols-2 md:grid-cols-4"}`}>
           {[
-            { label: "Total Sessions", value: years.length, icon: "calendar_today", color: "text-blue-600", bg: "bg-blue-100" },
-            { label: "Active Session", value: activeYear?.year || "None", icon: "auto_awesome", color: "text-emerald-600", bg: "bg-emerald-100" },
-            { label: "Completed", value: years.filter(y => y.status === "completed").length, icon: "verified", color: "text-purple-600", bg: "bg-purple-100" },
+            { label: "Total Sessions", value: years.length, icon: "calendar_today", color: "text-blue-600", bg: "bg-blue-50" },
+            { label: "Active Session", value: activeYear?.year || "None", icon: "auto_awesome", color: "text-emerald-600", bg: "bg-emerald-50" },
+            { label: "Completed", value: years.filter(y => y.status === "completed").length, icon: "verified", color: "text-purple-600", bg: "bg-purple-50" },
           ].map((stat) => (
-            <div key={stat.label} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow group">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-500">{stat.label}</p>
-                  <p className="mt-2 text-2xl font-bold text-slate-900 tracking-tight">{stat.value}</p>
+            <div key={stat.label} className="bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 px-3.5 py-3 shadow-[0_4px_18px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.05)] transition-all group">
+              <div className="flex items-center gap-3">
+                <div className={`h-9 w-9 rounded-lg ${stat.bg} ${stat.color} flex items-center justify-center transition-transform group-hover:scale-105 shrink-0`}>
+                  <span className="material-symbols-outlined text-lg">{stat.icon}</span>
                 </div>
-                <div className={`h-11 w-11 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center transition-transform group-hover:scale-110`}>
-                  <span className="material-symbols-outlined text-xl">{stat.icon}</span>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold text-slate-400 normal-case truncate">{stat.label}</p>
+                  <p className="mt-0.5 text-lg font-bold text-slate-900 tracking-tight leading-none truncate">{stat.value}</p>
                 </div>
               </div>
             </div>
           ))}
-          <Link 
-            to="/admin/academic-years/create" 
-            className={`bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md hover:border-blue-300 transition-all group flex items-start justify-between ${isDrawerOpen ? "hidden md:flex" : ""}`}
+          <Link
+            to="/admin/academic-years/create"
+            className={`bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 px-3.5 py-3 shadow-[0_4px_18px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.05)] hover:border-blue-300 transition-all group flex items-center gap-3 ${isDrawerOpen ? "hidden md:flex" : ""}`}
           >
-            <div>
-              <p className="text-sm font-medium text-slate-500">Quick Action</p>
-              <p className="mt-2 text-lg font-bold text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors">Add New Session</p>
+            <div className="h-9 w-9 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center group-hover:bg-blue-50 group-hover:text-blue-600 group-hover:rotate-90 transition-all shrink-0">
+              <span className="material-symbols-outlined text-lg">add</span>
             </div>
-            <div className="h-11 w-11 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center group-hover:bg-blue-100 group-hover:text-blue-600 group-hover:rotate-90 transition-all">
-              <span className="material-symbols-outlined text-xl">add</span>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold text-slate-400 normal-case truncate">Quick Action</p>
+              <p className="mt-0.5 text-sm font-bold text-slate-900 tracking-tight leading-none group-hover:text-blue-600 transition-colors truncate">Add New Session</p>
             </div>
           </Link>
         </div>

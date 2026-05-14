@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useLocation } from "react-router-dom";
-import { DataTable, DataTableColumn, RowAction, Badge, DataState, Skeleton, TableSkeleton } from "@/components/ui";
+import { DataTable, DataTableColumn, RowAction, Badge, DataState, Skeleton, TableSkeleton, StatCardGrid } from "@/components/ui";
 import { useResults } from "../hooks/useResults";
 import { ResultRow } from "../types/result.types";
 import { showToast } from "@/utils/toast";
 import { useQueryParams } from "@/hooks/useQueryParams";
 import { useClasses } from "../../classes/hooks/useClasses";
 import { useExams } from "../../exams/hooks/useExams";
+import { exportMarksheet, exportExamMarksheet } from "@/utils/marksheet";
+import { useAuth } from "@/hooks/useAuth";
 
 export function ResultListPage({ filters }: { filters?: { exam_id?: string; student_id?: string } }) {
   const pathname = useLocation().pathname;
@@ -118,14 +120,20 @@ export function ResultListPage({ filters }: { filters?: { exam_id?: string; stud
     }
   ], []);
 
+  const { user } = useAuth();
+  const schoolName = (user as any)?.schoolName || (user as any)?.school_name || "School";
+
   const rowActions: RowAction<ResultRow>[] = useMemo(() => [
     {
-      icon: "visibility",
-      label: "Transcript",
+      icon: "download",
+      label: "Marksheet",
       variant: "primary",
-      onClick: (row) => alert(`Exam: ${row.exam_title}`),
-    }
-  ], []);
+      onClick: (row) => {
+        exportMarksheet(row, { schoolName });
+        showToast("Generating marksheet…", "info");
+      },
+    },
+  ], [schoolName]);
 
   if (state.status === "loading" && !state.data) {
     return <TableSkeleton />;
@@ -134,21 +142,23 @@ export function ResultListPage({ filters }: { filters?: { exam_id?: string; stud
   return (
     <div className="space-y-6">
       {/* Metrics Strip */}
-      <div className="flex flex-wrap gap-4">
-        {[
-          { label: "Evaluations", value: stats.total, icon: "grading" },
-          { label: "Success Rate", value: stats.passRate, icon: "verified" },
-          { label: "Avg. Performance", value: stats.avgMarks, icon: "leaderboard" },
-        ].map((stat, i) => (
-          <div key={i} className="flex-1 min-w-[140px] bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-0.5">{stat.label}</p>
-              <h3 className="text-lg font-black text-slate-900 tracking-tight leading-none">{stat.value}</h3>
-            </div>
-            <span className="material-symbols-outlined text-blue-600 text-[18px] opacity-20">{stat.icon}</span>
-          </div>
-        ))}
-      </div>
+      <StatCardGrid
+        items={[
+          { label: "Evaluations", value: stats.total, icon: "grading", accent: "blue" },
+          { label: "Success Rate", value: stats.passRate, icon: "verified", accent: "emerald" },
+          { label: "Avg. Performance", value: stats.avgMarks, icon: "leaderboard", accent: "purple" },
+          {
+            label: "Top Grade",
+            value:
+              (state.data || []).reduce<string>(
+                (best, r) => (best === "F" || (r.grade && r.grade < best) ? r.grade : best),
+                "F"
+              ),
+            icon: "workspace_premium",
+            accent: "amber",
+          },
+        ]}
+      />
 
       {/* Toolbar */}
       {!isParent && (
@@ -181,6 +191,21 @@ export function ResultListPage({ filters }: { filters?: { exam_id?: string; stud
             <span className="material-symbols-outlined text-[16px]">add_chart</span>
             Record Results
           </Link>
+
+          {filteredRows.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                exportExamMarksheet(filteredRows, { schoolName });
+                showToast("Generating class marksheet…", "info");
+              }}
+              className="h-9 flex items-center gap-2 px-3 bg-white border border-slate-200 text-slate-700 rounded-lg text-[10px] font-black uppercase tracking-wider hover:border-blue-300 hover:text-blue-700 transition-all"
+              title="Download a marksheet covering every visible row"
+            >
+              <span className="material-symbols-outlined text-[16px]">picture_as_pdf</span>
+              Export Sheet
+            </button>
+          )}
         </div>
       )}
 

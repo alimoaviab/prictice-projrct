@@ -2,6 +2,7 @@ import { useCallback, useEffect } from "react";
 import { useSafeAsync } from "@/hooks/useSafeAsync";
 import { showToast } from "@/utils/toast";
 import { ExamFormInput, ExamRow } from "../types/exam.types";
+import { bindRefresh, publish } from "@/services/data-bus";
 import * as service from "../services/exam.service";
 
 export function useExams(filters?: { class_id?: string; subject?: string }) {
@@ -30,6 +31,7 @@ export function useExams(filters?: { class_id?: string; subject?: string }) {
 
       showToast("Exam scheduled.", "success");
       await loadExams();
+      publish("exams");
       return result;
     },
     [loadExams]
@@ -45,6 +47,7 @@ export function useExams(filters?: { class_id?: string; subject?: string }) {
 
       showToast("Exam updated.", "success");
       await loadExams();
+      publish("exams");
       return result;
     },
     [loadExams]
@@ -60,6 +63,7 @@ export function useExams(filters?: { class_id?: string; subject?: string }) {
 
       showToast("Exam deleted.", "success");
       await loadExams();
+      publish("exams");
       return result;
     },
     [loadExams]
@@ -69,6 +73,12 @@ export function useExams(filters?: { class_id?: string; subject?: string }) {
     void loadExams().catch(() => {
       // Error state is already managed by useSafeAsync.
     });
+    const offClasses = bindRefresh("classes", loadExams);
+    const offExams = bindRefresh("exams", loadExams);
+    return () => {
+      offClasses();
+      offExams();
+    };
   }, [loadExams]);
 
   return { state, addExam, updateExam, deleteExam };

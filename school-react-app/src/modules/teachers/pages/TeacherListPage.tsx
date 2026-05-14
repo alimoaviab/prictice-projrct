@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { DataTable, DataTableColumn, RowAction, Badge, DataState, Skeleton, TableSkeleton } from "@/components/ui";
+import { DataTable, DataTableColumn, RowAction, Badge, DataState, Skeleton, TableSkeleton, StatCardGrid } from "@/components/ui";
 import { useTeachers } from "../hooks/useTeachers";
 import { useClasses } from "../../classes/hooks/useClasses";
 import { useSubjects } from "../../subjects/hooks/useSubjects";
@@ -164,26 +164,14 @@ export function TeacherListPage() {
   return (
     <div className="space-y-6 relative min-h-[80vh] pb-10">
       {/* Stats Section */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "Total Teachers", value: stats.total, icon: "badge", color: "text-blue-600", bg: "bg-blue-100" },
-          { label: "Active", value: stats.active, icon: "check_circle", color: "text-emerald-600", bg: "bg-emerald-100" },
-          { label: "On Leave", value: stats.onLeave, icon: "event_busy", color: "text-amber-600", bg: "bg-amber-100" },
-          { label: "Subjects Covered", value: new Set((state.data || []).flatMap(t => t.subjects || [])).size, icon: "menu_book", color: "text-purple-600", bg: "bg-purple-100" },
-        ].map((stat, i) => (
-          <div key={i} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow group">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500">{stat.label}</p>
-                <p className="mt-2 text-2xl font-bold text-slate-900 tracking-tight">{stat.value}</p>
-              </div>
-              <div className={`h-11 w-11 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center transition-transform group-hover:scale-110`}>
-                <span className="material-symbols-outlined text-xl">{stat.icon}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      <StatCardGrid
+        items={[
+          { label: "Total Teachers", value: stats.total, icon: "badge", accent: "blue" },
+          { label: "Active", value: stats.active, icon: "check_circle", accent: "emerald" },
+          { label: "On Leave", value: stats.onLeave, icon: "event_busy", accent: "amber" },
+          { label: "Subjects Covered", value: new Set((state.data || []).flatMap(t => t.subjects || [])).size, icon: "menu_book", accent: "purple" },
+        ]}
+      />
 
       {/* Toolbar Section - Unified & Sticky */}
       <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md sticky top-[72px] z-20 border-slate-200/60 shadow-sm rounded-xl">

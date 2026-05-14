@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Card, DataState, Skeleton, TableSkeleton, Badge, DataTable, DataTableColumn, RowAction } from "@/components/ui";
+import { Card, DataState, Skeleton, TableSkeleton, Badge, DataTable, DataTableColumn, RowAction, StatCardGrid } from "@/components/ui";
 import { useSafeAsync } from "@/hooks/useSafeAsync";
 import { serviceRequest } from "@/services/service-client";
 import { ResultForm } from "../components/ResultForm";
@@ -9,6 +9,8 @@ import { ResultRow } from "../types/result.types";
 import { useClasses } from "../../classes/hooks/useClasses";
 import { useExams } from "../../exams/hooks/useExams";
 import { useQueryParams } from "@/hooks/useQueryParams";
+import { exportMarksheet } from "@/utils/marksheet";
+import { showToast } from "@/utils/toast";
 
 export function ResultPage() {
     const { currentParams, updateQuery } = useQueryParams();
@@ -154,8 +156,15 @@ export function ResultPage() {
     ];
 
     const rowActions: RowAction<ResultRow>[] = [
-        { icon: "visibility", label: "Analytics", onClick: (row) => alert(`Analysis for ${row.student_name}`) },
-        { icon: "download", label: "Report Card", onClick: (row) => alert(`Downloading for ${row.student_name}`) },
+        {
+          icon: "download",
+          label: "Marksheet",
+          variant: "primary",
+          onClick: (row) => {
+            exportMarksheet(row);
+            showToast("Generating marksheet…", "info");
+          },
+        },
     ];
 
     const isDependencyLoading =
@@ -176,35 +185,23 @@ export function ResultPage() {
     return (
         <div className="space-y-6 relative min-h-[80vh] pb-10">
             {/* Stats Section */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {(() => {
-                    const rows = state.data || [];
-                    const totalResults = rows.length;
-                    const avgPerformance = totalResults > 0 
-                        ? Math.round(rows.reduce((sum, r) => sum + (r.obtained_marks / r.max_marks) * 100, 0) / totalResults)
-                        : 0;
-                    const passCount = rows.filter(r => (r.obtained_marks / r.max_marks) >= 0.4).length;
-                    const distinctionCount = rows.filter(r => (r.obtained_marks / r.max_marks) >= 0.8).length;
-                    return [
-                        { label: "Total Results", value: totalResults, icon: "leaderboard", color: "text-blue-600", bg: "bg-blue-100" },
-                        { label: "Avg. Score", value: `${avgPerformance}%`, icon: "trending_up", color: "text-emerald-600", bg: "bg-emerald-100" },
-                        { label: "Distinctions", value: distinctionCount, icon: "stars", color: "text-amber-600", bg: "bg-amber-100" },
-                        { label: "Pass Rate", value: totalResults > 0 ? `${Math.round((passCount / totalResults) * 100)}%` : "0%", icon: "verified", color: "text-purple-600", bg: "bg-purple-100" },
-                    ];
-                })().map((stat, i) => (
-                    <div key={i} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow group">
-                        <div className="flex items-start justify-between">
-                            <div>
-                                <p className="text-sm font-medium text-slate-500">{stat.label}</p>
-                                <p className="mt-2 text-2xl font-bold text-slate-900 tracking-tight">{stat.value}</p>
-                            </div>
-                            <div className={`h-11 w-11 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center transition-transform group-hover:scale-110`}>
-                                <span className="material-symbols-outlined text-xl">{stat.icon}</span>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
+            <StatCardGrid
+              items={(() => {
+                const rows = state.data || [];
+                const totalResults = rows.length;
+                const avgPerformance = totalResults > 0 
+                    ? Math.round(rows.reduce((sum, r) => sum + (r.obtained_marks / r.max_marks) * 100, 0) / totalResults)
+                    : 0;
+                const passCount = rows.filter(r => (r.obtained_marks / r.max_marks) >= 0.4).length;
+                const distinctionCount = rows.filter(r => (r.obtained_marks / r.max_marks) >= 0.8).length;
+                return [
+                    { label: "Total Results", value: totalResults, icon: "leaderboard", accent: "blue" as const },
+                    { label: "Avg. Score", value: `${avgPerformance}%`, icon: "trending_up", accent: "emerald" as const },
+                    { label: "Distinctions", value: distinctionCount, icon: "stars", accent: "amber" as const },
+                    { label: "Pass Rate", value: totalResults > 0 ? `${Math.round((passCount / totalResults) * 100)}%` : "0%", icon: "verified", accent: "purple" as const },
+                ];
+              })()}
+            />
 
             {/* Toolbar Section - Unified & Sticky */}
             <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md sticky top-[72px] z-20 border-slate-200/60 shadow-sm rounded-xl">

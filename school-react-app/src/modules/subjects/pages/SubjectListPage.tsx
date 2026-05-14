@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useMemo, useState } from "react";
-import { DataTable, DataTableColumn, RowAction, Badge, DataState, Skeleton, TableSkeleton } from "@/components/ui";
+import { DataTable, DataTableColumn, RowAction, Badge, DataState, Skeleton, TableSkeleton, StatCardGrid } from "@/components/ui";
 import { useSubjects } from "../hooks/useSubjects";
 import { SubjectEditSidebar } from "../components/SubjectEditSidebar";
 import { SubjectRow, SubjectFormInput } from "../types";
@@ -133,24 +133,14 @@ export function SubjectListPage() {
   return (
     <div className="space-y-8 relative min-h-[80vh] pb-10">
       {/* Stats Section - Premium & Compact */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "Total Subjects", value: (data || []).length, icon: "menu_book", color: "text-blue-600", bg: "bg-blue-600/5" },
-          { label: "Active Curriculum", value: (data || []).filter(s => s.status === 'active').length, icon: "check_circle", color: "text-emerald-600", bg: "bg-emerald-600/5" },
-          { label: "Core Credits", value: "128", icon: "stars", color: "text-amber-600", bg: "bg-amber-600/5" },
-          { label: "Faculty Mapping", value: "94%", icon: "hub", color: "text-purple-600", bg: "bg-purple-600/5" },
-        ].map((stat, i) => (
-          <div key={i} className="premium-card bg-white p-3.5 border-slate-200/60 shadow-sm flex items-center justify-between group hover:border-blue-200 transition-all cursor-default">
-            <div>
-              <p className="text-[10px] font-bold text-slate-400 normal-case  mb-1">{stat.label}</p>
-              <h3 className="text-xl font-bold text-slate-900 tracking-tighter leading-none">{stat.value}</h3>
-            </div>
-            <div className={`h-8 w-8 rounded-lg ${stat.bg} ${stat.color} flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm`}>
-               <span className="material-symbols-outlined text-lg font-bold">{stat.icon}</span>
-            </div>
-          </div>
-        ))}
-      </div>
+      <StatCardGrid
+        items={[
+          { label: "Total Subjects", value: (data || []).length, icon: "menu_book", accent: "blue" },
+          { label: "Active Curriculum", value: (data || []).filter(s => s.status === 'active').length, icon: "check_circle", accent: "emerald" },
+          { label: "Core Credits", value: "128", icon: "stars", accent: "amber" },
+          { label: "Faculty Mapping", value: "94%", icon: "hub", accent: "purple" },
+        ]}
+      />
 
       {/* Toolbar Section - Unified & Sticky */}
       <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md sticky top-[72px] z-20 border-slate-200/60 shadow-sm rounded-xl">

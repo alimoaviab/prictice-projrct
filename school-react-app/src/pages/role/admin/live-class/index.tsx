@@ -4,6 +4,7 @@ import { SchoolShell } from "@/layouts/SchoolShell";
 import { LiveClassList } from "@/components/live-classes/LiveClassList";
 import { useNavigate } from "react-router-dom";
 import { Video, Calendar, Users, RefreshCw, PlusCircle, LayoutDashboard, Clock, Activity, Settings, UserCheck } from "lucide-react";
+import { StatCardGrid } from "@/components/ui";
 
 export function LiveClassPage() {
     const navigate = useNavigate();
@@ -77,60 +78,35 @@ export function LiveClassPage() {
                 </div>
 
                 {/* 2. LIVE SESSION DASHBOARD (Compact Metrics) */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm relative overflow-hidden group">
-                        <div className="absolute right-0 top-0 h-16 w-16 -mr-4 -mt-4 rounded-full bg-red-50 transition-transform group-hover:scale-150 duration-500"></div>
-                        <div className="relative z-10 flex items-start justify-between">
-                            <div>
-                                <h3 className="text-xs font-bold normal-case  text-slate-500">Active Live</h3>
-                                <div className="mt-2 flex items-baseline gap-2">
-                                    <p className="text-3xl font-bold text-slate-900">0</p>
-                                    <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-100 flex items-center">
-                                       <span className="w-1.5 h-1.5 rounded-full bg-red-500 mr-1.5 animate-pulse"></span>
-                                       Live
-                                    </span>
-                                </div>
-                            </div>
-                            <Video className="h-5 w-5 text-red-400" />
-                        </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm relative overflow-hidden group">
-                        <div className="absolute right-0 top-0 h-16 w-16 -mr-4 -mt-4 rounded-full bg-blue-50 transition-transform group-hover:scale-150 duration-500"></div>
-                        <div className="relative z-10 flex items-start justify-between">
-                            <div>
-                                <h3 className="text-xs font-bold normal-case  text-slate-500">Queued Today</h3>
-                                <p className="mt-2 text-3xl font-bold text-slate-900">-</p>
-                            </div>
-                            <Calendar className="h-5 w-5 text-blue-500" />
-                        </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm relative overflow-hidden group">
-                        <div className="absolute right-0 top-0 h-16 w-16 -mr-4 -mt-4 rounded-full bg-emerald-50 transition-transform group-hover:scale-150 duration-500"></div>
-                        <div className="relative z-10 flex items-start justify-between">
-                            <div>
-                                <h3 className="text-xs font-bold normal-case  text-slate-500">Teachers Ready</h3>
-                                <p className="mt-2 text-3xl font-bold text-slate-900">{teachersData.length || "-"}</p>
-                            </div>
-                            <Users className="h-5 w-5 text-emerald-500" />
-                        </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm relative overflow-hidden group">
-                        <div className="absolute right-0 top-0 h-16 w-16 -mr-4 -mt-4 rounded-full bg-amber-50 transition-transform group-hover:scale-150 duration-500"></div>
-                        <div className="relative z-10 flex items-start justify-between">
-                            <div>
-                                <h3 className="text-xs font-bold normal-case  text-slate-500">Avg Duration</h3>
-                                <div className="mt-2 flex items-baseline gap-1">
-                                    <p className="text-3xl font-bold text-slate-900">45</p>
-                                    <span className="text-sm font-semibold text-slate-500">min</span>
-                                </div>
-                            </div>
-                            <Clock className="h-5 w-5 text-amber-500" />
-                        </div>
-                    </div>
-                </div>
+                <StatCardGrid
+                  items={[
+                    {
+                      label: "Active Live",
+                      value: "0",
+                      icon: "videocam",
+                      accent: "rose",
+                      hint: "Live now",
+                    },
+                    {
+                      label: "Queued Today",
+                      value: "—",
+                      icon: "calendar_today",
+                      accent: "blue",
+                    },
+                    {
+                      label: "Teachers Ready",
+                      value: teachersData.length || "—",
+                      icon: "groups",
+                      accent: "emerald",
+                    },
+                    {
+                      label: "Avg Duration",
+                      value: "45 min",
+                      icon: "schedule",
+                      accent: "amber",
+                    },
+                  ]}
+                />
 
                 {/* 3. MAIN LAYOUT (Timeline Left, Tools Right) */}
                 <div className="grid gap-6 lg:grid-cols-[1fr_320px]">

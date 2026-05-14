@@ -1,7 +1,6 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
-import { DataTable, DataTableColumn, RowAction, Badge, DataState, Skeleton, TableSkeleton } from "@/components/ui";
+import { DataTable, DataTableColumn, RowAction, Badge, DataState, Skeleton, TableSkeleton, StatCardGrid } from "@/components/ui";
 import { useExams } from "../hooks/useExams";
 import { ExamRow } from "../types/exam.types";
 import { useQueryParams } from "@/hooks/useQueryParams";
@@ -9,6 +8,9 @@ import { useQueryParams } from "@/hooks/useQueryParams";
 export function ExamListPage({ filters }: { filters?: { class_id?: string; subject?: string } }) {
   const pathname = useLocation().pathname;
   const isParent = pathname.includes("/parent");
+  const isTeacher = pathname.includes("/teacher");
+  const marksBase = isTeacher ? "/teacher/exams/marks" : "/admin/exams/marks";
+  const examsCreatePath = isTeacher ? "/teacher/exams/create" : "/admin/exams/create";
   const { currentParams, updateQuery, withQuery } = useQueryParams();
   
   const today = new Date().toISOString().split('T')[0];
@@ -72,6 +74,19 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
     },
   ];
 
+  const rowActions: RowAction<ExamRow>[] = isParent
+    ? []
+    : [
+        {
+          icon: "edit_note",
+          label: "Enter Marks",
+          variant: "primary",
+          onClick: (row) => {
+            window.location.assign(`${marksBase}?exam_id=${encodeURIComponent(row._id)}`);
+          },
+        },
+      ];
+
   if (state.status === "loading" || state.status === "idle") {
     return <TableSkeleton />;
   }
@@ -83,26 +98,14 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
   return (
     <div className="space-y-6">
       {/* Stats Section */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "Total Exams", value: state.data?.length || 0, icon: "quiz", color: "text-blue-600", bg: "bg-blue-100" },
-          { label: "Upcoming", value: state.data?.filter(e => e.status === "scheduled").length || 0, icon: "event", color: "text-purple-600", bg: "bg-purple-100" },
-          { label: "Completed", value: state.data?.filter(e => e.status === "completed").length || 0, icon: "task_alt", color: "text-emerald-600", bg: "bg-emerald-100" },
-          { label: "Results Pending", value: state.data?.filter(e => e.status === "scheduled" && (e.results_count || 0) === 0).length || 0, icon: "pending", color: "text-amber-600", bg: "bg-amber-100" },
-        ].map((stat, i) => (
-          <div key={i} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow group">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500">{stat.label}</p>
-                <p className="mt-2 text-2xl font-bold text-slate-900 tracking-tight">{stat.value}</p>
-              </div>
-              <div className={`h-11 w-11 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center transition-transform group-hover:scale-110`}>
-                <span className="material-symbols-outlined text-xl">{stat.icon}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      <StatCardGrid
+        items={[
+          { label: "Total Exams", value: state.data?.length || 0, icon: "quiz", accent: "blue" },
+          { label: "Upcoming", value: state.data?.filter(e => e.status === "scheduled").length || 0, icon: "event", accent: "purple" },
+          { label: "Completed", value: state.data?.filter(e => e.status === "completed").length || 0, icon: "task_alt", accent: "emerald" },
+          { label: "Results Pending", value: state.data?.filter(e => e.status === "scheduled" && (e.results_count || 0) === 0).length || 0, icon: "pending", accent: "amber" },
+        ]}
+      />
 
       {/* Toolbar */}
       <div className="bg-white p-2 rounded-xl border border-slate-100 shadow-sm flex flex-wrap items-center justify-between gap-3">
@@ -133,6 +136,16 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
              <button onClick={() => setViewMode("grid")} className={`h-7 px-3 rounded-md text-[10px] font-black uppercase tracking-tight transition-all ${viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-400"}`}>Grid</button>
              <button onClick={() => setViewMode("list")} className={`h-7 px-3 rounded-md text-[10px] font-black uppercase tracking-tight transition-all ${viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-400"}`}>List</button>
            </div>
+
+           {!isParent && (
+             <Link
+               to={examsCreatePath}
+               className="h-9 inline-flex items-center gap-2 px-4 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm active:scale-95 transition-all"
+             >
+               <span className="material-symbols-outlined text-[16px]">add</span>
+               New Exam
+             </Link>
+           )}
         </div>
       </div>
 
@@ -142,7 +155,7 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredRows.map((exam) => (
-            <div key={exam._id} className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm hover:border-blue-200 transition-all">
+            <div key={exam._id} className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm hover:border-blue-200 transition-all flex flex-col">
                <div className="flex items-center justify-between mb-4">
                   <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
                      <span className="material-symbols-outlined text-[18px]">description</span>
@@ -153,7 +166,7 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
                </div>
                <h3 className="text-[13px] font-black text-slate-900 mb-0.5 truncate">{exam.title}</h3>
                <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-4">{exam.subject}</p>
-               
+
                <div className="flex items-center justify-between pt-3 border-t border-slate-50">
                   <div className="flex items-center gap-2">
                      <span className="material-symbols-outlined text-slate-300 text-[14px]">calendar_today</span>
@@ -161,12 +174,22 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
                   </div>
                   <div className="text-[10px] font-black text-slate-900">{exam.max_marks} Pts</div>
                </div>
+
+               {!isParent && (
+                 <Link
+                   to={`${marksBase}?exam_id=${encodeURIComponent(exam._id)}`}
+                   className="mt-3 inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 active:scale-95 transition-all"
+                 >
+                   <span className="material-symbols-outlined text-[14px]">edit_note</span>
+                   Enter Marks
+                 </Link>
+               )}
             </div>
           ))}
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
-           <DataTable columns={columns} rows={filteredRows} rowKey={(row) => row._id} />
+           <DataTable columns={columns} rows={filteredRows} rowKey={(row) => row._id} rowActions={rowActions} />
         </div>
       )}
     </div>

@@ -2,6 +2,7 @@ import { useCallback, useEffect } from "react";
 import { useSafeAsync } from "@/hooks/useSafeAsync";
 import { showToast } from "@/utils/toast";
 import { StudentFormInput, StudentRow, StudentPatchInput } from "../types/student.types";
+import { bindRefresh, publish } from "@/services/data-bus";
 import * as service from "../services/student.service";
 
 export function useStudents(filters?: { class_id?: string }) {
@@ -26,6 +27,7 @@ export function useStudents(filters?: { class_id?: string }) {
 			}
 			showToast("Student created.", "success");
 			await loadStudents();
+			publish("students");
 			return result;
 		},
 		[loadStudents]
@@ -40,6 +42,7 @@ export function useStudents(filters?: { class_id?: string }) {
 			}
 			showToast("Student updated.", "success");
 			await loadStudents();
+			publish("students");
 			return result;
 		},
 		[loadStudents]
@@ -54,6 +57,7 @@ export function useStudents(filters?: { class_id?: string }) {
 			}
 			showToast("Student deleted.", "success");
 			await loadStudents();
+			publish("students");
 			return result;
 		},
 		[loadStudents]
@@ -61,6 +65,7 @@ export function useStudents(filters?: { class_id?: string }) {
 
 	useEffect(() => {
 		void loadStudents().catch(() => {});
+		return bindRefresh("students", loadStudents);
 	}, [loadStudents]);
 
 	return { state, addStudent, updateStudent, deleteStudent };

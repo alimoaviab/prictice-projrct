@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { DataTable, DataTableColumn, RowAction, Badge, DataState, Skeleton, TableSkeleton } from "@/components/ui";
+import { DataTable, DataTableColumn, RowAction, Badge, DataState, Skeleton, TableSkeleton, StatCardGrid } from "@/components/ui";
 import { useAnnouncements } from "../hooks/useAnnouncements";
 import { AnnouncementRecordRow } from "../types/announcement.types";
 import { showToast } from "@/utils/toast";
@@ -139,24 +139,14 @@ export function AnnouncementListPage() {
   return (
     <div className="space-y-8 relative min-h-[80vh] pb-10">
       {/* Stats Section - Premium & Compact */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "Total Notices", value: stats.total, icon: "campaign", color: "text-blue-600", bg: "bg-blue-600/5" },
-          { label: "Live Now", value: stats.published, icon: "podcasts", color: "text-emerald-600", bg: "bg-emerald-600/5" },
-          { label: "Critical Alerts", value: stats.urgent, icon: "emergency_home", color: "text-red-600", bg: "bg-red-600/5" },
-          { label: "Reach Index", value: stats.reach, icon: "cell_tower", color: "text-purple-600", bg: "bg-purple-600/5" },
-        ].map((stat, i) => (
-          <div key={i} className="premium-card bg-white p-3.5 border-slate-200/60 shadow-sm flex items-center justify-between group hover:border-blue-200 transition-all cursor-default">
-            <div>
-              <p className="text-[10px] font-bold text-slate-400 normal-case  mb-1">{stat.label}</p>
-              <h3 className="text-xl font-bold text-slate-900 tracking-tighter leading-none">{stat.value}</h3>
-            </div>
-            <div className={`h-8 w-8 rounded-lg ${stat.bg} ${stat.color} flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm`}>
-               <span className="material-symbols-outlined text-lg font-bold">{stat.icon}</span>
-            </div>
-          </div>
-        ))}
-      </div>
+      <StatCardGrid
+        items={[
+          { label: "Total Notices", value: stats.total, icon: "campaign", accent: "blue" },
+          { label: "Live Now", value: stats.published, icon: "podcasts", accent: "emerald" },
+          { label: "Critical Alerts", value: stats.urgent, icon: "emergency_home", accent: "rose" },
+          { label: "Reach Index", value: stats.reach, icon: "cell_tower", accent: "purple" },
+        ]}
+      />
 
       {/* Toolbar Section - Unified & Sticky */}
       <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md sticky top-[72px] z-20 border-slate-200/60 shadow-sm rounded-xl">

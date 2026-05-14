@@ -2,6 +2,7 @@ import { useCallback, useEffect } from "react";
 import { useSafeAsync } from "@/hooks/useSafeAsync";
 import { showToast } from "@/utils/toast";
 import { TimetableFormInput, TimetableRecord } from "../types/timetable.types";
+import { bindRefresh, publish } from "@/services/data-bus";
 import * as service from "../services/timetable.service";
 
 export function useTimetable(filters?: { class_id?: string; teacher_id?: string; day_of_week?: number }) {
@@ -28,6 +29,7 @@ export function useTimetable(filters?: { class_id?: string; teacher_id?: string;
         }
         // Don't auto-show toast, let the caller handle it
         await loadTimetable();
+        publish("timetable");
         return result;
       } catch (error: any) {
         console.error("[useTimetable] Error creating timetable:", error);
@@ -46,6 +48,7 @@ export function useTimetable(filters?: { class_id?: string; teacher_id?: string;
         }
         showToast("Timetable entry updated", "success");
         await loadTimetable();
+        publish("timetable");
         return result;
       } catch (error: any) {
         console.error("[useTimetable] Error updating timetable:", error);
@@ -64,6 +67,7 @@ export function useTimetable(filters?: { class_id?: string; teacher_id?: string;
         }
         showToast("Timetable entry deleted", "success");
         await loadTimetable();
+        publish("timetable");
         return result;
       } catch (error: any) {
         console.error("[useTimetable] Error deleting timetable:", error);
@@ -75,6 +79,18 @@ export function useTimetable(filters?: { class_id?: string; teacher_id?: string;
 
   useEffect(() => {
     void loadTimetable().catch(() => { });
+    // Refresh the timetable when classes/teachers/subjects change so any
+    // selectors and conflict-check data stay in sync with new entities.
+    const offClasses = bindRefresh("classes", loadTimetable);
+    const offTeachers = bindRefresh("teachers", loadTimetable);
+    const offSubjects = bindRefresh("subjects", loadTimetable);
+    const offTimetable = bindRefresh("timetable", loadTimetable);
+    return () => {
+      offClasses();
+      offTeachers();
+      offSubjects();
+      offTimetable();
+    };
   }, [loadTimetable]);
 
   return { state, addTimetable, updateTimetable, deleteTimetable, refresh: loadTimetable };

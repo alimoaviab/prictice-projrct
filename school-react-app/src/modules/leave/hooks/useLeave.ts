@@ -2,6 +2,7 @@ import { useCallback, useEffect } from "react";
 import { useSafeAsync } from "@/hooks/useSafeAsync";
 import { showToast } from "@/utils/toast";
 import { LeaveFormInput, LeaveRecordRow } from "../types/leave.types";
+import { bindRefresh, publish } from "@/services/data-bus";
 import * as service from "../services/leave.service";
 
 export function useLeave() {
@@ -89,6 +90,7 @@ export function useLeave() {
 
   useEffect(() => {
     void loadLeave().catch(() => {});
+    return bindRefresh("leave", loadLeave);
   }, [loadLeave]);
 
   return { state, addLeave, updateLeave, deleteLeave, approveLeave, rejectLeave };

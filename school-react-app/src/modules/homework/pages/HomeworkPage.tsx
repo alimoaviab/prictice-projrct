@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Button, DataState, Skeleton, Badge } from "@/components/ui";
 import { showToast } from "@/utils/toast";
 import { useQueryParams } from "@/hooks/useQueryParams";
+import { bindRefresh } from "@/services/data-bus";
 
 interface HomeworkPageProps {
   role: "ADMIN" | "TEACHER" | "STUDENT" | "PARENT";
@@ -44,6 +45,7 @@ export function HomeworkPage({ role, studentId }: HomeworkPageProps) {
 
   useEffect(() => {
     fetchHomeworks();
+    return bindRefresh("homework", fetchHomeworks);
   }, [studentId]);
 
   const filteredHomeworks = useMemo(() => {

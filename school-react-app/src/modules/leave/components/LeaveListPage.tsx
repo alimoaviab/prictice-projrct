@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 import { useLeave } from "../hooks/useLeave";
 import { LeaveRecordRow } from "../types/leave.types";
 import { showToast } from "@/utils/toast";
-import { DataTable, DataTableColumn, RowAction, Badge, DataState, TableSkeleton, Skeleton } from "@/components/ui";
+import { DataTable, DataTableColumn, RowAction, Badge, DataState, TableSkeleton, Skeleton, StatCardGrid } from "@/components/ui";
 import { useQueryParams } from "@/hooks/useQueryParams";
 
 export default function LeaveListPage() {
@@ -146,26 +146,14 @@ export default function LeaveListPage() {
   return (
     <div className="space-y-6 relative min-h-[80vh] pb-10">
       {/* Stats Section */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "Total Requests", value: stats.total, icon: "event_available", color: "text-blue-600", bg: "bg-blue-100" },
-          { label: "Pending Review", value: stats.pending, icon: "hourglass_empty", color: "text-amber-600", bg: "bg-amber-100" },
-          { label: "Approved", value: stats.approved, icon: "verified", color: "text-emerald-600", bg: "bg-emerald-100" },
-          { label: "Sick Leave", value: stats.sickLeaves, icon: "medical_services", color: "text-red-600", bg: "bg-red-100" },
-        ].map((stat, i) => (
-          <div key={i} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow group">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500">{stat.label}</p>
-                <p className="mt-2 text-2xl font-bold text-slate-900 tracking-tight">{stat.value}</p>
-              </div>
-              <div className={`h-11 w-11 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center transition-transform group-hover:scale-110`}>
-                <span className="material-symbols-outlined text-xl">{stat.icon}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      <StatCardGrid
+        items={[
+          { label: "Total Requests", value: stats.total, icon: "event_available", accent: "blue" },
+          { label: "Pending Review", value: stats.pending, icon: "hourglass_empty", accent: "amber" },
+          { label: "Approved", value: stats.approved, icon: "verified", accent: "emerald" },
+          { label: "Sick Leave", value: stats.sickLeaves, icon: "medical_services", accent: "rose" },
+        ]}
+      />
 
       {/* Toolbar Section - Unified & Sticky */}
       <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md sticky top-[72px] z-20 border-slate-200/60 shadow-sm rounded-xl">

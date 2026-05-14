@@ -2,6 +2,7 @@ import { useCallback, useEffect } from "react";
 import { useSafeAsync } from "@/hooks/useSafeAsync";
 import { showToast } from "@/utils/toast";
 import { TeacherRow, TeacherFormInput } from "../types/teacher.types";
+import { bindRefresh, publish } from "@/services/data-bus";
 import * as service from "../services/teacher.service";
 
 export function useTeachers() {
@@ -26,6 +27,7 @@ export function useTeachers() {
             }
             showToast("Teacher created.", "success");
             await loadTeachers();
+            publish("teachers");
             return result;
         },
         [loadTeachers]
@@ -40,6 +42,7 @@ export function useTeachers() {
             }
             showToast("Teacher updated.", "success");
             await loadTeachers();
+            publish("teachers");
             return result;
         },
         [loadTeachers]
@@ -54,6 +57,7 @@ export function useTeachers() {
             }
             showToast("Teacher deleted.", "success");
             await loadTeachers();
+            publish("teachers");
             return result;
         },
         [loadTeachers]
@@ -63,6 +67,7 @@ export function useTeachers() {
         void loadTeachers().catch(() => {
             // Error state is already managed by useSafeAsync.
         });
+        return bindRefresh("teachers", loadTeachers);
     }, [loadTeachers]);
 
     return { state, addTeacher, updateTeacher, deleteTeacher, refresh: loadTeachers };

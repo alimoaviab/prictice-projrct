@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SchoolShell } from "@/layouts/SchoolShell";
-import { Badge, Skeleton, DataState } from "@/components/ui";
+import { Badge, Skeleton, DataState, StatCardGrid } from "@/components/ui";
 import { serviceRequest } from "@/services/service-client";
 import { showToast } from "@/utils/toast";
 
@@ -173,26 +173,14 @@ export function StudentFeeDashboard() {
             <div className="space-y-6 relative min-h-[80vh] pb-20 max-w-[1600px] mx-auto px-4">
                 
                 {/* Stats Section */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {[
-                        { label: "Collected", value: `Rs ${Number(data?.stats?.monthly_collection || 0).toLocaleString()}`, icon: "payments", color: "text-emerald-600", bg: "bg-emerald-100" },
-                        { label: "Pending", value: `Rs ${Number(data?.stats?.pending_amount || 0).toLocaleString()}`, icon: "schedule", color: "text-rose-600", bg: "bg-rose-100" },
-                        { label: "Paid Students", value: data?.stats?.paid_count || 0, icon: "task_alt", color: "text-blue-600", bg: "bg-blue-100" },
-                        { label: "Partial Paid", value: data?.stats?.partial_count || 0, icon: "pending_actions", color: "text-amber-600", bg: "bg-amber-100" }
-                    ].map((stat, i) => (
-                        <div key={i} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow group">
-                            <div className="flex items-start justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-slate-500">{stat.label}</p>
-                                    <p className={`mt-2 text-2xl font-bold tracking-tight ${stat.color}`}>{stat.value}</p>
-                                </div>
-                                <div className={`h-11 w-11 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center transition-transform group-hover:scale-110`}>
-                                    <span className="material-symbols-outlined text-xl">{stat.icon}</span>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                <StatCardGrid
+                  items={[
+                    { label: "Collected", value: `Rs ${Number(data?.stats?.monthly_collection || 0).toLocaleString()}`, icon: "payments", accent: "emerald" },
+                    { label: "Pending", value: `Rs ${Number(data?.stats?.pending_amount || 0).toLocaleString()}`, icon: "schedule", accent: "rose" },
+                    { label: "Paid Students", value: data?.stats?.paid_count || 0, icon: "task_alt", accent: "blue" },
+                    { label: "Partial Paid", value: data?.stats?.partial_count || 0, icon: "pending_actions", accent: "amber" },
+                  ]}
+                />
 
                 {/* FILTERS & SEARCH */}
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-slate-50/50 p-2 rounded-2xl border border-slate-100">

@@ -9,6 +9,7 @@ import {
   DataState,
   TableSkeleton,
   Skeleton,
+  StatCardGrid,
 } from "@/components/ui";
 import { useBehavior } from "../hooks/useBehavior";
 import { BehaviorRecordRow } from "../types/behavior.types";
@@ -166,26 +167,14 @@ export function BehaviorListPage({ filters }: { filters?: { student_id?: string;
   return (
     <div className="space-y-6 relative min-h-[80vh] pb-10">
       {/* Stats Section */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "Total Incidents", value: stats.total, icon: "gavel", color: "text-blue-600", bg: "bg-blue-100" },
-          { label: "Open Issues", value: stats.open, icon: "assignment_late", color: "text-amber-600", bg: "bg-amber-100" },
-          { label: "Critical", value: stats.critical, icon: "error", color: "text-red-600", bg: "bg-red-100" },
-          { label: "Resolved", value: stats.resolved, icon: "task_alt", color: "text-emerald-600", bg: "bg-emerald-100" },
-        ].map((stat, i) => (
-          <div key={i} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow group">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500">{stat.label}</p>
-                <p className="mt-2 text-2xl font-bold text-slate-900 tracking-tight">{stat.value}</p>
-              </div>
-              <div className={`h-11 w-11 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center transition-transform group-hover:scale-110`}>
-                <span className="material-symbols-outlined text-xl">{stat.icon}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      <StatCardGrid
+        items={[
+          { label: "Total Incidents", value: stats.total, icon: "gavel", accent: "blue" },
+          { label: "Open Issues", value: stats.open, icon: "assignment_late", accent: "amber" },
+          { label: "Critical", value: stats.critical, icon: "error", accent: "rose" },
+          { label: "Resolved", value: stats.resolved, icon: "task_alt", accent: "emerald" },
+        ]}
+      />
 
       {/* Toolbar Section - Unified & Sticky */}
       <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md sticky top-[72px] z-20 border-slate-200/60 shadow-sm rounded-xl">

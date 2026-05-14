@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { DataTable, DataTableColumn, RowAction, Badge, DataState, Skeleton, TableSkeleton, Select, Card } from "@/components/ui";
+import { DataTable, DataTableColumn, RowAction, Badge, DataState, Skeleton, TableSkeleton, Select, Card, StatCardGrid } from "@/components/ui";
 import { useSafeAsync } from "@/hooks/useSafeAsync";
 import { serviceRequest } from "@/services/service-client";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -159,26 +159,14 @@ export function AttendanceListPage({ filters: initialFilters }: { filters?: { cl
   return (
     <div className="space-y-6 relative min-h-[80vh] pb-10">
       {/* Stats Section */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "Total Strength", value: stats.total, icon: "groups", color: "text-blue-600", bg: "bg-blue-100" },
-          { label: "Present Today", value: stats.present, icon: "check_circle", color: "text-emerald-600", bg: "bg-emerald-100" },
-          { label: "Absent", value: stats.absent, icon: "cancel", color: "text-red-600", bg: "bg-red-100" },
-          { label: "Late Arrivals", value: stats.late, icon: "schedule", color: "text-amber-600", bg: "bg-amber-100" },
-        ].map((stat, i) => (
-          <div key={i} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow group">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500">{stat.label}</p>
-                <p className="mt-2 text-2xl font-bold text-slate-900 tracking-tight">{stat.value}</p>
-              </div>
-              <div className={`h-11 w-11 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center transition-transform group-hover:scale-110`}>
-                <span className="material-symbols-outlined text-xl">{stat.icon}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      <StatCardGrid
+        items={[
+          { label: "Total Strength", value: stats.total, icon: "groups", accent: "blue" },
+          { label: "Present Today", value: stats.present, icon: "check_circle", accent: "emerald" },
+          { label: "Absent", value: stats.absent, icon: "cancel", accent: "rose" },
+          { label: "Late Arrivals", value: stats.late, icon: "schedule", accent: "amber" },
+        ]}
+      />
 
       {/* Toolbar Section - Unified & Sticky */}
       <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md sticky top-[72px] z-20 border-slate-200/60 shadow-sm rounded-xl">

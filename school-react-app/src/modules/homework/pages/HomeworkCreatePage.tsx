@@ -1,10 +1,23 @@
-import React, { useEffect, useState, useCallback } from "react";
+/**
+ * Homework create page rebuilt on the Academic Year design system.
+ *
+ * Reuses the existing HomeworkForm component (which fetches its own
+ * subjects-by-class) and just provides the AY-style chrome around it.
+ */
+
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, Skeleton } from "@/components/ui";
+import {
+  Skeleton,
+  EntityCreateLayout,
+  GuidanceSection,
+  GuidanceCallout,
+  GuidanceChecklist,
+} from "@/components/ui";
 import { HomeworkForm } from "../components/HomeworkForm";
 import { showToast } from "@/utils/toast";
+import { bindRefresh, publish } from "@/services/data-bus";
 
 interface HomeworkCreatePageProps {
   role: "ADMIN" | "TEACHER";
@@ -15,10 +28,14 @@ export function HomeworkCreatePage({ role }: HomeworkCreatePageProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    classes: any[];
+    subjects: any[];
+    teachers: any[];
+  }>({
     classes: [],
     subjects: [],
-    teachers: []
+    teachers: [],
   });
 
   const fetchData = useCallback(async () => {
@@ -26,13 +43,17 @@ export function HomeworkCreatePage({ role }: HomeworkCreatePageProps) {
     try {
       const isTeacher = role === "TEACHER";
       const endpoints = [
-        fetch(isTeacher ? "/api/school/my-classes" : "/api/classes", { credentials: "include" }),
+        fetch(isTeacher ? "/api/school/my-classes" : "/api/classes", {
+          credentials: "include",
+        }),
         fetch("/api/school/subjects", { credentials: "include" }),
-        ...(role === "ADMIN" ? [fetch("/api/teachers", { credentials: "include" })] : [])
+        ...(role === "ADMIN"
+          ? [fetch("/api/teachers", { credentials: "include" })]
+          : []),
       ];
 
       const responses = await Promise.all(endpoints);
-      const jsonData = await Promise.all(responses.map(r => r.json()));
+      const jsonData = await Promise.all(responses.map((r) => r.json()));
 
       const extractArray = (res: any, key?: string) => {
         if (!res) return [];
@@ -44,9 +65,11 @@ export function HomeworkCreatePage({ role }: HomeworkCreatePageProps) {
       };
 
       setFormData({
-        classes: isTeacher ? extractArray(jsonData[0], "classes") : extractArray(jsonData[0]),
+        classes: isTeacher
+          ? extractArray(jsonData[0], "classes")
+          : extractArray(jsonData[0]),
         subjects: extractArray(jsonData[1]),
-        teachers: extractArray(jsonData[2])
+        teachers: extractArray(jsonData[2]),
       });
     } catch (error) {
       console.error(error);
@@ -58,6 +81,15 @@ export function HomeworkCreatePage({ role }: HomeworkCreatePageProps) {
 
   useEffect(() => {
     fetchData();
+    // Refresh dependencies when classes/teachers/subjects change anywhere.
+    const offC = bindRefresh("classes", fetchData);
+    const offT = bindRefresh("teachers", fetchData);
+    const offS = bindRefresh("subjects", fetchData);
+    return () => {
+      offC();
+      offT();
+      offS();
+    };
   }, [fetchData]);
 
   const handleSubmit = async (data: any) => {
@@ -73,8 +105,8 @@ export function HomeworkCreatePage({ role }: HomeworkCreatePageProps) {
       const result = await res.json();
       if (res.ok && result.success) {
         showToast("Homework assigned successfully", "success");
+        publish("homework");
         navigate(role === "ADMIN" ? "/admin/homework" : "/teacher/homework");
-
       } else {
         showToast(result.error?.message || "Failed to assign homework", "error");
       }
@@ -86,43 +118,62 @@ export function HomeworkCreatePage({ role }: HomeworkCreatePageProps) {
     }
   };
 
+  const backPath = role === "ADMIN" ? "/admin/homework" : "/teacher/homework";
+
   return (
-    <div className="max-w-full mx-auto space-y-6">
-      <Link
-        to={role === "ADMIN" ? "/admin/homework" : "/teacher/homework"}
-        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-indigo-600 transition-colors"
-      >
-        <span className="material-symbols-outlined text-lg">arrow_back</span>
-        Back to Homework List
-      </Link>
-
-      <Card className="p-8">
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-slate-900 normal-case tracking-tight">Assign New Homework</h2>
-          <p className="text-sm text-slate-500 mt-1 font-medium">Create a new assignment for your students.</p>
-        </div>
-
-        {loading ? (
-          <div className="space-y-6">
-            <Skeleton className="h-14 w-full rounded-2xl" />
-            <div className="grid grid-cols-2 gap-6">
-              <Skeleton className="h-14 w-full rounded-2xl" />
-              <Skeleton className="h-14 w-full rounded-2xl" />
-            </div>
-            <Skeleton className="h-48 w-full rounded-[2.5rem]" />
-          </div>
-        ) : (
-          <HomeworkForm
-            onSubmit={handleSubmit}
-            classes={formData.classes}
-            subjects={formData.subjects}
-            teachers={formData.teachers}
-            showTeacherField={role === "ADMIN"}
-            initialTeacherId={role === "TEACHER" ? user?.profileId : ""}
-            loading={submitting}
+    <EntityCreateLayout
+      backTo={backPath}
+      backLabel="Return to Homework"
+      eyebrow="Assignment Composer"
+      icon="assignment_add"
+      title="Assign New Homework"
+      subtitle="Create a new homework task and pin it to a class, subject, and due date."
+      asideTitle="Assignment Intelligence"
+      aside={
+        <>
+          <GuidanceSection title="How is it delivered?">
+            Once published, students in the selected class see the assignment in their portal and a
+            pending submission record is created automatically.
+          </GuidanceSection>
+          <GuidanceSection title="Due Time Rule">
+            <GuidanceCallout tone="blue">
+              Due dates are clamped to 23:59 on the chosen day, so submissions accept work through the
+              entire day.
+            </GuidanceCallout>
+          </GuidanceSection>
+          <GuidanceChecklist
+            items={[
+              { done: formData.classes.length > 0, label: "Classes available" },
+              { done: formData.subjects.length > 0, label: "Subjects available" },
+              {
+                done: role === "TEACHER" || formData.teachers.length > 0,
+                label: "Teacher assignable",
+              },
+            ]}
           />
-        )}
-      </Card>
-    </div>
+        </>
+      }
+    >
+      {loading ? (
+        <div className="space-y-6">
+          <Skeleton className="h-12 w-full rounded-2xl" />
+          <div className="grid grid-cols-2 gap-4">
+            <Skeleton className="h-12 w-full rounded-2xl" />
+            <Skeleton className="h-12 w-full rounded-2xl" />
+          </div>
+          <Skeleton className="h-40 w-full rounded-2xl" />
+        </div>
+      ) : (
+        <HomeworkForm
+          onSubmit={handleSubmit}
+          classes={formData.classes}
+          subjects={formData.subjects}
+          teachers={formData.teachers}
+          showTeacherField={role === "ADMIN"}
+          initialTeacherId={role === "TEACHER" ? user?.profileId : ""}
+          loading={submitting}
+        />
+      )}
+    </EntityCreateLayout>
   );
 }
