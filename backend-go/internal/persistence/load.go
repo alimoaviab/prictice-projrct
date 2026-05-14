@@ -410,7 +410,7 @@ func (p *Persister) loadAttendance(ctx context.Context, s *store.MemStore) error
 func (p *Persister) loadExams(ctx context.Context, s *store.MemStore) error {
 	rows, err := p.pool.Query(ctx, `
 		SELECT id, school_id, COALESCE(academic_year_id,''), class_id, COALESCE(teacher_id,''),
-			subject, title, starts_at, max_marks, status, description, created_at, updated_at
+			subject, title, type, starts_at, max_marks, status, description, created_at, updated_at
 		FROM exams`)
 	if err != nil {
 		return err
@@ -419,7 +419,7 @@ func (p *Persister) loadExams(ctx context.Context, s *store.MemStore) error {
 	for rows.Next() {
 		v := &store.Exam{}
 		if err := rows.Scan(&v.ID, &v.SchoolID, &v.AcademicYearID, &v.ClassID, &v.TeacherID,
-			&v.Subject, &v.Title, &v.StartsAt, &v.MaxMarks, &v.Status, &v.Description,
+			&v.Subject, &v.Title, &v.Type, &v.StartsAt, &v.MaxMarks, &v.Status, &v.Description,
 			&v.CreatedAt, &v.UpdatedAt); err != nil {
 			return err
 		}

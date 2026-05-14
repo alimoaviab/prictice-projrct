@@ -24,6 +24,14 @@ import {
   studentRoutes,
 } from "./generated-routes";
 
+// Tests Imports
+import { AdminTestsPage } from "@/pages/role/admin/tests";
+import { AdminTestCreatePage } from "@/pages/role/admin/tests/create";
+import { AdminTestMarksPage } from "@/pages/role/admin/tests/marks";
+import { TeacherTestsPage } from "@/pages/role/teacher/tests";
+import { TeacherTestCreatePage } from "@/pages/role/teacher/tests/create";
+import { TeacherTestMarksPage } from "@/pages/role/teacher/tests/marks";
+
 export const router = createBrowserRouter([
   {
     element: <App />,
@@ -48,6 +56,9 @@ export const router = createBrowserRouter([
         children: [
           { path: "/admin", element: <Navigate to="/admin/dashboard" replace /> },
           ...adminRoutes,
+          { path: "/admin/tests", element: <AdminTestsPage /> },
+          { path: "/admin/tests/create", element: <AdminTestCreatePage /> },
+          { path: "/admin/tests/marks", element: <AdminTestMarksPage /> },
         ],
       },
 
@@ -57,6 +68,9 @@ export const router = createBrowserRouter([
         children: [
           { path: "/teacher", element: <Navigate to="/teacher/dashboard" replace /> },
           ...teacherRoutes,
+          { path: "/teacher/tests", element: <TeacherTestsPage /> },
+          { path: "/teacher/tests/create", element: <TeacherTestCreatePage /> },
+          { path: "/teacher/tests/marks", element: <TeacherTestMarksPage /> },
         ],
       },
 

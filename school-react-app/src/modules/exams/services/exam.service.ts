@@ -2,10 +2,11 @@ import { serviceRequest } from "@/services/service-client";
 import { getSelectedAcademicYearId } from "@/services/academic-year-context";
 import { ExamFormInput, ExamRow } from "../types/exam.types";
 
-export function listExams(filters?: { class_id?: string; subject?: string }) {
+export function listExams(filters?: { class_id?: string; subject?: string; type?: string }) {
   const params = new URLSearchParams();
   const academicYearId = getSelectedAcademicYearId();
   if (academicYearId) params.append("academic_year_id", academicYearId);
+  params.append("type", filters?.type || "exam");
   
   if (filters?.class_id) params.append("class_id", filters.class_id);
   if (filters?.subject) params.append("subject", filters.subject);
@@ -17,7 +18,7 @@ export function listExams(filters?: { class_id?: string; subject?: string }) {
 export function createExam(input: ExamFormInput) {
   return serviceRequest<ExamRow>("/api/exams", {
     method: "POST",
-    body: JSON.stringify(input)
+    body: JSON.stringify({ ...input, type: "exam" })
   });
 }
 

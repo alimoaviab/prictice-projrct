@@ -16,15 +16,15 @@ import (
 )
 
 type Handler struct {
-	Store *store.MemStore
-	Save  func(table string, doc any)
+	Store   *store.MemStore
+	Persist func(table string, doc any)
 }
 
 func New(s *store.MemStore, save func(string, any)) *Handler {
 	if save == nil {
 		save = func(string, any) {}
 	}
-	return &Handler{Store: s, Save: save}
+	return &Handler{Store: s, Persist: save}
 }
 
 // List implements GET /api/teachers.
@@ -198,7 +198,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 				CreatedAt: now,
 				UpdatedAt: now,
 			})
-			h.Save("users", h.Store.Users[len(h.Store.Users)-1])
+			h.Persist("users", h.Store.Users[len(h.Store.Users)-1])
 		}
 
 		count := 0
@@ -250,7 +250,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		}
 		h.Store.Unlock()
 
-		h.Save("teachers", newTeacher)
+		h.Persist("teachers", newTeacher)
 		// Save classes that were updated with teacher_ids
 		if len(body.ClassIDs) > 0 {
 			classIDSet := map[string]bool{}
@@ -259,7 +259,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 			}
 			for _, c := range h.Store.Classes {
 				if c.SchoolID == ctx.SchoolID && classIDSet[c.ID] {
-					h.Save("classes", c)
+					h.Persist("classes", c)
 				}
 			}
 		}
@@ -314,7 +314,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 					_ = json.Unmarshal(v, &t.Status)
 				}
 				t.UpdatedAt = time.Now()
-				h.Save("teachers", t)
+				h.Persist("teachers", t)
 				audit.Write(h.Store, ctx, audit.Input{
 					Action: "update", EntityType: "teacher", EntityID: id,
 					Before: before, After: *t,
@@ -363,9 +363,9 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 				}
 				h.Store.Teachers = append(h.Store.Teachers[:i], h.Store.Teachers[i+1:]...)
 
-				h.Save("teachers:delete", before.ID)
+				h.Persist("teachers:delete", before.ID)
 				if before.UserID != "" {
-					h.Save("users:delete", before.UserID)
+					h.Persist("users:delete", before.UserID)
 				}
 				// Save classes that were updated (teacher removed)
 				for _, c := range h.Store.Classes {
@@ -378,7 +378,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 						if found {
-							h.Save("classes", c)
+							h.Persist("classes", c)
 						}
 					}
 				}

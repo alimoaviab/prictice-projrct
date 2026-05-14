@@ -338,18 +338,23 @@ func upsertAttendance(ctx context.Context, tx pgx.Tx, v *store.Attendance) error
 }
 
 func upsertExam(ctx context.Context, tx pgx.Tx, v *store.Exam) error {
+	examType := v.Type
+	if examType == "" {
+		examType = "exam"
+	}
 	_, err := tx.Exec(ctx, `
 		INSERT INTO exams (id, school_id, academic_year_id, class_id, teacher_id,
-			subject, title, starts_at, max_marks, status, description,
+			subject, title, type, starts_at, max_marks, status, description,
 			created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
 		ON CONFLICT (id) DO UPDATE SET
 			class_id=EXCLUDED.class_id, teacher_id=EXCLUDED.teacher_id,
-			subject=EXCLUDED.subject, title=EXCLUDED.title, starts_at=EXCLUDED.starts_at,
-			max_marks=EXCLUDED.max_marks, status=EXCLUDED.status,
-			description=EXCLUDED.description, updated_at=EXCLUDED.updated_at
+			subject=EXCLUDED.subject, title=EXCLUDED.title, type=EXCLUDED.type,
+			starts_at=EXCLUDED.starts_at, max_marks=EXCLUDED.max_marks,
+			status=EXCLUDED.status, description=EXCLUDED.description,
+			updated_at=EXCLUDED.updated_at
 	`, v.ID, v.SchoolID, nullableString(v.AcademicYearID), v.ClassID, nullableString(v.TeacherID),
-		v.Subject, v.Title, v.StartsAt, v.MaxMarks, v.Status, v.Description,
+		v.Subject, v.Title, examType, v.StartsAt, v.MaxMarks, v.Status, v.Description,
 		v.CreatedAt, v.UpdatedAt)
 	return err
 }

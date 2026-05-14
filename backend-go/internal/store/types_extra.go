@@ -32,6 +32,7 @@ type Exam struct {
 	TeacherID      string    `json:"teacher_id,omitempty"`
 	Subject        string    `json:"subject"`
 	Title          string    `json:"title"`
+	Type           string    `json:"type"` // exam | test
 	StartsAt       time.Time `json:"starts_at"`
 	MaxMarks       int       `json:"max_marks"`
 	Status         string    `json:"status"`

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { LiveClassCard } from "./LiveClassCard";
 import { Search, Filter, CalendarX2 } from "lucide-react";
 import { bindRefresh, publish } from "@/services/data-bus";
+import { serviceRequest } from "@/services/service-client";
 
 interface LiveClassListProps {
   role: "TEACHER" | "STUDENT" | "ADMIN";
@@ -32,11 +33,12 @@ export const LiveClassList: React.FC<LiveClassListProps> = ({ role }) => {
 
   const fetchClasses = useCallback(async () => {
     try {
-      const res = await fetch("/api/live/classes");
-      const json = await res.json();
-
-      if (json.success) {
-        setClasses(json.data);
+      const result = await serviceRequest<any[]>("/api/live/classes");
+      if (result.ok) {
+        // Handle both plain array and paginated { data: [] }
+        const data = result.data as any;
+        const array = Array.isArray(data) ? data : data?.data ?? [];
+        setClasses(array);
       }
     } catch (error) {
       console.error("Failed to fetch live classes", error);
@@ -62,9 +64,8 @@ export const LiveClassList: React.FC<LiveClassListProps> = ({ role }) => {
   const handleJoin = async (id: string, link: string) => {
     if (role === "STUDENT") {
       try {
-        await fetch("/api/live/attendance", {
+        await serviceRequest("/api/live/attendance", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ liveClassId: id, action: "join" })
         });
       } catch (error) {
@@ -76,12 +77,11 @@ export const LiveClassList: React.FC<LiveClassListProps> = ({ role }) => {
 
   const handleUpdateStatus = async (id: string, status: string) => {
     try {
-      const res = await fetch(`/api/live/classes/${id}`, {
+      const result = await serviceRequest(`/api/live/classes/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status })
+        body: JSON.stringify({ status: status.toLowerCase() }) // Backend uses lowercase
       });
-      if (res.ok) {
+      if (result.ok) {
         fetchClasses();
         publish("live-classes");
       }
@@ -103,7 +103,7 @@ export const LiveClassList: React.FC<LiveClassListProps> = ({ role }) => {
       const matchesStatus = statusFilter === "ALL" || cls.status === statusFilter;
 
       return matchesSearch && matchesStatus;
-    }).sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+    }).sort((a, b) => new Date(a.starts_at || a.startTime).getTime() - new Date(b.starts_at || b.startTime).getTime());
   }, [classes, searchQuery, statusFilter]);
 
 
@@ -180,12 +180,12 @@ export const LiveClassList: React.FC<LiveClassListProps> = ({ role }) => {
                   <LiveClassCard
                     id={cls._id}
                     title={cls.title}
-                    startTime={cls.startTime}
-                    endTime={cls.endTime}
-                    subjectName={cls.subjectId?.name || "Subject"}
-                    teacherName={getTeacherName(cls.teacherId)}
-                    status={cls.status}
-                    meetingLink={cls.meetingLink}
+                    startTime={cls.starts_at || cls.startTime}
+                    endTime={cls.ends_at || cls.endTime}
+                    subjectName={cls.subject || cls.subjectId?.name || "Subject"}
+                    teacherName={getTeacherName(cls.host_teacher_id || cls.teacherId)}
+                    status={cls.status?.toUpperCase() as any}
+                    meetingLink={cls.join_url || cls.meetingLink}
                     role={role}
                     onJoin={handleJoin}
                     onUpdateStatus={handleUpdateStatus}

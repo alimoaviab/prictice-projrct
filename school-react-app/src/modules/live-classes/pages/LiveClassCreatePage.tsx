@@ -18,6 +18,7 @@ import {
 } from "@/components/ui";
 import { LiveClassForm } from "../components/LiveClassForm";
 import { showToast } from "@/utils/toast";
+import { serviceRequest } from "@/services/service-client";
 import { bindRefresh, publish } from "@/services/data-bus";
 
 interface LiveClassCreatePageProps {
@@ -38,30 +39,21 @@ export function LiveClassCreatePage({ role }: LiveClassCreatePageProps) {
     try {
       const isTeacher = role === "TEACHER";
 
-      const endpoints = [
-        fetch(isTeacher ? "/api/school/my-classes" : "/api/classes"),
-        ...(role === "ADMIN" ? [fetch("/api/teachers")] : []),
-      ];
+      const [classesRes, teachersRes] = await Promise.all([
+        serviceRequest<any>(isTeacher ? "/api/school/my-classes" : "/api/classes"),
+        role === "ADMIN" ? serviceRequest<any>("/api/teachers") : Promise.resolve({ ok: true, data: [] }),
+      ]);
 
-      const responses = await Promise.all(endpoints);
-      const jsonData = await Promise.all(responses.map((r) => r.json()));
-
-      const classesRes = jsonData[0];
-      const teachersRes = jsonData[1];
-
-      const extractArray = (res: any, key?: string) => {
-        if (!res) return [];
-        if (Array.isArray(res)) return res;
-        if (Array.isArray(res.data)) return res.data;
-        if (key && Array.isArray(res.data?.[key])) return res.data[key];
-        if (key && Array.isArray(res[key])) return res[key];
+      const extractArray = (res: any) => {
+        if (!res?.ok) return [];
+        const data = res.data;
+        if (Array.isArray(data)) return data;
+        if (data && typeof data === "object" && Array.isArray(data.data)) return data.data;
         return [];
       };
 
       setFormData({
-        classes: isTeacher
-          ? extractArray(classesRes, "classes")
-          : extractArray(classesRes),
+        classes: extractArray(classesRes),
         teachers: extractArray(teachersRes),
       });
     } catch (error) {
@@ -85,28 +77,37 @@ export function LiveClassCreatePage({ role }: LiveClassCreatePageProps) {
   const handleSubmit = async (data: any) => {
     setSubmitting(true);
     try {
-      const res = await fetch("/api/live/classes", {
+      // Map frontend camelCase to backend snake_case
+      const payload = {
+        title: data.title,
+        class_id: data.classId,
+        subject: data.subjectId, // The form stores subject name/id in subjectId field
+        starts_at: data.startTime,
+        ends_at: data.endTime,
+        host_teacher_id: data.teacherId,
+      };
+
+      const result = await serviceRequest<any>("/api/live/classes/schedule", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
 
-      const result = await res.json();
-
-      if (res.ok && (result.success || result.data?.success)) {
-        const meetingLink = result.data?.meetingLink;
+      if (result.ok) {
+        const resData = result.data;
+        const meetingLink = resData?.join_url || resData?.meetingLink;
+        
         if (meetingLink) {
           showToast(`Live class scheduled. Meeting link: ${meetingLink}`, "success");
         } else {
           showToast("Live class scheduled successfully", "success");
         }
+        
         publish("live-classes");
         setTimeout(() => {
           navigate(role === "ADMIN" ? "/admin/live-class" : "/teacher/live-class");
         }, 1200);
       } else {
-        const errorMsg =
-          result.error || result.data?.error || "Failed to schedule class";
+        const errorMsg = result.message || "Failed to schedule class";
         showToast(errorMsg, "error");
       }
     } catch (err) {

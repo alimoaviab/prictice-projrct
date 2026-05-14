@@ -61,12 +61,15 @@ export function LiveClassForm({
 
       setLoadingSubjects(true);
       try {
-        const result = await serviceRequest<{ subjects?: any[] }>(`/api/school/subjects/class/${classId}`);
+        const result = await serviceRequest<any>(`/api/school/subjects/class/${classId}`);
         if (!result.ok) {
           throw new Error(result.error.message || "Failed to load class subjects");
         }
-
-        const apiSubjects = (result.data?.subjects ?? [])
+        
+        const data = result.data;
+        const subjectsArray = Array.isArray(data) ? data : (data as any)?.subjects ?? [];
+        
+        const apiSubjects = subjectsArray
           .map((subject: any) => ({
             label: subject.name || String(subject._id ?? subject.id),
             value: subject.id || subject._id || subject.name

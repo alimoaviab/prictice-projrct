@@ -16,9 +16,17 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-type Handler struct{ Store *store.MemStore }
+type Handler struct {
+	Store   *store.MemStore
+	Persist func(table string, doc any)
+}
 
-func New(s *store.MemStore) *Handler { return &Handler{Store: s} }
+func New(s *store.MemStore, save func(string, any)) *Handler {
+	if save == nil {
+		save = func(string, any) {}
+	}
+	return &Handler{Store: s, Persist: save}
+}
 
 func (h *Handler) hydrate(rows []*store.Exam) []map[string]any {
 	classByID := map[string]*store.Class{}
@@ -45,6 +53,7 @@ func (h *Handler) hydrate(rows []*store.Exam) []map[string]any {
 			"teacher_id":       e.TeacherID,
 			"subject":          e.Subject,
 			"title":            e.Title,
+			"type":             e.Type,
 			"starts_at":        api.FormatDate(e.StartsAt),
 			"max_marks":        e.MaxMarks,
 			"status":           e.Status,
@@ -69,10 +78,15 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		classID := q.Get("class_id")
 		statusQ := q.Get("status")
 
+		typeQ := q.Get("type")
+
 		h.Store.RLock()
 		rows := make([]*store.Exam, 0)
 		for _, e := range h.Store.Exams {
 			if e.SchoolID != ctx.SchoolID {
+				continue
+			}
+			if typeQ != "" && e.Type != typeQ {
 				continue
 			}
 			if yearID != "" && e.AcademicYearID != "" && e.AcademicYearID != yearID {
@@ -121,13 +135,15 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 type createInput struct {
-	ClassID     string `json:"class_id"`
-	Subject     string `json:"subject"`
-	Title       string `json:"title"`
-	StartsAt    string `json:"starts_at"`
-	MaxMarks    int    `json:"max_marks"`
-	Status      string `json:"status,omitempty"`
-	Description string `json:"description,omitempty"`
+	ClassID     string   `json:"class_id"`
+	Subject     string   `json:"subject"`
+	Subjects    []string `json:"subjects,omitempty"` // For multiple subjects in one go
+	Title       string   `json:"title"`
+	Type        string   `json:"type,omitempty"` // exam | test
+	StartsAt    string   `json:"starts_at"`
+	MaxMarks    int      `json:"max_marks"`
+	Status      string   `json:"status,omitempty"`
+	Description string   `json:"description,omitempty"`
 }
 
 // Create implements POST /api/exams.
@@ -142,9 +158,19 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		if err := auth.AssertPermission(ctx, "exams", auth.ActionCreate); err != nil {
 			return nil, err
 		}
-		if body.ClassID == "" || body.Subject == "" || body.Title == "" {
-			return nil, api.NewControlledError("VALIDATION_ERROR", "class_id, subject and title are required.", 400, nil)
+		if body.ClassID == "" || body.Title == "" {
+			return nil, api.NewControlledError("VALIDATION_ERROR", "class_id and title are required.", 400, nil)
 		}
+
+		// Support both single subject and multiple subjects
+		subjs := body.Subjects
+		if len(subjs) == 0 && body.Subject != "" {
+			subjs = []string{body.Subject}
+		}
+		if len(subjs) == 0 {
+			return nil, api.NewControlledError("VALIDATION_ERROR", "At least one subject is required.", 400, nil)
+		}
+
 		startsAt, ok := api.ParseDate(body.StartsAt)
 		if !ok {
 			return nil, api.NewControlledError("VALIDATION_ERROR", "Invalid starts_at date.", 400, nil)
@@ -152,39 +178,41 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
 		h.Store.Lock()
 		defer h.Store.Unlock()
-		var class *store.Class
-		for _, c := range h.Store.Classes {
-			if c.ID == body.ClassID && c.SchoolID == ctx.SchoolID {
-				class = c
-				break
-			}
-		}
-		if class == nil {
-			return nil, api.NewControlledError("NOT_FOUND", "Selected class was not found.", 404, nil)
-		}
 
 		now := time.Now()
-		newRow := &store.Exam{
-			ID:             store.NewID("exm"),
-			SchoolID:       ctx.SchoolID,
-			AcademicYearID: ctx.ActiveAcademicYearID,
-			ClassID:        body.ClassID,
-			TeacherID:      ifTeacherID(ctx),
-			Subject:        body.Subject,
-			Title:          body.Title,
-			StartsAt:       startsAt,
-			MaxMarks:       body.MaxMarks,
-			Status:         orDefault(body.Status, "scheduled"),
-			Description:    body.Description,
-			CreatedAt:      now,
-			UpdatedAt:      now,
-		}
-		h.Store.Exams = append(h.Store.Exams, newRow)
+		created := make([]*store.Exam, 0, len(subjs))
+		examType := orDefault(body.Type, "exam")
 
-		audit.Write(h.Store, ctx, audit.Input{
-			Action: "create", EntityType: "exam", EntityID: newRow.ID, After: newRow,
-		})
-		return h.hydrate([]*store.Exam{newRow})[0], nil
+		for _, s := range subjs {
+			newRow := &store.Exam{
+				ID:             store.NewID("exm"),
+				SchoolID:       ctx.SchoolID,
+				AcademicYearID: ctx.ActiveAcademicYearID,
+				ClassID:        body.ClassID,
+				TeacherID:      ifTeacherID(ctx),
+				Subject:        s,
+				Title:          body.Title,
+				Type:           examType,
+				StartsAt:       startsAt,
+				MaxMarks:       body.MaxMarks,
+				Status:         orDefault(body.Status, "scheduled"),
+				Description:    body.Description,
+				CreatedAt:      now,
+				UpdatedAt:      now,
+			}
+			h.Store.Exams = append(h.Store.Exams, newRow)
+			h.Persist("exams", newRow)
+			created = append(created, newRow)
+
+			audit.Write(h.Store, ctx, audit.Input{
+				Action: "create", EntityType: "exam", EntityID: newRow.ID, After: newRow,
+			})
+		}
+
+		if len(created) == 1 {
+			return h.hydrate(created)[0], nil
+		}
+		return h.hydrate(created), nil
 	}))
 }
 
@@ -231,6 +259,9 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 				if v, ok := body["class_id"]; ok {
 					_ = json.Unmarshal(v, &e.ClassID)
 				}
+				if v, ok := body["type"]; ok {
+					_ = json.Unmarshal(v, &e.Type)
+				}
 				if v, ok := body["starts_at"]; ok {
 					var s string
 					_ = json.Unmarshal(v, &s)
@@ -239,6 +270,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 				e.UpdatedAt = time.Now()
+				h.Persist("exams", e)
 				audit.Write(h.Store, ctx, audit.Input{
 					Action: "update", EntityType: "exam", EntityID: id, Before: before, After: *e,
 				})
@@ -263,6 +295,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 			if e.ID == id && e.SchoolID == ctx.SchoolID {
 				before := *e
 				h.Store.Exams = append(h.Store.Exams[:i], h.Store.Exams[i+1:]...)
+				h.Persist("exams:delete", id)
 				audit.Write(h.Store, ctx, audit.Input{
 					Action: "delete", EntityType: "exam", EntityID: id, Before: before,
 				})

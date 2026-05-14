@@ -1,4 +1,4 @@
-export interface ExamFormInput {
+export interface TestFormInput {
   academic_year_id: string;
   class_id: string;
   teacher_id?: string;
@@ -12,7 +12,7 @@ export interface ExamFormInput {
   description: string;
 }
 
-export interface ExamRow {
+export interface TestRow {
   _id: string;
   class_id: string;
   class_name: string;
@@ -26,7 +26,7 @@ export interface ExamRow {
   results_count?: number;
 }
 
-export interface ExamOption {
+export interface TestOption {
   id: string;
   label: string;
 }

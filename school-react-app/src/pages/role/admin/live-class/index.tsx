@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { SchoolShell } from "@/layouts/SchoolShell";
 import { LiveClassList } from "@/components/live-classes/LiveClassList";
 import { useNavigate } from "react-router-dom";
+import { serviceRequest } from "@/services/service-client";
 import { Video, Calendar, Users, RefreshCw, PlusCircle, LayoutDashboard, Clock, Activity, Settings, UserCheck } from "lucide-react";
 import { StatCardGrid } from "@/components/ui";
 
@@ -15,10 +16,10 @@ export function LiveClassPage() {
     useEffect(() => {
         const loadCounts = async () => {
             try {
-                const teachersRes = await fetch("/api/teachers");
-                if (teachersRes.ok) {
-                    const data = await teachersRes.json();
-                    setTeachersData(data.data || []);
+                const result = await serviceRequest<any>("/api/teachers");
+                if (result.ok) {
+                    const data = result.data as any;
+                    setTeachersData(data.data || data || []);
                 }
             } catch (error) {
                 console.error("Failed to load counts", error);

@@ -17,15 +17,15 @@ import (
 )
 
 type Handler struct {
-	Store *store.MemStore
-	Save  func(table string, doc any)
+	Store   *store.MemStore
+	Persist func(table string, doc any)
 }
 
 func New(s *store.MemStore, save func(string, any)) *Handler {
 	if save == nil {
 		save = func(string, any) {}
 	}
-	return &Handler{Store: s, Save: save}
+	return &Handler{Store: s, Persist: save}
 }
 
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
@@ -130,7 +130,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		h.Store.Lock()
 		h.Store.Subjects = append(h.Store.Subjects, s)
 		h.Store.Unlock()
-		h.Save("subjects", s)
+		h.Persist("subjects", s)
 		audit.Write(h.Store, ctx, audit.Input{Action: "create", EntityType: "subject", EntityID: s.ID, After: s})
 		return s, nil
 	}))
@@ -174,7 +174,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 				if v, ok := body["teacher_id"]; ok {
 					_ = json.Unmarshal(v, &s.TeacherID)
 				}
-				h.Save("subjects", s)
+				h.Persist("subjects", s)
 				audit.Write(h.Store, ctx, audit.Input{
 					Action: "update", EntityType: "subject", EntityID: id, Before: before, After: *s,
 				})
@@ -198,7 +198,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 			if s.ID == id && s.SchoolID == ctx.SchoolID {
 				before := *s
 				h.Store.Subjects = append(h.Store.Subjects[:i], h.Store.Subjects[i+1:]...)
-				h.Save("subjects:delete", before.ID)
+				h.Persist("subjects:delete", before.ID)
 				audit.Write(h.Store, ctx, audit.Input{
 					Action: "delete", EntityType: "subject", EntityID: id, Before: before,
 				})

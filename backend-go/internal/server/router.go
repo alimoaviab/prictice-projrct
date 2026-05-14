@@ -135,7 +135,7 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister) htt
 			r.Delete("/attendance/{id}", atH.Delete)
 			r.Post("/attendance/mark", atH.MarkBulk)
 
-			exH := exams.New(s)
+			exH := exams.New(s, saveFn)
 			r.Get("/exams", exH.List)
 			r.Post("/exams", exH.Create)
 			r.Get("/exams/{id}", exH.Get)
@@ -143,12 +143,22 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister) htt
 			r.Put("/exams/{id}", exH.Update)
 			r.Delete("/exams/{id}", exH.Delete)
 
-			rsH := results.New(s)
+			// Tests (Duplicates Exam logic with type=test)
+			r.Get("/tests", exH.List)
+			r.Post("/tests", exH.Create)
+			r.Get("/tests/{id}", exH.Get)
+			r.Patch("/tests/{id}", exH.Update)
+			r.Put("/tests/{id}", exH.Update)
+			r.Delete("/tests/{id}", exH.Delete)
+
+			rsH := results.New(s, saveFn)
 			r.Get("/results", rsH.List)
 			r.Post("/results", rsH.Save)
 			r.Get("/results/{id}", rsH.Get)
 			r.Get("/exams/{id}/results", rsH.ListForExam)
 			r.Post("/exams/{id}/results", rsH.Save)
+			r.Get("/tests/{id}/results", rsH.ListForExam)
+			r.Post("/tests/{id}/results", rsH.Save)
 
 			hwH := homework.New(s)
 			r.Get("/homework", hwH.List)

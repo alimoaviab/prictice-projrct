@@ -19,15 +19,15 @@ import (
 )
 
 type Handler struct {
-	Store *store.MemStore
-	Save  func(table string, doc any)
+	Store   *store.MemStore
+	Persist func(table string, doc any)
 }
 
 func New(s *store.MemStore, save func(string, any)) *Handler {
 	if save == nil {
 		save = func(string, any) {}
 	}
-	return &Handler{Store: s, Save: save}
+	return &Handler{Store: s, Persist: save}
 }
 
 // List implements GET /api/classes.
@@ -190,7 +190,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		h.Store.Lock()
 		h.Store.Classes = append(h.Store.Classes, newClass)
 		h.Store.Unlock()
-		h.Save("classes", newClass)
+		h.Persist("classes", newClass)
 
 		audit.Write(h.Store, ctx, audit.Input{
 			Action: "create", EntityType: "class", EntityID: newClass.ID, After: newClass,
@@ -260,7 +260,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 					_ = json.Unmarshal(v, &c.Status)
 				}
 				c.UpdatedAt = time.Now()
-				h.Save("classes", c)
+				h.Persist("classes", c)
 				audit.Write(h.Store, ctx, audit.Input{
 					Action: "update", EntityType: "class", EntityID: id,
 					Before: before, After: *c,
@@ -286,7 +286,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 			if c.ID == id && c.SchoolID == ctx.SchoolID {
 				before := *c
 				h.Store.Classes = append(h.Store.Classes[:i], h.Store.Classes[i+1:]...)
-				h.Save("classes:delete", before.ID)
+				h.Persist("classes:delete", before.ID)
 				audit.Write(h.Store, ctx, audit.Input{
 					Action: "delete", EntityType: "class", EntityID: id, Before: before,
 				})

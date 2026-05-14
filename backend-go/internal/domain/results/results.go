@@ -17,9 +17,17 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-type Handler struct{ Store *store.MemStore }
+type Handler struct {
+	Store   *store.MemStore
+	Persist func(table string, doc any)
+}
 
-func New(s *store.MemStore) *Handler { return &Handler{Store: s} }
+func New(s *store.MemStore, save func(string, any)) *Handler {
+	if save == nil {
+		save = func(string, any) {}
+	}
+	return &Handler{Store: s, Persist: save}
+}
 
 // calculateGrade matches the original `calculateGrade` thresholds.
 func calculateGrade(obtained, max float64) string {
@@ -233,8 +241,9 @@ func (h *Handler) Save(w http.ResponseWriter, r *http.Request) {
 				existing.Remarks = item.Remarks
 				existing.GradedAt = now
 				existing.UpdatedAt = now
+				h.Persist("results", existing)
 			} else {
-				h.Store.Results = append(h.Store.Results, &store.Result{
+				newRes := &store.Result{
 					ID:             store.NewID("res"),
 					SchoolID:       ctx.SchoolID,
 					AcademicYearID: exam.AcademicYearID,
@@ -246,7 +255,9 @@ func (h *Handler) Save(w http.ResponseWriter, r *http.Request) {
 					GradedAt:       now,
 					CreatedAt:      now,
 					UpdatedAt:      now,
-				})
+				}
+				h.Store.Results = append(h.Store.Results, newRes)
+				h.Persist("results", newRes)
 			}
 			saved++
 		}

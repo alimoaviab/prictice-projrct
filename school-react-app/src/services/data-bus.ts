@@ -29,6 +29,7 @@ export type DataBusChannel =
   | "academic-years"
   | "fees"
   | "live-classes"
+  | "tests"
   | "announcements";
 
 type Listener = () => void;

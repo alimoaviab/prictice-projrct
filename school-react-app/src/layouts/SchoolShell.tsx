@@ -53,6 +53,7 @@ const adminNavGroups: NavGroup[] = [
       { label: "Timetable", href: "/admin/timetable", icon: "schedule" },
       { label: "Attendance", href: "/admin/attendance", icon: "fact_check" },
       { label: "Exams", href: "/admin/exams", icon: "quiz" },
+      { label: "Tests", href: "/admin/tests", icon: "assignment_turned_in" },
       { label: "Results", href: "/admin/results", icon: "leaderboard" },
       { label: "Live Class", href: "/admin/live-class", icon: "videocam" },
       { label: "Home Work", href: "/admin/homework", icon: "assignment" },
@@ -103,6 +104,7 @@ const teacherNavGroups: NavGroup[] = [
     items: [
       { label: "Timetable", href: "/teacher/timetable", icon: "schedule" },
       { label: "Exams", href: "/teacher/exams", icon: "quiz" },
+      { label: "Tests", href: "/teacher/tests", icon: "assignment_turned_in" },
       { label: "Results", href: "/teacher/results", icon: "leaderboard" },
       { label: "Attendance", href: "/teacher/attendance", icon: "fact_check" },
       { label: "Live Class", href: "/teacher/live-class", icon: "videocam" },

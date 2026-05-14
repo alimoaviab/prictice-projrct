@@ -20,15 +20,15 @@ import (
 )
 
 type Handler struct {
-	Store *store.MemStore
-	Save  func(table string, doc any)
+	Store   *store.MemStore
+	Persist func(table string, doc any)
 }
 
 func New(s *store.MemStore, save func(string, any)) *Handler {
 	if save == nil {
 		save = func(string, any) {}
 	}
-	return &Handler{Store: s, Save: save}
+	return &Handler{Store: s, Persist: save}
 }
 
 // List implements GET /api/students with the same query params:
@@ -207,7 +207,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		h.Store.Students = append(h.Store.Students, newStudent)
 		h.Store.Unlock()
 
-		h.Save("students", newStudent)
+		h.Persist("students", newStudent)
 
 		audit.Write(h.Store, ctx, audit.Input{
 			Action:     "create",
@@ -290,7 +290,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		}
 		target.UpdatedAt = time.Now()
 
-		h.Save("students", target)
+		h.Persist("students", target)
 
 		audit.Write(h.Store, ctx, audit.Input{
 			Action: "update", EntityType: "student", EntityID: id,
@@ -315,7 +315,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 			if s.ID == id && s.SchoolID == ctx.SchoolID {
 				before := *s
 				h.Store.Students = append(h.Store.Students[:i], h.Store.Students[i+1:]...)
-				h.Save("students:delete", before.ID)
+				h.Persist("students:delete", before.ID)
 				audit.Write(h.Store, ctx, audit.Input{
 					Action: "delete", EntityType: "student", EntityID: id, Before: before,
 				})

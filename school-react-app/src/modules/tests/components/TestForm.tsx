@@ -3,27 +3,27 @@ import { Link } from "react-router-dom";
 import { Button, Input, Select } from "@/components/ui";
 import { ServiceResult } from "@/types/core";
 import { serviceRequest } from "@/services/service-client";
-import { ExamFormInput } from "../types/exam.types";
+import { TestFormInput } from "../types/test.types";
 
-export function ExamForm({
+export function TestForm({
   classes,
   onCreate,
   showFooter = true
 }: {
   classes: any[];
-  onCreate: (input: ExamFormInput) => Promise<ServiceResult<unknown>>;
+  onCreate: (input: TestFormInput) => Promise<ServiceResult<unknown>>;
   showFooter?: boolean;
 }) {
-    const [form, setForm] = useState<ExamFormInput>({
+    const [form, setForm] = useState<TestFormInput>({
         academic_year_id: typeof window !== "undefined" ? window.localStorage.getItem("academic_year_id") || "" : "",
         class_id: "",
         subject: "",
         subjects: [],
         teacher_id: "",
         title: "",
-        type: "exam",
+        type: "test",
         starts_at: "",
-        max_marks: 100,
+        max_marks: 10,
         status: "scheduled",
         description: ""
     });
@@ -33,7 +33,6 @@ export function ExamForm({
     const [loadingSubjects, setLoadingSubjects] = useState(false);
 
     const selectedClass = classes.find(c => c.id === form.class_id || c._id === form.class_id);
-    const classTeacher = selectedClass?.class_teacher;
 
     useEffect(() => {
         let cancelled = false;
@@ -95,7 +94,7 @@ export function ExamForm({
 
     function validate() {
         const newErrors: Record<string, string> = {};
-        if (!form.title.trim()) newErrors.title = "Exam title is required";
+        if (!form.title.trim()) newErrors.title = "Test title is required";
         if (!form.class_id.trim()) newErrors.class_id = "Class is required";
         if ((form.subjects || []).length === 0) newErrors.subject = "At least one subject is required";
         if (!form.starts_at) newErrors.starts_at = "Date is required";
@@ -119,9 +118,9 @@ export function ExamForm({
                     subjects: [],
                     teacher_id: "",
                     title: "",
-                    type: "exam",
+                    type: "test",
                     starts_at: "",
-                    max_marks: 100,
+                    max_marks: 10,
                     status: "scheduled",
                     description: ""
                 });
@@ -132,11 +131,11 @@ export function ExamForm({
     }
 
     return (
-        <form id="exam-form-quick" onSubmit={handleSubmit} className="space-y-8">
+        <form id="test-form-quick" onSubmit={handleSubmit} className="space-y-8">
             <div className="space-y-6">
                 {/* Row 1: Class and Subject Selection */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                    <div className="lg:col-span-6">
+                    <div className="lg:col-span-12">
                         <Select
                             label="Target Class"
                             value={form.class_id}
@@ -146,7 +145,7 @@ export function ExamForm({
                                 setForm({ 
                                     ...form, 
                                     class_id: classId, 
-                                    subject: "", // Reset subject on class change
+                                    subjects: [], // Reset subjects on class change
                                     teacher_id: cls?.class_teacher?.id || "" // Auto-assign class teacher
                                 });
                             }}
@@ -215,11 +214,11 @@ export function ExamForm({
                     </div>
                 </div>
 
-                {/* Row 2: Exam Title */}
+                {/* Row 2: Test Title */}
                 <div className="pt-1">
                     <Input
-                        label="Examination Title"
-                        placeholder="e.g., Mid-Term Mathematics Assessment"
+                        label="Test Title"
+                        placeholder="e.g., Weekly Class Test"
                         value={form.title}
                         onChange={(e) => setForm({ ...form, title: e.target.value })}
                         error={errors.title}
@@ -229,10 +228,10 @@ export function ExamForm({
                     />
                 </div>
 
-                {/* Row 3: Exam Date and Marks */}
+                {/* Row 3: Test Date and Marks */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <Input
-                        label="Examination Date"
+                        label="Test Date"
                         type="date"
                         value={form.starts_at}
                         onChange={(e) => setForm({ ...form, starts_at: e.target.value })}
@@ -243,11 +242,11 @@ export function ExamForm({
                     />
 
                     <Input
-                        label="Maximum Possible Marks"
+                        label="Maximum Marks"
                         type="number"
                         min="1"
                         value={form.max_marks}
-                        onChange={(e) => setForm({ ...form, max_marks: parseInt(e.target.value) || 100 })}
+                        onChange={(e) => setForm({ ...form, max_marks: parseInt(e.target.value) || 10 })}
                         leftIcon={<span className="material-symbols-outlined text-[16px]">score</span>}
                         className="bg-white border-slate-200 h-9.5 focus:border-slate-900 focus:ring-slate-900/5 transition-all text-sm"
                     />
@@ -257,7 +256,7 @@ export function ExamForm({
                 {/* Row 5: Description */}
                 <div className="pt-1">
                     <label className="block text-[11px] font-bold text-slate-700 normal-case mb-2">
-                        Exam Description & Instructions
+                        Test Description & Instructions
                     </label>
                     <textarea
                         placeholder="Add syllabus coverage or student instructions..."
@@ -273,7 +272,7 @@ export function ExamForm({
             {showFooter && (
                 <div className="-mx-6 -mb-6 mt-12 flex items-center justify-between border-t border-slate-100 bg-slate-50/40 px-8 py-4">
                     <Link
-                        to="/admin/exams"
+                        to="/admin/tests"
                         className="flex items-center gap-2 rounded-xl px-4 py-2 text-[10px] font-bold normal-case  text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-900"
                     >
                         Discard Changes
@@ -291,7 +290,7 @@ export function ExamForm({
                         ) : (
                             <>
                                 <span className="material-symbols-outlined text-[16px]">check_circle</span>
-                                Commit Exam Schedule
+                                Commit Test Schedule
                             </>
                         )}
                     </Button>

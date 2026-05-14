@@ -3,6 +3,7 @@ import { SchoolShell } from "@/layouts/SchoolShell";
 import { LiveClassList } from "@/components/live-classes/LiveClassList";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { serviceRequest } from "@/services/service-client";
 
 const stats = [
   { title: "My Live Classes", value: "-", detail: "Classes scheduled", icon: "video_camera_back", tone: "text-sky-700" },
@@ -26,9 +27,9 @@ export function TeacherLiveClassPage() {
 
     (async () => {
       try {
-        const res = await fetch("/api/auth/google/status", { credentials: "include" });
-        if (res.ok) {
-          const data = await res.json();
+        const result = await serviceRequest<any>("/api/auth/google/status");
+        if (result.ok) {
+          const data = result.data as any;
           setGoogleConnected(!!data?.isConnected);
         }
       } catch {
@@ -39,9 +40,9 @@ export function TeacherLiveClassPage() {
 
   const handleConnectGoogle = async () => {
     try {
-      const res = await fetch("/api/auth/google/calendar", { credentials: "include" });
-      if (res.ok) {
-        const data = await res.json();
+      const result = await serviceRequest<any>("/api/auth/google/calendar", { method: "POST" });
+      if (result.ok) {
+        const data = result.data as any;
         if (data?.authUrl) {
           window.location.href = data.authUrl;
           return;
