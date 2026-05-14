@@ -161,6 +161,26 @@ func EnsureBootstrapUsers(s *MemStore) {
 		superUser.PasswordHash = superPassword
 		superUser.Password = superPassword
 	} else {
+		// Super admins need a "system" school record to satisfy database FKs
+		hasSystemSchool := false
+		for _, sch := range s.Schools {
+			if sch.SchoolID == "system" {
+				hasSystemSchool = true
+				break
+			}
+		}
+		if !hasSystemSchool {
+			s.Schools = append(s.Schools, &School{
+				ID:        "sch_system",
+				SchoolID:  "system",
+				Name:      "System Administration",
+				Code:      "SYS",
+				Status:    "active",
+				CreatedAt: now,
+				UpdatedAt: now,
+			})
+		}
+
 		s.Users = append(s.Users, &User{
 			ID:           NewID("user"),
 			SchoolID:     "system",
@@ -264,6 +284,17 @@ func bootstrapAdmin(s *MemStore) {
 	if superPassword == "" {
 		superPassword = "Test@123"
 	}
+
+	// Super admins need a "system" school record to satisfy database FKs
+	s.Schools = append(s.Schools, &School{
+		ID:        "sch_system",
+		SchoolID:  "system",
+		Name:      "System Administration",
+		Code:      "SYS",
+		Status:    "active",
+		CreatedAt: now,
+		UpdatedAt: now,
+	})
 
 	s.Users = append(s.Users, &User{
 		ID:           NewID("user"),

@@ -19,6 +19,7 @@ package persistence
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -133,6 +134,9 @@ func (p *Persister) flush(ctx context.Context) error {
 			continue
 		}
 		if err := upsertRow(ctx, tx, w.table, w.doc); err != nil {
+			// Log the failing document for debugging
+			docJSON, _ := json.Marshal(w.doc)
+			log.Printf("[persistence] upsert %s failed: %v | data: %s", w.table, err, string(docJSON))
 			return fmt.Errorf("upsert %s: %w", w.table, err)
 		}
 	}
@@ -292,8 +296,15 @@ func (p *Persister) FullSnapshot(ctx context.Context, s *store.MemStore) error {
 	defer func() { _ = tx.Rollback(ctx) }()
 	for _, w := range plan {
 		if err := upsertRow(ctx, tx, w.table, w.doc); err != nil {
+			// Log the failing document for debugging
+			docJSON, _ := json.Marshal(w.doc)
+			log.Printf("[persistence] snapshot upsert %s failed: %v | data: %s", w.table, err, string(docJSON))
 			return fmt.Errorf("upsert %s: %w", w.table, err)
 		}
 	}
-	return tx.Commit(ctx)
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	log.Printf("[persistence] full snapshot successful (%d entities)", len(plan))
+	return nil
 }
