@@ -359,6 +359,19 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 			h.Store.RUnlock()
 		}
 
+		// Teacher scoping: resolve teacher profile for post-query filtering.
+		var teacherProfileID string
+		if ctx.Role == "teacher" {
+			h.Store.RLock()
+			for _, t := range h.Store.Teachers {
+				if t.SchoolID == ctx.SchoolID && t.UserID == ctx.UserID {
+					teacherProfileID = t.ID
+					break
+				}
+			}
+			h.Store.RUnlock()
+		}
+
 		cacheKey := h.listKey(ctx.SchoolID, yearID, classFilter)
 		if h.Cache != nil && h.Cache.Available() && !api.ParsePagination(q).Enabled {
 			if b, err := h.Cache.Get(r.Context(), cacheKey); err == nil && b != nil {
@@ -371,7 +384,19 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		}
 
 		hydrated := h.queryAndHydrate(ctx.SchoolID, yearID, classFilter)
-		if h.Cache != nil && h.Cache.Available() && !api.ParsePagination(q).Enabled {
+
+		// Teacher scoping: filter to only periods assigned to this teacher.
+		if teacherProfileID != "" {
+			filtered := make([]map[string]any, 0, len(hydrated))
+			for _, rec := range hydrated {
+				if tid, _ := rec["teacher_id"].(string); tid == teacherProfileID {
+					filtered = append(filtered, rec)
+				}
+			}
+			hydrated = filtered
+		}
+
+		if h.Cache != nil && h.Cache.Available() && !api.ParsePagination(q).Enabled && teacherProfileID == "" {
 			if b, err := json.Marshal(hydrated); err == nil {
 				_ = h.Cache.Set(r.Context(), cacheKey, b, listCacheTTL)
 			}

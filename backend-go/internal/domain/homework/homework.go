@@ -273,7 +273,6 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		dueAt = time.Date(dueAt.Year(), dueAt.Month(), dueAt.Day(), 23, 59, 0, 0, time.UTC)
 
 		h.Store.Lock()
-		defer h.Store.Unlock()
 		
 		var class *store.Class
 		for _, c := range h.Store.Classes {
@@ -283,12 +282,12 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if class == nil {
+			h.Store.Unlock()
 			return nil, api.NewControlledError("NOT_FOUND", "Selected class was not found.", 404, nil)
 		}
 
 		teacherID := body.TeacherID
 		if teacherID == "" && ctx.Role == "teacher" {
-			// Resolve teacher profile for current user
 			for _, t := range h.Store.Teachers {
 				if t.SchoolID == ctx.SchoolID && t.UserID == ctx.UserID {
 					teacherID = t.ID
@@ -312,10 +311,6 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 				}
 				h.Store.Subjects = append(h.Store.Subjects, newSub)
 				subject = newSub
-				// Persist the new subject to PG BEFORE the homework row
-				// references it — otherwise the FK constraint on
-				// homework.subject_id → subjects.id fails.
-				h.Persist("subjects", newSub)
 			}
 		}
 
@@ -327,7 +322,6 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		submissions := make([]store.HomeworkSubmission, 0)
 		for _, s := range h.Store.Students {
 			if s.SchoolID == ctx.SchoolID && s.ClassID == body.ClassID && s.Status == "active" {
-				// Optional section filter
 				if body.Section != "" && s.Section != body.Section {
 					continue
 				}
@@ -365,12 +359,27 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		}
 		h.Store.Homework = append(h.Store.Homework, newRow)
 
+		// Release the lock BEFORE persistence and audit — these are
+		// non-blocking queue operations but holding the global write lock
+		// while they run blocks ALL other HTTP handlers (reads included),
+		// causing the entire app to freeze.
+		h.Store.Unlock()
+
+		// Persist subject first (FK dependency), then homework.
+		if subject != nil && body.SubjectID != "" && subject.ID != body.SubjectID {
+			h.Persist("subjects", subject)
+		}
 		h.Persist("homework", newRow)
 
 		audit.Write(h.Store, ctx, audit.Input{
 			Action: "create", EntityType: "homework", EntityID: newRow.ID, After: newRow,
 		})
-		return h.hydrate([]*store.Homework{newRow})[0], nil
+
+		// Take a brief read lock for hydration (joining class/teacher/subject names).
+		h.Store.RLock()
+		result := h.hydrate([]*store.Homework{newRow})[0]
+		h.Store.RUnlock()
+		return result, nil
 	}))
 }
 

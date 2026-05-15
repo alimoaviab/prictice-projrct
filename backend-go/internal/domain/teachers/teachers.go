@@ -218,6 +218,10 @@ func (h *Handler) hydrateTeacher(pgRow *store.Teacher, mem *store.Teacher) map[s
 // Read path: PG when available, MemStore fallback otherwise. The MemStore
 // row is preferred when present because it carries the auxiliary
 // subject_ids/class_ids arrays.
+//
+// Special case: id == "session" or id == "me" resolves the teacher profile
+// for the currently authenticated user (by matching teacher.UserID == ctx.UserID).
+// This is used by the teacher portal when profile_id isn't available.
 func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	id := chi.URLParam(r, "id")
@@ -226,8 +230,30 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		// MemStore is authoritative for subject_ids/class_ids arrays which
-		// are not stored on the PG `teachers` row directly.
+		// Handle "session" / "me" — resolve teacher from authenticated user.
+		if id == "session" || id == "me" {
+			h.Store.RLock()
+			for _, t := range h.Store.Teachers {
+				if t.SchoolID == ctx.SchoolID && t.UserID == ctx.UserID {
+					h.Store.RUnlock()
+					return t, nil
+				}
+			}
+			h.Store.RUnlock()
+
+			// PG fallback.
+			if h.repo != nil {
+				if t, err := h.repo.GetByUserID(r.Context(), ctx.UserID, ctx.SchoolID); err == nil && t != nil {
+					return t, nil
+				}
+			}
+
+			return nil, api.NewControlledError("NOT_FOUND",
+				"No teacher profile is linked to your account. Please contact your school administrator.",
+				404, nil)
+		}
+
+		// Standard lookup by teacher ID.
 		h.Store.RLock()
 		for _, t := range h.Store.Teachers {
 			if t.ID == id && t.SchoolID == ctx.SchoolID {

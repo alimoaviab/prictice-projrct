@@ -164,7 +164,6 @@ func (h *Handler) autoGenerateForMonth(ctx *api.RequestContext, classFilter, mon
 	}
 
 	h.Store.Lock()
-	defer h.Store.Unlock()
 
 	// Find all classes to process (or just the filtered one).
 	classIDs := make([]string, 0)
@@ -185,7 +184,7 @@ func (h *Handler) autoGenerateForMonth(ctx *api.RequestContext, classFilter, mon
 	}
 
 	dueAt := time.Date(year, time.Month(mn), 10, 23, 59, 59, 0, time.UTC)
-	generated := 0
+	generated := make([]*store.Fee, 0)
 
 	for _, cid := range classIDs {
 		// Resolve active fee components for this class + month.
@@ -265,12 +264,20 @@ func (h *Handler) autoGenerateForMonth(ctx *api.RequestContext, classFilter, mon
 				UpdatedAt:        now,
 			}
 			h.Store.Fees = append(h.Store.Fees, fee)
-			h.Save("fees", fee)
-			generated++
+			generated = append(generated, fee)
 		}
 	}
 
-	if generated > 0 {
-		fmt.Printf("[fees] auto-generated %d invoices for %s %d\n", generated, month, year)
+	// Release the lock BEFORE persisting to PG — holding it during N
+	// Save calls blocks ALL other HTTP handlers and freezes the app.
+	h.Store.Unlock()
+
+	// Persist outside the lock.
+	for _, fee := range generated {
+		h.Save("fees", fee)
+	}
+
+	if len(generated) > 0 {
+		fmt.Printf("[fees] auto-generated %d invoices for %s %d\n", len(generated), month, year)
 	}
 }

@@ -180,3 +180,26 @@ func (r *TeacherRepo) invalidate(ctx context.Context, schoolID, yearID string) {
 	_, _ = r.cache.Del(ctx, fmt.Sprintf("dash:%s:%s", schoolID, yearID))
 	_, _ = r.cache.Del(ctx, fmt.Sprintf("composite:%s:%s", schoolID, yearID))
 }
+
+// GetByUserID resolves a teacher by their linked user account ID.
+// Used by the teacher portal when the frontend passes "session" as the
+// teacher ID (meaning: "find MY teacher profile from my auth session").
+func (r *TeacherRepo) GetByUserID(ctx context.Context, userID, schoolID string) (*store.Teacher, error) {
+	var t store.Teacher
+	err := r.pool.QueryRow(ctx, `
+		SELECT id, school_id, COALESCE(academic_year_id,''), COALESCE(user_id,''),
+			email, employee_no, first_name, last_name, phone,
+			COALESCE(qualification,''), status, joined_at, created_at, updated_at
+		FROM teachers
+		WHERE user_id = $1 AND school_id = $2
+		LIMIT 1
+	`, userID, schoolID).Scan(
+		&t.ID, &t.SchoolID, &t.AcademicYearID, &t.UserID,
+		&t.Email, &t.EmployeeNo, &t.FirstName, &t.LastName, &t.Phone,
+		&t.Qualification, &t.Status, &t.JoinedAt, &t.CreatedAt, &t.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &t, nil
+}
