@@ -120,7 +120,7 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Delete("/academic-years/{id}", ayH.Delete)
 			r.Post("/academic-years/switch", authH.SwitchAcademicYear)
 
-			stH := students.New(s, saveFn)
+			stH := students.NewPG(s, saveFn, pg.Pool(), rdb)
 			r.Get("/students", stH.List)
 			r.Post("/students", stH.Create)
 			r.Get("/students/{id}", stH.Get)
@@ -128,7 +128,7 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Put("/students/{id}", stH.Update)
 			r.Delete("/students/{id}", stH.Delete)
 
-			tcH := teachers.New(s, saveFn)
+			tcH := teachers.NewPG(s, saveFn, pg.Pool(), rdb)
 			r.Get("/teachers", tcH.List)
 			r.Post("/teachers", tcH.Create)
 			r.Get("/teachers/{id}", tcH.Get)

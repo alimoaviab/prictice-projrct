@@ -1,7 +1,19 @@
+// Package teachers implements /api/teachers endpoints.
+//
+// Performance architecture:
+//   - List/Get: when a PG pool is provided, queries are served from
+//     PostgreSQL with Redis caching (30 min TTL via *repo.TeacherRepo).
+//     Falls back to MemStore scans when PG is unavailable.
+//   - Create/Update/Delete: writes go to MemStore + persistence queue
+//     (preserving the existing User account + class.teacher_ids fan-out).
+//     Each mutation invalidates teachers list, dashboard, and composite
+//     caches so downstream views stay fresh.
 package teachers
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sort"
 	"strings"
@@ -10,14 +22,26 @@ import (
 	"github.com/eduplexo/backend-go/internal/api"
 	"github.com/eduplexo/backend-go/internal/audit"
 	"github.com/eduplexo/backend-go/internal/auth"
+	"github.com/eduplexo/backend-go/internal/cache"
 	"github.com/eduplexo/backend-go/internal/domain/tenant"
+	"github.com/eduplexo/backend-go/internal/repo"
 	"github.com/eduplexo/backend-go/internal/store"
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// Handler serves the /api/teachers/* routes.
+//
+// `Pool` and `Cache` are optional — when both are provided, List queries
+// are served from PostgreSQL with Redis caching. CUD operations always go
+// through MemStore + persistence queue and additionally invalidate the
+// composite/dashboard cache.
 type Handler struct {
 	Store   *store.MemStore
 	Persist func(table string, doc any)
+	Pool    *pgxpool.Pool
+	Cache   *cache.Client
+	repo    *repo.TeacherRepo
 }
 
 func New(s *store.MemStore, save func(string, any)) *Handler {
@@ -27,7 +51,38 @@ func New(s *store.MemStore, save func(string, any)) *Handler {
 	return &Handler{Store: s, Persist: save}
 }
 
+// NewPG creates a teacher handler with PostgreSQL + Redis read path.
+func NewPG(s *store.MemStore, save func(string, any), pool *pgxpool.Pool, c *cache.Client) *Handler {
+	h := New(s, save)
+	h.Pool = pool
+	h.Cache = c
+	if pool != nil {
+		h.repo = repo.NewTeacherRepo(pool, c)
+	}
+	return h
+}
+
+// invalidateCaches clears teacher list + dashboard + composite caches for
+// the given tenant. Called after every mutation.
+func (h *Handler) invalidateCaches(ctx context.Context, schoolID, yearID string) {
+	if h.Cache == nil || !h.Cache.Available() {
+		return
+	}
+	_, _ = h.Cache.DelPattern(ctx, fmt.Sprintf("teachers:%s:*", schoolID))
+	_, _ = h.Cache.Del(ctx,
+		fmt.Sprintf("composite:%s:%s", schoolID, yearID),
+		fmt.Sprintf("dash:%s:%s", schoolID, yearID),
+	)
+}
+
 // List implements GET /api/teachers.
+//
+// Read path: when PG is available and pagination is requested, the indexed
+// SQL query + Redis cache fast path is used. The raw teacher row is then
+// re-hydrated from the MemStore for the auxiliary `subject_ids`/`class_ids`
+// arrays that aren't on the PG row directly. Without pagination params, we
+// fall through to a MemStore scan to preserve the legacy flat-array
+// response.
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	if ctx == nil {
@@ -43,7 +98,40 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		yearID := tenant.ResolveAcademicYearID(h.Store, ctx, q.Get("academic_year_id"))
 		status := q.Get("status")
 		search := strings.TrimSpace(q.Get("search"))
+		pagination := api.ParsePagination(q)
 
+		// ─── PG fast path (paginated only) ─────────────────────────────
+		if h.repo != nil && pagination.Enabled {
+			items, total, err := h.repo.List(r.Context(), ctx.SchoolID, yearID, repo.ListOpts{
+				Page:    pagination.Page,
+				PerPage: pagination.Limit,
+				Status:  status,
+				Search:  search,
+			})
+			if err == nil {
+				// Build a quick lookup of MemStore teachers to enrich
+				// subject_ids/class_ids that aren't part of the PG row.
+				h.Store.RLock()
+				memByID := make(map[string]*store.Teacher, len(h.Store.Teachers))
+				for _, t := range h.Store.Teachers {
+					if t.SchoolID == ctx.SchoolID {
+						memByID[t.ID] = t
+					}
+				}
+				h.Store.RUnlock()
+
+				hydrated := make([]map[string]any, 0, len(items))
+				for i := range items {
+					t := items[i]
+					mem := memByID[t.ID]
+					hydrated = append(hydrated, h.hydrateTeacher(&t, mem))
+				}
+				return api.BuildPaginated(hydrated, total, pagination), nil
+			}
+			// PG failure — fall through to MemStore scan
+		}
+
+		// ─── MemStore fallback ─────────────────────────────────────────
 		h.Store.RLock()
 		rows := make([]*store.Teacher, 0)
 		for _, t := range h.Store.Teachers {
@@ -70,46 +158,66 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 			return rows[i].FirstName < rows[j].FirstName
 		})
 
-		// Return hydrated objects to ensure frontend doesn't crash on null fields.
-		// We do NOT modify the pointers in the store directly here to avoid races.
 		hydrated := make([]map[string]any, 0, len(rows))
 		for _, t := range rows {
-			hydrated = append(hydrated, map[string]any{
-				"_id":             t.ID,
-				"employee_no":     t.EmployeeNo,
-				"first_name":      t.FirstName,
-				"last_name":       t.LastName,
-				"email":           t.Email,
-				"phone":           t.Phone,
-				"qualification":   t.Qualification,
-				"subjects":        orEmpty(t.Subjects),
-				"subject_ids":     orEmpty(t.SubjectIDs),
-				"class_ids":       orEmpty(t.ClassIDs),
-				"status":          t.Status,
-				"joined_at":       t.JoinedAt,
-				"academic_year_id": t.AcademicYearID,
-				"user_id":          t.UserID,
-			})
+			hydrated = append(hydrated, h.hydrateTeacher(t, t))
 		}
 
-		page := api.ParsePagination(q)
-		if !page.Enabled {
+		if !pagination.Enabled {
 			return hydrated, nil
 		}
 		total := len(hydrated)
-		start := page.Skip
-		end := start + page.Limit
+		start := pagination.Skip
+		end := start + pagination.Limit
 		if start > total {
 			start = total
 		}
 		if end > total {
 			end = total
 		}
-		return api.BuildPaginated(hydrated[start:end], total, page), nil
+		return api.BuildPaginated(hydrated[start:end], total, pagination), nil
 	}))
 }
 
+// hydrateTeacher returns the response shape the frontend expects. `pgRow`
+// is the canonical record (from PG or MemStore); `mem` is the optional
+// MemStore enrichment for fields that PG doesn't carry (subjects/classes).
+func (h *Handler) hydrateTeacher(pgRow *store.Teacher, mem *store.Teacher) map[string]any {
+	out := map[string]any{
+		"_id":              pgRow.ID,
+		"employee_no":      pgRow.EmployeeNo,
+		"first_name":       pgRow.FirstName,
+		"last_name":        pgRow.LastName,
+		"email":            pgRow.Email,
+		"phone":            pgRow.Phone,
+		"qualification":    pgRow.Qualification,
+		"status":           pgRow.Status,
+		"joined_at":        pgRow.JoinedAt,
+		"academic_year_id": pgRow.AcademicYearID,
+		"user_id":          pgRow.UserID,
+		"subjects":         orEmpty(pgRow.Subjects),
+		"subject_ids":      orEmpty(pgRow.SubjectIDs),
+		"class_ids":        orEmpty(pgRow.ClassIDs),
+	}
+	if mem != nil {
+		out["subjects"] = orEmpty(mem.Subjects)
+		out["subject_ids"] = orEmpty(mem.SubjectIDs)
+		out["class_ids"] = orEmpty(mem.ClassIDs)
+		if mem.UserID != "" {
+			out["user_id"] = mem.UserID
+		}
+		if !mem.JoinedAt.IsZero() {
+			out["joined_at"] = mem.JoinedAt
+		}
+	}
+	return out
+}
+
 // Get implements GET /api/teachers/:id.
+//
+// Read path: PG when available, MemStore fallback otherwise. The MemStore
+// row is preferred when present because it carries the auxiliary
+// subject_ids/class_ids arrays.
 func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	id := chi.URLParam(r, "id")
@@ -117,13 +225,25 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		if err := auth.AssertPermission(ctx, "teachers", auth.ActionView); err != nil {
 			return nil, err
 		}
+
+		// MemStore is authoritative for subject_ids/class_ids arrays which
+		// are not stored on the PG `teachers` row directly.
 		h.Store.RLock()
-		defer h.Store.RUnlock()
 		for _, t := range h.Store.Teachers {
 			if t.ID == id && t.SchoolID == ctx.SchoolID {
+				h.Store.RUnlock()
 				return t, nil
 			}
 		}
+		h.Store.RUnlock()
+
+		// PG fallback when not in MemStore (e.g. lazy-loaded tenant).
+		if h.repo != nil {
+			if t, err := h.repo.GetByID(r.Context(), id, ctx.SchoolID); err == nil && t != nil {
+				return t, nil
+			}
+		}
+
 		return nil, api.NewControlledError("NOT_FOUND", "Teacher not found.", 404, nil)
 	}))
 }
@@ -267,6 +387,11 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		audit.Write(h.Store, ctx, audit.Input{
 			Action: "create", EntityType: "teacher", EntityID: newTeacher.ID, After: newTeacher,
 		})
+
+		// Invalidate teachers list + dashboard caches so the new row shows
+		// immediately on the next list/dashboard fetch.
+		h.invalidateCaches(r.Context(), ctx.SchoolID, yearID)
+
 		return newTeacher, nil
 	}))
 }
@@ -315,11 +440,21 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 				}
 				t.UpdatedAt = time.Now()
 				h.Persist("teachers", t)
+
+				// Capture identifying fields then invalidate outside the
+				// store lock — DelPattern uses a network call.
+				schoolID := t.SchoolID
+				yearID := t.AcademicYearID
+				snapshot := t
+
 				audit.Write(h.Store, ctx, audit.Input{
 					Action: "update", EntityType: "teacher", EntityID: id,
 					Before: before, After: *t,
 				})
-				return t, nil
+
+				go h.invalidateCaches(context.Background(), schoolID, yearID)
+
+				return snapshot, nil
 			}
 		}
 		return nil, api.NewControlledError("NOT_FOUND", "Teacher not found.", 404, nil)
@@ -385,6 +520,9 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 				audit.Write(h.Store, ctx, audit.Input{
 					Action: "delete", EntityType: "teacher", EntityID: id, Before: before,
 				})
+
+				go h.invalidateCaches(context.Background(), ctx.SchoolID, before.AcademicYearID)
+
 				return map[string]any{"success": true, "id": id}, nil
 			}
 		}

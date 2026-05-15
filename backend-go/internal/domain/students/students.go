@@ -2,10 +2,21 @@
 // old-app/shared/services/student.service.ts: list (with pagination, search,
 // class+status filters), get, create, update, delete. Same projection
 // fields, same admission-number generator, same audit-log writes.
+//
+// Performance architecture:
+//   - List/Get: when a PG pool is provided, queries are served from
+//     PostgreSQL with Redis caching (10 min TTL). Falls back to MemStore
+//     scans when PG is unavailable.
+//   - Create/Update/Delete: writes go to MemStore immediately and are
+//     persisted to PG via the background snapshot queue. Each mutation
+//     invalidates dashboard + composite + paginated list caches so
+//     downstream views stay fresh.
 package students
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sort"
 	"strings"
@@ -14,16 +25,30 @@ import (
 	"github.com/eduplexo/backend-go/internal/api"
 	"github.com/eduplexo/backend-go/internal/audit"
 	"github.com/eduplexo/backend-go/internal/auth"
+	"github.com/eduplexo/backend-go/internal/cache"
 	"github.com/eduplexo/backend-go/internal/domain/tenant"
+	"github.com/eduplexo/backend-go/internal/repo"
 	"github.com/eduplexo/backend-go/internal/store"
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// Handler serves the /api/students/* routes.
+//
+// `Pool` and `Cache` are optional. When `Pool` is non-nil, List/Get prefer
+// indexed PostgreSQL queries (via the embedded *repo.StudentRepo) with
+// Redis-backed result caching. When `Pool` is nil, the handler falls back
+// to the MemStore — useful for tests and the in-memory dev mode.
 type Handler struct {
 	Store   *store.MemStore
 	Persist func(table string, doc any)
+	Pool    *pgxpool.Pool
+	Cache   *cache.Client
+	repo    *repo.StudentRepo
 }
 
+// New creates a MemStore-backed handler. Use NewPG for production where
+// PostgreSQL + Redis caching should be the primary read path.
 func New(s *store.MemStore, save func(string, any)) *Handler {
 	if save == nil {
 		save = func(string, any) {}
@@ -31,15 +56,46 @@ func New(s *store.MemStore, save func(string, any)) *Handler {
 	return &Handler{Store: s, Persist: save}
 }
 
+// NewPG creates a handler that prefers PostgreSQL + Redis for reads and
+// falls back to the MemStore when the pool is unavailable. Mutations always
+// go through the MemStore + persistence queue so the existing snapshot
+// mechanism continues to work.
+func NewPG(s *store.MemStore, save func(string, any), pool *pgxpool.Pool, c *cache.Client) *Handler {
+	h := New(s, save)
+	h.Pool = pool
+	h.Cache = c
+	if pool != nil {
+		h.repo = repo.NewStudentRepo(pool, c)
+	}
+	return h
+}
+
+// invalidateDashboardCaches clears the composite/dashboard Redis keys for
+// the given tenant. Called after every mutation so the next dashboard hit
+// reflects the latest counts.
+func (h *Handler) invalidateDashboardCaches(ctx context.Context, schoolID, yearID string) {
+	if h.Cache == nil || !h.Cache.Available() {
+		return
+	}
+	_, _ = h.Cache.Del(ctx,
+		fmt.Sprintf("composite:%s:%s", schoolID, yearID),
+		fmt.Sprintf("dash:%s:%s", schoolID, yearID),
+	)
+}
+
 // List implements GET /api/students with the same query params:
 // `class_id`, `status`, `academic_year_id`, `search`, `page`, `per_page`.
 //
-// Pagination: When `page` or `per_page` (or legacy `limit`) is provided,
-// returns a paginated response:
-//   {"data": [...], "meta": {"page": 1, "per_page": 25, "total": 487, "pages": 20}}
+// Read path:
+//   - When PG is available, a single indexed SQL query returns the page
+//     directly. Result is cached in Redis (10 min TTL) keyed by the full
+//     filter set, so repeated visits are O(1).
+//   - On cache miss + PG error, falls back to a MemStore scan so the
+//     endpoint never breaks.
 //
-// Without pagination params, returns the legacy flat array for backward
-// compatibility with existing frontend code.
+// Pagination: When `page` or `per_page` (or legacy `limit`) is provided,
+// returns a paginated envelope. Without pagination params, returns the
+// legacy flat array for backward compatibility.
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	q := r.URL.Query()
@@ -53,7 +109,31 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		classID := q.Get("class_id")
 		status := q.Get("status")
 		search := strings.TrimSpace(q.Get("search"))
+		pagination := api.ParsePagination(q)
 
+		// ─── PG fast path ──────────────────────────────────────────────
+		if h.repo != nil && pagination.Enabled {
+			items, total, err := h.repo.List(r.Context(), ctx.SchoolID, yearID, repo.ListOpts{
+				Page:    pagination.Page,
+				PerPage: pagination.Limit,
+				Status:  status,
+				ClassID: classID,
+				Search:  search,
+			})
+			if err == nil {
+				// repo returns []store.Student; convert to []*store.Student to
+				// match existing response shape.
+				ptrs := make([]*store.Student, len(items))
+				for i := range items {
+					s := items[i]
+					ptrs[i] = &s
+				}
+				return api.BuildPaginated(ptrs, total, pagination), nil
+			}
+			// PG failure — fall through to MemStore so the endpoint stays up.
+		}
+
+		// ─── MemStore fallback ─────────────────────────────────────────
 		h.Store.RLock()
 		rows := make([]*store.Student, 0)
 		for _, s := range h.Store.Students {
@@ -83,24 +163,26 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 			return rows[i].FirstName < rows[j].FirstName
 		})
 
-		page := api.ParsePagination(q)
-		if !page.Enabled {
+		if !pagination.Enabled {
 			return rows, nil
 		}
 		total := len(rows)
-		start := page.Skip
-		end := start + page.Limit
+		start := pagination.Skip
+		end := start + pagination.Limit
 		if start > total {
 			start = total
 		}
 		if end > total {
 			end = total
 		}
-		return api.BuildPaginated(rows[start:end], total, page), nil
+		return api.BuildPaginated(rows[start:end], total, pagination), nil
 	}))
 }
 
 // Get implements GET /api/students/:id.
+//
+// Read path: PG + Redis (per-student key, 10 min TTL) when available,
+// MemStore fallback otherwise.
 func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	id := chi.URLParam(r, "id")
@@ -109,6 +191,18 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		if err := auth.AssertPermission(ctx, "students", auth.ActionView); err != nil {
 			return nil, err
 		}
+
+		// PG fast path
+		if h.repo != nil {
+			if found, err := h.repo.GetByID(r.Context(), id, ctx.SchoolID); err == nil {
+				if found == nil {
+					return nil, api.NewControlledError("NOT_FOUND", "Student not found.", 404, nil)
+				}
+				return found, nil
+			}
+			// fall through to MemStore on error
+		}
+
 		h.Store.RLock()
 		defer h.Store.RUnlock()
 		for _, s := range h.Store.Students {
@@ -215,6 +309,13 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
 		h.Persist("students", newStudent)
 
+		// Invalidate paginated list + dashboard caches so the new row shows
+		// immediately on the next list/dashboard fetch.
+		if h.Cache != nil && h.Cache.Available() {
+			_, _ = h.Cache.DelPattern(r.Context(), fmt.Sprintf("students:%s:%s:*", ctx.SchoolID, yearID))
+		}
+		h.invalidateDashboardCaches(r.Context(), ctx.SchoolID, yearID)
+
 		audit.Write(h.Store, ctx, audit.Input{
 			Action:     "create",
 			EntityType: "student",
@@ -298,6 +399,16 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 
 		h.Persist("students", target)
 
+		// Invalidate caches outside the store lock — these are network calls.
+		schoolID := target.SchoolID
+		yearID := target.AcademicYearID
+		studentID := target.ID
+		if h.Cache != nil && h.Cache.Available() {
+			_, _ = h.Cache.DelPattern(r.Context(), fmt.Sprintf("students:%s:%s:*", schoolID, yearID))
+			_, _ = h.Cache.Del(r.Context(), fmt.Sprintf("student:%s:%s", schoolID, studentID))
+		}
+		h.invalidateDashboardCaches(r.Context(), schoolID, yearID)
+
 		audit.Write(h.Store, ctx, audit.Input{
 			Action: "update", EntityType: "student", EntityID: id,
 			Before: before, After: *target,
@@ -322,6 +433,13 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 				before := *s
 				h.Store.Students = append(h.Store.Students[:i], h.Store.Students[i+1:]...)
 				h.Persist("students:delete", before.ID)
+
+				if h.Cache != nil && h.Cache.Available() {
+					_, _ = h.Cache.DelPattern(r.Context(), fmt.Sprintf("students:%s:%s:*", ctx.SchoolID, before.AcademicYearID))
+					_, _ = h.Cache.Del(r.Context(), fmt.Sprintf("student:%s:%s", ctx.SchoolID, before.ID))
+				}
+				h.invalidateDashboardCaches(r.Context(), ctx.SchoolID, before.AcademicYearID)
+
 				audit.Write(h.Store, ctx, audit.Input{
 					Action: "delete", EntityType: "student", EntityID: id, Before: before,
 				})
