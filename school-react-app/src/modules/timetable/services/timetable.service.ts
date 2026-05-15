@@ -74,6 +74,38 @@ export function createTimetable(
   });
 }
 
+/**
+ * Bulk create — attach the same period to multiple weekdays in a single
+ * round trip using the backend's sessions[] shape. Used by the "Everyday
+ * (Mon–Fri)" toggle in the form. The response is either a single record
+ * or an array of records depending on what the server hydrated; we type
+ * it as `unknown[]` so callers can refresh from the list endpoint.
+ */
+export function createTimetableBulk(input: {
+  class_id: string;
+  subject_id: string;
+  teacher_id: string;
+  period_number: number;
+  start_time: string;
+  end_time: string;
+  room?: string;
+  days: number[]; // ISO 1..7
+}): Promise<ServiceResult<TimetableRecord | TimetableRecord[]>> {
+  const sessions = input.days.map((iso) => ({
+    day_of_week: iso,
+    period: input.period_number,
+    start_time: input.start_time,
+    end_time: input.end_time,
+    subject_id: input.subject_id,
+    teacher_id: input.teacher_id,
+    room: input.room || "",
+  }));
+  return serviceRequest<TimetableRecord | TimetableRecord[]>("/api/timetable", {
+    method: "POST",
+    body: JSON.stringify({ class_id: input.class_id, sessions }),
+  });
+}
+
 export function updateTimetable(
   id: string,
   input: Partial<TimetableFormInput>

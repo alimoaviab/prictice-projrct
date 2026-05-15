@@ -1,5 +1,5 @@
 /**
- * Compact 2-step timetable form.
+ * Timetable form — single-screen layout (no step wizard).
  *
  * Wire-format contract (verified end-to-end with the Go backend):
  *   {
@@ -11,18 +11,14 @@
  *     room?:      "..."
  *   }
  *
- * Why we send `day_of_week` as a number:
- *   The Go handler decodes into an int. The previous form sent the
- *   English day name as a string and json.Decoder failed with
- *   "Invalid JSON body". The handler now also accepts strings, but the
- *   canonical client format is the ISO number to keep the contract tight.
- *
- * Steps:
- *   1. Subject + Day + Time (the "what & when")
- *   2. Teacher + Room        (the "who & where")
+ * "Everyday (Mon–Fri)" — create only:
+ *   The Day of week select exposes a sentinel value `0` meaning "attach
+ *   this period to every weekday". The parent page detects 0 and posts
+ *   a single sessions[] bulk request to /api/timetable so all five
+ *   weekdays land in one transaction (and one conflict check pass).
  *
  * Class is set by the parent page (URL ?class_id) and shown read-only
- * here, so admins are never confused about which class they're editing.
+ * here so admins are never confused about which class they're editing.
  */
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
@@ -37,6 +33,10 @@ import {
 import { findTimetableConflicts } from "../utils/conflicts";
 import { serviceRequest } from "@/services/service-client";
 import { useTimetable } from "../hooks/useTimetable";
+
+/** Sentinel for "attach this period to Mon–Sat in one shot". */
+export const EVERYDAY_VALUE = 0;
+const WEEKDAY_ISOS = [1, 2, 3, 4, 5, 6];
 
 interface ClassOption {
   id: string;
@@ -81,7 +81,7 @@ export function TimetableForm({
   initialValues,
   isLoading = false,
 }: Props) {
-  const [step, setStep] = useState(1);
+  const isEditing = Boolean(initialValues);
   const [form, setForm] = useState<TimetableFormInput>(() => ({
     ...initialState,
     class_id: initialValues?.class_id || initialClassId || "",
@@ -98,7 +98,7 @@ export function TimetableForm({
   const [serverError, setServerError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   // Anchor we scroll to when validation fails so the user never wonders
-  // "why did Continue do nothing?".
+  // "why did Save do nothing?".
   const topRef = useRef<HTMLDivElement>(null);
 
   // Subjects for the selected class — narrowing the picker scales when
@@ -140,15 +140,41 @@ export function TimetableForm({
   const { state: timetableState } = useTimetable(
     form.class_id ? { class_id: form.class_id } : undefined
   );
-  const clientConflicts = useMemo(
-    () =>
-      timetableState.data
-        ? findTimetableConflicts(timetableState.data, form, initialValues?._id)
-        : [],
-    [timetableState.data, form, initialValues]
-  );
+
+  // For client-side conflict preview: when "Everyday" is selected we
+  // synthesise five candidates (Mon..Fri) and aggregate hits across all
+  // of them so the admin gets a single combined warning.
+  const clientConflicts = useMemo(() => {
+    const records = timetableState.data;
+    if (!records) return [];
+    if (Number(form.day_of_week) === EVERYDAY_VALUE) {
+      const seen = new Set<string>();
+      const out: ReturnType<typeof findTimetableConflicts> = [];
+      for (const iso of WEEKDAY_ISOS) {
+        const hits = findTimetableConflicts(
+          records,
+          { ...form, day_of_week: iso },
+          initialValues?._id
+        );
+        for (const c of hits) {
+          const key = `${c.type}-${c.record._id}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          out.push(c);
+        }
+      }
+      return out;
+    }
+    return findTimetableConflicts(records, form, initialValues?._id);
+  }, [timetableState.data, form, initialValues]);
 
   const activeClass = classOptions.find((c) => c.id === form.class_id);
+
+  const dayOptions = useMemo(() => {
+    const base = DAY_OPTIONS.map((d) => ({ label: d.label, value: String(d.iso) }));
+    if (isEditing) return base;
+    return [{ label: "Everyday (Mon–Sat)", value: String(EVERYDAY_VALUE) }, ...base];
+  }, [isEditing]);
 
   function setField<K extends keyof TimetableFormInput>(key: K, value: TimetableFormInput[K]) {
     setForm((f) => {
@@ -171,57 +197,29 @@ export function TimetableForm({
     setServerError(null);
   }
 
-  function validateStep(s: number): boolean {
+  function validate(): boolean {
     const next: Record<string, string> = {};
-    if (s === 1) {
-      if (!form.class_id) next.class_id = "Class is required";
-      if (!form.subject_id) next.subject_id = "Subject is required";
-      if (!form.start_time) next.start_time = "Start time is required";
-      if (!form.end_time) next.end_time = "End time is required";
-      if (form.start_time && form.end_time && form.end_time <= form.start_time) {
-        next.end_time = "End time must be after start time";
-      }
-      if (form.period_number < 1) next.period_number = "Period must be at least 1";
+    if (!form.class_id) next.class_id = "Class is required";
+    if (!form.subject_id) next.subject_id = "Subject is required";
+    if (!form.teacher_id) next.teacher_id = "Teacher is required";
+    if (!form.start_time) next.start_time = "Start time is required";
+    if (!form.end_time) next.end_time = "End time is required";
+    if (form.start_time && form.end_time && form.end_time <= form.start_time) {
+      next.end_time = "End time must be after start time";
     }
-    if (s === 2) {
-      if (!form.teacher_id) next.teacher_id = "Teacher is required";
-    }
+    if (form.period_number < 1) next.period_number = "Period must be at least 1";
     setErrors(next);
     return Object.keys(next).length === 0;
   }
 
-  function handleNext() {
-    const ok = validateStep(step);
-    if (!ok) {
-      // Surface failure: scroll the banner into view. Without this,
-      // tiny inline errors below the fold made Continue feel dead.
-      requestAnimationFrame(() => {
-        topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
-      // Aid debugging: anyone reporting "Continue does nothing" can
-      // open DevTools and immediately see why.
-      // eslint-disable-next-line no-console
-      console.warn("[TimetableForm] Continue blocked by validation:", errors, form);
-      return;
-    }
-    setStep(step + 1);
-  }
-
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!validateStep(1) || !validateStep(2)) {
-      // If step 1 has issues, walk back so the user can see them.
-      const stepOneInvalid =
-        !form.class_id ||
-        !form.subject_id ||
-        !form.start_time ||
-        !form.end_time ||
-        form.end_time <= form.start_time ||
-        form.period_number < 1;
-      setStep(stepOneInvalid ? 1 : 2);
+    if (!validate()) {
       requestAnimationFrame(() => {
         topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       });
+      // eslint-disable-next-line no-console
+      console.warn("[TimetableForm] Save blocked by validation:", errors, form);
       return;
     }
     setSaving(true);
@@ -233,7 +231,9 @@ export function TimetableForm({
         const conflicts = extractConflicts(result.error?.details);
         if (conflicts.length > 0) {
           setServerConflicts(conflicts);
-          setStep(2);
+          requestAnimationFrame(() => {
+            topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+          });
           return;
         }
         setServerError(result.error?.message || "Failed to save the period.");
@@ -243,20 +243,13 @@ export function TimetableForm({
     }
   }
 
+  const isEveryday = Number(form.day_of_week) === EVERYDAY_VALUE;
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-5">
       <div ref={topRef} />
 
-      {/* Step indicator */}
-      <div className="flex items-center gap-3">
-        <StepDot index={1} active={step >= 1} label="Schedule" />
-        <div className="flex-1 h-px bg-slate-200" />
-        <StepDot index={2} active={step >= 2} label="Assignment" />
-      </div>
-
-      {/* Top-level validation summary. Without this, the only feedback
-          on a failed Continue was a 10px error line under the field — a
-          Continue click on a long form looked like nothing happened. */}
+      {/* Top-level validation summary. */}
       {Object.keys(errors).length > 0 && (
         <div className="rounded-lg bg-rose-50 border border-rose-200 px-3 py-2.5">
           <div className="flex items-start gap-2">
@@ -290,161 +283,156 @@ export function TimetableForm({
         </div>
       )}
 
-      {step === 1 && (
-        <div className="space-y-4">
-          {!activeClass && (
-            <Select
-              label="Class"
-              value={form.class_id}
-              onChange={(e) => setField("class_id", e.target.value)}
-              options={[
-                { label: "Select a class", value: "" },
-                ...classOptions.map((o) => ({ label: o.label, value: o.id })),
-              ]}
-              error={errors.class_id}
-              required
-            />
+      {!activeClass && (
+        <Select
+          label="Class"
+          value={form.class_id}
+          onChange={(e) => setField("class_id", e.target.value)}
+          options={[
+            { label: "Select a class", value: "" },
+            ...classOptions.map((o) => ({ label: o.label, value: o.id })),
+          ]}
+          error={errors.class_id}
+          required
+        />
+      )}
+
+      {/* Teacher — moved to the top of the form so admins see the
+          assignment first, before fiddling with the schedule grid. */}
+      <SearchableSelect
+        label="Teacher"
+        value={form.teacher_id}
+        onChange={(id) => setField("teacher_id", id)}
+        options={teacherOptions}
+        placeholder="Search teacher by name…"
+        error={errors.teacher_id}
+        required
+      />
+
+      <Select
+        label="Subject"
+        value={form.subject_id}
+        onChange={(e) => setField("subject_id", e.target.value)}
+        options={[
+          { label: form.class_id ? "Select a subject" : "Select a class first", value: "" },
+          ...subjectsToShow.map((o) => ({ label: o.label, value: o.id })),
+        ]}
+        error={errors.subject_id}
+        disabled={!form.class_id}
+        required
+      />
+
+      <div className="grid grid-cols-2 gap-3">
+        <Select
+          label="Day of week"
+          value={String(form.day_of_week)}
+          onChange={(e) => setField("day_of_week", Number(e.target.value))}
+          options={dayOptions}
+        />
+        <Input
+          label="Period"
+          type="number"
+          min={1}
+          max={20}
+          value={form.period_number}
+          onChange={(e) =>
+            setField("period_number", Math.max(1, parseInt(e.target.value || "1", 10)))
+          }
+          error={errors.period_number}
+          required
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Input
+          label="Start time"
+          type="time"
+          value={form.start_time}
+          onChange={(e) => setField("start_time", e.target.value)}
+          error={errors.start_time}
+          required
+        />
+        <Input
+          label="End time"
+          type="time"
+          value={form.end_time}
+          onChange={(e) => setField("end_time", e.target.value)}
+          error={errors.end_time}
+          required
+        />
+      </div>
+
+      <Input
+        label="Room (optional)"
+        placeholder="e.g. R-102, Science Lab"
+        value={form.room || ""}
+        onChange={(e) => setField("room", e.target.value)}
+      />
+
+      {clientConflicts.length > 0 && (
+        <ConflictBanner
+          conflicts={clientConflicts.map(
+            (c) =>
+              `${c.type}: ${c.record.subject_name} on ${isoToDayName(c.record.day_of_week)}`
           )}
+          tone="warning"
+        />
+      )}
 
-          <Select
-            label="Subject"
-            value={form.subject_id}
-            onChange={(e) => setField("subject_id", e.target.value)}
-            options={[
-              { label: form.class_id ? "Select a subject" : "Select a class first", value: "" },
-              ...subjectsToShow.map((o) => ({ label: o.label, value: o.id })),
-            ]}
-            error={errors.subject_id}
-            disabled={!form.class_id}
-            required
-          />
+      {/* Live summary */}
+      <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2.5 space-y-1">
+        <p className="text-[10px] font-bold text-slate-400 normal-case">Summary</p>
+        <p className="text-[12px] font-bold text-slate-900 tracking-tight">
+          {form.subject_id
+            ? subjectsToShow.find((s) => s.id === form.subject_id)?.label
+            : "—"}
+          <span className="font-medium text-slate-500"> · </span>
+          {isEveryday ? "Mon–Sat" : isoToDayName(form.day_of_week)}{" "}
+          {form.start_time && form.end_time
+            ? `· ${form.start_time}–${form.end_time}`
+            : ""}
+        </p>
+        <p className="text-[11px] font-medium text-slate-500">
+          {form.teacher_id
+            ? teacherOptions.find((t) => t.id === form.teacher_id)?.label
+            : "Pick a teacher"}
+          {form.room ? ` · ${form.room}` : ""}
+        </p>
+      </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Select
-              label="Day of week"
-              value={String(form.day_of_week)}
-              onChange={(e) => setField("day_of_week", Number(e.target.value))}
-              options={DAY_OPTIONS.map((d) => ({ label: d.label, value: d.iso }))}
-            />
-            <Input
-              label="Period"
-              type="number"
-              min={1}
-              max={20}
-              value={form.period_number}
-              onChange={(e) =>
-                setField("period_number", Math.max(1, parseInt(e.target.value || "1", 10)))
-              }
-              error={errors.period_number}
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              label="Start time"
-              type="time"
-              value={form.start_time}
-              onChange={(e) => setField("start_time", e.target.value)}
-              error={errors.start_time}
-              required
-            />
-            <Input
-              label="End time"
-              type="time"
-              value={form.end_time}
-              onChange={(e) => setField("end_time", e.target.value)}
-              error={errors.end_time}
-              required
-            />
-          </div>
-
-          {clientConflicts.length > 0 && (
-            <ConflictBanner conflicts={clientConflicts.map((c) => `${c.type}: ${c.record.subject_name} on ${isoToDayName(c.record.day_of_week)}`)} tone="warning" />
-          )}
+      {serverError && (
+        <div className="rounded-lg bg-rose-50 border border-rose-200 px-3 py-2.5 text-[12px] font-bold text-rose-700">
+          {serverError}
         </div>
       )}
 
-      {step === 2 && (
-        <div className="space-y-4">
-          <SearchableSelect
-            label="Teacher"
-            value={form.teacher_id}
-            onChange={(id) => setField("teacher_id", id)}
-            options={teacherOptions}
-            placeholder="Search teacher by name…"
-            error={errors.teacher_id}
-            required
-          />
-
-          <Input
-            label="Room (optional)"
-            placeholder="e.g. R-102, Science Lab"
-            value={form.room || ""}
-            onChange={(e) => setField("room", e.target.value)}
-          />
-
-          {/* Live summary */}
-          <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2.5 space-y-1">
-            <p className="text-[10px] font-bold text-slate-400 normal-case">Summary</p>
-            <p className="text-[12px] font-bold text-slate-900 tracking-tight">
-              {form.subject_id
-                ? subjectsToShow.find((s) => s.id === form.subject_id)?.label
-                : "—"}
-              <span className="font-medium text-slate-500"> · </span>
-              {isoToDayName(form.day_of_week)}{" "}
-              {form.start_time && form.end_time
-                ? `· ${form.start_time}–${form.end_time}`
-                : ""}
-            </p>
-            <p className="text-[11px] font-medium text-slate-500">
-              {form.teacher_id
-                ? teacherOptions.find((t) => t.id === form.teacher_id)?.label
-                : "Pick a teacher"}
-              {form.room ? ` · ${form.room}` : ""}
-            </p>
-          </div>
-
-          {serverError && (
-            <div className="rounded-lg bg-rose-50 border border-rose-200 px-3 py-2.5 text-[12px] font-bold text-rose-700">
-              {serverError}
-            </div>
-          )}
-
-          {serverConflicts.length > 0 && (
-            <ConflictBanner
-              tone="error"
-              conflicts={serverConflicts.map((c) => c.message)}
-              title="Server detected schedule conflicts"
-            />
-          )}
-        </div>
+      {serverConflicts.length > 0 && (
+        <ConflictBanner
+          tone="error"
+          conflicts={serverConflicts.map((c) => c.message)}
+          title="Server detected schedule conflicts"
+        />
       )}
 
       {/* Actions */}
       <div className="flex items-center gap-2 pt-4 border-t border-slate-100">
+        <Button type="button" variant="ghost" onClick={onCancel} className="flex-1">
+          Cancel
+        </Button>
         <Button
-          type="button"
-          variant="ghost"
-          onClick={step > 1 ? () => setStep(step - 1) : onCancel}
+          type="submit"
+          variant="primary"
+          disabled={saving || isLoading}
           className="flex-1"
         >
-          {step === 1 ? "Cancel" : "Back"}
+          {saving
+            ? "Saving…"
+            : initialValues
+            ? "Update period"
+            : isEveryday
+            ? "Save for Mon–Sat"
+            : "Save period"}
         </Button>
-        {step < 2 ? (
-          <Button type="button" variant="primary" onClick={handleNext} className="flex-1">
-            Continue
-          </Button>
-        ) : (
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={saving || isLoading}
-            className="flex-1"
-          >
-            {saving ? "Saving…" : initialValues ? "Update period" : "Save period"}
-          </Button>
-        )}
       </div>
     </form>
   );
@@ -466,29 +454,6 @@ function extractConflicts(details: unknown): ServerConflict[] {
   return [];
 }
 
-function StepDot({ index, active, label }: { index: number; active: boolean; label: string }) {
-  return (
-    <div className="flex items-center gap-2">
-      <div
-        className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold border ${
-          active
-            ? "bg-blue-600 text-white border-blue-600"
-            : "bg-white text-slate-400 border-slate-200"
-        }`}
-      >
-        {index}
-      </div>
-      <span
-        className={`text-[11px] font-bold normal-case ${
-          active ? "text-slate-900" : "text-slate-400"
-        }`}
-      >
-        {label}
-      </span>
-    </div>
-  );
-}
-
 function ConflictBanner({
   conflicts,
   tone = "warning",
@@ -508,7 +473,10 @@ function ConflictBanner({
         <span className="material-symbols-outlined text-base mt-0.5">warning</span>
         <div className="flex-1">
           <p className="text-[11px] font-bold tracking-tight">
-            {title ?? `${conflicts.length} ${conflicts.length === 1 ? "conflict" : "conflicts"} detected`}
+            {title ??
+              `${conflicts.length} ${
+                conflicts.length === 1 ? "conflict" : "conflicts"
+              } detected`}
           </p>
           <ul className="mt-1 text-[11px] font-medium space-y-0.5">
             {conflicts.slice(0, 4).map((c, i) => (

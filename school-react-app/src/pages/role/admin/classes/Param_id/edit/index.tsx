@@ -81,8 +81,23 @@ export function ClassEditPage() {
   }
 
   return (
-    <SchoolShell eyebrow="Academic Management" title="Synchronize Class Unit">
-      <div className="w-full py-8 px-6">
+    <SchoolShell>
+      <div className="max-w-7xl mx-auto py-2 px-4 sm:px-6">
+        <div className="mb-3 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => navigate("/admin/classes")}
+            className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-400 normal-case hover:text-slate-900 transition-all group"
+          >
+            <span className="material-symbols-outlined text-[16px] group-hover:-translate-x-0.5 transition-transform">arrow_back</span>
+            Return to Classes
+          </button>
+          <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 normal-case ">
+            <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
+            Academic Management
+          </div>
+        </div>
+
         {error ? (
           <DataState variant="error" title="Data Retrieval Failed" message={error} />
         ) : isDependencyLoading ? (

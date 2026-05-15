@@ -240,8 +240,8 @@ function Tooltip({ children, text }: { children: ReactNode; text: string }) {
 
 interface SchoolShellProps {
   children: ReactNode;
-  title: string;
-  eyebrow: string;
+  title?: string;
+  eyebrow?: string;
   description?: string;
   actions?: ReactNode;
 }
@@ -598,22 +598,7 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
           </div>
         </header>
 
-        <div key={pathname} className="w-full flex-1 overflow-y-auto animate-fade-in-up px-4 py-6 md:px-8 custom-scrollbar relative z-10">
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="h-px w-4 bg-blue-600/30" />
-              <p className="text-[10px] font-black tracking-[0.2em] text-blue-600/60">{eyebrow}</p>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-black tracking-tight text-slate-900">{title}</h1>
-                {description && (
-                  <p className="mt-1 text-sm font-medium text-slate-500 max-w-2xl">{description}</p>
-                )}
-              </div>
-              {actions && <div className="flex items-center gap-2">{actions}</div>}
-            </div>
-          </div>
+        <div key={pathname} className="w-full flex-1 overflow-y-auto animate-fade-in-up px-4 py-3 md:px-8 md:pt-4 custom-scrollbar relative z-10">
           <ErrorBoundary
             title="This page ran into a problem"
             message="A part of this page failed to render. Try the action again, or refresh the page."

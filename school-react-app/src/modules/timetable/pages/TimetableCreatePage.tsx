@@ -26,11 +26,12 @@ import {
 } from "@/components/ui";
 import { useSafeAsync } from "@/hooks/useSafeAsync";
 import { serviceRequest } from "@/services/service-client";
-import { TimetableForm } from "../components/TimetableForm";
+import { TimetableForm, EVERYDAY_VALUE } from "../components/TimetableForm";
 import { useTimetable } from "../hooks/useTimetable";
 import { TimetableFormInput } from "../types/timetable.types";
 import { showToast } from "@/utils/toast";
-import { bindRefresh } from "@/services/data-bus";
+import { bindRefresh, publish } from "@/services/data-bus";
+import { createTimetableBulk } from "../services/timetable.service";
 
 export function TimetableCreatePage() {
   const navigate = useNavigate();
@@ -91,6 +92,32 @@ export function TimetableCreatePage() {
     classState.status === "idle";
 
   async function handleCreate(input: TimetableFormInput) {
+    // "Everyday (Mon–Fri)" — fan out into a single bulk request so the
+    // server runs one conflict pass over all five sessions.
+    if (Number(input.day_of_week) === EVERYDAY_VALUE) {
+      const result = await createTimetableBulk({
+        class_id: input.class_id,
+        subject_id: input.subject_id,
+        teacher_id: input.teacher_id,
+        period_number: input.period_number,
+        start_time: input.start_time,
+        end_time: input.end_time,
+        room: input.room,
+        days: [1, 2, 3, 4, 5, 6],
+      });
+      if (result.ok) {
+        showToast("Period saved for Mon–Sat.", "success");
+        publish("timetable");
+        const dest = input.class_id
+          ? `/admin/timetable?class_id=${encodeURIComponent(input.class_id)}`
+          : "/admin/timetable";
+        navigate(dest);
+      } else if (result.error?.code !== "CONFLICT") {
+        showToast(result.error?.message || "Failed to save period.", "error");
+      }
+      return result as { ok: boolean; error?: { message?: string; details?: unknown } };
+    }
+
     const result = await addTimetable(input);
     if (result.ok) {
       showToast("Period saved.", "success");
@@ -153,8 +180,9 @@ export function TimetableCreatePage() {
           </GuidanceSection>
           <GuidanceSection title="Wire format">
             <GuidanceCallout tone="blue">
-              Day of week is sent as an ISO number (1=Mon, 7=Sun). The form
-              handles the conversion for you.
+              Day of week is sent as an ISO number (1=Mon, 7=Sun). Pick
+              "Everyday (Mon–Sat)" to attach the same period to all six
+              weekdays in one save.
             </GuidanceCallout>
           </GuidanceSection>
           <GuidanceChecklist
