@@ -20,7 +20,6 @@ import {
 } from "./generated-routes";
 
 // Auth pages are small and critical-path — keep them eager
-import { HomePage } from "@/pages/HomePage";
 import { AuthLayout } from "@/pages/auth/AuthLayout";
 import { LoginPage } from "@/pages/auth/LoginPage";
 import { SignupPage } from "@/pages/auth/SignupPage";
@@ -46,7 +45,9 @@ export const router = createBrowserRouter([
     element: <App />,
     children: [
       // ─── Public ────────────────────────────────────────────────────────
-      { path: "/", element: <HomePage /> },
+      // The marketing landing page is now a separate app on :3002.
+      // The school SPA root redirects to the login page.
+      { path: "/", element: <Navigate to="/auth/login" replace /> },
 
       // ─── Auth ──────────────────────────────────────────────────────────
       {

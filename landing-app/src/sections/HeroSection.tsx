@@ -1,7 +1,7 @@
 import React, { useRef } from "react";
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { ArrowRight, Play, ShieldCheck, Zap, BarChart3, Users, CreditCard, Sparkles } from "lucide-react";
-import { Link } from "react-router-dom";
+import { LOGIN_URL } from "@/lib/config";
 
 export const HeroSection = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -92,18 +92,18 @@ export const HeroSection = () => {
               transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
               className="flex flex-col sm:flex-row items-center justify-center gap-4"
             >
-              <Link
-                to="/auth/login"
+              <a
+                href={LOGIN_URL}
                 className="w-full sm:w-auto px-8 py-4 bg-blue-600 text-white rounded-full font-semibold shadow-[0_8px_30px_rgba(37,99,235,0.24)] hover:bg-blue-700 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(37,99,235,0.32)] transition-all duration-300 flex items-center justify-center gap-2"
               >
                 Start Free Trial <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link
-                to="#demo"
+              </a>
+              <a
+                href="#demo"
                 className="w-full sm:w-auto px-8 py-4 bg-white/80 backdrop-blur-sm text-slate-900 rounded-full font-semibold shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2 border border-slate-200/60"
               >
                 <Play className="w-4 h-4 fill-current" /> Watch Preview
-              </Link>
+              </a>
             </motion.div>
           </motion.div>
 

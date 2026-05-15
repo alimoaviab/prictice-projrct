@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X, BookOpen } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { LOGIN_URL } from "@/lib/config";
 
 export const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -55,18 +56,18 @@ export const Navbar = () => {
 
         {/* Auth CTA */}
         <div className="hidden md:flex items-center gap-4">
-          <Link
-            to="/auth/login"
+          <a
+            href={LOGIN_URL}
             className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors px-3 py-2"
           >
             Log in
-          </Link>
-          <Link
-            to="#demo"
+          </a>
+          <a
+            href="#demo"
             className="text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 transition-all shadow-md hover:shadow-lg px-5 py-2.5 rounded-full"
           >
             Book Demo
-          </Link>
+          </a>
         </div>
 
         {/* Mobile Menu Toggle */}
@@ -101,19 +102,19 @@ export const Navbar = () => {
                 </Link>
               ))}
               <div className="h-px bg-slate-100 w-full my-2" />
-              <Link
-                to="/auth/login"
+              <a
+                href={LOGIN_URL}
                 className="text-base font-medium text-slate-700 p-2 rounded-lg hover:bg-slate-50 text-center"
               >
                 Log in
-              </Link>
-              <Link
-                to="#demo"
+              </a>
+              <a
+                href="#demo"
                 className="text-base font-medium text-white bg-blue-600 p-3 rounded-lg text-center"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Book Demo
-              </Link>
+              </a>
             </div>
           </motion.div>
         )}
