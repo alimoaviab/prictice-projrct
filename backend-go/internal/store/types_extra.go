@@ -23,6 +23,17 @@ type Attendance struct {
 	UpdatedAt      time.Time `json:"updated_at"`
 }
 
+// ExamSubject is one subject inside a multi-subject exam. The exam row
+// owns an ordered slice of these. SubjectID prefers the actual subject
+// document _id; older callers may pass the name as id (it is treated as
+// an opaque key on the wire). MaxMarks is per-subject so each section
+// can have its own ceiling.
+type ExamSubject struct {
+	SubjectID   string `json:"subject_id"`
+	SubjectName string `json:"subject_name"`
+	MaxMarks    int    `json:"max_marks"`
+}
+
 // Exam mirrors old-app/shared/models/exam.model.ts.
 type Exam struct {
 	ID             string    `json:"_id"`
@@ -30,15 +41,29 @@ type Exam struct {
 	AcademicYearID string    `json:"academic_year_id,omitempty"`
 	ClassID        string    `json:"class_id"`
 	TeacherID      string    `json:"teacher_id,omitempty"`
-	Subject        string    `json:"subject"`
-	Title          string    `json:"title"`
-	Type           string    `json:"type"` // exam | test
-	StartsAt       time.Time `json:"starts_at"`
-	MaxMarks       int       `json:"max_marks"`
-	Status         string    `json:"status"`
-	Description    string    `json:"description,omitempty"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	// Subject and MaxMarks are kept for backward compatibility with
+	// pre-multi-subject exams that were persisted before the schema
+	// extension. New exams populate Subjects[] and leave Subject as the
+	// first subject's name (so any legacy reader still gets *something*
+	// useful). Hydrators always prefer Subjects[] when present.
+	Subject     string        `json:"subject,omitempty"`
+	Subjects    []ExamSubject `json:"subjects,omitempty"`
+	Title       string        `json:"title"`
+	Type        string        `json:"type"` // exam | test
+	StartsAt    time.Time     `json:"starts_at"`
+	MaxMarks    int           `json:"max_marks"` // legacy aggregate
+	Status      string        `json:"status"`
+	Description string        `json:"description,omitempty"`
+	CreatedAt   time.Time     `json:"created_at"`
+	UpdatedAt   time.Time     `json:"updated_at"`
+}
+
+// ResultSubject is one student's mark for one subject inside a
+// multi-subject exam result.
+type ResultSubject struct {
+	SubjectID     string  `json:"subject_id"`
+	SubjectName   string  `json:"subject_name"`
+	ObtainedMarks float64 `json:"obtained_marks"`
 }
 
 // Result mirrors old-app/shared/models/result.model.ts.
@@ -49,11 +74,14 @@ type Result struct {
 	ExamID         string    `json:"exam_id"`
 	ClassID        string    `json:"class_id"`
 	StudentID      string    `json:"student_id"`
-	ObtainedMarks  float64   `json:"obtained_marks"`
-	Remarks        string    `json:"remarks,omitempty"`
-	GradedAt       time.Time `json:"graded_at"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	// ObtainedMarks is the aggregate (sum of subject marks) for new
+	// rows, or the single mark for legacy single-subject results.
+	ObtainedMarks float64         `json:"obtained_marks"`
+	Subjects      []ResultSubject `json:"subjects,omitempty"`
+	Remarks       string          `json:"remarks,omitempty"`
+	GradedAt      time.Time       `json:"graded_at"`
+	CreatedAt     time.Time       `json:"created_at"`
+	UpdatedAt     time.Time       `json:"updated_at"`
 }
 
 // HomeworkSubmission mirrors the embedded `submissions[]` array on the

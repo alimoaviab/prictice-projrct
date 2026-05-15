@@ -70,6 +70,20 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 			requesterType = "student"
 		}
 
+		// If teacher, force filter to their own requests as well, so the
+		// teacher portal only ever sees the teacher's own submissions.
+		if ctx.Role == "teacher" {
+			h.Store.RLock()
+			for _, t := range h.Store.Teachers {
+				if t.UserID == ctx.UserID {
+					requesterID = t.ID
+					break
+				}
+			}
+			h.Store.RUnlock()
+			requesterType = "teacher"
+		}
+
 		startDate, hasStart := api.ParseDate(q.Get("start_date"))
 		endDate, hasEnd := api.ParseDate(q.Get("end_date"))
 
@@ -164,6 +178,25 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 			h.Store.RUnlock()
 			if body.RequesterID == "" {
 				return nil, api.NewControlledError("NOT_FOUND", "Student profile not found.", 404, nil)
+			}
+		}
+
+		// If teacher is creating, force requester info to themselves so
+		// the teacher portal can simply post {leave_type, dates, reason}
+		// without having to know its own teacher record id.
+		if ctx.Role == "teacher" {
+			body.RequesterType = "teacher"
+			h.Store.RLock()
+			for _, t := range h.Store.Teachers {
+				if t.UserID == ctx.UserID && t.SchoolID == ctx.SchoolID {
+					body.RequesterID = t.ID
+					body.RequesterName = t.FirstName + " " + t.LastName
+					break
+				}
+			}
+			h.Store.RUnlock()
+			if body.RequesterID == "" {
+				return nil, api.NewControlledError("NOT_FOUND", "Teacher profile not found.", 404, nil)
 			}
 		}
 

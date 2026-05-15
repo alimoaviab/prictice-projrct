@@ -240,16 +240,55 @@ func (h *Handler) StudentResults(w http.ResponseWriter, r *http.Request) {
 			ex := examByID[r.ExamID]
 			max := 0
 			title, subject := "", ""
+			subjectsOut := make([]map[string]any, 0)
 			if ex != nil {
-				max = ex.MaxMarks
 				title = ex.Title
-				subject = ex.Subject
+				// New architecture: aggregate max from exam.Subjects[],
+				// fall back to legacy MaxMarks for older rows.
+				if len(ex.Subjects) > 0 {
+					for _, s := range ex.Subjects {
+						max += s.MaxMarks
+					}
+					// Joined display string for legacy widgets.
+					for i, s := range ex.Subjects {
+						if i > 0 {
+							subject += ", "
+						}
+						subject += s.SubjectName
+					}
+				} else {
+					max = ex.MaxMarks
+					subject = ex.Subject
+				}
+			}
+			// Per-subject breakdown — pair the result subjects with the
+			// exam's per-subject max so the parent UI can render one
+			// chip per subject just like the admin/teacher views.
+			examSubByID := map[string]store.ExamSubject{}
+			if ex != nil {
+				for _, es := range ex.Subjects {
+					examSubByID[es.SubjectID] = es
+				}
+			}
+			for _, rs := range r.Subjects {
+				meta := examSubByID[rs.SubjectID]
+				name := rs.SubjectName
+				if name == "" {
+					name = meta.SubjectName
+				}
+				subjectsOut = append(subjectsOut, map[string]any{
+					"subject_id":     rs.SubjectID,
+					"subject_name":   name,
+					"obtained_marks": rs.ObtainedMarks,
+					"max_marks":      meta.MaxMarks,
+				})
 			}
 			out = append(out, map[string]any{
 				"_id":            r.ID,
 				"exam_id":        r.ExamID,
 				"exam_title":     title,
 				"exam_subject":   subject,
+				"subjects":       subjectsOut,
 				"obtained_marks": r.ObtainedMarks,
 				"max_marks":      max,
 				"graded_at":      r.GradedAt,

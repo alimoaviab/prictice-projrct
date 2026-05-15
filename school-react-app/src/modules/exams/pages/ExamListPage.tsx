@@ -1,7 +1,11 @@
 /**
- * /admin/exams — Exam list page. Mirrors the TestListPage layout exactly,
- * uses the universal EntityCard so the visual contract is shared with
- * Classes, Tests, Homework, Teachers, etc.
+ * /admin/exams — Exam list page.
+ *
+ * Architecture: one card == one exam. Each card shows the subjects
+ * embedded inside the exam as small chips so admins can see at a
+ * glance what the exam covers without opening it. Clicking "Add
+ * marks" opens the unified marks entry page where every subject is a
+ * column.
  */
 
 import { Link, useLocation } from "react-router-dom";
@@ -14,15 +18,17 @@ import {
   DataState,
   Skeleton,
   StatCardGrid,
-  EntityCard,
-  EntityGrid,
   EntityGridSkeleton,
 } from "@/components/ui";
 import { useExams } from "../hooks/useExams";
 import { ExamRow } from "../types/exam.types";
 import { useQueryParams } from "@/hooks/useQueryParams";
 
-export function ExamListPage({ filters }: { filters?: { class_id?: string; subject?: string } }) {
+export function ExamListPage({
+  filters,
+}: {
+  filters?: { class_id?: string; subject?: string };
+}) {
   const pathname = useLocation().pathname;
   const isParent = pathname.includes("/parent");
   const isTeacher = pathname.includes("/teacher");
@@ -31,9 +37,9 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
   const { currentParams, updateQuery, withQuery } = useQueryParams();
 
   const [searchQuery, setSearchQuery] = useState(currentParams.get("search") || "");
-  const [statusFilter, setStatusFilter] = useState<"all" | "scheduled" | "completed" | "cancelled">(
-    (currentParams.get("status") as any) || "all"
-  );
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "scheduled" | "completed" | "cancelled"
+  >((currentParams.get("status") as any) || "all");
   const [viewMode, setViewMode] = useState<"grid" | "list">(
     (currentParams.get("view") as any) || "grid"
   );
@@ -50,24 +56,19 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
     const rows = state.data || [];
     const q = searchQuery.trim().toLowerCase();
     return rows.filter((row) => {
+      const subjectsConcat = (row.subjects || [])
+        .map((s) => s.subject_name)
+        .join(" ")
+        .toLowerCase();
       const queryMatch =
         q.length === 0 ||
         row.title.toLowerCase().includes(q) ||
-        row.subject.toLowerCase().includes(q);
+        (row.subject || "").toLowerCase().includes(q) ||
+        subjectsConcat.includes(q);
       const statusMatch = statusFilter === "all" || row.status === statusFilter;
       return queryMatch && statusMatch;
     });
   }, [state.data, searchQuery, statusFilter]);
-
-  const stats = useMemo(() => {
-    const all = state.data || [];
-    return {
-      total: all.length,
-      scheduled: all.filter((e) => e.status === "scheduled").length,
-      completed: all.filter((e) => e.status === "completed").length,
-      pending: all.filter((e) => e.status === "scheduled" && (e.results_count || 0) === 0).length,
-    };
-  }, [state.data]);
 
   const columns: DataTableColumn<ExamRow>[] = [
     {
@@ -75,8 +76,13 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
       label: "Name",
       render: (row) => (
         <div className="flex flex-col">
-          <span className="text-[12px] font-black text-slate-900 leading-none mb-1 tracking-tight">{row.title}</span>
-          <span className="text-[10px] text-blue-600 font-bold tracking-widest">{row.subject}</span>
+          <span className="text-[12px] font-black text-slate-900 leading-none mb-1 tracking-tight">
+            {row.title}
+          </span>
+          <span className="text-[10px] text-slate-500 font-bold tracking-tight truncate max-w-[260px]">
+            {row.subject_count || (row.subjects || []).length} subj ·{" "}
+            {(row.subjects || []).map((s) => s.subject_name).join(", ") || row.subject}
+          </span>
         </div>
       ),
       sortable: true,
@@ -150,10 +156,33 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
     <div className="space-y-5">
       <StatCardGrid
         items={[
-          { label: "Total exams", value: state.data?.length || 0, icon: "quiz", accent: "blue" },
-          { label: "Upcoming", value: state.data?.filter(e => e.status === "scheduled").length || 0, icon: "event", accent: "purple" },
-          { label: "Completed", value: state.data?.filter(e => e.status === "completed").length || 0, icon: "task_alt", accent: "emerald" },
-          { label: "Pending results", value: state.data?.filter(e => e.status === "scheduled" && (e.results_count || 0) === 0).length || 0, icon: "pending", accent: "amber" },
+          {
+            label: "Total exams",
+            value: state.data?.length || 0,
+            icon: "quiz",
+            accent: "blue",
+          },
+          {
+            label: "Upcoming",
+            value: state.data?.filter((e) => e.status === "scheduled").length || 0,
+            icon: "event",
+            accent: "purple",
+          },
+          {
+            label: "Completed",
+            value: state.data?.filter((e) => e.status === "completed").length || 0,
+            icon: "task_alt",
+            accent: "emerald",
+          },
+          {
+            label: "Pending results",
+            value:
+              state.data?.filter(
+                (e) => e.status === "scheduled" && (e.results_count || 0) === 0
+              ).length || 0,
+            icon: "pending",
+            accent: "amber",
+          },
         ]}
       />
 
@@ -175,20 +204,20 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
             />
           </div>
 
-           <select
-             value={statusFilter}
-             onChange={(e) => {
-               const v = e.target.value as any;
-               setStatusFilter(v);
-               updateQuery({ status: v });
-             }}
-             className="h-9 rounded-lg border border-slate-50 bg-slate-50/50 px-3 text-[10px] font-black uppercase text-slate-600 outline-none cursor-pointer hover:bg-slate-50 transition-colors"
-           >
-             <option value="all">All</option>
-             <option value="scheduled">Scheduled</option>
-             <option value="completed">Completed</option>
-             <option value="cancelled">Cancelled</option>
-           </select>
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              const v = e.target.value as any;
+              setStatusFilter(v);
+              updateQuery({ status: v });
+            }}
+            className="h-9 rounded-lg border border-slate-50 bg-slate-50/50 px-3 text-[10px] font-black uppercase text-slate-600 outline-none cursor-pointer hover:bg-slate-50 transition-colors"
+          >
+            <option value="all">All</option>
+            <option value="scheduled">Scheduled</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
 
           {(searchQuery || statusFilter !== "all") && (
             <button
@@ -210,7 +239,10 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
           <div className="inline-flex items-center bg-slate-50 rounded-lg border border-slate-200 p-0.5">
             <button
               type="button"
-              onClick={() => { setViewMode("grid"); updateQuery({ view: "grid" }); }}
+              onClick={() => {
+                setViewMode("grid");
+                updateQuery({ view: "grid" });
+              }}
               className={`h-7 px-2 rounded-md flex items-center gap-1 text-[11px] font-bold transition-colors ${
                 viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500"
               }`}
@@ -220,7 +252,10 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
             </button>
             <button
               type="button"
-              onClick={() => { setViewMode("list"); updateQuery({ view: "list" }); }}
+              onClick={() => {
+                setViewMode("list");
+                updateQuery({ view: "list" });
+              }}
               className={`h-7 px-2 rounded-md flex items-center gap-1 text-[11px] font-bold transition-colors ${
                 viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500"
               }`}
@@ -230,66 +265,51 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
             </button>
           </div>
 
-           {!isParent && (
-             <Link
-               to={withQuery(examsCreatePath)}
-               className="h-9 inline-flex items-center gap-2 px-4 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm active:scale-95 transition-all"
-             >
-                <span className="material-symbols-outlined text-[16px]">add</span>
-                Add exam
-              </Link>
-           )}
+          {!isParent && (
+            <Link
+              to={withQuery(examsCreatePath)}
+              className="h-9 inline-flex items-center gap-2 px-4 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm active:scale-95 transition-all"
+            >
+              <span className="material-symbols-outlined text-[16px]">add</span>
+              Add exam
+            </Link>
+          )}
         </div>
       </div>
 
       {/* Content */}
       {filteredRows.length === 0 ? (
-        <DataState variant="empty" title="No exams found" message="No upcoming or past exams found for the selected criteria." />
+        <DataState
+          variant="empty"
+          title="No exams found"
+          message="No upcoming or past exams found for the selected criteria."
+        />
       ) : viewMode === "grid" ? (
-        <EntityGrid>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredRows.map((exam) => (
-            <div key={exam._id} className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm hover:border-blue-200 transition-all flex flex-col">
-               <div className="flex items-center justify-between mb-4">
-                  <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
-                     <span className="material-symbols-outlined text-[18px]">description</span>
-                  </div>
-                  <Badge variant={exam.status === "completed" ? "success" : "primary"} className="text-[8px] font-black tracking-widest px-2 py-0.5">
-                    {exam.status}
-                  </Badge>
-               </div>
-               <h3 className="text-[13px] font-black text-slate-900 mb-0.5 truncate">{exam.title}</h3>
-               <p className="text-[10px] font-bold text-blue-600 tracking-widest mb-4">{exam.subject}</p>
-
-               <div className="flex items-center justify-between pt-3 border-t border-slate-50">
-                  <div className="flex items-center gap-2">
-                     <span className="material-symbols-outlined text-slate-300 text-[14px]">calendar_today</span>
-                     <span className="text-[10px] font-bold text-slate-400">{exam.starts_at}</span>
-                  </div>
-                  <div className="text-[10px] font-black text-slate-900">{exam.max_marks} Pts</div>
-               </div>
-
-               {!isParent && (
-                 <Link
-                   to={`${marksBase}?exam_id=${encodeURIComponent(exam._id)}`}
-                   className="mt-3 inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 active:scale-95 transition-all"
-                 >
-                   <span className="material-symbols-outlined text-[14px]">edit_note</span>
-                   Add marks
-                 </Link>
-               )}
-            </div>
+            <ExamCard
+              key={exam._id}
+              exam={exam}
+              marksBase={marksBase}
+              isParent={isParent}
+            />
           ))}
-        </EntityGrid>
+        </div>
       ) : (
         <div className="bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 shadow-[0_4px_18px_rgb(0,0,0,0.03)] overflow-hidden">
-          <DataTable columns={columns} rows={filteredRows} rowKey={(row) => row._id} rowActions={rowActions} />
+          <DataTable
+            columns={columns}
+            rows={filteredRows}
+            rowKey={(row) => row._id}
+            rowActions={rowActions}
+          />
         </div>
       )}
     </div>
   );
 }
 
-// ─── ExamCard — uses universal EntityCard ───────────────────────────────
+// ─── ExamCard ──────────────────────────────────────────────────────────
 
 function ExamCard({
   exam,
@@ -300,37 +320,69 @@ function ExamCard({
   marksBase: string;
   isParent: boolean;
 }) {
-  const accent =
-    exam.status === "completed"
-      ? "emerald"
-      : exam.status === "scheduled"
-        ? "blue"
-        : "slate";
+  const subjects = exam.subjects || [];
+  const subjectCount = exam.subject_count || subjects.length;
 
   return (
-    <EntityCard
-      icon="description"
-      accent={accent}
-      title={exam.title}
-      subtitle={exam.subject}
-      status={{ label: exam.status, accent }}
-      metrics={[
-        { label: "Date", value: exam.starts_at || "—" },
-        { label: "Max Marks", value: `${exam.max_marks} pts` },
-      ]}
-      actions={
-        isParent
-          ? []
-          : [
-              {
-                label: "Enter Marks",
-                icon: "edit_note",
-                to: `${marksBase}?exam_id=${encodeURIComponent(exam._id)}`,
-                accent: "blue",
-                primary: true,
-              },
-            ]
-      }
-    />
+    <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm hover:border-blue-200 transition-all flex flex-col">
+      <div className="flex items-center justify-between mb-3">
+        <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+          <span className="material-symbols-outlined text-[18px]">description</span>
+        </div>
+        <Badge
+          variant={exam.status === "completed" ? "success" : "primary"}
+          className="text-[8px] font-black tracking-widest px-2 py-0.5"
+        >
+          {exam.status}
+        </Badge>
+      </div>
+
+      <h3 className="text-[13px] font-black text-slate-900 mb-0.5 truncate">{exam.title}</h3>
+      <p className="text-[10px] font-bold text-slate-400 tracking-tight mb-2">
+        {exam.class_name || "—"}
+      </p>
+
+      {/* Subject chips. Wrap, cap visible at 6, then "+N more". */}
+      <div className="flex flex-wrap gap-1 mb-3 min-h-[20px]">
+        {subjects.slice(0, 6).map((s) => (
+          <span
+            key={s.subject_id}
+            className="inline-flex items-center gap-1 h-5 px-1.5 rounded-md bg-slate-50 border border-slate-100 text-[9px] font-bold text-slate-700 truncate max-w-[110px]"
+            title={`${s.subject_name} · max ${s.max_marks}`}
+          >
+            {s.subject_name}
+          </span>
+        ))}
+        {subjects.length > 6 && (
+          <span className="inline-flex items-center h-5 px-1.5 rounded-md bg-slate-100 text-[9px] font-bold text-slate-600">
+            +{subjects.length - 6} more
+          </span>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between pt-3 border-t border-slate-50 text-[10px] font-bold">
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-slate-300 text-[14px]">
+            calendar_today
+          </span>
+          <span className="text-slate-400">{exam.starts_at}</span>
+        </div>
+        <div className="flex items-center gap-2 text-slate-700">
+          <span>{subjectCount} subj</span>
+          <span className="h-1 w-1 rounded-full bg-slate-200" />
+          <span>{exam.max_marks} pts</span>
+        </div>
+      </div>
+
+      {!isParent && (
+        <Link
+          to={`${marksBase}?exam_id=${encodeURIComponent(exam._id)}`}
+          className="mt-3 inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 active:scale-95 transition-all"
+        >
+          <span className="material-symbols-outlined text-[14px]">edit_note</span>
+          Add marks
+        </Link>
+      )}
+    </div>
   );
 }

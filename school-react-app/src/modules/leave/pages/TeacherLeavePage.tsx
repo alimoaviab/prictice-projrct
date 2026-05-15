@@ -1,22 +1,26 @@
 /**
- * Student "My leave requests" page.
+ * Teacher "My leave requests" page.
  *
- * Server-side enforcement (RBAC + handler) restricts the list to the
- * caller's own student record, so this page can call the same generic
- * /api/leave list endpoint as the admin and rely on the backend to
- * scope down. Submission goes through StudentLeaveSubmitForm which
- * does NOT show a requester picker — the backend binds the requester
- * from the session.
+ * Server-side enforcement scopes the list to the caller's own teacher
+ * record (handler binds requester from session). Submission uses the
+ * same self-submit form as students — the requester picker is hidden.
  */
 
 import { useState, useMemo } from "react";
 import { useLeave } from "../hooks/useLeave";
-import { LeaveRecordRow, LeaveFormInput } from "../types/leave.types";
-import { Badge, Button, DataState, DataTable, DataTableColumn, PageHeader } from "@/components/ui";
+import { LeaveFormInput, LeaveRecordRow } from "../types/leave.types";
+import {
+  Badge,
+  Button,
+  DataState,
+  DataTable,
+  DataTableColumn,
+  PageHeader,
+} from "@/components/ui";
 import { motion, AnimatePresence } from "framer-motion";
 import { StudentLeaveSubmitForm } from "../components/StudentLeaveSubmitForm";
 
-export default function StudentLeavePage() {
+export function TeacherLeavePage() {
   const { state, addLeave } = useLeave();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -98,7 +102,7 @@ export default function StudentLeavePage() {
     <div className="space-y-6 p-6">
       <PageHeader
         title="My leave requests"
-        description="View and submit your leave applications. Approval status appears here."
+        description="Submit time off and track approval status. Admins receive your requests automatically."
         actions={
           <Button onClick={() => setIsModalOpen(true)}>
             <span className="material-symbols-outlined text-lg mr-2">add</span>
@@ -113,8 +117,7 @@ export default function StudentLeavePage() {
         isLoading={state.status === "loading"}
         emptyState={{
           title: "No leave requests yet",
-          description:
-            "When you submit a leave request, it'll show up here with its approval status.",
+          description: "When you submit a leave request, it'll appear here with its status.",
         }}
       />
 

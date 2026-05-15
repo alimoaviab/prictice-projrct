@@ -1,5 +1,28 @@
-// Package exams implements /api/exams endpoints. Mirrors
-// old-app/shared/services/exam.service.ts.
+// Package exams implements /api/exams endpoints.
+//
+// Architecture: ONE exam → MANY subjects.
+//
+//	Each exam row carries a `subjects[]` array of {subject_id, max_marks}.
+//	A class running "Mid-Term" with Math + English + Physics + Chemistry
+//	produces a SINGLE exam row (one card on the list page) and four
+//	entries in `subjects[]`. The legacy single-subject schema is still
+//	read on the way out (subject + max_marks fields), so already-saved
+//	exams continue to render.
+//
+// Marks: each student gets one Result row per exam, with a parallel
+// `subjects[]` array of {subject_id, obtained_marks}. Total marks and
+// percentage are computed from those breakdowns at hydrate time.
+//
+// Wire shapes accepted by Create/Update:
+//
+//	A. New (preferred):
+//	   { class_id, title, starts_at, type, status, description,
+//	     subjects: [{ subject_id, subject_name?, max_marks }, ...] }
+//	B. Legacy single-subject:
+//	   { class_id, title, ..., subject: "Math", max_marks: 100 }
+//	   (auto-promoted to subjects[] internally)
+//	C. Legacy bulk fan-out (subjects: ["Math","English"], max_marks: 100)
+//	   (auto-promoted: each name becomes a subject with the same max)
 package exams
 
 import (
@@ -28,6 +51,55 @@ func New(s *store.MemStore, save func(string, any)) *Handler {
 	return &Handler{Store: s, Persist: save}
 }
 
+// ─── Hydration ──────────────────────────────────────────────────────
+
+// resolveSubjects normalises whatever subject shape we have on disk
+// (legacy `Subject` string vs new `Subjects[]`) into a single slice we
+// can render and aggregate over. Subject names are looked up in
+// store.Subjects when only an ID was stored.
+func (h *Handler) resolveSubjects(e *store.Exam) []store.ExamSubject {
+	if len(e.Subjects) > 0 {
+		out := make([]store.ExamSubject, 0, len(e.Subjects))
+		for _, s := range e.Subjects {
+			name := s.SubjectName
+			if name == "" {
+				for _, sub := range h.Store.Subjects {
+					if sub.ID == s.SubjectID {
+						name = sub.Name
+						break
+					}
+				}
+				if name == "" {
+					name = s.SubjectID
+				}
+			}
+			out = append(out, store.ExamSubject{
+				SubjectID:   s.SubjectID,
+				SubjectName: name,
+				MaxMarks:    s.MaxMarks,
+			})
+		}
+		return out
+	}
+	// Legacy fallback: single-subject exam.
+	if e.Subject == "" {
+		return nil
+	}
+	return []store.ExamSubject{{
+		SubjectID:   e.Subject,
+		SubjectName: e.Subject,
+		MaxMarks:    e.MaxMarks,
+	}}
+}
+
+func sumMaxMarks(subjects []store.ExamSubject) int {
+	total := 0
+	for _, s := range subjects {
+		total += s.MaxMarks
+	}
+	return total
+}
+
 func (h *Handler) hydrate(rows []*store.Exam) []map[string]any {
 	classByID := map[string]*store.Class{}
 	for _, c := range h.Store.Classes {
@@ -44,6 +116,29 @@ func (h *Handler) hydrate(rows []*store.Exam) []map[string]any {
 		if cls != nil {
 			className = cls.Name
 		}
+		subjects := h.resolveSubjects(e)
+		// Build a UI-friendly snapshot with names already resolved.
+		subjectsOut := make([]map[string]any, 0, len(subjects))
+		for _, s := range subjects {
+			subjectsOut = append(subjectsOut, map[string]any{
+				"subject_id":   s.SubjectID,
+				"subject_name": s.SubjectName,
+				"max_marks":    s.MaxMarks,
+			})
+		}
+		// Concatenated subject string for old clients that still read
+		// `subject` (homework/results widgets etc).
+		concat := ""
+		for i, s := range subjects {
+			if i > 0 {
+				concat += ", "
+			}
+			concat += s.SubjectName
+		}
+		totalMax := sumMaxMarks(subjects)
+		if totalMax == 0 {
+			totalMax = e.MaxMarks // legacy fallback
+		}
 		out = append(out, map[string]any{
 			"_id":              e.ID,
 			"school_id":        e.SchoolID,
@@ -51,11 +146,13 @@ func (h *Handler) hydrate(rows []*store.Exam) []map[string]any {
 			"class_id":         e.ClassID,
 			"class_name":       className,
 			"teacher_id":       e.TeacherID,
-			"subject":          e.Subject,
+			"subject":          concat, // joined, for legacy readers
+			"subjects":         subjectsOut,
+			"subject_count":    len(subjects),
 			"title":            e.Title,
 			"type":             e.Type,
 			"starts_at":        api.FormatDate(e.StartsAt),
-			"max_marks":        e.MaxMarks,
+			"max_marks":        totalMax,
 			"status":           e.Status,
 			"description":      e.Description,
 			"results_count":    resultsByExam[e.ID],
@@ -66,7 +163,8 @@ func (h *Handler) hydrate(rows []*store.Exam) []map[string]any {
 	return out
 }
 
-// List implements GET /api/exams.
+// ─── List ───────────────────────────────────────────────────────────
+
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	q := r.URL.Query()
@@ -77,7 +175,6 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		yearID := tenant.ResolveAcademicYearID(h.Store, ctx, q.Get("academic_year_id"))
 		classID := q.Get("class_id")
 		statusQ := q.Get("status")
-
 		typeQ := q.Get("type")
 
 		h.Store.RLock()
@@ -115,7 +212,8 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	}))
 }
 
-// Get implements GET /api/exams/:id.
+// ─── Get ────────────────────────────────────────────────────────────
+
 func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	id := chi.URLParam(r, "id")
@@ -134,19 +232,106 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	}))
 }
 
-type createInput struct {
-	ClassID     string   `json:"class_id"`
-	Subject     string   `json:"subject"`
-	Subjects    []string `json:"subjects,omitempty"` // For multiple subjects in one go
-	Title       string   `json:"title"`
-	Type        string   `json:"type,omitempty"` // exam | test
-	StartsAt    string   `json:"starts_at"`
-	MaxMarks    int      `json:"max_marks"`
-	Status      string   `json:"status,omitempty"`
-	Description string   `json:"description,omitempty"`
+// ─── Create / Update payloads ───────────────────────────────────────
+
+// subjectInput accepts either {subject_id, max_marks} or just a string
+// subject name (legacy). UnmarshalJSON below handles both.
+type subjectInput struct {
+	SubjectID   string `json:"subject_id"`
+	SubjectName string `json:"subject_name"`
+	MaxMarks    int    `json:"max_marks"`
 }
 
-// Create implements POST /api/exams.
+func (s *subjectInput) UnmarshalJSON(b []byte) error {
+	if len(b) == 0 || string(b) == "null" {
+		return nil
+	}
+	if b[0] == '"' {
+		var name string
+		if err := json.Unmarshal(b, &name); err != nil {
+			return err
+		}
+		s.SubjectID = name
+		s.SubjectName = name
+		return nil
+	}
+	type alias subjectInput
+	var raw alias
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	*s = subjectInput(raw)
+	return nil
+}
+
+type createInput struct {
+	ClassID  string         `json:"class_id"`
+	Title    string         `json:"title"`
+	Type     string         `json:"type,omitempty"` // exam | test
+	StartsAt string         `json:"starts_at"`
+	Status   string         `json:"status,omitempty"`
+	Description string      `json:"description,omitempty"`
+
+	// New shape — preferred.
+	Subjects []subjectInput `json:"subjects,omitempty"`
+
+	// Legacy single-subject convenience — the old form used to send
+	// `subject` (string) + `max_marks` (int). We promote it to a single-
+	// element subjects[] internally.
+	Subject  string `json:"subject,omitempty"`
+	MaxMarks int    `json:"max_marks,omitempty"`
+}
+
+// normaliseSubjects converts whatever shape the client posted into the
+// canonical store.ExamSubject slice. Returns the slice plus a fallback
+// MaxMarks aggregate for the legacy column.
+func (in *createInput) normaliseSubjects(h *Handler) ([]store.ExamSubject, int) {
+	subjectByID := map[string]*store.Subject{}
+	for _, s := range h.Store.Subjects {
+		subjectByID[s.ID] = s
+	}
+	out := make([]store.ExamSubject, 0)
+	for _, s := range in.Subjects {
+		if s.SubjectID == "" && s.SubjectName == "" {
+			continue
+		}
+		name := s.SubjectName
+		if name == "" {
+			if found, ok := subjectByID[s.SubjectID]; ok {
+				name = found.Name
+			} else {
+				name = s.SubjectID
+			}
+		}
+		max := s.MaxMarks
+		if max <= 0 {
+			max = in.MaxMarks
+		}
+		if max <= 0 {
+			max = 100
+		}
+		out = append(out, store.ExamSubject{
+			SubjectID:   s.SubjectID,
+			SubjectName: name,
+			MaxMarks:    max,
+		})
+	}
+	if len(out) == 0 && in.Subject != "" {
+		max := in.MaxMarks
+		if max <= 0 {
+			max = 100
+		}
+		out = append(out, store.ExamSubject{
+			SubjectID:   in.Subject,
+			SubjectName: in.Subject,
+			MaxMarks:    max,
+		})
+	}
+	return out, sumMaxMarks(out)
+}
+
+// ─── Create ─────────────────────────────────────────────────────────
+
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	var body createInput
@@ -162,12 +347,8 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 			return nil, api.NewControlledError("VALIDATION_ERROR", "class_id and title are required.", 400, nil)
 		}
 
-		// Support both single subject and multiple subjects
-		subjs := body.Subjects
-		if len(subjs) == 0 && body.Subject != "" {
-			subjs = []string{body.Subject}
-		}
-		if len(subjs) == 0 {
+		subjects, totalMax := body.normaliseSubjects(h)
+		if len(subjects) == 0 {
 			return nil, api.NewControlledError("VALIDATION_ERROR", "At least one subject is required.", 400, nil)
 		}
 
@@ -180,39 +361,33 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		defer h.Store.Unlock()
 
 		now := time.Now()
-		created := make([]*store.Exam, 0, len(subjs))
 		examType := orDefault(body.Type, "exam")
 
-		for _, s := range subjs {
-			newRow := &store.Exam{
-				ID:             store.NewID("exm"),
-				SchoolID:       ctx.SchoolID,
-				AcademicYearID: ctx.ActiveAcademicYearID,
-				ClassID:        body.ClassID,
-				TeacherID:      ifTeacherID(ctx),
-				Subject:        s,
-				Title:          body.Title,
-				Type:           examType,
-				StartsAt:       startsAt,
-				MaxMarks:       body.MaxMarks,
-				Status:         orDefault(body.Status, "scheduled"),
-				Description:    body.Description,
-				CreatedAt:      now,
-				UpdatedAt:      now,
-			}
-			h.Store.Exams = append(h.Store.Exams, newRow)
-			h.Persist("exams", newRow)
-			created = append(created, newRow)
-
-			audit.Write(h.Store, ctx, audit.Input{
-				Action: "create", EntityType: "exam", EntityID: newRow.ID, After: newRow,
-			})
+		newRow := &store.Exam{
+			ID:             store.NewID("exm"),
+			SchoolID:       ctx.SchoolID,
+			AcademicYearID: ctx.ActiveAcademicYearID,
+			ClassID:        body.ClassID,
+			TeacherID:      ifTeacherID(ctx),
+			// Legacy mirror so old readers still get something useful.
+			Subject:     subjects[0].SubjectName,
+			Subjects:    subjects,
+			Title:       body.Title,
+			Type:        examType,
+			StartsAt:    startsAt,
+			MaxMarks:    totalMax,
+			Status:      orDefault(body.Status, "scheduled"),
+			Description: body.Description,
+			CreatedAt:   now,
+			UpdatedAt:   now,
 		}
+		h.Store.Exams = append(h.Store.Exams, newRow)
+		h.Persist("exams", newRow)
+		audit.Write(h.Store, ctx, audit.Input{
+			Action: "create", EntityType: "exam", EntityID: newRow.ID, After: newRow,
+		})
 
-		if len(created) == 1 {
-			return h.hydrate(created)[0], nil
-		}
-		return h.hydrate(created), nil
+		return h.hydrate([]*store.Exam{newRow})[0], nil
 	}))
 }
 
@@ -223,7 +398,8 @@ func ifTeacherID(ctx *api.RequestContext) string {
 	return ""
 }
 
-// Update implements PATCH /api/exams/:id.
+// ─── Update ─────────────────────────────────────────────────────────
+
 func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	id := chi.URLParam(r, "id")
@@ -244,12 +420,6 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 				if v, ok := body["title"]; ok {
 					_ = json.Unmarshal(v, &e.Title)
 				}
-				if v, ok := body["subject"]; ok {
-					_ = json.Unmarshal(v, &e.Subject)
-				}
-				if v, ok := body["max_marks"]; ok {
-					_ = json.Unmarshal(v, &e.MaxMarks)
-				}
 				if v, ok := body["status"]; ok {
 					_ = json.Unmarshal(v, &e.Status)
 				}
@@ -269,6 +439,26 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 						e.StartsAt = d
 					}
 				}
+				if v, ok := body["subjects"]; ok {
+					var raw []subjectInput
+					if err := json.Unmarshal(v, &raw); err == nil && len(raw) > 0 {
+						tmp := createInput{Subjects: raw}
+						subs, total := tmp.normaliseSubjects(h)
+						if len(subs) > 0 {
+							e.Subjects = subs
+							e.Subject = subs[0].SubjectName
+							e.MaxMarks = total
+						}
+					}
+				} else {
+					// Single-subject legacy patch
+					if v, ok := body["subject"]; ok {
+						_ = json.Unmarshal(v, &e.Subject)
+					}
+					if v, ok := body["max_marks"]; ok {
+						_ = json.Unmarshal(v, &e.MaxMarks)
+					}
+				}
 				e.UpdatedAt = time.Now()
 				h.Persist("exams", e)
 				audit.Write(h.Store, ctx, audit.Input{
@@ -281,7 +471,8 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	}))
 }
 
-// Delete implements DELETE /api/exams/:id.
+// ─── Delete ─────────────────────────────────────────────────────────
+
 func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	id := chi.URLParam(r, "id")

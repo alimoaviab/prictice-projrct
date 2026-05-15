@@ -59,9 +59,11 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/attendance", element: lazyPage(() => import("@/pages/role/admin/attendance"), "AdminAttendancePage") },
   { path: "/admin/attendance/create", element: lazyPage(() => import("@/pages/role/admin/attendance/create"), "AdminAttendanceCreatePage") },
 
-  // Behavior
+  // Behavior — admin reviews; teachers create. The /admin/behavior/create
+  // route was removed because admin should not author behavior reports
+  // (those originate from teachers via /teacher/behavior/create).
   { path: "/admin/behavior", element: lazyPage(() => import("@/pages/role/admin/behavior"), "BehaviorPage") },
-  { path: "/admin/behavior/create", element: lazyPage(() => import("@/pages/role/admin/behavior/create"), "AdminBehaviorCreatePage") },
+  { path: "/admin/behavior/:id", element: lazyPage(() => import("@/pages/role/admin/behavior/Param_id"), "AdminBehaviorDetailPage") },
 
   // Classes
   { path: "/admin/classes", element: lazyPage(() => import("@/pages/role/admin/classes"), "AdminClassesPage") },
@@ -91,9 +93,10 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/homework/edit/:id", element: lazyPage(() => import("@/pages/role/admin/homework/edit/Param_id"), "AdminHomeworkEditPage") },
   { path: "/admin/homework/:id/review", element: lazyPage(() => import("@/pages/role/admin/homework/Param_id/review"), "AdminHomeworkReviewPage") },
 
-  // Leave
+  // Leave — admin only reviews. Submission happens from student/teacher
+  // portals; the /admin/leave/create route was removed accordingly.
   { path: "/admin/leave", element: lazyPage(() => import("@/pages/role/admin/leave"), "LeavePage") },
-  { path: "/admin/leave/create", element: lazyPage(() => import("@/pages/role/admin/leave/create"), "AdminLeaveCreatePage") },
+  { path: "/admin/leave/:id", element: lazyPage(() => import("@/pages/role/admin/leave/Param_id"), "AdminLeaveDetailPage") },
 
   // Live Classes
   { path: "/admin/live-class", element: lazyPage(() => import("@/pages/role/admin/live-class"), "LiveClassPage") },
@@ -144,6 +147,7 @@ export const teacherRoutes: RouteObject[] = [
   { path: "/teacher/attendance/create", element: lazyPage(() => import("@/pages/role/teacher/attendance/create"), "TeacherAttendanceCreatePage") },
   { path: "/teacher/behavior", element: lazyPage(() => import("@/pages/role/teacher/behavior"), "TeacherBehaviorPage") },
   { path: "/teacher/behavior/create", element: lazyPage(() => import("@/pages/role/teacher/behavior/create"), "TeacherBehaviorCreatePage") },
+  { path: "/teacher/behavior/:id", element: lazyPage(() => import("@/pages/role/teacher/behavior/Param_id"), "TeacherBehaviorDetailPage") },
   { path: "/teacher/classes", element: lazyPage(() => import("@/pages/role/teacher/classes"), "TeacherClassesPage") },
   { path: "/teacher/classes/:id/students", element: lazyPage(() => import("@/pages/role/teacher/classes/Param_id/students"), "TeacherClassStudentsPage") },
   { path: "/teacher/events", element: lazyPage(() => import("@/pages/role/teacher/events"), "TeacherEventsPage") },
@@ -163,6 +167,7 @@ export const teacherRoutes: RouteObject[] = [
   { path: "/teacher/results", element: lazyPage(() => import("@/pages/role/teacher/results"), "TeacherResultsPage") },
   { path: "/teacher/results/create", element: lazyPage(() => import("@/pages/role/teacher/results/create"), "TeacherResultCreatePage") },
   { path: "/teacher/timetable", element: lazyPage(() => import("@/pages/role/teacher/timetable"), "TeacherTimetablePage") },
+  { path: "/teacher/leave", element: lazyPage(() => import("@/pages/role/teacher/leave")) },
 ];
 
 // ─── Parent Routes (lazy-loaded) ─────────────────────────────────────────
@@ -172,6 +177,7 @@ export const parentRoutes: RouteObject[] = [
   { path: "/parent/announcements", element: lazyPage(() => import("@/pages/role/parent/announcements"), "ParentAnnouncementsPage") },
   { path: "/parent/attendance", element: lazyPage(() => import("@/pages/role/parent/attendance"), "ParentAttendancePage") },
   { path: "/parent/behavior", element: lazyPage(() => import("@/pages/role/parent/behavior"), "ParentBehaviorPage") },
+  { path: "/parent/behavior/:id", element: lazyPage(() => import("@/pages/role/parent/behavior/Param_id"), "ParentBehaviorDetailPage") },
   { path: "/parent/events", element: lazyPage(() => import("@/pages/role/parent/events"), "ParentEventsPage") },
   { path: "/parent/exams", element: lazyPage(() => import("@/pages/role/parent/exams"), "ParentExamsPage") },
   { path: "/parent/fees", element: lazyPage(() => import("@/pages/role/parent/fees"), "ParentFeesPage") },
