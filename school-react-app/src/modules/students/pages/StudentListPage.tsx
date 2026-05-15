@@ -115,7 +115,7 @@ export function StudentListPage() {
       icon: "edit",
       label: "Edit student",
       variant: "ghost",
-      onClick: (row) => setEditingStudent(row),
+      onClick: (row) => goToEdit(row._id),
     },
     {
       icon: "delete",
@@ -394,22 +394,6 @@ export function StudentListPage() {
       </div>
 
 
-      <StudentEditSidebar
-        student={editingStudent}
-        isOpen={editingStudent !== null}
-        classOptions={classOptions}
-        subjectOptions={subjectOptions}
-        onClose={() => setEditingStudent(null)}
-        onSave={async (id, data) => {
-          setIsSaving(true);
-          try {
-            await updateStudent(id, data as StudentPatchInput);
-          } finally {
-            setIsSaving(false);
-          }
-        }}
-        isSaving={isSaving}
-      />
     </div>
   );
 }

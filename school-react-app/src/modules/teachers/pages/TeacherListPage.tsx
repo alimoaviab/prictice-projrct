@@ -375,7 +375,7 @@ export function TeacherListPage() {
               rowActions={rowActions}
             />
           </div>
-        )}
+        ))}
       </div>
 
       {/* Pagination Footer - Premium ERP Style */}
