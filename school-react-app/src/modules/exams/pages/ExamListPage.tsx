@@ -1,6 +1,23 @@
+/**
+ * /admin/exams — Exam list page. Mirrors the TestListPage layout exactly,
+ * uses the universal EntityCard so the visual contract is shared with
+ * Classes, Tests, Homework, Teachers, etc.
+ */
+
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import { DataTable, DataTableColumn, RowAction, Badge, DataState, Skeleton, TableSkeleton, StatCardGrid } from "@/components/ui";
+import {
+  DataTable,
+  DataTableColumn,
+  RowAction,
+  Badge,
+  DataState,
+  Skeleton,
+  StatCardGrid,
+  EntityCard,
+  EntityGrid,
+  EntityGridSkeleton,
+} from "@/components/ui";
 import { useExams } from "../hooks/useExams";
 import { ExamRow } from "../types/exam.types";
 import { useQueryParams } from "@/hooks/useQueryParams";
@@ -12,12 +29,14 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
   const marksBase = isTeacher ? "/teacher/exams/marks" : "/admin/exams/marks";
   const examsCreatePath = isTeacher ? "/teacher/exams/create" : "/admin/exams/create";
   const { currentParams, updateQuery, withQuery } = useQueryParams();
-  
-  const today = new Date().toISOString().split('T')[0];
-  
+
   const [searchQuery, setSearchQuery] = useState(currentParams.get("search") || "");
-  const [statusFilter, setStatusFilter] = useState<"all" | "scheduled" | "completed" | "cancelled">((currentParams.get("status") as any) || "all");
-  const [viewMode, setViewMode] = useState<"grid" | "list">((currentParams.get("view") as any) || "grid");
+  const [statusFilter, setStatusFilter] = useState<"all" | "scheduled" | "completed" | "cancelled">(
+    (currentParams.get("status") as any) || "all"
+  );
+  const [viewMode, setViewMode] = useState<"grid" | "list">(
+    (currentParams.get("view") as any) || "grid"
+  );
 
   const { state } = useExams(filters);
 
@@ -35,11 +54,20 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
         q.length === 0 ||
         row.title.toLowerCase().includes(q) ||
         row.subject.toLowerCase().includes(q);
-      const statusMatch = statusFilter === "all" ? true : row.status === statusFilter;
-      
+      const statusMatch = statusFilter === "all" || row.status === statusFilter;
       return queryMatch && statusMatch;
     });
   }, [state.data, searchQuery, statusFilter]);
+
+  const stats = useMemo(() => {
+    const all = state.data || [];
+    return {
+      total: all.length,
+      scheduled: all.filter((e) => e.status === "scheduled").length,
+      completed: all.filter((e) => e.status === "completed").length,
+      pending: all.filter((e) => e.status === "scheduled" && (e.results_count || 0) === 0).length,
+    };
+  }, [state.data]);
 
   const columns: DataTableColumn<ExamRow>[] = [
     {
@@ -55,19 +83,32 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
     },
     {
       key: "date",
-      label: "Schedule",
+      label: "Date",
       render: (row) => (
-        <div className="flex items-center gap-2">
-           <span className="material-symbols-outlined text-slate-300 text-[16px]">calendar_today</span>
-           <span className="text-[11px] font-bold text-slate-600">{row.starts_at}</span>
-        </div>
+        <span className="text-[11px] font-medium text-slate-600">{row.starts_at}</span>
+      ),
+    },
+    {
+      key: "max_marks",
+      label: "Marks",
+      render: (row) => (
+        <span className="text-[11px] font-bold text-slate-700">{row.max_marks}</span>
       ),
     },
     {
       key: "status",
       label: "Status",
       render: (row) => (
-        <Badge variant={row.status === "completed" ? "success" : row.status === "scheduled" ? "primary" : "gray"} className="text-[9px] font-bold normal-case px-2 py-0.5">
+        <Badge
+          variant={
+            row.status === "completed"
+              ? "success"
+              : row.status === "scheduled"
+                ? "primary"
+                : "gray"
+          }
+          className="text-[9px] font-bold px-2 py-0.5"
+        >
           {row.status}
         </Badge>
       ),
@@ -88,7 +129,17 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
       ];
 
   if (state.status === "loading" || state.status === "idle") {
-    return <TableSkeleton />;
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-[72px] w-full rounded-xl" />
+          ))}
+        </div>
+        <Skeleton className="h-[52px] w-full rounded-xl" />
+        <EntityGridSkeleton count={6} />
+      </div>
+    );
   }
 
   if (state.status === "error") {
@@ -96,8 +147,7 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
   }
 
   return (
-    <div className="space-y-6">
-      {/* Stats Section */}
+    <div className="space-y-5">
       <StatCardGrid
         items={[
           { label: "Total exams", value: state.data?.length || 0, icon: "quiz", accent: "blue" },
@@ -108,21 +158,22 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
       />
 
       {/* Toolbar */}
-      <div className="bg-white p-2 rounded-xl border border-slate-100 shadow-sm flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-1 items-center gap-3">
-           <div className="relative flex-1 max-w-xs">
-              <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
-              <input
-                value={searchQuery}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setSearchQuery(v);
-                  updateQuery({ search: v });
-                }}
-                placeholder="Filter exams by title or subject..."
-                className="h-9 w-full rounded-lg border border-slate-50 bg-slate-50/50 pl-9 pr-3 text-[11px] font-bold text-slate-700 outline-none focus:bg-white focus:border-blue-400"
-              />
-           </div>
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 px-3 py-2.5 shadow-[0_4px_18px_rgb(0,0,0,0.03)]">
+        <div className="flex flex-1 items-center gap-2">
+          <div className="relative flex-1 max-w-[220px]">
+            <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-base text-slate-400">
+              search
+            </span>
+            <input
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                updateQuery({ search: e.target.value });
+              }}
+              placeholder="Search exams…"
+              className="h-8 w-full rounded-lg border border-slate-200 bg-white pl-8 pr-3 text-[12px] font-medium text-slate-700 outline-none transition-all focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 placeholder:text-slate-400"
+            />
+          </div>
 
            <select
              value={statusFilter}
@@ -139,28 +190,45 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
              <option value="cancelled">Cancelled</option>
            </select>
 
-           {(searchQuery || statusFilter !== "all") && (
-             <button
-               type="button"
-               onClick={() => {
-                 setSearchQuery("");
-                 setStatusFilter("all");
-                 updateQuery({ search: "", status: "all" });
-               }}
-               className="h-9 inline-flex items-center gap-1.5 px-3 rounded-lg border border-slate-200 bg-white text-[10px] font-bold text-slate-500 hover:text-slate-900 hover:border-slate-300 transition-colors"
-               title="Clear filters"
-             >
-               <span className="material-symbols-outlined text-[16px]">filter_alt_off</span>
-               Reset
-             </button>
-           )}
+          {(searchQuery || statusFilter !== "all") && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery("");
+                setStatusFilter("all");
+                updateQuery({ search: "", status: "all" });
+              }}
+              className="h-7 inline-flex items-center gap-1 px-2 rounded-md text-[11px] font-bold text-slate-400 hover:text-slate-700 transition-colors"
+            >
+              <span className="material-symbols-outlined text-sm">close</span>
+              Clear
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
-           <div className="h-9 flex items-center bg-slate-100 p-1 rounded-lg">
-             <button onClick={() => { setViewMode("grid"); updateQuery({ view: "grid" }); }} className={`h-7 px-3 rounded-md text-[10px] font-black uppercase tracking-tight transition-all ${viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-400"}`}>Grid</button>
-             <button onClick={() => { setViewMode("list"); updateQuery({ view: "list" }); }} className={`h-7 px-3 rounded-md text-[10px] font-black uppercase tracking-tight transition-all ${viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-400"}`}>List</button>
-           </div>
+          <div className="inline-flex items-center bg-slate-50 rounded-lg border border-slate-200 p-0.5">
+            <button
+              type="button"
+              onClick={() => { setViewMode("grid"); updateQuery({ view: "grid" }); }}
+              className={`h-7 px-2 rounded-md flex items-center gap-1 text-[11px] font-bold transition-colors ${
+                viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500"
+              }`}
+            >
+              <span className="material-symbols-outlined text-sm">grid_view</span>
+              Grid
+            </button>
+            <button
+              type="button"
+              onClick={() => { setViewMode("list"); updateQuery({ view: "list" }); }}
+              className={`h-7 px-2 rounded-md flex items-center gap-1 text-[11px] font-bold transition-colors ${
+                viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500"
+              }`}
+            >
+              <span className="material-symbols-outlined text-sm">view_list</span>
+              List
+            </button>
+          </div>
 
            {!isParent && (
              <Link
@@ -174,11 +242,11 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
         </div>
       </div>
 
-      {/* Grid / List Content */}
+      {/* Content */}
       {filteredRows.length === 0 ? (
         <DataState variant="empty" title="No exams found" message="No upcoming or past exams found for the selected criteria." />
       ) : viewMode === "grid" ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <EntityGrid>
           {filteredRows.map((exam) => (
             <div key={exam._id} className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm hover:border-blue-200 transition-all flex flex-col">
                <div className="flex items-center justify-between mb-4">
@@ -211,12 +279,58 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
                )}
             </div>
           ))}
-        </div>
+        </EntityGrid>
       ) : (
-        <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
-           <DataTable columns={columns} rows={filteredRows} rowKey={(row) => row._id} rowActions={rowActions} />
+        <div className="bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 shadow-[0_4px_18px_rgb(0,0,0,0.03)] overflow-hidden">
+          <DataTable columns={columns} rows={filteredRows} rowKey={(row) => row._id} rowActions={rowActions} />
         </div>
       )}
     </div>
+  );
+}
+
+// ─── ExamCard — uses universal EntityCard ───────────────────────────────
+
+function ExamCard({
+  exam,
+  marksBase,
+  isParent,
+}: {
+  exam: ExamRow;
+  marksBase: string;
+  isParent: boolean;
+}) {
+  const accent =
+    exam.status === "completed"
+      ? "emerald"
+      : exam.status === "scheduled"
+        ? "blue"
+        : "slate";
+
+  return (
+    <EntityCard
+      icon="description"
+      accent={accent}
+      title={exam.title}
+      subtitle={exam.subject}
+      status={{ label: exam.status, accent }}
+      metrics={[
+        { label: "Date", value: exam.starts_at || "—" },
+        { label: "Max Marks", value: `${exam.max_marks} pts` },
+      ]}
+      actions={
+        isParent
+          ? []
+          : [
+              {
+                label: "Enter Marks",
+                icon: "edit_note",
+                to: `${marksBase}?exam_id=${encodeURIComponent(exam._id)}`,
+                accent: "blue",
+                primary: true,
+              },
+            ]
+      }
+    />
   );
 }

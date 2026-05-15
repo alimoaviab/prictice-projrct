@@ -47,7 +47,7 @@ export function TeacherPage() {
                         </div>
                     </div>
                 ) : (
-                    <TeacherForm onCreate={addTeacher} classOptions={classOptions} />
+                    <TeacherForm onSubmit={addTeacher} classOptions={classOptions} />
                 )}
             </Card>
 

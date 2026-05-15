@@ -184,25 +184,7 @@ export function SalaryPage() {
                     />
                 </div>
 
-                {/* Pagination Footer - Premium ERP Style */}
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100">
-                    <p className="text-[10px] font-bold text-slate-400 normal-case ">
-                        Showing <span className="text-indigo-600">1</span> to <span className="text-slate-900">{filteredRows.length}</span> of <span className="text-slate-900">{data.length}</span> Personnel
-                    </p>
-                    <div className="flex items-center gap-2">
-                        <button className="h-9 px-4 rounded-xl border border-slate-200 text-[10px] font-bold normal-case  text-slate-400 cursor-not-allowed flex items-center gap-2">
-                            <span className="material-symbols-outlined text-base">chevron_left</span>
-                            Previous
-                        </button>
-                        <div className="flex items-center gap-1">
-                            <button className="h-9 w-9 rounded-xl bg-indigo-600 text-[10px] font-bold text-white shadow-lg shadow-indigo-600/20">1</button>
-                        </div>
-                        <button className="h-9 px-4 rounded-xl border border-slate-200 text-[10px] font-bold normal-case  text-slate-400 cursor-not-allowed flex items-center gap-2">
-                            Next
-                            <span className="material-symbols-outlined text-base">chevron_right</span>
-                        </button>
-                    </div>
-                </div>
+                {/* Real pagination is rendered by <DataTable paginated={N}> in the list view. */}
             </div>
         </SchoolShell>
     );

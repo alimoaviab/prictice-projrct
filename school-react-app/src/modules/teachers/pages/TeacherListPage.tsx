@@ -1,28 +1,64 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import { DataTable, DataTableColumn, RowAction, Badge, DataState, Skeleton, TableSkeleton, StatCardGrid } from "@/components/ui";
+import {
+  DataTable,
+  DataTableColumn,
+  RowAction,
+  Badge,
+  DataState,
+  TableSkeleton,
+  StatCardGrid,
+  Pagination,
+  EntityCard,
+  EntityGrid,
+} from "@/components/ui";
 import { useTeachers } from "../hooks/useTeachers";
-import { useClasses } from "../../classes/hooks/useClasses";
-import { useSubjects } from "../../subjects/hooks/useSubjects";
-import { TeacherRow, TeacherFormInput } from "../types/teacher.types";
+import { TeacherRow } from "../types/teacher.types";
 import { showToast } from "@/utils/toast";
-import { TeacherEditSidebar } from "../components/TeacherEditSidebar";
 import { useQueryParams } from "@/hooks/useQueryParams";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { usePagination } from "@/hooks/usePagination";
 
 export function TeacherListPage() {
-  const { state, updateTeacher, deleteTeacher } = useTeachers();
-  const { state: classesState } = useClasses();
-  const { data: subjectsData } = useSubjects();
+  const navigate = useNavigate();
   const { currentParams, updateQuery, withQuery } = useQueryParams();
-  
-  const [editingTeacher, setEditingTeacher] = useState<TeacherRow | null>(null);
-  const [deletingTeacher, setDeletingTeacher] = useState<TeacherRow | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+
+  // ─── Filters ────────────────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState(currentParams.get("search") || "");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "on_leave" | "inactive">((currentParams.get("status") as any) || "all");
-  const [viewMode, setViewMode] = useState<"grid" | "list">((currentParams.get("view") as any) || "grid");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "active" | "on_leave" | "inactive"
+  >((currentParams.get("status") as any) || "all");
+  const [viewMode, setViewMode] = useState<"grid" | "list">(
+    (currentParams.get("view") as any) || "grid"
+  );
+
+  // ─── Pagination ─────────────────────────────────────────────────────
+  const pagination = usePagination({ defaultLimit: 12 });
+
+  // Reset to page 1 whenever a filter changes (search/status). Without
+  // this the user can be left on page 5 of a freshly-empty filter result.
+  useEffect(() => {
+    pagination.resetToFirst();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, statusFilter]);
+
+  // ─── Data ───────────────────────────────────────────────────────────
+  const { state, meta, deleteTeacher } = useTeachers({
+    page: pagination.page,
+    limit: pagination.limit,
+    status: statusFilter,
+    search: searchQuery,
+  });
+
+  // Mirror server-side meta into the pagination hook so it can clamp
+  // page numbers when the dataset shrinks.
+  useEffect(() => {
+    if (meta) pagination.applyMeta(meta);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [meta.total, meta.pages, meta.page]);
+
+  const [deletingTeacher, setDeletingTeacher] = useState<TeacherRow | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     setSearchQuery(currentParams.get("search") || "");
@@ -30,40 +66,20 @@ export function TeacherListPage() {
     setViewMode((currentParams.get("view") as any) || "grid");
   }, [currentParams.toString()]);
 
-  const classOptions = useMemo(() => ((classesState.data as any)?.data || []).map((cls: any) => ({
-    id: cls._id,
-    label: cls.name,
-  })), [classesState.data]);
+  function goToEdit(id: string) {
+    navigate(`/admin/teachers/edit/${id}`);
+  }
 
-  const subjectOptions = useMemo(() => subjectsData.map((subj) => ({ 
-    id: (subj as any)._id || (subj as any).id || subj.name, 
-    label: subj.name 
-  })), [subjectsData]);
-
-  const filteredRows = useMemo(() => {
-    const rows = state.data || [];
-    const q = searchQuery.trim().toLowerCase();
-    return rows.filter((row) => {
-      const queryMatch =
-        q.length === 0 ||
-        (row.employee_no || "").toLowerCase().includes(q) ||
-        `${row.first_name || ""} ${row.last_name || ""}`.toLowerCase().includes(q) ||
-        (row.email || "").toLowerCase().includes(q) ||
-        (row.qualification || "").toLowerCase().includes(q);
-      const statusMatch = statusFilter === "all" ? true : row.status === statusFilter;
-      return queryMatch && statusMatch;
-    });
-  }, [state.data, searchQuery, statusFilter]);
+  // The backend already filtered + paginated — render rows as-is.
+  const rows = state.data ?? [];
 
   const stats = useMemo(() => {
-    const data = state.data || [];
     return {
-      total: data.length,
-      active: data.filter(r => r.status === 'active').length,
-      onLeave: data.filter(r => r.status === 'on_leave').length,
-      capacity: "94%",
+      total: meta.total,
+      active: rows.filter((r) => r.status === "active").length,
+      onLeave: rows.filter((r) => r.status === "on_leave").length,
     };
-  }, [state.data]);
+  }, [meta.total, rows]);
 
   const columns: DataTableColumn<TeacherRow>[] = useMemo(() => [
     {
@@ -125,28 +141,36 @@ export function TeacherListPage() {
     },
   ], []);
 
-  const rowActions: RowAction<TeacherRow>[] = useMemo(() => [
-    {
-      icon: "edit",
-      label: "Edit Record",
-      variant: "primary",
-      onClick: (row) => setEditingTeacher(row),
-    },
-    {
-      icon: "delete",
-      label: "Remove",
-      variant: "danger",
-      onClick: (row) => setDeletingTeacher(row),
-    },
-  ], []);
+  const rowActions: RowAction<TeacherRow>[] = useMemo(
+    () => [
+      {
+        icon: "edit",
+        label: "Edit Record",
+        variant: "primary",
+        onClick: (row) => goToEdit(row._id),
+      },
+      {
+        icon: "delete",
+        label: "Remove",
+        variant: "danger",
+        onClick: (row) => setDeletingTeacher(row),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
 
   const handleDelete = async () => {
     if (!deletingTeacher) return;
     setIsDeleting(true);
+    // Capture how many items are visible BEFORE the delete fires so the
+    // pagination hook knows whether the page would become empty.
+    const visibleBefore = rows.length;
     try {
       const result = await deleteTeacher(deletingTeacher._id);
       if (result.ok) {
         setDeletingTeacher(null);
+        pagination.handleItemRemoved(visibleBefore);
       } else {
         showToast(result.error.message || "Failed to delete teacher", "error");
       }
@@ -160,12 +184,18 @@ export function TeacherListPage() {
   }
 
   if (state.status === "error") {
-    return <DataState variant="error" title="Failed to load faculty" message={state.error} />;
+    return (
+      <DataState
+        variant="error"
+        title="Failed to load faculty"
+        message={state.error}
+      />
+    );
   }
 
   return (
     <div className="space-y-6 relative min-h-[80vh] pb-10">
-      {/* Stats Section */}
+      {/* Stats */}
       <StatCardGrid
         items={[
           { label: "Total teachers", value: stats.total, icon: "badge", accent: "blue" },
@@ -179,7 +209,9 @@ export function TeacherListPage() {
       <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md border-slate-200/60 shadow-sm rounded-xl">
         <div className="flex flex-1 items-center gap-2 max-w-2xl">
           <div className="relative flex-1">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">
+              search
+            </span>
             <input
               value={searchQuery}
               onChange={(e) => {
@@ -215,7 +247,9 @@ export function TeacherListPage() {
                 updateQuery({ view: "grid" });
               }}
               className={`flex h-7 items-center gap-2 rounded-md px-3 text-[11px] font-bold transition-all ${
-                viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                viewMode === "grid"
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
               }`}
             >
               <span className="material-symbols-outlined text-base">grid_view</span>
@@ -227,7 +261,9 @@ export function TeacherListPage() {
                 updateQuery({ view: "list" });
               }}
               className={`flex h-7 items-center gap-2 rounded-md px-3 text-[11px] font-bold transition-all ${
-                viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                viewMode === "list"
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
               }`}
             >
               <span className="material-symbols-outlined text-base">view_list</span>
@@ -249,7 +285,7 @@ export function TeacherListPage() {
         </div>
       </div>
 
-      {/* Main Content Area */}
+      {/* Content */}
       <div>
         {filteredRows.length === 0 ? (
           <DataState 
@@ -263,119 +299,77 @@ export function TeacherListPage() {
               {filteredRows.map((row) => (
                 <div
                   key={row._id}
-                  className="group relative bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 shadow-[0_2px_8px_rgb(0,0,0,0.02)] hover:shadow-[0_4px_14px_rgb(0,0,0,0.05)] transition-shadow overflow-hidden"
+                  icon={
+                    <span className="text-[11px] font-bold">{initials}</span>
+                  }
+                  accent={accent}
+                  title={`${row.first_name} ${row.last_name || ""}`.trim()}
+                  subtitle={row.employee_no}
+                  status={{
+                    label: (row.status || "unknown").replace("_", " "),
+                    accent,
+                  }}
+                  hoverActions={[
+                    {
+                      label: "Edit teacher",
+                      icon: "edit",
+                      onClick: () => goToEdit(row._id),
+                      accent: "blue",
+                    },
+                    {
+                      label: "Delete teacher",
+                      icon: "delete",
+                      onClick: () => setDeletingTeacher(row),
+                      accent: "rose",
+                    },
+                  ]}
+                  metrics={
+                    row.qualification
+                      ? [
+                          { label: "Qualification", value: row.qualification },
+                          {
+                            label: "Subjects",
+                            value: (row.subjects || []).length || "—",
+                          },
+                        ]
+                      : undefined
+                  }
                 >
-                  {/* Status accent bar */}
-                  <div
-                    className={`absolute left-0 top-0 bottom-0 w-0.5 ${
-                      row.status === "active"
-                        ? "bg-emerald-500"
-                        : row.status === "on_leave"
-                          ? "bg-amber-500"
-                          : "bg-slate-300"
-                    }`}
-                  />
-
-                  <div className="px-4 py-3.5">
-                    {/* Top row: avatar + name + status + actions */}
-                    <div className="flex items-start justify-between gap-2 mb-3">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="h-10 w-10 shrink-0 rounded-lg bg-slate-900 text-white flex items-center justify-center text-[11px] font-bold">
-                          {(row.first_name || "?").substring(0, 1)}
-                          {(row.last_name || "").substring(0, 1)}
-                        </div>
-                        <div className="min-w-0">
-                          <h3 className="text-[13px] font-bold text-slate-900 tracking-tight truncate">
-                            {row.first_name} {row.last_name}
-                          </h3>
-                          <p className="text-[11px] font-bold text-blue-600 truncate">
-                            {row.employee_no}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Hover actions */}
-                      <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => setEditingTeacher(row)}
-                          className="h-6 w-6 inline-flex items-center justify-center rounded-md bg-white border border-slate-200 text-slate-500 hover:text-blue-600 shadow-sm"
-                          title="Edit teacher"
+                  {(row.subjects || []).length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {(row.subjects || []).slice(0, 3).map((s) => (
+                        <span
+                          key={s}
+                          className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md truncate max-w-[100px]"
                         >
-                          <span className="material-symbols-outlined text-[13px]">edit</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDeletingTeacher(row)}
-                          className="h-6 w-6 inline-flex items-center justify-center rounded-md bg-white border border-slate-200 text-slate-500 hover:text-rose-600 shadow-sm"
-                          title="Delete teacher"
-                        >
-                          <span className="material-symbols-outlined text-[13px]">delete</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Status pill */}
-                    <div className="flex items-center gap-1.5 mb-3">
-                      <span
-                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[9px] font-bold uppercase tracking-wider ${
-                          row.status === "active"
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            : row.status === "on_leave"
-                              ? "bg-amber-50 text-amber-700 border-amber-200"
-                              : "bg-slate-50 text-slate-600 border-slate-200"
-                        }`}
-                      >
-                        {(row.status || "unknown").replace("_", " ")}
-                      </span>
-                      {row.qualification && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded-md truncate max-w-[140px]">
-                          <span className="material-symbols-outlined text-[11px]">school</span>
-                          {row.qualification}
+                          {s}
+                        </span>
+                      ))}
+                      {(row.subjects || []).length > 3 && (
+                        <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded-md">
+                          +{(row.subjects || []).length - 3}
                         </span>
                       )}
                     </div>
-
-                    {/* Subjects */}
-                    {(row.subjects || []).length > 0 && (
-                      <div className="flex flex-wrap gap-1 mb-3">
-                        {(row.subjects || []).slice(0, 3).map((s) => (
-                          <span
-                            key={s}
-                            className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md truncate max-w-[100px]"
-                          >
-                            {s}
-                          </span>
-                        ))}
-                        {(row.subjects || []).length > 3 && (
-                          <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded-md">
-                            +{(row.subjects || []).length - 3}
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Bottom: email */}
-                    <div className="flex items-center gap-1.5 pt-2.5 border-t border-slate-100 text-[11px] font-medium text-slate-500 truncate">
-                      <span className="material-symbols-outlined text-[13px] shrink-0">mail</span>
-                      <span className="truncate">{row.email || "—"}</span>
-                    </div>
+                  )}
+                  <div className="flex items-center gap-1.5 pt-2.5 border-t border-slate-100 text-[11px] font-medium text-slate-500 truncate">
+                    <span className="material-symbols-outlined text-[13px] shrink-0">mail</span>
+                    <span className="truncate">{row.email || "—"}</span>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="premium-card overflow-hidden border-slate-200/60 shadow-sm bg-white rounded-2xl">
-              <DataTable
-                columns={columns}
-                rows={filteredRows}
-                rowKey={(row) => row._id}
-                sortable
-                paginated={10}
-                rowActions={rowActions}
-              />
-            </div>
-          )
+                </EntityCard>
+              );
+            })}
+          </EntityGrid>
+        ) : (
+          <div className="premium-card overflow-hidden border-slate-200/60 shadow-sm bg-white rounded-2xl">
+            <DataTable
+              columns={columns}
+              rows={rows}
+              rowKey={(row) => row._id}
+              sortable
+              rowActions={rowActions}
+            />
+          </div>
         )}
       </div>
 

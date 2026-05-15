@@ -1,21 +1,27 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { useQueryParams } from "@/hooks/useQueryParams";
 import { DataTable, DataTableColumn, RowAction, Badge, DataState, ListToolbar, Skeleton, TableSkeleton, StatCardGrid } from "@/components/ui";
 import { useStudents } from "../hooks/useStudents";
 import { useClasses } from "../../classes/hooks/useClasses";
 import { useSubjects } from "../../subjects/hooks/useSubjects";
-import { StudentRow, StudentPatchInput } from "../types/student.types";
+import { StudentRow } from "../types/student.types";
 import { showToast } from "@/utils/toast";
-import { StudentEditSidebar } from "../components/StudentEditSidebar";
 
 export function StudentListPage() {
-  const { students, isLoading, isError, error, updateStudent, deleteStudent } = useStudents();
-  const { state: classesState } = useClasses();
-  const { data: subjectsData } = useSubjects();
+  const navigate = useNavigate();
   const { currentParams, updateQuery, withQuery } = useQueryParams();
-  const [editingStudent, setEditingStudent] = useState<StudentRow | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
+  const classFilter = currentParams.get("class_id") || "";
+
+  // Pass the class_id from the URL straight into the hook so the API
+  // request is already scoped server-side (matters when the school has
+  // thousands of students and we shouldn't fetch all of them).
+  const { students, isLoading, isError, error, updateStudent, deleteStudent } = useStudents(
+    classFilter ? { class_id: classFilter } : undefined
+  );
+  const { state: classesState } = useClasses();
+  // subjects unused after sidebar removal but kept for ListToolbar parity
+  // (not currently consumed; left out intentionally).
   const [searchQuery, setSearchQuery] = useState(currentParams.get("search") || "");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">((currentParams.get("status") as any) || "all");
   const [viewMode, setViewMode] = useState<"grid" | "list">((currentParams.get("view") as any) || "grid");
@@ -26,11 +32,17 @@ export function StudentListPage() {
     setViewMode((currentParams.get("view") as any) || "grid");
   }, [currentParams.toString()]);
 
-  const subjectOptions = subjectsData.map((subj) => ({ id: (subj as any)._id || (subj as any).id || subj.name, label: subj.name }));
   const classOptions = ((classesState.data as any)?.data || []).map((cls: any) => ({
     id: cls._id,
     label: cls.name,
   }));
+
+  // Resolve a friendly class label for the "filtering by class" pill.
+  const activeClass = classOptions.find((c: { id: string; label: string }) => c.id === classFilter);
+
+  function goToEdit(id: string) {
+    navigate(`/admin/students/edit/${id}`);
+  }
 
   const filteredRows = useMemo(() => {
     const rows = students || [];
@@ -149,6 +161,32 @@ export function StudentListPage() {
         ]}
       />
 
+      {/* Active class filter chip — appears whenever ?class_id=... is in the URL.
+          Lets the user see at a glance that the list is scoped, and one-click
+          back to "all students". */}
+      {classFilter && (
+        <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2 ring-1 ring-blue-900/5">
+          <span className="material-symbols-outlined text-base text-blue-600">filter_alt</span>
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+            Filtering by class
+          </span>
+          <span className="text-[12px] font-bold text-blue-700">
+            {activeClass?.label || classFilter}
+          </span>
+          <span className="ml-auto text-[11px] font-medium text-slate-500">
+            {(students || []).length} student{(students || []).length === 1 ? "" : "s"}
+          </span>
+          <button
+            type="button"
+            onClick={() => updateQuery({ class_id: "" })}
+            className="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg bg-white border border-blue-200 text-[11px] font-bold text-blue-700 hover:bg-blue-100 transition-colors"
+          >
+            <span className="material-symbols-outlined text-sm">close</span>
+            Show all
+          </button>
+        </div>
+      )}
+
       {/* Toolbar Section - Unified & Sticky */}
       <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md border-slate-200/60 shadow-sm rounded-xl">
         <div className="flex flex-1 items-center gap-2 max-w-2xl">
@@ -245,7 +283,7 @@ export function StudentListPage() {
                     
                     <div className="flex items-center gap-0.5">
                       <button 
-                        onClick={() => setEditingStudent(row)}
+                        onClick={() => goToEdit(row._id)}
                         className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all"
                         title="Edit student"
                       >

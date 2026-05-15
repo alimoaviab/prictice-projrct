@@ -58,7 +58,7 @@ export function StudentCreatePage() {
             </div>
           </div>
         ) : (
-          <StudentForm onCreate={handleCreate} classOptions={classOptions} />
+          <StudentForm onSubmit={handleCreate} classOptions={classOptions} mode="create" />
         )}
       </Card>
     </div>

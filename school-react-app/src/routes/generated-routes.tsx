@@ -114,6 +114,7 @@ export const adminRoutes: RouteObject[] = [
   // Students
   { path: "/admin/students", element: lazyPage(() => import("@/pages/role/admin/students"), "AdminStudentsPage") },
   { path: "/admin/students/create", element: lazyPage(() => import("@/pages/role/admin/students/create"), "AdminStudentCreatePage") },
+  { path: "/admin/students/edit/:id", element: lazyPage(() => import("@/pages/role/admin/students/edit/Param_id"), "AdminStudentEditPage") },
 
   // Subjects
   { path: "/admin/subjects", element: lazyPage(() => import("@/pages/role/admin/subjects"), "SubjectsPage") },
@@ -121,6 +122,7 @@ export const adminRoutes: RouteObject[] = [
   // Teachers
   { path: "/admin/teachers", element: lazyPage(() => import("@/pages/role/admin/teachers"), "AdminTeachersPage") },
   { path: "/admin/teachers/create", element: lazyPage(() => import("@/pages/role/admin/teachers/create"), "AdminTeacherCreatePage") },
+  { path: "/admin/teachers/edit/:id", element: lazyPage(() => import("@/pages/role/admin/teachers/edit/Param_id"), "AdminTeacherEditPage") },
 
   // Timetable
   { path: "/admin/timetable", element: lazyPage(() => import("@/pages/role/admin/timetable"), "TimetableRoute") },

@@ -13,7 +13,7 @@
 
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { StatCardCompact, Skeleton, DataState, ConfirmModal } from "@/components/ui";
+import { StatCardCompact, Skeleton, DataState, ConfirmModal, EntityCard, EntityGrid } from "@/components/ui";
 import { serviceRequest } from "@/services/service-client";
 import { showToast } from "@/utils/toast";
 import { bindRefresh } from "@/services/data-bus";
@@ -332,124 +332,80 @@ export function HomeworkPage({ role, studentId }: HomeworkPageProps) {
 
       {/* ─── Assignment Cards Grid ────────────────────────────────────── */}
       {!loading && filtered.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <EntityGrid>
           {filtered.map((hw) => {
             const id = hw._id || hw.id;
             const overdue = isOverdue(hw);
-            const statusColor = overdue
-              ? "bg-rose-50 text-rose-700 border-rose-200"
-              : hw.status === "assigned"
-                ? "bg-blue-50 text-blue-700 border-blue-200"
-                : hw.status === "draft"
-                  ? "bg-amber-50 text-amber-700 border-amber-200"
-                  : "bg-emerald-50 text-emerald-700 border-emerald-200";
+            const accent: "rose" | "blue" | "amber" | "emerald" = overdue
+              ? "rose"
+              : hw.status === "draft"
+                ? "amber"
+                : hw.status === "closed"
+                  ? "emerald"
+                  : "blue";
             const statusLabel = overdue ? "Overdue" : hw.status || "assigned";
-            const barColor = overdue
-              ? "bg-rose-500"
-              : hw.status === "assigned"
-                ? "bg-blue-500"
-                : hw.status === "draft"
-                  ? "bg-amber-500"
-                  : "bg-emerald-500";
 
             return (
-              <div
+              <EntityCard
                 key={id}
-                className="group relative bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 shadow-[0_2px_8px_rgb(0,0,0,0.02)] hover:shadow-[0_4px_14px_rgb(0,0,0,0.05)] transition-shadow overflow-hidden"
-              >
-                {/* Status bar */}
-                <div className={`absolute left-0 top-0 bottom-0 w-0.5 ${barColor}`} />
-
-                <div className="px-4 py-3.5">
-                  {/* Top: status + actions */}
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <span
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[9px] font-bold uppercase tracking-wider ${statusColor}`}
-                    >
-                      {overdue && (
-                        <span className="material-symbols-outlined text-[10px]">warning</span>
-                      )}
-                      {statusLabel}
-                    </span>
-
-                    {/* Hover actions */}
-                    <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        type="button"
-                        onClick={() => navigate(`${basePath}/${id}/review`)}
-                        className="h-6 w-6 inline-flex items-center justify-center rounded-md bg-white border border-slate-200 text-slate-500 hover:text-blue-600 shadow-sm"
-                        title="View"
-                      >
-                        <span className="material-symbols-outlined text-[13px]">visibility</span>
-                      </button>
-                      {canCreate && (
-                        <button
-                          type="button"
-                          onClick={() =>
+                icon="assignment"
+                accent={accent}
+                title={hw.title}
+                subtitle={hw.subject_name || hw.subject}
+                status={{ label: statusLabel, accent }}
+                hoverActions={[
+                  {
+                    label: "View submissions",
+                    icon: "visibility",
+                    onClick: () => navigate(`${basePath}/${id}/review`),
+                    accent: "blue",
+                  },
+                  ...(canCreate
+                    ? ([
+                        {
+                          label: "Edit",
+                          icon: "edit",
+                          onClick: () =>
                             navigate(
                               `${role === "ADMIN" ? "/admin" : "/teacher"}/homework/edit/${id}`
-                            )
-                          }
-                          className="h-6 w-6 inline-flex items-center justify-center rounded-md bg-white border border-slate-200 text-slate-500 hover:text-blue-600 shadow-sm"
-                          title="Edit"
-                        >
-                          <span className="material-symbols-outlined text-[13px]">edit</span>
-                        </button>
-                      )}
-                      {canCreate && (
-                        <button
-                          type="button"
-                          onClick={() => setPendingDelete(hw)}
-                          className="h-6 w-6 inline-flex items-center justify-center rounded-md bg-white border border-slate-200 text-slate-500 hover:text-rose-600 shadow-sm"
-                          title="Delete"
-                        >
-                          <span className="material-symbols-outlined text-[13px]">delete</span>
-                        </button>
-                      )}
+                            ),
+                          accent: "blue" as const,
+                        },
+                        {
+                          label: "Delete",
+                          icon: "delete",
+                          onClick: () => setPendingDelete(hw),
+                          accent: "rose" as const,
+                        },
+                      ])
+                    : []),
+                ]}
+                metrics={[
+                  { label: "Class", value: hw.class_name || "—" },
+                  { label: "Due", value: formatDate(hw.due_at || hw.due_date) },
+                ]}
+                context={{
+                  label: hw.teacher_name || "Instructor",
+                  icon: (
+                    <div className="h-6 w-6 rounded-md bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 shrink-0">
+                      {(hw.teacher_name || "T").charAt(0).toUpperCase()}
                     </div>
-                  </div>
-
-                  {/* Title */}
-                  <h4 className="text-[13px] font-bold text-slate-900 tracking-tight leading-tight truncate mb-1.5">
-                    {hw.title}
-                  </h4>
-
-                  {/* Meta row: subject + class */}
-                  <div className="flex items-center gap-2 mb-3">
-                    {(hw.subject_name || hw.subject) && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md truncate max-w-[120px]">
-                        <span className="material-symbols-outlined text-[11px]">menu_book</span>
-                        {hw.subject_name || hw.subject}
-                      </span>
-                    )}
-                    {hw.class_name && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded-md truncate max-w-[100px]">
-                        <span className="material-symbols-outlined text-[11px]">school</span>
-                        {hw.class_name}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Bottom: teacher + due date */}
-                  <div className="flex items-center justify-between pt-2.5 border-t border-slate-100">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="h-6 w-6 rounded-md bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 shrink-0">
-                        {(hw.teacher_name || "T").charAt(0).toUpperCase()}
-                      </div>
-                      <span className="text-[11px] font-medium text-slate-500 truncate max-w-[100px]">
-                        {hw.teacher_name || "Instructor"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1 text-[11px] font-medium text-slate-500 shrink-0">
-                      <span className="material-symbols-outlined text-[13px]">calendar_today</span>
-                      {formatDate(hw.due_at || hw.due_date)}
-                    </div>
-                  </div>
-                </div>
-              </div>
+                  ),
+                  to: `${basePath}/${id}/review`,
+                }}
+                actions={[
+                  {
+                    label: "Open",
+                    icon: "visibility",
+                    to: `${basePath}/${id}/review`,
+                    accent: "blue",
+                    primary: true,
+                  },
+                ]}
+              />
             );
           })}
-        </div>
+        </EntityGrid>
       )}
 
       {/* ─── Delete Confirm ───────────────────────────────────────────── */}

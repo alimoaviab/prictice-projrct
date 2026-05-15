@@ -21,6 +21,9 @@ import {
   DataState,
   Skeleton,
   StatCardGrid,
+  EntityCard,
+  EntityGrid,
+  EntityGridSkeleton,
 } from "@/components/ui";
 import { useTests } from "../hooks/useTests";
 import { TestRow } from "../types/test.types";
@@ -139,11 +142,7 @@ export function TestListPage({ filters }: { filters?: { class_id?: string; subje
           ))}
         </div>
         <Skeleton className="h-[52px] w-full rounded-xl" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Skeleton key={i} className="h-[130px] w-full rounded-xl" />
-          ))}
-        </div>
+        <EntityGridSkeleton count={6} />
       </div>
     );
   }
@@ -273,7 +272,7 @@ export function TestListPage({ filters }: { filters?: { class_id?: string; subje
           createPath={isParent ? undefined : withQuery(testsCreatePath)}
         />
       ) : viewMode === "grid" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <EntityGrid>
           {filteredRows.map((test) => (
             <TestCard
               key={test._id}
@@ -282,7 +281,7 @@ export function TestListPage({ filters }: { filters?: { class_id?: string; subje
               isParent={isParent}
             />
           ))}
-        </div>
+        </EntityGrid>
       ) : (
         <div className="bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 shadow-[0_4px_18px_rgb(0,0,0,0.03)] overflow-hidden">
           <DataTable columns={columns} rows={filteredRows} rowKey={(row) => row._id} rowActions={rowActions} />
@@ -292,7 +291,7 @@ export function TestListPage({ filters }: { filters?: { class_id?: string; subje
   );
 }
 
-// ─── TestCard (compact, 3-per-row) ───────────────────────────────────────
+// ─── TestCard — uses universal EntityCard ───────────────────────────────
 
 function TestCard({
   test,
@@ -303,70 +302,38 @@ function TestCard({
   marksBase: string;
   isParent: boolean;
 }) {
-  const statusColor =
+  const accent =
     test.status === "completed"
-      ? "bg-emerald-500"
+      ? "emerald"
       : test.status === "scheduled"
-        ? "bg-blue-500"
-        : "bg-slate-400";
-
-  const statusBadge =
-    test.status === "completed"
-      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-      : test.status === "scheduled"
-        ? "bg-blue-50 text-blue-700 border-blue-200"
-        : "bg-slate-50 text-slate-600 border-slate-200";
+        ? "blue"
+        : "slate";
 
   return (
-    <div className="group relative bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 shadow-[0_2px_8px_rgb(0,0,0,0.02)] hover:shadow-[0_4px_14px_rgb(0,0,0,0.05)] transition-shadow overflow-hidden">
-      {/* Status bar */}
-      <div className={`absolute left-0 top-0 bottom-0 w-0.5 ${statusColor}`} />
-
-      <div className="px-4 py-3">
-        {/* Top: icon + status */}
-        <div className="flex items-center justify-between mb-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-            <span className="material-symbols-outlined text-base">description</span>
-          </div>
-          <span
-            className={`inline-flex items-center px-2 py-0.5 rounded-md border text-[9px] font-bold uppercase tracking-wider ${statusBadge}`}
-          >
-            {test.status}
-          </span>
-        </div>
-
-        {/* Title + subject */}
-        <h4 className="text-[13px] font-bold text-slate-900 tracking-tight leading-tight truncate mb-0.5">
-          {test.title}
-        </h4>
-        <p className="text-[11px] font-medium text-blue-600 truncate mb-3">
-          {test.subject}
-        </p>
-
-        {/* Meta row: date + marks */}
-        <div className="flex items-center justify-between pt-2.5 border-t border-slate-100">
-          <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
-            <span className="material-symbols-outlined text-[13px]">calendar_today</span>
-            {test.starts_at || "—"}
-          </div>
-          <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
-            <span className="material-symbols-outlined text-[13px]">grade</span>
-            {test.max_marks} pts
-          </div>
-        </div>
-
-        {/* Action button */}
-        {!isParent && (
-          <Link
-            to={`${marksBase}?test_id=${encodeURIComponent(test._id)}`}
-            className="mt-2.5 w-full inline-flex h-7 items-center justify-center gap-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-600 text-[10px] font-bold hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-colors"
-          >
-            <span className="material-symbols-outlined text-[13px]">edit_note</span>
-            Enter Marks
-          </Link>
-        )}
-      </div>
-    </div>
+    <EntityCard
+      icon="description"
+      accent={accent}
+      title={test.title}
+      subtitle={test.subject}
+      status={{ label: test.status, accent }}
+      metrics={[
+        { label: "Date", value: test.starts_at || "—" },
+        { label: "Max Marks", value: `${test.max_marks} pts`, tone: "text-slate-800" },
+      ]}
+      actions={
+        isParent
+          ? []
+          : [
+              {
+                label: "Enter Marks",
+                icon: "edit_note",
+                to: `${marksBase}?test_id=${encodeURIComponent(test._id)}`,
+                accent: "blue",
+                primary: true,
+              },
+            ]
+      }
+    />
   );
 }
 

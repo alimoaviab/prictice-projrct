@@ -21,7 +21,9 @@ export function SubjectEditSidebar({ isOpen, subject, onClose, onSave, isSaving 
             // Fetch teachers for the dropdown
             listTeachers().then(res => {
                 if (res.success) {
-                    setTeachers(res.data.map((t: any) => ({
+                    const raw = res.data as any;
+                    const list = Array.isArray(raw) ? raw : raw?.items ?? raw?.data ?? [];
+                    setTeachers(list.map((t: any) => ({
                         id: t._id,
                         name: `${t.first_name} ${t.last_name}`
                     })));

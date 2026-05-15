@@ -17,6 +17,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"sort"
 	"strings"
@@ -432,9 +433,14 @@ func studentMatchesSearch(s *store.Student, term string) bool {
 }
 
 func (h *Handler) nextAdmissionNo(schoolID string) string {
+	// Build a set of currently-used admission numbers. Check both
+	// MemStore AND Postgres — a student can exist in PG but not yet in
+	// MemStore right after a hot snapshot reload, and the unique index
+	// on (school_id, admission_no) would otherwise reject the insert.
+	used := map[string]bool{}
+
 	h.Store.RLock()
-	defer h.Store.RUnlock()
-	count := 0
+	maxCount := 0
 	for _, s := range h.Store.Students {
 		if s.SchoolID == schoolID {
 			count++

@@ -108,7 +108,7 @@ export function TeacherCreatePage() {
           <Skeleton className="h-32 w-full rounded-xl" />
         </div>
       ) : (
-        <TeacherForm onCreate={handleCreate} classOptions={classOptions} />
+        <TeacherForm onSubmit={handleCreate} classOptions={classOptions} mode="create" />
       )}
     </EntityCreateLayout>
   );
