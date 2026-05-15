@@ -213,7 +213,7 @@ export function ClassFeeManagerDrawer({ isOpen, classItem, onClose }: Props) {
       <aside className="fixed inset-y-0 right-0 z-[9999] flex w-full max-w-4xl flex-col bg-[#F8FAFF] shadow-[-28px_0_60px_-20px_rgba(15,23,42,0.35)]">
         <div className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-5">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-blue-600">Fee Structure Manager</p>
+            <p className="text-[10px] font-black tracking-[0.28em] text-blue-600">Fee structure manager</p>
             <h2 className="mt-1 text-xl font-black text-slate-900">{classItem.name}</h2>
             <p className="text-xs font-semibold text-slate-500">{classItem.academic_year || "Active academic year"}</p>
           </div>
@@ -225,19 +225,19 @@ export function ClassFeeManagerDrawer({ isOpen, classItem, onClose }: Props) {
         <div className="grid flex-1 grid-rows-[auto_1fr] overflow-hidden">
           <div className="grid gap-4 border-b border-slate-200 bg-white px-6 py-4 md:grid-cols-4">
             <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Recurring</p>
+              <p className="text-[10px] font-black tracking-[0.2em] text-blue-600">Monthly</p>
               <p className="mt-2 text-2xl font-black text-slate-900">{toMoney(summary.recurring)}</p>
             </div>
             <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600">One-time</p>
+              <p className="text-[10px] font-black tracking-[0.2em] text-amber-600">One-time</p>
               <p className="mt-2 text-2xl font-black text-slate-900">{toMoney(summary.oneTime)}</p>
             </div>
             <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600">Annual total</p>
+              <p className="text-[10px] font-black tracking-[0.2em] text-emerald-600">Annual total</p>
               <p className="mt-2 text-2xl font-black text-slate-900">{toMoney(summary.total)}</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Components</p>
+              <p className="text-[10px] font-black tracking-[0.2em] text-slate-500">Components</p>
               <p className="mt-2 text-2xl font-black text-slate-900">{classFees.length}</p>
             </div>
           </div>
@@ -246,10 +246,10 @@ export function ClassFeeManagerDrawer({ isOpen, classItem, onClose }: Props) {
             <div className="border-r border-slate-200 bg-white p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Add component</p>
-                  <h3 className="text-base font-black text-slate-900">Recurring / one-time fee</h3>
+                  <p className="text-[10px] font-black tracking-[0.2em] text-slate-400">Add component</p>
+                  <h3 className="text-base font-black text-slate-900">Monthly / one-time fee</h3>
                 </div>
-                <Badge variant={draft.is_monthly ? "primary" : "warning"}>{draft.is_monthly ? "Recurring" : "One-time"}</Badge>
+                <Badge variant={draft.is_monthly ? "primary" : "warning"}>{draft.is_monthly ? "Monthly" : "One-time"}</Badge>
               </div>
 
               {error && <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div>}
@@ -282,12 +282,12 @@ export function ClassFeeManagerDrawer({ isOpen, classItem, onClose }: Props) {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <Select
-                    label="Billing Mode"
+                    label="Billing mode"
                     value={draft.is_monthly ? "monthly" : "one-time"}
                     onChange={(event) => setDraft({ ...draft, is_monthly: event.target.value === "monthly" })}
                     options={[
-                      { label: "Recurring monthly", value: "monthly" },
-                      { label: "One-time fee", value: "one-time" },
+                      { label: "Monthly", value: "monthly" },
+                      { label: "One-time", value: "one-time" },
                     ]}
                   />
                   <Input
@@ -313,7 +313,7 @@ export function ClassFeeManagerDrawer({ isOpen, classItem, onClose }: Props) {
             <div className="overflow-y-auto p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Configured components</p>
+                  <p className="text-[10px] font-black tracking-[0.2em] text-slate-400">Configured components</p>
                   <h3 className="text-base font-black text-slate-900">Class fee blueprint</h3>
                 </div>
                 {loading && <p className="text-xs font-semibold text-slate-500">Loading...</p>}
@@ -334,7 +334,7 @@ export function ClassFeeManagerDrawer({ isOpen, classItem, onClose }: Props) {
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <p className="text-sm font-black text-slate-900">{fee.fee_type}</p>
-                            <Badge variant={fee.is_monthly ? "primary" : "warning"}>{fee.is_monthly ? "Recurring" : "One-time"}</Badge>
+                            <Badge variant={fee.is_monthly ? "primary" : "warning"}>{fee.is_monthly ? "Monthly" : "One-time"}</Badge>
                           </div>
                           <p className="mt-1 text-xs font-medium text-slate-500">Due {fee.due_date || "Not set"} · {fee.notes || "No notes"}</p>
                           <p className="mt-2 text-lg font-black text-slate-900">{toMoney(fee.amount)}</p>
@@ -366,12 +366,12 @@ export function ClassFeeManagerDrawer({ isOpen, classItem, onClose }: Props) {
                             onChange={(event) => setClassFees((rows) => rows.map((row) => row.id === fee.id ? { ...row, due_date: event.target.value } : row))}
                           />
                           <Select
-                            label="Billing Mode"
+                            label="Billing mode"
                             value={fee.is_monthly ? "monthly" : "one-time"}
                             onChange={(event) => setClassFees((rows) => rows.map((row) => row.id === fee.id ? { ...row, is_monthly: event.target.value === "monthly" } : row))}
                             options={[
-                              { label: "Recurring monthly", value: "monthly" },
-                              { label: "One-time fee", value: "one-time" },
+                              { label: "Monthly", value: "monthly" },
+                              { label: "One-time", value: "one-time" },
                             ]}
                           />
                           <Input

@@ -50,7 +50,7 @@ export function StudentListPage() {
   const columns: DataTableColumn<StudentRow>[] = [
     {
       key: "admission_no",
-      label: "Admission No",
+      label: "Roll number",
       render: (row) => <span className="font-mono text-xs text-gray-500">{row.admission_no}</span>,
     },
     {
@@ -62,7 +62,7 @@ export function StudentListPage() {
     },
     {
       key: "class",
-      label: "Class / Section",
+      label: "Class / section",
       render: (row) => (
         <div className="flex items-center gap-2">
           <span className="text-gray-700">{row.class_id}</span>
@@ -94,34 +94,23 @@ export function StudentListPage() {
   const rowActions: RowAction<StudentRow>[] = [
     {
       icon: "visibility",
-      label: "View Details",
-      variant: "primary",
+      label: "View",
       onClick: (row) => {
-        alert(`Student: ${row.first_name} ${row.last_name}\nAdmission: ${row.admission_no}\nGuardian: ${row.guardian.name} (${row.guardian.phone})`);
+        alert(`Student: ${row.first_name} ${row.last_name}\nID: ${row.admission_no}\nGuardian: ${row.guardian.name} (${row.guardian.phone})`);
       },
     },
     {
       icon: "edit",
-      label: "Edit Student",
+      label: "Edit student",
       variant: "ghost",
-      onClick: async (row) => {
-        const first_name = window.prompt("First name", row.first_name)?.trim();
-        if (!first_name) {
-          return;
-        }
-        const last_name = window.prompt("Last name", row.last_name)?.trim();
-        if (!last_name) {
-          return;
-        }
-        await updateStudent(row._id, { first_name, last_name });
-      },
+      onClick: (row) => setEditingStudent(row),
     },
     {
       icon: "delete",
-      label: "Delete Student",
+      label: "Delete student",
       variant: "danger",
       requireConfirm: true,
-      confirmTitle: "Delete Student",
+      confirmTitle: "Delete student",
       confirmMessage: (row: StudentRow) => `Are you sure you want to delete ${row.first_name} ${row.last_name}?`,
       onClick: async (row) => {
         const result = await deleteStudent(row._id);
@@ -153,15 +142,15 @@ export function StudentListPage() {
       {/* Stats Section */}
       <StatCardGrid
         items={[
-          { label: "Total Students", value: (students || []).length, icon: "groups", accent: "blue" },
-          { label: "Active Students", value: (students || []).filter((s: StudentRow) => s.status === 'active').length, icon: "how_to_reg", accent: "emerald" },
+          { label: "Total students", value: (students || []).length, icon: "groups", accent: "blue" },
+          { label: "Active students", value: (students || []).filter((s: StudentRow) => s.status === 'active').length, icon: "how_to_reg", accent: "emerald" },
           { label: "Inactive", value: (students || []).filter((s: StudentRow) => s.status !== 'active').length, icon: "person_off", accent: "amber" },
           { label: "Classes", value: new Set((students || []).map((s: StudentRow) => s.class_id)).size, icon: "door_front", accent: "purple" },
         ]}
       />
 
       {/* Toolbar Section - Unified & Sticky */}
-      <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md sticky top-[72px] z-20 border-slate-200/60 shadow-sm rounded-xl">
+      <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md border-slate-200/60 shadow-sm rounded-xl">
         <div className="flex flex-1 items-center gap-2 max-w-2xl">
           <div className="relative flex-1">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
@@ -186,9 +175,9 @@ export function StudentListPage() {
             }}
             className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none cursor-pointer transition-all hover:border-slate-300 focus:border-blue-400"
           >
-            <option value="all">Lifecycle: All</option>
-            <option value="active">Active Only</option>
-            <option value="inactive">Archived / Withdrawn</option>
+            <option value="all">Status: All</option>
+            <option value="active">Active only</option>
+            <option value="inactive">Archived</option>
           </select>
         </div>
 
@@ -221,7 +210,7 @@ export function StudentListPage() {
           </div>
           <div className="h-6 w-px bg-slate-200" />
           <span className="text-[10px] font-bold text-slate-900 normal-case  px-2 whitespace-nowrap">
-            {filteredRows.length} <span className="text-slate-400">STUDENTS</span>
+            {filteredRows.length} <span className="text-slate-400">records</span>
           </span>
           <div className="h-6 w-px bg-slate-200" />
           <Link
@@ -229,7 +218,7 @@ export function StudentListPage() {
             className="inline-flex h-9 items-center gap-2 px-5 text-[11px] font-bold normal-case  text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
           >
             <span className="material-symbols-outlined text-lg">person_add</span>
-            Add Student
+            Add student
           </Link>
         </div>
       </div>
@@ -239,8 +228,8 @@ export function StudentListPage() {
         {filteredRows.length === 0 ? (
           <DataState 
             variant="empty" 
-            title="No Students Found" 
-            message={searchQuery ? "Try refining your search parameters." : "Start by admitting your first student to the academy."} 
+            title="No students found" 
+            message={searchQuery ? "Try refining your search parameters." : "Start by adding your first student."} 
           />
         ) : (
           viewMode === "grid" ? (
@@ -251,14 +240,14 @@ export function StudentListPage() {
                   <div className="flex items-start justify-between gap-4 mb-3.5">
                     <div className="space-y-0.5 flex-1 min-w-0">
                       <h3 className="text-base font-bold text-slate-900 tracking-tight leading-none truncate">{row.first_name} {row.last_name}</h3>
-                      <p className="text-[9px] font-bold text-slate-400 normal-case  mt-1">Student ID: {row.admission_no}</p>
+                      <p className="text-[9px] font-bold text-slate-400 normal-case  mt-1">ID: {row.admission_no}</p>
                     </div>
                     
                     <div className="flex items-center gap-0.5">
                       <button 
                         onClick={() => setEditingStudent(row)}
                         className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all"
-                        title="Edit Student"
+                        title="Edit student"
                       >
                         <span className="material-symbols-outlined text-[18px]">edit_note</span>
                       </button>
@@ -279,7 +268,7 @@ export function StudentListPage() {
                   {/* Middle Row: Academic Placement (Pill Style) */}
                   <div className="mb-3.5 p-3 rounded-xl bg-slate-50/50 border border-slate-100/50 flex items-center justify-between">
                     <div className="flex-1">
-                      <p className="text-[8px] font-bold text-slate-400 normal-case  mb-1.5">Academic Placement</p>
+                      <p className="text-[8px] font-bold text-slate-400 normal-case  mb-1.5">Class info</p>
                       <div className="flex items-center gap-2 text-[10px] font-bold text-slate-700">
                         <span className="bg-white px-1.5 py-0.5 rounded-md border border-slate-100">{row.class_id}</span>
                         <span className="text-slate-300">→</span>
@@ -288,14 +277,14 @@ export function StudentListPage() {
                     </div>
                     <div className="text-right pl-3 border-l border-slate-200/50 ml-3">
                        <p className="text-xs font-bold text-slate-900 leading-none">{row.status === 'active' ? 'EN' : 'WD'}</p>
-                       <p className="text-[7px] font-bold text-slate-400 normal-case  mt-0.5">Type</p>
+                       <p className="text-[7px] font-bold text-slate-400 normal-case  mt-0.5">Status</p>
                     </div>
                   </div>
 
                   {/* Bottom Row: Contact & Status Toggle */}
                   <div className="mt-auto pt-2 flex flex-col gap-3">
                     <div className="px-0.5">
-                       <p className="text-[8px] font-bold text-slate-400 normal-case  mb-1">Primary Contact</p>
+                       <p className="text-[8px] font-bold text-slate-400 normal-case  mb-1">Contact</p>
                        <p className="text-[10px] font-medium text-slate-500 line-clamp-1 leading-relaxed">
                          {row.guardian?.name || "No guardian"} • {row.guardian?.phone || "No phone"}
                        </p>
@@ -349,7 +338,7 @@ export function StudentListPage() {
       {/* Pagination Footer - Premium ERP Style */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100">
         <p className="text-[10px] font-bold text-slate-400 normal-case ">
-          Showing <span className="text-blue-600">1</span> to <span className="text-slate-900">{filteredRows.length}</span> of <span className="text-slate-900">{students?.length}</span> Student Records
+          Showing <span className="text-blue-600">1</span> to <span className="text-slate-900">{filteredRows.length}</span> of <span className="text-slate-900">{students?.length}</span> records
         </p>
         <div className="flex items-center gap-2">
           <button className="h-9 px-4 rounded-xl border border-slate-200 text-[10px] font-bold normal-case  text-slate-400 cursor-not-allowed flex items-center gap-2">

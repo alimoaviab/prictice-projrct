@@ -122,7 +122,7 @@ func (r *StudentRepo) List(ctx context.Context, schoolID, yearID string, opts Li
 	// ─── Data query with pagination ────────────────────────────────────
 	dataQuery := fmt.Sprintf(`
 		SELECT id, school_id, academic_year_id, admission_no, first_name, last_name,
-		       class_id, section, status, roll_no, gender, enrolled_at, created_at, updated_at,
+		       class_id, section, status, roll_no, gender, COALESCE(user_id, '') AS user_id, enrolled_at, created_at, updated_at,
 		       COALESCE(guardian_name, '') AS guardian_name,
 		       COALESCE(guardian_phone, '') AS guardian_phone,
 		       COALESCE(guardian_email, '') AS guardian_email
@@ -146,7 +146,7 @@ func (r *StudentRepo) List(ctx context.Context, schoolID, yearID string, opts Li
 		err := rows.Scan(
 			&s.ID, &s.SchoolID, &s.AcademicYearID, &s.AdmissionNo,
 			&s.FirstName, &s.LastName, &s.ClassID, &s.Section,
-			&s.Status, &s.RollNo, &s.Gender, &s.EnrolledAt,
+			&s.Status, &s.RollNo, &s.Gender, &s.UserID, &s.EnrolledAt,
 			&s.CreatedAt, &s.UpdatedAt,
 			&guardianName, &guardianPhone, &guardianEmail,
 		)
@@ -197,7 +197,7 @@ func (r *StudentRepo) GetByID(ctx context.Context, id, schoolID string) (*store.
 	var guardianName, guardianPhone, guardianEmail string
 	err := r.pool.QueryRow(ctx, `
 		SELECT id, school_id, academic_year_id, admission_no, first_name, last_name,
-		       class_id, section, status, roll_no, gender, enrolled_at, created_at, updated_at,
+		       class_id, section, status, roll_no, gender, COALESCE(user_id, '') AS user_id, enrolled_at, created_at, updated_at,
 		       COALESCE(guardian_name, '') AS guardian_name,
 		       COALESCE(guardian_phone, '') AS guardian_phone,
 		       COALESCE(guardian_email, '') AS guardian_email
@@ -206,7 +206,7 @@ func (r *StudentRepo) GetByID(ctx context.Context, id, schoolID string) (*store.
 	`, id, schoolID).Scan(
 		&s.ID, &s.SchoolID, &s.AcademicYearID, &s.AdmissionNo,
 		&s.FirstName, &s.LastName, &s.ClassID, &s.Section,
-		&s.Status, &s.RollNo, &s.Gender, &s.EnrolledAt,
+		&s.Status, &s.RollNo, &s.Gender, &s.UserID, &s.EnrolledAt,
 		&s.CreatedAt, &s.UpdatedAt,
 		&guardianName, &guardianPhone, &guardianEmail,
 	)
@@ -225,6 +225,35 @@ func (r *StudentRepo) GetByID(ctx context.Context, id, schoolID string) (*store.
 		}
 	}
 
+	return &s, nil
+}
+
+// GetByUserID returns a single student by their associated user ID.
+func (r *StudentRepo) GetByUserID(ctx context.Context, userID, schoolID string) (*store.Student, error) {
+	var s store.Student
+	var guardianName, guardianPhone, guardianEmail string
+	err := r.pool.QueryRow(ctx, `
+		SELECT id, school_id, academic_year_id, admission_no, first_name, last_name,
+		       class_id, section, status, roll_no, gender, COALESCE(user_id, '') AS user_id, enrolled_at, created_at, updated_at,
+		       COALESCE(guardian_name, '') AS guardian_name,
+		       COALESCE(guardian_phone, '') AS guardian_phone,
+		       COALESCE(guardian_email, '') AS guardian_email
+		FROM students
+		WHERE user_id = $1 AND school_id = $2
+	`, userID, schoolID).Scan(
+		&s.ID, &s.SchoolID, &s.AcademicYearID, &s.AdmissionNo,
+		&s.FirstName, &s.LastName, &s.ClassID, &s.Section,
+		&s.Status, &s.RollNo, &s.Gender, &s.UserID, &s.EnrolledAt,
+		&s.CreatedAt, &s.UpdatedAt,
+		&guardianName, &guardianPhone, &guardianEmail,
+	)
+	if err == pgx.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get student by user_id: %w", err)
+	}
+	s.Guardian = store.Guardian{Name: guardianName, Phone: guardianPhone, Email: guardianEmail}
 	return &s, nil
 }
 

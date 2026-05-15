@@ -71,7 +71,7 @@ func (r *TeacherRepo) List(ctx context.Context, schoolID, yearID string, opts Li
 	dataQuery := fmt.Sprintf(`
 		SELECT id, school_id, COALESCE(academic_year_id,''), employee_no, first_name,
 		       COALESCE(last_name,''), email, phone, COALESCE(qualification,''),
-		       status, created_at, updated_at
+		       status, COALESCE(user_id, ''), created_at, updated_at
 		FROM teachers WHERE %s
 		ORDER BY first_name ASC
 		LIMIT $%d OFFSET $%d
@@ -90,7 +90,7 @@ func (r *TeacherRepo) List(ctx context.Context, schoolID, yearID string, opts Li
 		err := rows.Scan(
 			&t.ID, &t.SchoolID, &t.AcademicYearID, &t.EmployeeNo, &t.FirstName,
 			&t.LastName, &t.Email, &t.Phone, &t.Qualification,
-			&t.Status, &t.CreatedAt, &t.UpdatedAt,
+			&t.Status, &t.UserID, &t.CreatedAt, &t.UpdatedAt,
 		)
 		if err != nil {
 			log.Printf("[teacher-repo] scan error: %v", err)
@@ -116,12 +116,12 @@ func (r *TeacherRepo) GetByID(ctx context.Context, id, schoolID string) (*store.
 	err := r.pool.QueryRow(ctx, `
 		SELECT id, school_id, COALESCE(academic_year_id,''), employee_no, first_name,
 		       COALESCE(last_name,''), email, phone, COALESCE(qualification,''),
-		       status, created_at, updated_at
+		       status, COALESCE(user_id, ''), created_at, updated_at
 		FROM teachers WHERE id = $1 AND school_id = $2
 	`, id, schoolID).Scan(
 		&t.ID, &t.SchoolID, &t.AcademicYearID, &t.EmployeeNo, &t.FirstName,
 		&t.LastName, &t.Email, &t.Phone, &t.Qualification,
-		&t.Status, &t.CreatedAt, &t.UpdatedAt,
+		&t.Status, &t.UserID, &t.CreatedAt, &t.UpdatedAt,
 	)
 	if err == pgx.ErrNoRows {
 		return nil, nil
@@ -132,14 +132,36 @@ func (r *TeacherRepo) GetByID(ctx context.Context, id, schoolID string) (*store.
 	return &t, nil
 }
 
+// GetByUserID returns a single teacher by their associated user ID.
+func (r *TeacherRepo) GetByUserID(ctx context.Context, userID, schoolID string) (*store.Teacher, error) {
+	var t store.Teacher
+	err := r.pool.QueryRow(ctx, `
+		SELECT id, school_id, COALESCE(academic_year_id,''), employee_no, first_name,
+		       COALESCE(last_name,''), email, phone, COALESCE(qualification,''),
+		       status, COALESCE(user_id, ''), joined_at, created_at, updated_at
+		FROM teachers WHERE user_id = $1 AND school_id = $2
+	`, userID, schoolID).Scan(
+		&t.ID, &t.SchoolID, &t.AcademicYearID, &t.EmployeeNo, &t.FirstName,
+		&t.LastName, &t.Email, &t.Phone, &t.Qualification,
+		&t.Status, &t.UserID, &t.JoinedAt, &t.CreatedAt, &t.UpdatedAt,
+	)
+	if err == pgx.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get teacher by user_id: %w", err)
+	}
+	return &t, nil
+}
+
 // Create inserts a new teacher.
 func (r *TeacherRepo) Create(ctx context.Context, t *store.Teacher) error {
 	_, err := r.pool.Exec(ctx, `
 		INSERT INTO teachers (id, school_id, academic_year_id, employee_no, first_name, last_name,
-		                      email, phone, qualification, status, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+		                      email, phone, qualification, status, user_id, created_at, updated_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
 	`, t.ID, t.SchoolID, t.AcademicYearID, t.EmployeeNo, t.FirstName, t.LastName,
-		t.Email, t.Phone, t.Qualification, t.Status, t.CreatedAt, t.UpdatedAt)
+		t.Email, t.Phone, t.Qualification, t.Status, t.UserID, t.CreatedAt, t.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("create teacher: %w", err)
 	}
@@ -151,10 +173,10 @@ func (r *TeacherRepo) Create(ctx context.Context, t *store.Teacher) error {
 func (r *TeacherRepo) Update(ctx context.Context, t *store.Teacher) error {
 	_, err := r.pool.Exec(ctx, `
 		UPDATE teachers SET first_name=$3, last_name=$4, email=$5, phone=$6,
-		       qualification=$7, status=$8, updated_at=$9
+		       qualification=$7, status=$8, user_id=$9, updated_at=$10
 		WHERE id=$1 AND school_id=$2
 	`, t.ID, t.SchoolID, t.FirstName, t.LastName, t.Email, t.Phone,
-		t.Qualification, t.Status, time.Now())
+		t.Qualification, t.Status, t.UserID, time.Now())
 	if err != nil {
 		return fmt.Errorf("update teacher: %w", err)
 	}
@@ -181,25 +203,3 @@ func (r *TeacherRepo) invalidate(ctx context.Context, schoolID, yearID string) {
 	_, _ = r.cache.Del(ctx, fmt.Sprintf("composite:%s:%s", schoolID, yearID))
 }
 
-// GetByUserID resolves a teacher by their linked user account ID.
-// Used by the teacher portal when the frontend passes "session" as the
-// teacher ID (meaning: "find MY teacher profile from my auth session").
-func (r *TeacherRepo) GetByUserID(ctx context.Context, userID, schoolID string) (*store.Teacher, error) {
-	var t store.Teacher
-	err := r.pool.QueryRow(ctx, `
-		SELECT id, school_id, COALESCE(academic_year_id,''), COALESCE(user_id,''),
-			email, employee_no, first_name, last_name, phone,
-			COALESCE(qualification,''), status, joined_at, created_at, updated_at
-		FROM teachers
-		WHERE user_id = $1 AND school_id = $2
-		LIMIT 1
-	`, userID, schoolID).Scan(
-		&t.ID, &t.SchoolID, &t.AcademicYearID, &t.UserID,
-		&t.Email, &t.EmployeeNo, &t.FirstName, &t.LastName, &t.Phone,
-		&t.Qualification, &t.Status, &t.JoinedAt, &t.CreatedAt, &t.UpdatedAt,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &t, nil
-}

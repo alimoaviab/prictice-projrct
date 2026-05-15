@@ -71,7 +71,7 @@ export function ClassListPage() {
   const columns: DataTableColumn<ClassRow>[] = [
     {
       key: "name",
-      label: "Class Identity",
+      label: "Name",
       render: (row) => (
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-xs">
@@ -79,7 +79,7 @@ export function ClassListPage() {
           </div>
           <div>
             <p className="font-bold text-slate-900 leading-none mb-1">{row.name}</p>
-            <p className="text-[10px] text-slate-400 font-bold normal-case tracking-tighter">Academic Node</p>
+            <p className="text-[10px] text-slate-400 font-bold normal-case tracking-tighter">Class info</p>
           </div>
         </div>
       ),
@@ -97,7 +97,7 @@ export function ClassListPage() {
     },
     {
       key: "teachers",
-      label: "Faculty",
+      label: "Teachers",
       render: (row) => (
         <div className="flex -space-x-2">
           {(row.teacher_names || []).slice(0, 3).map((t, i) => (
@@ -113,7 +113,7 @@ export function ClassListPage() {
   const rowActions: RowAction<ClassRow>[] = [
     { icon: "edit_note", label: "Configure", onClick: (row) => navigate(`/admin/classes/${row._id}/edit`) },
     { icon: "schedule", label: "Timetable", onClick: (row) => navigate(`/admin/timetable?class_id=${row._id}`) },
-    { icon: "payments", label: "Fee Structure", onClick: (row) => navigate(`/admin/classes/${row._id}/fees`) },
+    { icon: "payments", label: "Fee structure", onClick: (row) => navigate(`/admin/classes/${row._id}/fees`) },
     { icon: "delete", label: "Remove", variant: "danger", onClick: (row) => setDeletingClass(row) },
   ];
 
@@ -130,15 +130,15 @@ export function ClassListPage() {
       {/* Stats Section */}
       <StatCardGrid
         items={[
-          { label: "Total Classes", value: meta?.total || classes.length, icon: "door_front", accent: "blue" },
-          { label: "Active Classes", value: (classes || []).filter((c: ClassRow) => c.status === "active").length, icon: "sensors", accent: "emerald" },
-          { label: "Attendance Rate", value: `${Math.round((classes || []).reduce((acc: number, c: ClassRow) => acc + (c.attendance_percentage || 0), 0) / (classes.length || 1))}%`, icon: "insights", accent: "purple" },
-          { label: "Total Students", value: (classes || []).reduce((acc: number, c: ClassRow) => acc + (c.student_count || 0), 0), icon: "groups", accent: "amber" },
+          { label: "Total classes", value: meta?.total || classes.length, icon: "door_front", accent: "blue" },
+          { label: "Active classes", value: (classes || []).filter((c: ClassRow) => c.status === "active").length, icon: "sensors", accent: "emerald" },
+          { label: "Attendance rate", value: `${Math.round((classes || []).reduce((acc: number, c: ClassRow) => acc + (c.attendance_percentage || 0), 0) / (classes.length || 1))}%`, icon: "insights", accent: "purple" },
+          { label: "Total students", value: (classes || []).reduce((acc: number, c: ClassRow) => acc + (c.student_count || 0), 0), icon: "groups", accent: "amber" },
         ]}
       />
 
       {/* Toolbar */}
-      <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md sticky top-[72px] z-20 border-slate-200/60 shadow-sm rounded-xl">
+      <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md border-slate-200/60 shadow-sm rounded-xl">
         <div className="flex flex-1 items-center gap-2 max-w-4xl">
           <div className="relative flex-1">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
@@ -177,7 +177,7 @@ export function ClassListPage() {
             className="inline-flex h-8 items-center gap-2 px-4 text-[10px] font-bold text-white bg-blue-600 border border-slate-900/10 rounded-lg hover:bg-blue-700 transition-all shadow-sm active:scale-95"
           >
             <span className="material-symbols-outlined text-base">add_box</span>
-            Register Class
+            Add class
           </Link>
         </div>
       </div>
@@ -189,7 +189,7 @@ export function ClassListPage() {
             <span className="material-symbols-outlined font-bold">info</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-blue-900">Filtering by Academic Session</p>
+            <p className="text-xs font-bold text-blue-900">Filtering by session</p>
             <p className="text-[10px] text-blue-600 font-medium">
               You are currently viewing classes for the <span className="font-bold">{academicYearState.data?.data?.find(y => y._id === getSelectedAcademicYearId())?.year || "selected"}</span> session. 
               If you don't see your class, it might be registered in a different session. Use the selector in the top-bar to switch.
@@ -235,7 +235,7 @@ export function ClassListPage() {
               {/* Refined Pagination - Professional ERP Alignment */}
               <div className="mt-8 flex items-center justify-between border-t border-slate-100 pt-6 pb-8">
                 <div className="flex flex-col gap-0.5">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Page Navigation</p>
+                  <p className="text-[10px] font-bold text-slate-400 tracking-wider">Page navigation</p>
                   <p className="text-[11px] font-medium text-slate-600">
                     Page <span className="font-bold text-slate-900">{page}</span> of <span className="font-bold text-slate-900">{meta?.pages || 1}</span> 
                     <span className="mx-2 text-slate-300">|</span> 
@@ -290,9 +290,9 @@ export function ClassListPage() {
         isOpen={!!deletingClass}
         onCancel={() => setDeletingClass(null)}
         onConfirm={handleDelete}
-        title="Confirm Deletion"
+        title="Confirm deletion"
         message={`Are you sure you want to remove ${deletingClass?.name}? this action is irreversible.`}
-        confirmLabel="Delete Node"
+        confirmLabel="Delete class"
         confirmVariant="danger"
         isLoading={isDeleting}
       />

@@ -81,8 +81,8 @@ export function AttendancePage() {
         <div className="flex flex-col gap-4">
             <Card className="max-w-4xl">
                 <div className="mb-4">
-                    <h2 className="text-lg font-semibold tracking-tight text-slate-950">Mark Attendance</h2>
-                    <p className="text-sm text-slate-600">Record daily attendance for students in their respective classes.</p>
+                    <h2 className="text-lg font-semibold tracking-tight text-slate-950">Mark attendance</h2>
+                    <p className="text-sm text-slate-600">Daily attendance record for students.</p>
                 </div>
                 {isDependencyLoading ? (
                     <div className="space-y-4">
@@ -123,7 +123,7 @@ export function AttendancePage() {
             {state.status === "success" && state.data && state.data.length > 0 ? (
                 <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-base font-semibold tracking-tight text-slate-950">Attendance Log</h3>
+                        <h3 className="text-base font-semibold tracking-tight text-slate-950">Attendance log</h3>
                         <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold normal-case tracking-[0.08em] text-slate-600">
                            {filteredRows.length} visible
                         </span>
@@ -136,7 +136,7 @@ export function AttendancePage() {
                         filterValue={statusFilter}
                         onFilterChange={(value) => setStatusFilter(value as "all" | "present" | "absent")}
                         filterOptions={[
-                            { value: "all", label: "All statuses" },
+                            { value: "all", label: "All" },
                             { value: "present", label: "Present" },
                             { value: "absent", label: "Absent" },
                         ]}

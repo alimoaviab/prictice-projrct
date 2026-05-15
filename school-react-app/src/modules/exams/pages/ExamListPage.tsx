@@ -44,11 +44,11 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
   const columns: DataTableColumn<ExamRow>[] = [
     {
       key: "title",
-      label: "Examination",
+      label: "Name",
       render: (row) => (
         <div className="flex flex-col">
           <span className="text-[12px] font-black text-slate-900 leading-none mb-1 tracking-tight">{row.title}</span>
-          <span className="text-[10px] text-blue-600 font-bold uppercase tracking-widest">{row.subject}</span>
+          <span className="text-[10px] text-blue-600 font-bold tracking-widest">{row.subject}</span>
         </div>
       ),
       sortable: true,
@@ -65,7 +65,7 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
     },
     {
       key: "status",
-      label: "Current Status",
+      label: "Status",
       render: (row) => (
         <Badge variant={row.status === "completed" ? "success" : row.status === "scheduled" ? "primary" : "gray"} className="text-[9px] font-bold normal-case px-2 py-0.5">
           {row.status}
@@ -79,7 +79,7 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
     : [
         {
           icon: "edit_note",
-          label: "Enter Marks",
+          label: "Add marks",
           variant: "primary",
           onClick: (row) => {
             window.location.assign(`${marksBase}?exam_id=${encodeURIComponent(row._id)}`);
@@ -92,7 +92,7 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
   }
 
   if (state.status === "error") {
-    return <DataState variant="error" title="Synchronization Error" message={state.error} />;
+    return <DataState variant="error" title="Sync error" message={state.error} />;
   }
 
   return (
@@ -100,10 +100,10 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
       {/* Stats Section */}
       <StatCardGrid
         items={[
-          { label: "Total Exams", value: state.data?.length || 0, icon: "quiz", accent: "blue" },
+          { label: "Total exams", value: state.data?.length || 0, icon: "quiz", accent: "blue" },
           { label: "Upcoming", value: state.data?.filter(e => e.status === "scheduled").length || 0, icon: "event", accent: "purple" },
           { label: "Completed", value: state.data?.filter(e => e.status === "completed").length || 0, icon: "task_alt", accent: "emerald" },
-          { label: "Results Pending", value: state.data?.filter(e => e.status === "scheduled" && (e.results_count || 0) === 0).length || 0, icon: "pending", accent: "amber" },
+          { label: "Pending results", value: state.data?.filter(e => e.status === "scheduled" && (e.results_count || 0) === 0).length || 0, icon: "pending", accent: "amber" },
         ]}
       />
 
@@ -133,7 +133,7 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
              }}
              className="h-9 rounded-lg border border-slate-50 bg-slate-50/50 px-3 text-[10px] font-black uppercase text-slate-600 outline-none cursor-pointer hover:bg-slate-50 transition-colors"
            >
-             <option value="all">All Status</option>
+             <option value="all">All</option>
              <option value="scheduled">Scheduled</option>
              <option value="completed">Completed</option>
              <option value="cancelled">Cancelled</option>
@@ -167,16 +167,16 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
                to={withQuery(examsCreatePath)}
                className="h-9 inline-flex items-center gap-2 px-4 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm active:scale-95 transition-all"
              >
-               <span className="material-symbols-outlined text-[16px]">add</span>
-               New Exam
-             </Link>
+                <span className="material-symbols-outlined text-[16px]">add</span>
+                Add exam
+              </Link>
            )}
         </div>
       </div>
 
       {/* Grid / List Content */}
       {filteredRows.length === 0 ? (
-        <DataState variant="empty" title="No Exams Found" message="No upcoming or past exams found for the selected criteria." />
+        <DataState variant="empty" title="No exams found" message="No upcoming or past exams found for the selected criteria." />
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredRows.map((exam) => (
@@ -185,12 +185,12 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
                   <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
                      <span className="material-symbols-outlined text-[18px]">description</span>
                   </div>
-                  <Badge variant={exam.status === "completed" ? "success" : "primary"} className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5">
+                  <Badge variant={exam.status === "completed" ? "success" : "primary"} className="text-[8px] font-black tracking-widest px-2 py-0.5">
                     {exam.status}
                   </Badge>
                </div>
                <h3 className="text-[13px] font-black text-slate-900 mb-0.5 truncate">{exam.title}</h3>
-               <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-4">{exam.subject}</p>
+               <p className="text-[10px] font-bold text-blue-600 tracking-widest mb-4">{exam.subject}</p>
 
                <div className="flex items-center justify-between pt-3 border-t border-slate-50">
                   <div className="flex items-center gap-2">
@@ -206,7 +206,7 @@ export function ExamListPage({ filters }: { filters?: { class_id?: string; subje
                    className="mt-3 inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 active:scale-95 transition-all"
                  >
                    <span className="material-symbols-outlined text-[14px]">edit_note</span>
-                   Enter Marks
+                   Add marks
                  </Link>
                )}
             </div>

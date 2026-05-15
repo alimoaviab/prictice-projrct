@@ -100,7 +100,7 @@ export function ResultPage() {
     const columns: DataTableColumn<ResultRow>[] = [
         {
             key: "student",
-            label: "Student Performance",
+            label: "Student performance",
             render: (row) => (
                 <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-lg bg-slate-900 text-white flex items-center justify-center text-[10px] font-bold normal-case">
@@ -125,7 +125,7 @@ export function ResultPage() {
         },
         {
             key: "score",
-            label: "Performance Index",
+            label: "Performance score",
             render: (row) => {
                 const percentage = (row.obtained_marks / row.max_marks) * 100;
                 return (
@@ -146,7 +146,7 @@ export function ResultPage() {
         },
         {
             key: "grade",
-            label: "Merit",
+            label: "Grade",
             render: (row) => (
                 <Badge variant={row.grade === "A" || row.grade === "A+" ? "success" : row.grade === "F" ? "error" : "primary"} className="text-[10px] font-bold normal-case px-2 py-0.5">
                     {row.grade}
@@ -204,7 +204,7 @@ export function ResultPage() {
             />
 
             {/* Toolbar Section - Unified & Sticky */}
-            <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md sticky top-[72px] z-20 border-slate-200/60 shadow-sm rounded-xl no-print">
+            <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md border-slate-200/60 shadow-sm rounded-xl no-print">
                 <div className="flex flex-1 items-center gap-2 max-w-2xl">
                     <div className="relative flex-1">
                         <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
@@ -270,7 +270,7 @@ export function ResultPage() {
                         className="h-9 px-4 rounded-xl border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all flex items-center gap-2 no-print"
                     >
                         <span className="material-symbols-outlined text-base">print</span>
-                        Print Report
+                        Print report
                     </button>
                     <div className="h-6 w-px bg-slate-200 no-print" />
                     <div className="flex items-center rounded-lg bg-slate-100 p-1 shadow-inner no-print">
@@ -305,7 +305,7 @@ export function ResultPage() {
                         }`}
                     >
                         <span className="material-symbols-outlined text-lg">{isAdding ? "close" : "add_box"}</span>
-                        {isAdding ? "Cancel Entry" : "Record Result"}
+                        {isAdding ? "Cancel" : "Add result"}
                     </button>
                 </div>
             </div>
@@ -314,8 +314,8 @@ export function ResultPage() {
             {isAdding && (
                 <div className="premium-card p-6 bg-white border-blue-100 shadow-xl shadow-blue-900/5 animate-in slide-in-from-top-4 duration-300">
                     <div className="mb-6">
-                        <h2 className="text-lg font-bold text-slate-900">Record Assessment Results</h2>
-                        <p className="text-[11px] font-bold text-slate-400 normal-case  mt-1">Single Student entry mode</p>
+                        <h2 className="text-lg font-bold text-slate-900">Add assessment results</h2>
+                        <p className="text-[11px] font-bold text-slate-400 normal-case  mt-1">Single student entry</p>
                     </div>
                     {isDependencyLoading ? (
                         <div className="space-y-4">
@@ -370,7 +370,7 @@ export function ResultPage() {
 
                                             <div className="bg-slate-50/50 rounded-xl p-3 border border-slate-100/50 mb-6">
                                                 <div className="flex items-center justify-between mb-2">
-                                                    <span className="text-[10px] font-bold text-slate-400 normal-case ">Score Analysis</span>
+                                                    <span className="text-[10px] font-bold text-slate-400 normal-case ">Score analysis</span>
                                                     <span className={`text-[11px] font-bold ${percentage >= 80 ? 'text-emerald-600' : 'text-blue-600'}`}>{percentage.toFixed(1)}%</span>
                                                 </div>
                                                 <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
@@ -396,10 +396,10 @@ export function ResultPage() {
                                         <div className="mt-auto px-5 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between group-hover:bg-white transition-all">
                                             <button className="text-[10px] font-bold text-slate-400 normal-case  hover:text-blue-600 flex items-center gap-1 transition-colors">
                                                 <span className="material-symbols-outlined text-sm">history_edu</span>
-                                                Transcript
+                                                Report
                                             </button>
                                             <button className="group/btn h-8 px-4 rounded-lg bg-blue-600 text-[10px] font-bold text-white normal-case  hover:bg-blue-700 transition-all flex items-center gap-2 shadow-sm active:scale-95">
-                                                Analytics
+                                                Details
                                                 <span className="material-symbols-outlined text-sm transition-transform group-hover/btn:translate-x-1">query_stats</span>
                                             </button>
                                         </div>

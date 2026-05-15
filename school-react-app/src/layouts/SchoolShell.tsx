@@ -48,15 +48,15 @@ const adminNavGroups: NavGroup[] = [
   {
     label: "Academic",
     items: [
-      { label: "Academic Years", href: "/admin/academic-years", icon: "calendar_month" },
+      { label: "Academic years", href: "/admin/academic-years", icon: "calendar_month" },
       { label: "Classes", href: "/admin/classes", icon: "groups" },
       { label: "Timetable", href: "/admin/timetable", icon: "schedule" },
       { label: "Attendance", href: "/admin/attendance", icon: "fact_check" },
       { label: "Exams", href: "/admin/exams", icon: "quiz" },
       { label: "Tests", href: "/admin/tests", icon: "assignment_turned_in" },
       { label: "Results", href: "/admin/results", icon: "leaderboard" },
-      { label: "Live Class", href: "/admin/live-class", icon: "videocam" },
-      { label: "Home Work", href: "/admin/homework", icon: "assignment" },
+      { label: "Live classes", href: "/admin/live-class", icon: "videocam" },
+      { label: "Homework", href: "/admin/homework", icon: "assignment" },
     ],
   },
   {
@@ -107,8 +107,8 @@ const teacherNavGroups: NavGroup[] = [
       { label: "Tests", href: "/teacher/tests", icon: "assignment_turned_in" },
       { label: "Results", href: "/teacher/results", icon: "leaderboard" },
       { label: "Attendance", href: "/teacher/attendance", icon: "fact_check" },
-      { label: "Live Class", href: "/teacher/live-class", icon: "videocam" },
-      { label: "Home Work", href: "/teacher/homework", icon: "assignment" },
+      { label: "Live classes", href: "/teacher/live-class", icon: "videocam" },
+      { label: "Homework", href: "/teacher/homework", icon: "assignment" },
       { label: "Leave", href: "/admin/leave", icon: "event_available" },
     ],
   },
@@ -159,8 +159,8 @@ const studentNavGroups: NavGroup[] = [
       { label: "Exams", href: "/student/exams", icon: "quiz" },
       { label: "Results", href: "/student/results", icon: "leaderboard" },
       { label: "Attendance", href: "/student/attendance", icon: "fact_check" },
-      { label: "Live Class", href: "/student/live-class", icon: "videocam" },
-      { label: "Home Work", href: "/student/homework", icon: "assignment" },
+      { label: "Live classes", href: "/student/live-class", icon: "videocam" },
+      { label: "Homework", href: "/student/homework", icon: "assignment" },
       { label: "Leave", href: "/student/leave", icon: "event_available" },
     ],
   },
@@ -568,7 +568,7 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
                   }
                   window.location.reload();
                 }}
-                className={`bg-transparent text-[10px] font-black uppercase tracking-widest text-slate-500 focus:outline-none ${user.role === "student" ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+                className={`bg-transparent text-[10px] font-black tracking-widest text-slate-500 focus:outline-none ${user.role === "student" ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
               >
                 {academyYears.map((row) => (
                   <option key={row._id} value={row._id}>
@@ -598,7 +598,7 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-1">
               <span className="h-px w-4 bg-blue-600/30" />
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600/60">{eyebrow}</p>
+              <p className="text-[10px] font-black tracking-[0.2em] text-blue-600/60">{eyebrow}</p>
             </div>
             <div className="flex items-center justify-between gap-4">
               <div>

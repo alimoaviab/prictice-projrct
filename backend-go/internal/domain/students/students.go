@@ -34,11 +34,6 @@ import (
 )
 
 // Handler serves the /api/students/* routes.
-//
-// `Pool` and `Cache` are optional. When `Pool` is non-nil, List/Get prefer
-// indexed PostgreSQL queries (via the embedded *repo.StudentRepo) with
-// Redis-backed result caching. When `Pool` is nil, the handler falls back
-// to the MemStore — useful for tests and the in-memory dev mode.
 type Handler struct {
 	Store   *store.MemStore
 	Persist func(table string, doc any)
@@ -47,8 +42,6 @@ type Handler struct {
 	repo    *repo.StudentRepo
 }
 
-// New creates a MemStore-backed handler. Use NewPG for production where
-// PostgreSQL + Redis caching should be the primary read path.
 func New(s *store.MemStore, save func(string, any)) *Handler {
 	if save == nil {
 		save = func(string, any) {}
@@ -56,10 +49,6 @@ func New(s *store.MemStore, save func(string, any)) *Handler {
 	return &Handler{Store: s, Persist: save}
 }
 
-// NewPG creates a handler that prefers PostgreSQL + Redis for reads and
-// falls back to the MemStore when the pool is unavailable. Mutations always
-// go through the MemStore + persistence queue so the existing snapshot
-// mechanism continues to work.
 func NewPG(s *store.MemStore, save func(string, any), pool *pgxpool.Pool, c *cache.Client) *Handler {
 	h := New(s, save)
 	h.Pool = pool
@@ -70,9 +59,6 @@ func NewPG(s *store.MemStore, save func(string, any), pool *pgxpool.Pool, c *cac
 	return h
 }
 
-// invalidateDashboardCaches clears the composite/dashboard Redis keys for
-// the given tenant. Called after every mutation so the next dashboard hit
-// reflects the latest counts.
 func (h *Handler) invalidateDashboardCaches(ctx context.Context, schoolID, yearID string) {
 	if h.Cache == nil || !h.Cache.Available() {
 		return
@@ -83,19 +69,6 @@ func (h *Handler) invalidateDashboardCaches(ctx context.Context, schoolID, yearI
 	)
 }
 
-// List implements GET /api/students with the same query params:
-// `class_id`, `status`, `academic_year_id`, `search`, `page`, `per_page`.
-//
-// Read path:
-//   - When PG is available, a single indexed SQL query returns the page
-//     directly. Result is cached in Redis (10 min TTL) keyed by the full
-//     filter set, so repeated visits are O(1).
-//   - On cache miss + PG error, falls back to a MemStore scan so the
-//     endpoint never breaks.
-//
-// Pagination: When `page` or `per_page` (or legacy `limit`) is provided,
-// returns a paginated envelope. Without pagination params, returns the
-// legacy flat array for backward compatibility.
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	q := r.URL.Query()
@@ -111,7 +84,6 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		search := strings.TrimSpace(q.Get("search"))
 		pagination := api.ParsePagination(q)
 
-		// ─── PG fast path ──────────────────────────────────────────────
 		if h.repo != nil && pagination.Enabled {
 			items, total, err := h.repo.List(r.Context(), ctx.SchoolID, yearID, repo.ListOpts{
 				Page:    pagination.Page,
@@ -121,8 +93,6 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 				Search:  search,
 			})
 			if err == nil {
-				// repo returns []store.Student; convert to []*store.Student to
-				// match existing response shape.
 				ptrs := make([]*store.Student, len(items))
 				for i := range items {
 					s := items[i]
@@ -130,10 +100,8 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 				}
 				return api.BuildPaginated(ptrs, total, pagination), nil
 			}
-			// PG failure — fall through to MemStore so the endpoint stays up.
 		}
 
-		// ─── MemStore fallback ─────────────────────────────────────────
 		h.Store.RLock()
 		rows := make([]*store.Student, 0)
 		for _, s := range h.Store.Students {
@@ -179,10 +147,6 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	}))
 }
 
-// Get implements GET /api/students/:id.
-//
-// Read path: PG + Redis (per-student key, 10 min TTL) when available,
-// MemStore fallback otherwise.
 func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	id := chi.URLParam(r, "id")
@@ -192,21 +156,35 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		// PG fast path
-		if h.repo != nil {
-			if found, err := h.repo.GetByID(r.Context(), id, ctx.SchoolID); err == nil {
-				if found == nil {
-					return nil, api.NewControlledError("NOT_FOUND", "Student not found.", 404, nil)
+		targetID := id
+		if id == "session" {
+			h.Store.RLock()
+			for _, s := range h.Store.Students {
+				if s.UserID == ctx.UserID && s.SchoolID == ctx.SchoolID {
+					h.Store.RUnlock()
+					return s, nil
 				}
+			}
+			h.Store.RUnlock()
+
+			if h.repo != nil {
+				if found, err := h.repo.GetByUserID(r.Context(), ctx.UserID, ctx.SchoolID); err == nil && found != nil {
+					return found, nil
+				}
+			}
+			return nil, api.NewControlledError("NOT_FOUND", "Student profile not found for this user.", 404, nil)
+		}
+
+		if h.repo != nil {
+			if found, err := h.repo.GetByID(r.Context(), targetID, ctx.SchoolID); err == nil && found != nil {
 				return found, nil
 			}
-			// fall through to MemStore on error
 		}
 
 		h.Store.RLock()
 		defer h.Store.RUnlock()
 		for _, s := range h.Store.Students {
-			if s.ID == id && s.SchoolID == ctx.SchoolID {
+			if s.ID == targetID && s.SchoolID == ctx.SchoolID {
 				return s, nil
 			}
 		}
@@ -230,7 +208,6 @@ type createInput struct {
 	Gender      string          `json:"gender,omitempty"`
 }
 
-// Create implements POST /api/students.
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	var body createInput
@@ -261,17 +238,24 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 			return nil, api.NewControlledError("VALIDATION_ERROR", "No active academic year found for this school.", 400, nil)
 		}
 
-		// Duplicate admission_no check.
+		if body.Email != "" {
+			body.Email = strings.ToLower(strings.TrimSpace(body.Email))
+			h.Store.RLock()
+			for _, u := range h.Store.Users {
+				if strings.EqualFold(u.Email, body.Email) {
+					h.Store.RUnlock()
+					return nil, api.NewControlledError("DUPLICATE", "This email is already registered in the system.", 400, nil)
+				}
+			}
+			h.Store.RUnlock()
+		}
+
 		if body.AdmissionNo != "" {
 			h.Store.RLock()
 			for _, s := range h.Store.Students {
 				if s.SchoolID == ctx.SchoolID && s.AdmissionNo == body.AdmissionNo {
 					h.Store.RUnlock()
-					return nil, api.NewControlledError(
-						"DUPLICATE",
-						"A student with admission number \""+body.AdmissionNo+"\" already exists in this school.",
-						400, nil,
-					)
+					return nil, api.NewControlledError("DUPLICATE", "Admission number already exists.", 400, nil)
 				}
 			}
 			h.Store.RUnlock()
@@ -309,18 +293,13 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
 		h.Persist("students", newStudent)
 
-		// Invalidate paginated list + dashboard caches so the new row shows
-		// immediately on the next list/dashboard fetch.
 		if h.Cache != nil && h.Cache.Available() {
 			_, _ = h.Cache.DelPattern(r.Context(), fmt.Sprintf("students:%s:%s:*", ctx.SchoolID, yearID))
 		}
 		h.invalidateDashboardCaches(r.Context(), ctx.SchoolID, yearID)
 
 		audit.Write(h.Store, ctx, audit.Input{
-			Action:     "create",
-			EntityType: "student",
-			EntityID:   newStudent.ID,
-			After:      newStudent,
+			Action: "create", EntityType: "student", EntityID: newStudent.ID, After: newStudent,
 		})
 		return newStudent, nil
 	}))
@@ -338,7 +317,6 @@ type updateInput struct {
 	Gender    *string         `json:"gender,omitempty"`
 }
 
-// Update implements PATCH /api/students/:id.
 func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	id := chi.URLParam(r, "id")
@@ -399,7 +377,6 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 
 		h.Persist("students", target)
 
-		// Invalidate caches outside the store lock — these are network calls.
 		schoolID := target.SchoolID
 		yearID := target.AcademicYearID
 		studentID := target.ID
@@ -410,14 +387,12 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		h.invalidateDashboardCaches(r.Context(), schoolID, yearID)
 
 		audit.Write(h.Store, ctx, audit.Input{
-			Action: "update", EntityType: "student", EntityID: id,
-			Before: before, After: *target,
+			Action: "update", EntityType: "student", EntityID: id, Before: before, After: *target,
 		})
 		return target, nil
 	}))
 }
 
-// Delete implements DELETE /api/students/:id.
 func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	id := chi.URLParam(r, "id")
@@ -450,21 +425,10 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	}))
 }
 
-// ─── helpers ─────────────────────────────────────────────────────────────
-
 func studentMatchesSearch(s *store.Student, term string) bool {
 	t := strings.ToLower(term)
 	full := strings.ToLower(s.FirstName + " " + s.LastName)
-	if strings.Contains(full, t) {
-		return true
-	}
-	if strings.Contains(strings.ToLower(s.AdmissionNo), t) {
-		return true
-	}
-	if strings.Contains(strings.ToLower(s.Guardian.Email), t) {
-		return true
-	}
-	return false
+	return strings.Contains(full, t) || strings.Contains(strings.ToLower(s.AdmissionNo), t)
 }
 
 func (h *Handler) nextAdmissionNo(schoolID string) string {
@@ -476,20 +440,7 @@ func (h *Handler) nextAdmissionNo(schoolID string) string {
 			count++
 		}
 	}
-	for {
-		count++
-		candidate := "STU-" + padLeft(count, 5)
-		exists := false
-		for _, s := range h.Store.Students {
-			if s.SchoolID == schoolID && s.AdmissionNo == candidate {
-				exists = true
-				break
-			}
-		}
-		if !exists {
-			return candidate
-		}
-	}
+	return "STU-" + padLeft(count+1, 5)
 }
 
 func padLeft(n, width int) string {

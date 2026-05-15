@@ -188,11 +188,10 @@ export function HomeworkPage({ role, studentId }: HomeworkPageProps) {
                 key={s}
                 type="button"
                 onClick={() => setStatusFilter(s)}
-                className={`h-7 px-2.5 rounded-md text-[11px] font-bold transition-colors capitalize ${
-                  statusFilter === s
+                className={`h-7 px-2.5 rounded-md text-[11px] font-bold transition-colors capitalize ${statusFilter === s
                     ? "bg-white text-blue-600 shadow-sm"
                     : "text-slate-500 hover:text-slate-900"
-                }`}
+                  }`}
               >
                 {s}
               </button>

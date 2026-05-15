@@ -204,23 +204,23 @@ export function ClassFeesPage() {
                             <span className="material-symbols-outlined text-[18px]">class</span>
                         </div>
                         <div>
-                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Class</p>
+                            <p className="text-[9px] font-black tracking-widest text-slate-400">Class</p>
                             <h2 className="text-sm font-black text-slate-900">{data.class_name}</h2>
                         </div>
                     </div>
                     <div className="h-6 w-px bg-slate-100" />
                     <div>
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Expected Monthly</p>
+                        <p className="text-[9px] font-black tracking-widest text-slate-400">Monthly Expected</p>
                         <p className="text-sm font-black text-emerald-600">Rs {data.monthly_recurring.toLocaleString()}</p>
                     </div>
                     <div className="h-6 w-px bg-slate-100" />
                     <div>
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">One-Time Dues</p>
+                        <p className="text-[9px] font-black tracking-widest text-slate-400">One-time dues</p>
                         <p className="text-sm font-black text-amber-600">Rs {data.one_time_fees.toLocaleString()}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
-                    <Badge variant="primary" className="px-3 py-1 text-[9px] font-black uppercase tracking-widest">{data.academic_year}</Badge>
+                    <Badge variant="primary" className="px-3 py-1 text-[9px] font-black tracking-widest">{data.academic_year}</Badge>
                 </div>
             </div>
 
@@ -229,15 +229,15 @@ export function ClassFeesPage() {
                 <div className="flex-1 space-y-4 lg:w-[68%]">
                     {/* BLUE MINI STATS */}
                     <div className="grid grid-cols-4 gap-3">
-                        <StatCard label="Recurring" value={data.fees.filter(f => f.type === "recurring").length} icon="sync" />
-                        <StatCard label="One-Time" value={data.fees.filter(f => f.type === "onetime").length} icon="event_repeat" />
+                        <StatCard label="Monthly" value={data.fees.filter(f => f.type === "recurring").length} icon="sync" />
+                        <StatCard label="One-time" value={data.fees.filter(f => f.type === "onetime").length} icon="event_repeat" />
                         <StatCard label="Annual" value={`Rs ${data.total_annual.toLocaleString()}`} icon="database" />
                         <StatCard label="Status" value="Live" icon="auto_awesome" />
                     </div>
 
                     <div className="rounded-3xl border border-slate-200/60 bg-white p-5 shadow-sm">
                         <div className="flex items-center justify-between mb-5">
-                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900">Active Fee Components</h3>
+                            <h3 className="text-[10px] font-black tracking-[0.2em] text-slate-900">Active fee components</h3>
                         </div>
                         
                         {data.fees.length === 0 ? (
@@ -261,10 +261,10 @@ export function ClassFeesPage() {
                                             <div>
                                                 <h4 className="text-xs font-black text-slate-900">{fee.fee_type}</h4>
                                                 <div className="flex items-center gap-2 mt-0.5">
-                                                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{fee.type}</span>
+                                                    <span className="text-[9px] font-black tracking-widest text-slate-400">{fee.type === "recurring" ? "monthly" : "one-time"}</span>
                                                     <span className="h-0.5 w-0.5 rounded-full bg-slate-200" />
-                                                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
-                                                        {fee.type === "recurring" ? "Every Month" : `${fee.due_month} ${fee.due_year}`}
+                                                    <span className="text-[9px] font-black tracking-widest text-slate-400">
+                                                        {fee.type === "recurring" ? "Every month" : `${fee.due_month} ${fee.due_year}`}
                                                     </span>
                                                 </div>
                                             </div>
@@ -273,8 +273,8 @@ export function ClassFeesPage() {
                                         <div className="flex items-center gap-6">
                                             <div className="text-right">
                                                 <p className="text-sm font-black text-slate-900">Rs {fee.amount.toLocaleString()}</p>
-                                                <p className={`text-[8px] font-black uppercase tracking-widest ${fee.status === 'active' ? 'text-emerald-500' : 'text-slate-400'}`}>
-                                                    {fee.status}
+                                                <p className={`text-[8px] font-black tracking-widest ${fee.status === 'active' ? 'text-emerald-500' : 'text-slate-400'}`}>
+                                                    {fee.status === 'active' ? 'Active' : 'Disabled'}
                                                 </p>
                                             </div>
                                             <div className="flex items-center gap-0.5">
@@ -313,30 +313,30 @@ export function ClassFeesPage() {
                 {/* RIGHT: QUICK ADD PANEL (30%) */}
                 <div className="lg:w-[32%]">
                     <div className="sticky top-[80px] rounded-3xl border border-slate-200/60 bg-white p-6 shadow-sm">
-                        <h3 className="mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 text-center">Configure Billing</h3>
+                        <h3 className="mb-4 text-[10px] font-black tracking-[0.2em] text-slate-900 text-center">Configure billing</h3>
                         
                         <div className="mb-6 flex rounded-xl bg-slate-50 p-1">
                             <button
                                 onClick={() => setActiveTab("recurring")}
-                                className={`flex-1 rounded-lg py-2 text-[9px] font-black uppercase tracking-widest transition-all ${
+                                className={`flex-1 rounded-lg py-2 text-[9px] font-black tracking-widest transition-all ${
                                     activeTab === "recurring" ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
                                 }`}
                             >
-                                Recurring
+                                Monthly
                             </button>
                             <button
                                 onClick={() => setActiveTab("onetime")}
-                                className={`flex-1 rounded-lg py-2 text-[9px] font-black uppercase tracking-widest transition-all ${
+                                className={`flex-1 rounded-lg py-2 text-[9px] font-black tracking-widest transition-all ${
                                     activeTab === "onetime" ? "bg-white text-amber-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
                                 }`}
                             >
-                                One-Time
+                                One-time
                             </button>
                         </div>
 
                         <div className="space-y-4">
                             <div>
-                                <label className="mb-1.5 block text-[9px] font-black uppercase tracking-widest text-slate-400">Name</label>
+                                <label className="mb-1.5 block text-[9px] font-black tracking-widest text-slate-400">Name</label>
                                 <input 
                                     type="text"
                                     value={formData.name}
@@ -347,7 +347,7 @@ export function ClassFeesPage() {
                             </div>
 
                             <div>
-                                <label className="mb-1.5 block text-[9px] font-black uppercase tracking-widest text-slate-400">Amount (Rs)</label>
+                                <label className="mb-1.5 block text-[9px] font-black tracking-widest text-slate-400">Amount (Rs)</label>
                                 <input 
                                     type="number"
                                     value={formData.amount}
@@ -360,7 +360,7 @@ export function ClassFeesPage() {
                             {activeTab === "onetime" && (
                                 <div className="grid grid-cols-2 gap-2">
                                     <div>
-                                        <label className="mb-1.5 block text-[9px] font-black uppercase tracking-widest text-slate-400">Month</label>
+                                        <label className="mb-1.5 block text-[9px] font-black tracking-widest text-slate-400">Month</label>
                                         <select 
                                             value={formData.due_month}
                                             onChange={(e) => setFormData({...formData, due_month: e.target.value})}
@@ -370,7 +370,7 @@ export function ClassFeesPage() {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="mb-1.5 block text-[9px] font-black uppercase tracking-widest text-slate-400">Year</label>
+                                        <label className="mb-1.5 block text-[9px] font-black tracking-widest text-slate-400">Year</label>
                                         <select 
                                             value={formData.due_year}
                                             onChange={(e) => setFormData({...formData, due_year: Number(e.target.value)})}
@@ -383,7 +383,7 @@ export function ClassFeesPage() {
                             )}
 
                             <div>
-                                <label className="mb-1.5 block text-[9px] font-black uppercase tracking-widest text-slate-400">Audit Notes</label>
+                                <label className="mb-1.5 block text-[9px] font-black tracking-widest text-slate-400">Notes</label>
                                 <textarea 
                                     rows={2}
                                     value={formData.notes}
@@ -396,13 +396,13 @@ export function ClassFeesPage() {
                             <button
                                 onClick={handleSave}
                                 disabled={saving}
-                                className={`w-full rounded-xl py-3 text-[10px] font-black uppercase tracking-[0.2em] text-white shadow-lg transition-all active:scale-95 ${
+                                className={`w-full rounded-xl py-3 text-[10px] font-black tracking-[0.2em] text-white shadow-lg transition-all active:scale-95 ${
                                     activeTab === "recurring" 
                                         ? "bg-blue-600 shadow-blue-500/10 hover:bg-blue-700" 
                                         : "bg-amber-500 shadow-amber-500/10 hover:bg-amber-600"
                                 }`}
                             >
-                                {saving ? "Syncing..." : `Deploy ${activeTab} Fee`}
+                                {saving ? "Saving..." : `Add ${activeTab === "recurring" ? "monthly" : "one-time"} fee`}
                             </button>
                         </div>
                     </div>
@@ -421,13 +421,13 @@ export function ClassFeesPage() {
                             
                             <div className="flex-1 p-6 space-y-6">
                                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Selected Component</p>
+                                    <p className="text-[10px] font-black tracking-widest text-slate-400 mb-2">Selected component</p>
                                     <div className="flex items-center justify-between">
                                         <p className="text-sm font-black text-slate-900">{showDeleteDrawer.fee_type}</p>
                                         <p className="text-sm font-black text-blue-600">Rs {showDeleteDrawer.amount.toLocaleString()}</p>
                                     </div>
-                                    <p className="mt-1 text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
-                                        {showDeleteDrawer.type} • {showDeleteDrawer.status}
+                                    <p className="mt-1 text-[10px] font-bold text-slate-500 tracking-tighter">
+                                        {showDeleteDrawer.type === "recurring" ? "monthly" : "one-time"} • {showDeleteDrawer.status}
                                     </p>
                                 </div>
 
@@ -445,13 +445,13 @@ export function ClassFeesPage() {
                                 <button 
                                     onClick={handleConfirmDelete}
                                     disabled={saving}
-                                    className="w-full rounded-xl bg-red-600 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-white shadow-lg shadow-red-500/20 hover:bg-red-700 transition-all active:scale-95"
+                                className={`w-full rounded-xl bg-red-600 py-3 text-[10px] font-black tracking-[0.2em] text-white shadow-lg shadow-red-500/20 hover:bg-red-700 transition-all active:scale-95`}
                                 >
-                                    {saving ? "Processing..." : "Confirm Delete"}
+                                    {saving ? "Processing..." : "Confirm delete"}
                                 </button>
                                 <button 
                                     onClick={() => setShowDeleteDrawer(null)}
-                                    className="w-full rounded-xl bg-white border border-slate-200 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:bg-slate-50 transition-all"
+                                    className="w-full rounded-xl bg-white border border-slate-200 py-3 text-[10px] font-black tracking-[0.2em] text-slate-500 hover:bg-slate-50 transition-all"
                                 >
                                     Cancel
                                 </button>
@@ -467,7 +467,7 @@ export function ClassFeesPage() {
                 <div className="flex items-center justify-between mb-6">
                     <div>
                         <h3 className="text-sm font-black text-slate-900">Enrolled Students ({students.length})</h3>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Students who will receive these invoices</p>
+                        <p className="text-[10px] font-bold text-slate-400 tracking-widest mt-0.5">Students who will receive these invoices</p>
                     </div>
                     <div className="flex items-center gap-2">
                         <p className="text-[10px] font-bold text-slate-400">
@@ -479,7 +479,7 @@ export function ClassFeesPage() {
                 {students.length === 0 ? (
                     <div className="py-12 text-center border-2 border-dashed border-slate-100 rounded-3xl bg-slate-50/30">
                         <span className="material-symbols-outlined text-4xl text-slate-200 mb-2">person_off</span>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No students enrolled in this class</p>
+                        <p className="text-xs font-bold text-slate-400 tracking-widest">No students enrolled in this class</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -490,7 +490,7 @@ export function ClassFeesPage() {
                                 </div>
                                 <div className="min-w-0">
                                     <p className="text-xs font-black text-slate-900 truncate">{student.first_name} {student.last_name}</p>
-                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">Reg: {student.admission_no}</p>
+                                    <p className="text-[9px] font-bold text-slate-400 tracking-widest truncate">Reg: {student.admission_no}</p>
                                 </div>
                             </div>
                         ))}

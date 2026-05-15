@@ -81,9 +81,10 @@ export function TeacherClassesPage() {
     section: "all"
   });
 
+
+
   const teacherId = useMemo(() => {
-    const profileId = user?.profileId;
-    return profileId && /^[a-fA-F0-9]{24}$/.test(profileId) ? profileId : "session";
+    return user?.profileId || "session";
   }, [user?.profileId]);
 
   const fetchClasses = () => {

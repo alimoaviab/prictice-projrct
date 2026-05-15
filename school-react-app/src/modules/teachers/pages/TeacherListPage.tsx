@@ -70,12 +70,12 @@ export function TeacherListPage() {
   const columns: DataTableColumn<TeacherRow>[] = useMemo(() => [
     {
       key: "employee_no",
-      label: "Employee ID",
+      label: "ID",
       render: (row) => <span className="font-bold text-[10px] text-blue-600 normal-case ">{row.employee_no}</span>,
     },
     {
       key: "name",
-      label: "Faculty Member",
+      label: "Name",
       render: (row) => (
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 rounded-lg bg-slate-900 text-white flex items-center justify-center text-[10px] font-bold normal-case">
@@ -91,12 +91,12 @@ export function TeacherListPage() {
     },
     {
       key: "qualification",
-      label: "Qualification",
+      label: "Education",
       render: (row) => <span className="text-[11px] font-bold text-slate-600">{row.qualification || "—"}</span>,
     },
     {
       key: "subjects",
-      label: "Specializations",
+      label: "Subjects",
       render: (row) => {
         const subjects = row.subjects || [];
         return (
@@ -130,7 +130,7 @@ export function TeacherListPage() {
   const rowActions: RowAction<TeacherRow>[] = useMemo(() => [
     {
       icon: "visibility",
-      label: "View Hub",
+      label: "View",
       variant: "primary",
       onClick: (row) => {
         alert(`Teacher Hub: ${row.first_name} ${row.last_name}`);
@@ -138,7 +138,7 @@ export function TeacherListPage() {
     },
     {
       icon: "edit",
-      label: "Edit Record",
+      label: "Edit",
       variant: "ghost",
       onClick: (row) => setEditingTeacher(row),
     },
@@ -178,15 +178,15 @@ export function TeacherListPage() {
       {/* Stats Section */}
       <StatCardGrid
         items={[
-          { label: "Total Teachers", value: stats.total, icon: "badge", accent: "blue" },
+          { label: "Total teachers", value: stats.total, icon: "badge", accent: "blue" },
           { label: "Active", value: stats.active, icon: "check_circle", accent: "emerald" },
-          { label: "On Leave", value: stats.onLeave, icon: "event_busy", accent: "amber" },
-          { label: "Subjects Covered", value: new Set((state.data || []).flatMap(t => t.subjects || [])).size, icon: "menu_book", accent: "purple" },
+          { label: "On leave", value: stats.onLeave, icon: "event_busy", accent: "amber" },
+          { label: "Subjects covered", value: new Set((state.data || []).flatMap(t => t.subjects || [])).size, icon: "menu_book", accent: "purple" },
         ]}
       />
 
       {/* Toolbar Section - Unified & Sticky */}
-      <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md sticky top-[72px] z-20 border-slate-200/60 shadow-sm rounded-xl">
+      <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md border-slate-200/60 shadow-sm rounded-xl">
         <div className="flex flex-1 items-center gap-2 max-w-2xl">
           <div className="relative flex-1">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
@@ -211,9 +211,9 @@ export function TeacherListPage() {
             }}
             className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none cursor-pointer transition-all hover:border-slate-300 focus:border-blue-400"
           >
-            <option value="all">Lifecycle: All</option>
-            <option value="active">Active Only</option>
-            <option value="on_leave">Currently On Leave</option>
+            <option value="all">Status: All</option>
+            <option value="active">Active only</option>
+            <option value="on_leave">Currently on leave</option>
           </select>
         </div>
 
@@ -246,7 +246,7 @@ export function TeacherListPage() {
           </div>
           <div className="h-6 w-px bg-slate-200" />
           <span className="text-[10px] font-bold text-slate-900 normal-case  px-2 whitespace-nowrap">
-            {filteredRows.length} <span className="text-slate-400">FACULTY</span>
+            {filteredRows.length} <span className="text-slate-400">records</span>
           </span>
           <div className="h-6 w-px bg-slate-200" />
           <Link
@@ -254,7 +254,7 @@ export function TeacherListPage() {
             className="inline-flex h-9 items-center gap-2 px-5 text-[11px] font-bold normal-case  text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
           >
             <span className="material-symbols-outlined text-lg">person_add</span>
-            Add Faculty
+            Add teacher
           </Link>
         </div>
       </div>
@@ -264,8 +264,8 @@ export function TeacherListPage() {
         {filteredRows.length === 0 ? (
           <DataState 
             variant="empty" 
-            title="No Faculty Found" 
-            message={searchQuery ? "Try refining your search parameters." : "Start by adding your first faculty member to the directory."} 
+            title="No teachers found" 
+            message={searchQuery ? "Try refining your search parameters." : "Start by adding your first teacher."} 
           />
         ) : (
           viewMode === "grid" ? (
@@ -305,11 +305,11 @@ export function TeacherListPage() {
 
                     <div className="grid grid-cols-2 gap-2 mb-4">
                       <div className="bg-slate-50/50 rounded-lg p-2 border border-slate-100/50">
-                        <p className="text-[7px] font-bold text-slate-400 normal-case  mb-0.5">Qualification</p>
+                        <p className="text-[7px] font-bold text-slate-400 normal-case  mb-0.5">Education</p>
                         <p className="text-[9px] font-bold text-slate-700 truncate">{row.qualification || "B.Ed"}</p>
                       </div>
                       <div className="bg-slate-50/50 rounded-lg p-2 border border-slate-100/50">
-                        <p className="text-[7px] font-bold text-slate-400 normal-case  mb-0.5">Specialization</p>
+                        <p className="text-[7px] font-bold text-slate-400 normal-case  mb-0.5">Subject</p>
                         <p className="text-[9px] font-bold text-slate-700 truncate">{(row.subjects || [])[0] || "—"}</p>
                       </div>
                     </div>
@@ -353,7 +353,7 @@ export function TeacherListPage() {
       {/* Pagination Footer - Premium ERP Style */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100">
         <p className="text-[10px] font-bold text-slate-400 normal-case ">
-          Showing <span className="text-blue-600">1</span> to <span className="text-slate-900">{filteredRows.length}</span> of <span className="text-slate-900">{state.data?.length}</span> Faculty Records
+          Showing <span className="text-blue-600">1</span> to <span className="text-slate-900">{filteredRows.length}</span> of <span className="text-slate-900">{state.data?.length}</span> records
         </p>
         <div className="flex items-center gap-2">
           <button className="h-9 px-4 rounded-xl border border-slate-200 text-[10px] font-bold normal-case  text-slate-400 cursor-not-allowed flex items-center gap-2">
@@ -390,9 +390,9 @@ export function TeacherListPage() {
         isOpen={!!deletingTeacher}
         onCancel={() => setDeletingTeacher(null)}
         onConfirm={handleDelete}
-        title="Confirm Deletion"
+        title="Confirm deletion"
         message={`Are you sure you want to remove ${deletingTeacher?.first_name} ${deletingTeacher?.last_name}? This action is irreversible.`}
-        confirmLabel="Remove Faculty"
+        confirmLabel="Remove teacher"
         confirmVariant="danger"
         isLoading={isDeleting}
       />

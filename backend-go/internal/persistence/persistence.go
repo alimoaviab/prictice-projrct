@@ -46,6 +46,71 @@ type write struct {
 	id     string
 }
 
+// extractSchoolID attempts to extract a SchoolID from known store types.
+func extractSchoolID(doc any) string {
+	if doc == nil {
+		return ""
+	}
+	switch v := doc.(type) {
+	case *store.School:
+		return v.SchoolID
+	case *store.User:
+		return v.SchoolID
+	case *store.AcademicYear:
+		return v.SchoolID
+	case *store.Subject:
+		return v.SchoolID
+	case *store.Class:
+		return v.SchoolID
+	case *store.Teacher:
+		return v.SchoolID
+	case *store.Student:
+		return v.SchoolID
+	case *store.Parent:
+		return v.SchoolID
+	case *store.StudentParent:
+		return v.SchoolID
+	case *store.Attendance:
+		return v.SchoolID
+	case *store.Exam:
+		return v.SchoolID
+	case *store.Result:
+		return v.SchoolID
+	case *store.Homework:
+		return v.SchoolID
+	case *store.Announcement:
+		return v.SchoolID
+	case *store.Behavior:
+		return v.SchoolID
+	case *store.Event:
+		return v.SchoolID
+	case *store.Leave:
+		return v.SchoolID
+	case *store.Timetable:
+		return v.SchoolID
+	case *store.LiveClass:
+		return v.SchoolID
+	case *store.Notification:
+		return v.SchoolID
+	case *store.FeeType:
+		return v.SchoolID
+	case *store.ClassFee:
+		return v.SchoolID
+	case *store.Fee:
+		return v.SchoolID
+	case *store.FeeAdjustment:
+		return v.SchoolID
+	case *store.FeePayment:
+		return v.SchoolID
+	case *store.SchoolSettings:
+		return v.SchoolID
+	case *store.AuditLog:
+		return v.SchoolID
+	default:
+		return ""
+	}
+}
+
 // New connects to the configured database. When `dsn` is empty, the
 // returned Persister is a no-op so the server can fall back to pure
 // in-memory mode (development convenience).
@@ -137,6 +202,17 @@ func (p *Persister) Delete(table, id string) {
 	p.mu.Unlock()
 }
 
+// DeleteWithDoc schedules a delete using the provided document so the
+// persistence layer can extract the tenant (`SchoolID`) for RLS.
+func (p *Persister) DeleteWithDoc(table string, doc any) {
+	if p == nil || p.pool == nil {
+		return
+	}
+	p.mu.Lock()
+	p.queue = append(p.queue, write{table: table, doc: doc, delete: true})
+	p.mu.Unlock()
+}
+
 func (p *Persister) drainQueue() []write {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -161,6 +237,13 @@ func (p *Persister) flush(ctx context.Context) error {
 	defer func() { _ = tx.Rollback(ctx) }()
 
 	for _, w := range writes {
+		// Try to set tenant context if we can determine SchoolID from the doc.
+		if sid := extractSchoolID(w.doc); sid != "" {
+			if _, err := tx.Exec(ctx, "SET LOCAL app.current_school_id = $1", sid); err != nil {
+				return fmt.Errorf("set tenant context: %w", err)
+			}
+		}
+
 		if w.delete {
 			if err := deleteRow(ctx, tx, w.table, w.id); err != nil {
 				return fmt.Errorf("delete %s/%s: %w", w.table, w.id, err)

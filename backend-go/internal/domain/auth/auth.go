@@ -274,9 +274,9 @@ func (h *Handler) Signup(w http.ResponseWriter, r *http.Request) {
 
 	h.Store.RLock()
 	for _, u := range h.Store.Users {
-		if u.Email == email {
+		if strings.EqualFold(u.Email, email) {
 			h.Store.RUnlock()
-			api.WriteJSON(w, http.StatusConflict, signupErr("Email already registered"))
+			api.WriteJSON(w, http.StatusConflict, signupErr("This email is already registered in the system."))
 			return
 		}
 	}

@@ -84,12 +84,16 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 
 	authH := authdomain.New(cfg, s)
 	saveFn := func(table string, doc any) {
-		switch {
-		case len(table) > 7 && table[len(table)-7:] == ":delete":
-			pg.Delete(table[:len(table)-7], asString(doc))
-		default:
-			pg.Save(table, doc)
-		}
+			switch {
+			case len(table) > 7 && table[len(table)-7:] == ":delete":
+				if s, ok := doc.(string); ok {
+					pg.Delete(table[:len(table)-7], s)
+				} else {
+					pg.DeleteWithDoc(table[:len(table)-7], doc)
+				}
+			default:
+				pg.Save(table, doc)
+			}
 	}
 
 	// ─── WebSocket endpoint (requires auth) ──────────────────────────────
