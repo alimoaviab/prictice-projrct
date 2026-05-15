@@ -158,6 +158,13 @@ func (h *PGHandler) MarkBulkPG(w http.ResponseWriter, r *http.Request) {
 			dateStr, period, reqCtx.UserID, records, now,
 		)
 
+		// ─── Sync MemStore so GET /api/attendance returns fresh data ───
+		// The list endpoint reads from MemStore, not PG directly. Without
+		// this sync, marks appear to vanish when navigating away and back.
+		if saved > 0 {
+			h.syncToMemStore(reqCtx.SchoolID, yearID, body.ClassID, dateStr, period, reqCtx.UserID, records, now)
+		}
+
 		// ─── Invalidate Redis cache ────────────────────────────────────
 		if h.Cache != nil && h.Cache.Available() {
 			cacheKeys := []string{
@@ -235,6 +242,62 @@ func (h *PGHandler) executeBatchInsert(
 	}
 
 	return saved, failed
+}
+
+// syncToMemStore writes the marked records into the in-memory store so
+// that GET /api/attendance (which reads from MemStore) returns fresh data
+// without requiring a full reload from PG.
+func (h *PGHandler) syncToMemStore(
+	schoolID, yearID, classID, dateStr string,
+	period int, markedBy string,
+	records []markRecord, now time.Time,
+) {
+	date, _ := time.Parse("2006-01-02", dateStr)
+
+	h.Store.Lock()
+	defer h.Store.Unlock()
+
+	for _, rec := range records {
+		if rec.StudentID == "" || rec.Status == "" {
+			continue
+		}
+
+		// Check if an existing record matches (same school, student, date, period)
+		found := false
+		for _, existing := range h.Store.Attendance {
+			if existing.SchoolID == schoolID &&
+				existing.StudentID == rec.StudentID &&
+				existing.ClassID == classID &&
+				existing.Period == period &&
+				existing.Date.Format("2006-01-02") == dateStr {
+				// Update in place
+				existing.Status = strings.ToLower(rec.Status)
+				existing.Note = rec.Note
+				existing.MarkedBy = markedBy
+				existing.UpdatedAt = now
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			h.Store.Attendance = append(h.Store.Attendance, &store.Attendance{
+				ID:             store.NewID("att"),
+				SchoolID:       schoolID,
+				AcademicYearID: yearID,
+				StudentID:      rec.StudentID,
+				ClassID:        classID,
+				Date:           date,
+				Period:         period,
+				Status:         strings.ToLower(rec.Status),
+				MarkedBy:       markedBy,
+				Source:         "manual",
+				Note:           rec.Note,
+				CreatedAt:      now,
+				UpdatedAt:      now,
+			})
+		}
+	}
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

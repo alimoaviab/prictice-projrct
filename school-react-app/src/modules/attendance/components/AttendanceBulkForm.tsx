@@ -101,6 +101,9 @@ export function AttendanceBulkForm({ initialClassId, initialDate, viewMode = "li
                 records[s._id] = "present";
                 remarks[s._id] = remarksByStudent[s._id] || "";
             }
+            // Optimistic: update local state immediately
+            setStatusByStudent(records);
+
             await markAttendance({
                 class_id: initialClassId || classStudents[0].class_id,
                 date: initialDate || new Date().toISOString().split('T')[0],
@@ -110,9 +113,13 @@ export function AttendanceBulkForm({ initialClassId, initialDate, viewMode = "li
             });
             showToast("All students marked as present", "success");
             onSaved?.();
-            refreshAttendanceSnapshot();
+            // Don't refreshAttendanceSnapshot() here — the local state
+            // is already correct. Refreshing immediately would overwrite
+            // the optimistic update with stale server data.
         } catch (err: any) {
             showToast(err.message || "Failed to mark all present", "error");
+            // On error, re-fetch to get the real server state
+            refreshAttendanceSnapshot();
         }
     };
 
@@ -223,8 +230,13 @@ export function AttendanceBulkForm({ initialClassId, initialDate, viewMode = "li
                                     remarks: { [student._id]: remarksByStudent[student._id] || "" }
                                   });
                                   onSaved?.();
+                                  // Don't refresh — local state is already correct.
+                                  // Refreshing immediately overwrites with stale server data.
+                                } catch (err) {
+                                  console.error("Auto-save failed", err);
+                                  // Revert on error
                                   refreshAttendanceSnapshot();
-                                } catch (err) { console.error("Auto-save failed", err); }
+                                }
                               }}
                               className={`flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl border transition-all text-[9px] font-black uppercase tracking-tight ${
                                 status === opt.value 
@@ -285,8 +297,11 @@ export function AttendanceBulkForm({ initialClassId, initialDate, viewMode = "li
                                             remarks: { [student._id]: remarksByStudent[student._id] || "" }
                                           });
                                           onSaved?.();
+                                          // Don't refresh — local state is already correct.
+                                        } catch (err) {
+                                          console.error("Auto-save failed", err);
                                           refreshAttendanceSnapshot();
-                                        } catch (err) { console.error("Auto-save failed", err); }
+                                        }
                                       }}
                                       className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border transition-all text-[10px] font-black uppercase tracking-tight ${
                                         status === opt.value 

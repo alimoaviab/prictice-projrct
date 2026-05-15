@@ -1251,24 +1251,34 @@ func (h *Handler) LedgerDashboard(w http.ResponseWriter, r *http.Request) {
 			limit = l
 		}
 
-		h.Store.RLock()
-		defer h.Store.RUnlock()
-
 		mn, _ := monthToNum(monthQ)
 		yearNum, _ := strconv.Atoi(yearQ)
 		if yearNum == 0 {
 			yearNum = time.Now().Year()
 		}
 
-		// Resolve correct yearID for the requested period (mirroring Generate logic)
+		// Resolve correct yearID for the requested period.
 		targetDate := time.Date(yearNum, time.Month(mn), 15, 0, 0, 0, 0, time.UTC)
 		activeYearID := yearID
+		h.Store.RLock()
 		for _, y := range h.Store.AcademicYears {
 			if y.SchoolID == ctx.SchoolID && !targetDate.Before(y.StartDate) && !targetDate.After(y.EndDate) {
 				activeYearID = y.ID
 				break
 			}
 		}
+		h.Store.RUnlock()
+
+		// ─── Auto-generate invoices for the selected month ─────────────
+		// When the admin views a month, ensure invoices exist. This removes
+		// the need for a manual "Generate Invoices" button.
+		if monthQ != "" && yearNum > 0 && activeYearID != "" {
+			h.autoGenerateForMonth(ctx, classID, monthQ, yearNum, activeYearID)
+		}
+
+		// Take read lock for the main query.
+		h.Store.RLock()
+		defer h.Store.RUnlock()
 
 		// Index helpers.
 		studentByID := map[string]*store.Student{}
@@ -1345,8 +1355,15 @@ func (h *Handler) LedgerDashboard(w http.ResponseWriter, r *http.Request) {
 
 			fees := feesByStudent[student.ID]
 
-			// Carry forward = unpaid balance from any earlier month than the
-			// requested one (or from any past fee when no month filter set).
+			// ─── Carry-forward calculation ──────────────────────────────────
+			// Carry = sum of ALL unpaid balances from months BEFORE the selected
+			// month. This includes:
+			//   1. Outstanding amounts on existing invoices for earlier months
+			//   2. "Virtual" recurring charges for months where no invoice was
+			//      ever generated (the admin skipped Generate for those months)
+			//
+			// This ensures recurring fees accumulate correctly:
+			//   May=100, June=200, July=300, Aug=400, etc.
 			monthNum, _ := monthToNum(monthQ)
 			yearNum, _ := strconv.Atoi(yearQ)
 			if yearNum == 0 {
@@ -1355,6 +1372,9 @@ func (h *Handler) LedgerDashboard(w http.ResponseWriter, r *http.Request) {
 
 			var current *store.Fee
 			var carry, paidTotal, totalPayable, remaining float64
+
+			// Track which months have existing invoices so we can detect gaps.
+			invoicedMonths := map[string]bool{} // "month:year" → true
 
 			for _, f := range fees {
 				eff := f.Amount + f.AdjustmentAmount
@@ -1369,7 +1389,6 @@ func (h *Handler) LedgerDashboard(w http.ResponseWriter, r *http.Request) {
 				if monthQ != "" && yearQ != "" {
 					isPrevious = isEarlier(f.Month, f.Year, monthQ, yearNum)
 				} else if monthQ != "" {
-					// If no year specified, compare months in current year context
 					fn, _ := monthToNum(f.Month)
 					isPrevious = fn < monthNum
 				}
@@ -1383,10 +1402,85 @@ func (h *Handler) LedgerDashboard(w http.ResponseWriter, r *http.Request) {
 					remaining += outstanding
 				} else if isPrevious {
 					carry += outstanding
+					invoicedMonths[fmt.Sprintf("%s:%d", strings.ToLower(f.Month), f.Year)] = true
 				}
 			}
 
-			// ROOT FIX: If no invoice exists for current month, resolve from class config.
+			// ─── Fill gaps: add virtual recurring charges for uninvoiced months ─
+			// If the student's class has monthly recurring fees, every month from
+			// the academic year start (or the class fee creation) up to the
+			// selected month should have been charged. Months without an invoice
+			// still owe the recurring amount.
+			if monthQ != "" && student.ClassID != "" {
+				exp := expectedByClass[student.ClassID]
+				// Only the recurring portion carries forward for uninvoiced months.
+				// One-time fees only apply in their specific month.
+				recurringAmount := 0.0
+				for _, cf := range h.Store.ClassFees {
+					if cf.SchoolID != ctx.SchoolID || cf.ClassID != student.ClassID || cf.Status != "active" {
+						continue
+					}
+					if activeYearID != "" && cf.AcademicYearID != activeYearID {
+						continue
+					}
+					if cf.Type == "recurring" && cf.RecurringCycle == "monthly" {
+						recurringAmount += cf.Amount
+					}
+				}
+
+				if recurringAmount > 0 {
+					// Determine the range of months to check: from the academic year
+					// start month up to (but not including) the selected month.
+					var startMonth, startYear int
+					for _, y := range h.Store.AcademicYears {
+						if y.ID == activeYearID {
+							startMonth = int(y.StartDate.Month())
+							startYear = y.StartDate.Year()
+							break
+						}
+					}
+					if startMonth == 0 {
+						startMonth = 4 // default April
+						startYear = yearNum
+					}
+
+					// Walk each month from academic year start to selected month.
+					curM, curY := startMonth, startYear
+					for {
+						if curY > yearNum || (curY == yearNum && curM >= monthNum) {
+							break
+						}
+						monthName := strings.ToLower(time.Month(curM).String())
+						key := fmt.Sprintf("%s:%d", monthName, curY)
+						if !invoicedMonths[key] {
+							// This month has no invoice — the recurring fee is owed.
+							carry += recurringAmount
+
+							// Also check for one-time fees due in this uninvoiced month.
+							for _, cf := range h.Store.ClassFees {
+								if cf.SchoolID != ctx.SchoolID || cf.ClassID != student.ClassID || cf.Status != "active" {
+									continue
+								}
+								if activeYearID != "" && cf.AcademicYearID != activeYearID {
+									continue
+								}
+								if cf.Type == "onetime" && strings.EqualFold(cf.DueMonth, monthName) && cf.DueYear == curY {
+									carry += cf.Amount
+								}
+							}
+						}
+						// Advance to next month.
+						curM++
+						if curM > 12 {
+							curM = 1
+							curY++
+						}
+					}
+				}
+				_ = exp // used above via expectedByClass
+			}
+
+			// If no invoice exists for current month, resolve from class config.
 			var virtualCurrent map[string]any
 			if current == nil && monthQ != "" {
 				exp := expectedByClass[student.ClassID]

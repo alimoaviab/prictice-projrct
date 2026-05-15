@@ -280,15 +280,14 @@ export function StudentFeeDashboard() {
                         </div>
                         <h4 className="font-black text-slate-900 text-base">No fee records found for {filters.month.toUpperCase()} {filters.year}</h4>
                         <p className="text-[11px] text-slate-400 mt-2 max-w-sm mx-auto leading-relaxed">
-                            If you haven't generated this month's invoices yet, head over to the 
-                            <strong className="text-slate-600"> Class Fees</strong> configuration page to trigger the generation.
+                            Invoices are generated automatically when you view a month. If no records appear, ensure fee components are configured for the class.
                         </p>
                         <button 
                             onClick={() => navigate('/admin/classes')}
                             className="mt-6 inline-flex items-center gap-2 no-print px-6 py-2.5 rounded-xl bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
                         >
                             <span className="material-symbols-outlined text-base">settings</span>
-                            Configure & Generate Fees
+                            Configure Class Fees
                         </button>
                     </div>
                 ) : (

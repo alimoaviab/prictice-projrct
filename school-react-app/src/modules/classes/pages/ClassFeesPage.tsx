@@ -470,29 +470,9 @@ export function ClassFeesPage() {
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Students who will receive these invoices</p>
                     </div>
                     <div className="flex items-center gap-2">
-                        <select 
-                            value={genDate.month}
-                            onChange={(e) => setGenDate({...genDate, month: e.target.value})}
-                            className="h-9 px-3 rounded-xl border border-slate-200 bg-white text-[10px] font-bold text-slate-600 outline-none focus:border-blue-500"
-                        >
-                            {months.map(m => <option key={m} value={m}>{m.toUpperCase()}</option>)}
-                        </select>
-                        <select 
-                            value={genDate.year}
-                            onChange={(e) => setGenDate({...genDate, year: Number(e.target.value)})}
-                            className="h-9 px-3 rounded-xl border border-slate-200 bg-white text-[10px] font-bold text-slate-600 outline-none focus:border-blue-500"
-                        >
-                            {years.map(y => <option key={y} value={y}>{y}</option>)}
-                        </select>
-                        <Button 
-                            variant="primary" 
-                            onClick={handleGenerate} 
-                            disabled={saving || students.length === 0}
-                            className="h-9 px-6 bg-slate-900 text-white rounded-xl text-[10px] font-bold gap-2"
-                        >
-                            <span className="material-symbols-outlined text-sm">rocket_launch</span>
-                            Generate Invoices
-                        </Button>
+                        <p className="text-[10px] font-bold text-slate-400">
+                            Invoices are auto-generated when the admin views the fee ledger for a month.
+                        </p>
                     </div>
                 </div>
 

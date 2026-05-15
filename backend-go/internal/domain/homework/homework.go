@@ -32,7 +32,6 @@ func (h *Handler) hydrate(rows []*store.Homework) []map[string]any {
 	classByID := map[string]*store.Class{}
 	teacherByID := map[string]*store.Teacher{}
 	subjectByID := map[string]*store.Subject{}
-	h.Store.RLock()
 	for _, c := range h.Store.Classes {
 		classByID[c.ID] = c
 	}
@@ -42,7 +41,6 @@ func (h *Handler) hydrate(rows []*store.Homework) []map[string]any {
 	for _, s := range h.Store.Subjects {
 		subjectByID[s.ID] = s
 	}
-	h.Store.RUnlock()
 
 	out := make([]map[string]any, 0, len(rows))
 	for _, hw := range rows {
@@ -184,12 +182,12 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 
 			rows = append(rows, hw)
 		}
-		h.Store.RUnlock()
 		sort.SliceStable(rows, func(i, j int) bool {
 			return rows[i].DueAt.Before(rows[j].DueAt)
 		})
 
 		hydrated := h.hydrate(rows)
+		h.Store.RUnlock()
 		page := api.ParsePagination(q)
 		if !page.Enabled {
 			return hydrated, nil
@@ -426,6 +424,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 					_ = json.Unmarshal(v, &hw.Visibility)
 				}
 				hw.UpdatedAt = time.Now()
+				h.Persist("homework", hw)
 				audit.Write(h.Store, ctx, audit.Input{
 					Action: "update", EntityType: "homework", EntityID: id, Before: before, After: *hw,
 				})
