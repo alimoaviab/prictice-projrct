@@ -78,3 +78,24 @@ export function useResults(filters?: { exam_id?: string; student_id?: string }) 
 
   return { state, addResult, updateResult, deleteResult };
 }
+
+export function useResult(id: string | undefined) {
+  const { state, run } = useSafeAsync<ResultRow>();
+
+  const loadResult = useCallback(() => {
+    if (!id) return;
+    return run(async () => {
+      const result = await service.getResult(id);
+      if (!result.ok) {
+        throw new Error(result.error.message || "Failed to load result");
+      }
+      return result.data;
+    });
+  }, [id, run]);
+
+  useEffect(() => {
+    void loadResult();
+  }, [loadResult]);
+
+  return { state, refresh: loadResult };
+}

@@ -138,6 +138,7 @@ const parentNavGroups: NavGroup[] = [
       { label: "Results", href: "/parent/results", icon: "leaderboard" },
       { label: "Attendance", href: "/parent/attendance", icon: "fact_check" },
       { label: "Homework", href: "/parent/homework", icon: "assignment" },
+      { label: "Live Classes", href: "/parent/live-classes", icon: "videocam" },
       { label: "Fee Ledger", href: "/parent/fees", icon: "receipt_long" },
     ],
   },

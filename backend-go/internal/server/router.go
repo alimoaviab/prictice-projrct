@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/eduplexo/backend-go/internal/api"
+	"github.com/eduplexo/backend-go/internal/ai"
 	"github.com/eduplexo/backend-go/internal/cache"
 	"github.com/eduplexo/backend-go/internal/config"
 	"github.com/eduplexo/backend-go/internal/domain/academicyear"
@@ -335,8 +336,9 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Post("/admin/payments/{id}/verify", subH.AdminVerifyPayment)
 			r.Post("/admin/payments/{id}/reject", subH.AdminRejectPayment)
 
-			// Chatbot
-			cbH := chatbot.New(s)
+			// Chatbot (AI School Assistant)
+			geminiClient := ai.NewGeminiClient(cfg.GeminiAPIKey, cfg.GeminiModel, cfg.GeminiTimeoutMs)
+			cbH := chatbot.NewWithAI(s, geminiClient, rdb)
 			r.Post("/chatbot/message", cbH.Message)
 
 			// ─── Background Jobs ──────────────────────────────────────────
@@ -379,6 +381,7 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Get("/parent/child/homework", pH.ChildHomework)
 			r.Get("/parent/child/announcements", pH.ChildAnnouncements)
 			r.Get("/parent/performance-chart", pH.PerformanceChart)
+			r.Get("/parent/live-classes", pH.LiveClasses)
 			r.Get("/school/my-classes", clH.List)
 
 			r.Post("/dev/seed-academic-years", stubs.NotImplemented(""))

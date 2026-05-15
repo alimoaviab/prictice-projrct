@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   DataTable,
   DataTableColumn,
@@ -37,6 +37,7 @@ export function ResultListPage({
   filters?: { exam_id?: string; student_id?: string };
 }) {
   const pathname = useLocation().pathname;
+  const navigate = useNavigate();
   const isParent = pathname.includes("/parent");
   const { currentParams, updateQuery, withQuery } = useQueryParams();
   const { state: classState } = useClasses();
@@ -271,6 +272,15 @@ export function ResultListPage({
   const rowActions: RowAction<ResultRow>[] = useMemo(
     () => [
       {
+        icon: "visibility",
+        label: "View",
+        variant: "ghost",
+        onClick: (row) => {
+          const base = pathname.includes("/teacher") ? "/teacher" : "/admin";
+          navigate(`${base}/results/${row._id}`);
+        },
+      },
+      {
         icon: "download",
         label: "Marksheet",
         variant: "primary",
@@ -280,7 +290,7 @@ export function ResultListPage({
         },
       },
     ],
-    [schoolName]
+    [schoolName, navigate, pathname]
   );
 
   if (state.status === "loading" && !state.data) {

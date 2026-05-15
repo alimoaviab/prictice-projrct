@@ -216,20 +216,6 @@ export function ExamMarksGroupEntryPage({
     []
   );
 
-  const tableRef = useRef<HTMLTableElement>(null);
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key !== "Enter") return;
-    e.preventDefault();
-    const inputs = Array.from(
-      tableRef.current?.querySelectorAll<HTMLInputElement>(
-        `input[data-col="${e.currentTarget.dataset.col}"]`
-      ) ?? []
-    );
-    const idx = inputs.indexOf(e.currentTarget);
-    const nextEl = inputs[idx + 1] ?? inputs[0];
-    nextEl?.focus();
-    nextEl?.select();
-  }
 
   /* Live totals */
   const totalsMap = useMemo(() => {
@@ -364,7 +350,7 @@ export function ExamMarksGroupEntryPage({
   const totalMaxMarks = subjects.reduce((acc, s) => acc + s.max_marks, 0);
 
   return (
-    <div className="space-y-4 pb-24">
+    <div className="space-y-6">
       {/* Compact context header */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm px-4 py-3">
         <div className="flex items-start gap-4 flex-wrap">
@@ -417,77 +403,52 @@ export function ExamMarksGroupEntryPage({
         </div>
       </div>
 
-      {/* Marks table */}
-      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-        <div className="overflow-x-auto max-h-[calc(100vh-280px)]">
-          <table ref={tableRef} className="w-full text-left border-collapse min-w-[900px]">
-            <thead className="sticky top-0 z-10 bg-slate-50">
-              <tr className="border-b border-slate-200">
-                <th className="px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 w-14">
-                  Roll
-                </th>
-                <th className="px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 min-w-[180px]">
-                  Student
-                </th>
-                {subjects.map((subject) => (
-                  <th
-                    key={subject.subject_id}
-                    className="px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-500 w-24"
-                  >
-                    <div className="truncate">{subject.subject_name}</div>
-                    <div className="text-[9px] font-bold text-slate-400 mt-0.5">
-                      / {subject.max_marks}
-                    </div>
-                  </th>
-                ))}
-                <th className="px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-500 w-24 text-right">
-                  Total
-                </th>
-                <th className="px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-500 w-20 text-right">
-                  %
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {students.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={3 + subjects.length}
-                    className="px-4 py-12 text-center text-[12px] font-bold text-slate-400"
-                  >
-                    No students found.
-                  </td>
-                </tr>
-              ) : (
-                students.map((student) => {
-                  const totals = totalsMap[student._id] || {
-                    obtained: 0,
-                    max: 0,
-                    absentCount: 0,
-                  };
-                  const pct = totals.max > 0 ? (totals.obtained / totals.max) * 100 : 0;
-                  return (
-                    <tr key={student._id} className="hover:bg-slate-50/60">
-                      <td className="px-3 py-2 text-[12px] font-bold text-slate-400">
-                        #{student.roll_no || "—"}
-                      </td>
-                      <td className="px-3 py-2">
-                        <div className="text-[12px] font-bold text-slate-900 leading-tight">
-                          {student.first_name} {student.last_name}
-                        </div>
-                        <div className="text-[10px] font-bold text-slate-400 leading-tight mt-0.5">
-                          {student.admission_no}
-                        </div>
-                      </td>
-                      {subjects.map((subject) => {
-                        const cell = marks[student._id]?.[subject.subject_id] ?? "";
-                        const isAbsent = cell === "A";
-                        return (
-                          <td key={subject.subject_id} className="px-2 py-1.5">
-                            <input
+      {/* Marks Vertical Entry */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {students.length === 0 ? (
+          <div className="md:col-span-2 lg:col-span-3 bg-white border border-slate-200 rounded-2xl p-12 text-center text-[12px] font-bold text-slate-400">
+            No students found.
+          </div>
+        ) : (
+          students.map((student) => {
+            const totals = totalsMap[student._id] || {
+              obtained: 0,
+              max: 0,
+              absentCount: 0,
+            };
+            const pct = totals.max > 0 ? (totals.obtained / totals.max) * 100 : 0;
+            return (
+              <div key={student._id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col hover:border-blue-200 transition-all">
+                <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-50">
+                   <div>
+                      <p className="text-[12px] font-black text-slate-900">{student.first_name} {student.last_name}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">ROLL: {student.roll_no || "—"} · {student.admission_no}</p>
+                   </div>
+                   <div className="text-right">
+                      <p className={`text-[12px] font-black ${pct >= 50 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                         {totals.obtained} / {totals.max}
+                      </p>
+                      <p className="text-[10px] font-bold text-slate-400">{pct.toFixed(1)}%</p>
+                   </div>
+                </div>
+
+                <div className="space-y-3">
+                   {subjects.map((subject, idx) => {
+                      const cell = marks[student._id]?.[subject.subject_id] ?? "";
+                      const isAbsent = cell === "A";
+                      const isLast = idx === subjects.length - 1;
+
+                      return (
+                        <div key={subject.subject_id} className="flex items-center gap-3">
+                           <div className="flex-1 min-w-0">
+                              <p className="text-[11px] font-bold text-slate-700 truncate">{subject.subject_name}</p>
+                              <p className="text-[9px] font-bold text-slate-400 tracking-tighter uppercase">Max {subject.max_marks}</p>
+                           </div>
+                           <input
                               type="text"
                               inputMode="numeric"
-                              data-col={subject.subject_id}
+                              data-student={student._id}
+                              data-idx={idx}
                               value={cell === "" ? "" : String(cell)}
                               onChange={(e) =>
                                 updateCell(
@@ -497,87 +458,75 @@ export function ExamMarksGroupEntryPage({
                                   subject.max_marks
                                 )
                               }
-                              onKeyDown={handleKeyDown}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  if (isLast) {
+                                    handleSave();
+                                  } else {
+                                    const nextInput = document.querySelector<HTMLInputElement>(`input[data-student="${student._id}"][data-idx="${idx + 1}"]`);
+                                    nextInput?.focus();
+                                    nextInput?.select();
+                                  }
+                                }
+                              }}
                               onFocus={(e) => e.target.select()}
-                              placeholder="—"
-                              className={`h-8 w-full rounded-md border text-center text-[12px] font-bold outline-none transition-all ${
+                              placeholder="0"
+                              className={`h-9 w-20 rounded-xl border text-center text-[13px] font-black outline-none transition-all ${
                                 isAbsent
-                                  ? "bg-rose-50 border-rose-200 text-rose-700"
-                                  : "bg-white border-slate-200 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/5"
+                                  ? "bg-rose-50 border-rose-200 text-rose-700 shadow-inner"
+                                  : "bg-slate-50/50 border-slate-100 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-600/5"
                               }`}
                             />
-                          </td>
-                        );
-                      })}
-                      <td className="px-3 py-2 text-right text-[12px] font-black text-slate-900">
-                        {totals.obtained}
-                        <span className="text-[10px] font-bold text-slate-400">
-                          {" "}
-                          / {totals.max}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-right text-[12px] font-black">
-                        <span
-                          className={
-                            pct >= 50
-                              ? "text-emerald-600"
-                              : totals.max === 0
-                                ? "text-slate-400"
-                                : "text-rose-600"
-                          }
-                        >
-                          {totals.max > 0 ? pct.toFixed(1) : "—"}%
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-        <div className="px-3 py-2 border-t border-slate-100 text-[10px] font-bold text-slate-400 flex items-center gap-3">
-          <span>
-            Tip: type <kbd className="px-1 rounded bg-slate-100 text-slate-700">A</kbd> for absent
-          </span>
-          <span>·</span>
-          <span>Press Enter to jump to the next student in the same column</span>
-        </div>
+                        </div>
+                      );
+                   })}
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
 
-      {/* Sticky save bar */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-32px)] max-w-6xl bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center justify-between z-40">
-        <div className="flex items-center gap-3 min-w-0">
-          <span className="material-symbols-outlined text-[18px] text-blue-300">edit_note</span>
-          <p className="text-[11px] font-bold truncate">
-            {dirty ? (
-              <span className="text-amber-300">Unsaved changes</span>
-            ) : (
-              <span className="text-slate-300">All changes saved</span>
-            )}
-            <span className="text-slate-400">
-              {" "}
-              · {subjects.length} subjects · {students.length} students
-            </span>
-          </p>
+      {/* Save Area - Now directly below the entries */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${dirty ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'}`}>
+            <span className="material-symbols-outlined text-[20px]">{dirty ? "pending_actions" : "check_circle"}</span>
+          </div>
+          <div>
+            <p className="text-[13px] font-black text-slate-900">
+              {dirty ? "Unsaved Progress" : "Changes Synchronized"}
+            </p>
+            <p className="text-[11px] font-bold text-slate-400 normal-case ">
+              {subjects.length} subjects · {students.length} students detected
+            </p>
+          </div>
         </div>
-        <Button
-          onClick={handleSave}
-          disabled={saving || !dirty}
-          className="h-9 px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-[11px] uppercase tracking-widest gap-2 active:scale-95 transition-all"
-        >
-          {saving ? (
-            <>
-              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              Saving…
-            </>
-          ) : (
-            <>
-              <span className="material-symbols-outlined text-[16px]">save</span>
-              Save marks
-            </>
-          )}
-        </Button>
+
+        <div className="flex items-center gap-3">
+           <p className="text-[10px] font-bold text-slate-400 hidden md:block text-right">
+              Tip: Press <kbd className="px-1 rounded bg-slate-100 border border-slate-200 text-slate-600">Enter</kbd> to move down<br/>
+              Last subject Enter will auto-save
+           </p>
+           <Button
+            onClick={handleSave}
+            disabled={saving || !dirty}
+            className="h-12 px-8 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-[12px] uppercase tracking-widest gap-2 shadow-lg shadow-blue-600/20 active:scale-95 transition-all"
+           >
+            {saving ? (
+              <>
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined text-[20px]">save</span>
+                Save All Marks
+              </>
+            )}
+           </Button>
+        </div>
       </div>
     </div>
   );

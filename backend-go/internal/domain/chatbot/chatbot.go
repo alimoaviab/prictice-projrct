@@ -1,6 +1,7 @@
 // Package chatbot implements the /api/chatbot/message endpoint.
 // It provides an AI-powered assistant that can query school data using
-// registered tools. Works with OpenAI-compatible APIs.
+// registered tools. Uses Google Gemini for intent detection with fallback
+// to keyword matching when Gemini is unavailable.
 package chatbot
 
 import (
@@ -10,37 +11,52 @@ import (
 	"strings"
 	"time"
 
+	"github.com/eduplexo/backend-go/internal/ai"
 	"github.com/eduplexo/backend-go/internal/api"
 	"github.com/eduplexo/backend-go/internal/auth"
+	"github.com/eduplexo/backend-go/internal/cache"
 	"github.com/eduplexo/backend-go/internal/store"
 )
 
+// ActionButton represents a clickable action in the response.
+type ActionButton struct {
+	Label      string `json:"label"`
+	Route      string `json:"route"`
+	ActionType string `json:"action_type"` // "navigate" | "create"
+	Icon       string `json:"icon,omitempty"`
+}
+
 type Handler struct {
-	Store *store.MemStore
+	Store  *store.MemStore
+	Gemini *ai.GeminiClient
+	Cache  *cache.Client
 }
 
 func New(s *store.MemStore) *Handler { return &Handler{Store: s} }
 
-type chatRequest struct {
-	Message string        `json:"message"`
-	History []chatMessage `json:"history"`
+// NewWithAI creates a chatbot handler with Gemini AI and Redis cache.
+func NewWithAI(s *store.MemStore, gemini *ai.GeminiClient, c *cache.Client) *Handler {
+	return &Handler{Store: s, Gemini: gemini, Cache: c}
 }
 
-type chatMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
+type chatRequest struct {
+	Message string           `json:"message"`
+	History []ai.ChatMessage `json:"history"`
 }
 
 type chatResponse struct {
-	Reply    string `json:"reply"`
-	ToolUsed string `json:"tool_used,omitempty"`
-	Data     any    `json:"data,omitempty"`
+	Reply            string         `json:"reply"`
+	Analysis         string         `json:"analysis,omitempty"`
+	SuggestedActions []string       `json:"suggested_actions,omitempty"`
+	QuickButtons     []ActionButton `json:"quick_buttons,omitempty"`
+	ToolUsed         string         `json:"tool_used,omitempty"`
+	Data             any            `json:"data,omitempty"`
+	Language         string         `json:"language,omitempty"`
 }
 
 // Message implements POST /api/chatbot/message.
-// Since we don't have an external AI API key configured, this uses a
-// rule-based approach that matches user intent to tools and generates
-// helpful responses from real data.
+// Pipeline: Rate limit → Cache → Intent Detection (Gemini) → RBAC → Query → Response
+// Falls back to keyword matching when Gemini is unavailable.
 func (h *Handler) Message(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	var body chatRequest
@@ -54,47 +70,250 @@ func (h *Handler) Message(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg := strings.ToLower(strings.TrimSpace(body.Message))
+	msg := strings.TrimSpace(body.Message)
+	if len(msg) > 500 {
+		msg = msg[:500]
+	}
 	if msg == "" {
 		api.WriteJSON(w, http.StatusOK, api.Ok(chatResponse{
 			Reply: "Please type a message. I can help you with student info, attendance, fees, exams, timetable, and more!",
+			QuickButtons: []ActionButton{
+				{Label: "School Stats", Route: "/admin/dashboard", ActionType: "navigate", Icon: "dashboard"},
+				{Label: "Students", Route: "/admin/students", ActionType: "navigate", Icon: "school"},
+			},
 		}))
 		return
 	}
 
-	// Route to appropriate tool based on message content
-	var resp chatResponse
+	msgLower := strings.ToLower(msg)
 
-	switch {
-	case containsAny(msg, "student", "students", "kitne student", "total student", "how many student"):
-		resp = h.toolGetStudentCount(ctx)
-	case containsAny(msg, "attendance", "present", "absent", "hazri", "haazri"):
-		resp = h.toolGetAttendanceSummary(ctx)
-	case containsAny(msg, "fee", "fees", "pending fee", "collection", "overdue", "defaulter"):
-		resp = h.toolGetFeeSummary(ctx)
-	case containsAny(msg, "teacher", "teachers", "faculty", "staff"):
-		resp = h.toolGetTeacherList(ctx)
-	case containsAny(msg, "exam", "exams", "upcoming exam", "test"):
-		resp = h.toolGetUpcomingExams(ctx)
-	case containsAny(msg, "timetable", "schedule", "period", "class schedule"):
-		resp = h.toolGetTimetableSummary(ctx)
-	case containsAny(msg, "result", "results", "marks", "grade"):
-		resp = h.toolGetRecentResults(ctx)
-	case containsAny(msg, "stats", "overview", "summary", "school stats", "dashboard"):
-		resp = h.toolGetSchoolStats(ctx)
-	case containsAny(msg, "class", "classes", "sections"):
-		resp = h.toolGetClassInfo(ctx)
-	case containsAny(msg, "hello", "hi", "hey", "salam", "assalam"):
-		resp = chatResponse{
-			Reply: "Hello! 👋 I'm EduBot, your school assistant. I can help you with:\n\n• Student information & counts\n• Attendance summary\n• Fee collection & pending fees\n• Upcoming exams\n• Teacher information\n• Timetable & schedules\n• Results & grades\n\nWhat would you like to know?",
-		}
-	default:
-		resp = chatResponse{
-			Reply: "I can help you with information about students, attendance, fees, exams, teachers, timetable, and results. Try asking something like:\n\n• \"How many students are present today?\"\n• \"Show me pending fees\"\n• \"What are upcoming exams?\"\n• \"Show teacher list\"",
+	// Try Gemini AI intent detection
+	if h.Gemini != nil && h.Gemini.Available() {
+		intent, err := h.Gemini.DetectIntent(r.Context(), msg, body.History)
+		if err == nil && intent != nil && intent.Confidence > 0.3 {
+			resp := h.handleIntent(ctx, intent, msg)
+			resp.Language = intent.Language
+			api.WriteJSON(w, http.StatusOK, api.Ok(resp))
+			return
 		}
 	}
 
+	// Fallback: keyword matching
+	resp := h.keywordFallback(ctx, msgLower)
 	api.WriteJSON(w, http.StatusOK, api.Ok(resp))
+}
+
+// handleIntent routes a detected intent to the appropriate handler.
+func (h *Handler) handleIntent(reqCtx *api.RequestContext, intent *ai.IntentResult, originalMsg string) chatResponse {
+	// RBAC check
+	if (intent.Category == "fee" || intent.Category == "subscription") && reqCtx.Role != "admin" && reqCtx.Role != "super_admin" {
+		return chatResponse{Reply: "⚠️ Fee and subscription information is restricted to administrators."}
+	}
+
+	switch intent.Category {
+	case "student":
+		if intent.Intent == "student_count" {
+			return h.toolGetStudentCount(reqCtx)
+		}
+		if name := intent.Entities["student_name"]; name != "" {
+			return h.searchStudent(reqCtx, name)
+		}
+		if name := intent.Entities["name"]; name != "" {
+			return h.searchStudent(reqCtx, name)
+		}
+		return h.toolGetStudentCount(reqCtx)
+	case "class":
+		if name := intent.Entities["class_name"]; name != "" {
+			return h.searchClass(reqCtx, name)
+		}
+		return h.toolGetClassInfo(reqCtx)
+	case "teacher":
+		if name := intent.Entities["teacher_name"]; name != "" {
+			return h.searchTeacher(reqCtx, name)
+		}
+		if name := intent.Entities["name"]; name != "" {
+			return h.searchTeacher(reqCtx, name)
+		}
+		return h.toolGetTeacherList(reqCtx)
+	case "fee":
+		return h.toolGetFeeSummary(reqCtx)
+	case "exam":
+		return h.toolGetUpcomingExams(reqCtx)
+	case "result":
+		return h.toolGetRecentResults(reqCtx)
+	case "academic_year":
+		return h.handleAcademicYear(reqCtx)
+	case "support":
+		return chatResponse{
+			Reply: "🆘 **Support**\n\n📧 support@eduplexo.com\n📞 +92 300 1234567\n💬 WhatsApp: +92 300 1234567",
+			QuickButtons: []ActionButton{
+				{Label: "Email Support", Route: "mailto:support@eduplexo.com", ActionType: "navigate"},
+				{Label: "WhatsApp", Route: "https://wa.me/923001234567", ActionType: "navigate"},
+			},
+		}
+	case "guide":
+		return h.handleGuide(intent)
+	case "diagnostic":
+		return h.handleDiagnostic(reqCtx)
+	case "greeting":
+		return chatResponse{
+			Reply: "Hello! 👋 I'm EduBot, your AI school assistant.\n\n• 📊 Students & Analytics\n• 📋 Attendance\n• 💰 Fees\n• 📝 Exams & Results\n• 👨‍🏫 Teachers\n• 📅 Events\n\nAsk me anything!",
+			QuickButtons: []ActionButton{
+				{Label: "School Stats", Route: "/admin/dashboard", ActionType: "navigate"},
+				{Label: "Students", Route: "/admin/students", ActionType: "navigate"},
+				{Label: "Fees", Route: "/admin/fee", ActionType: "navigate"},
+			},
+		}
+	default:
+		return h.toolGetSchoolStats(reqCtx)
+	}
+}
+
+func (h *Handler) handleAcademicYear(ctx *api.RequestContext) chatResponse {
+	h.Store.RLock()
+	defer h.Store.RUnlock()
+	for _, ay := range h.Store.AcademicYears {
+		if ay.SchoolID == ctx.SchoolID && ay.IsActive {
+			return chatResponse{
+				Reply: fmt.Sprintf("📅 Active Academic Year: **%s**\nStart: %s | End: %s",
+					ay.Year, ay.StartDate.Format("02 Jan 2006"), ay.EndDate.Format("02 Jan 2006")),
+				QuickButtons: []ActionButton{{Label: "Manage Years", Route: "/admin/academic-years", ActionType: "navigate"}},
+			}
+		}
+	}
+	return chatResponse{
+		Reply: "⚠️ No active academic year. Create one to use most features.",
+		QuickButtons: []ActionButton{{Label: "Create Year", Route: "/admin/academic-years/create", ActionType: "create"}},
+	}
+}
+
+func (h *Handler) handleGuide(intent *ai.IntentResult) chatResponse {
+	guides := map[string]string{
+		"guide_create_student":    "📝 **Create Student**\n\n1. Sidebar → Students\n2. Click \"Create Student\"\n3. Fill: Name, Class, Section, Guardian\n4. Save\n\n✅ Requires: Active academic year + at least 1 class",
+		"guide_create_class":      "🏛️ **Create Class**\n\n1. Sidebar → Classes\n2. Click \"Create Class\"\n3. Enter: Name, Section, Capacity\n4. Save\n\n✅ Requires: Active academic year",
+		"guide_create_exam":       "📝 **Create Exam**\n\n1. Sidebar → Exams\n2. Click \"Create Exam\"\n3. Fill: Title, Subject, Class, Date, Max Marks\n4. Save",
+		"guide_mark_attendance":   "✅ **Mark Attendance**\n\n1. Sidebar → Attendance\n2. Click \"Mark Attendance\"\n3. Select Class & Date\n4. Mark each student\n5. Submit",
+		"guide_create_teacher":    "👨‍🏫 **Add Teacher**\n\n1. Sidebar → Teachers\n2. Click \"Create Teacher\"\n3. Fill: Name, Email, Phone, Subjects\n4. Save",
+		"guide_enter_results":     "📊 **Enter Results**\n\n1. Sidebar → Results\n2. Click \"Enter Results\"\n3. Select Exam & Class\n4. Enter marks for each student\n5. Save",
+	}
+	if text, ok := guides[intent.Intent]; ok {
+		return chatResponse{Reply: text}
+	}
+	return chatResponse{Reply: "📚 I can guide you through: Create Student, Class, Exam, Teacher, Mark Attendance, Enter Results. Just ask!"}
+}
+
+func (h *Handler) handleDiagnostic(ctx *api.RequestContext) chatResponse {
+	h.Store.RLock()
+	defer h.Store.RUnlock()
+	issues := []string{}
+	hasYear := false
+	for _, ay := range h.Store.AcademicYears {
+		if ay.SchoolID == ctx.SchoolID && ay.IsActive {
+			hasYear = true
+			break
+		}
+	}
+	if !hasYear {
+		issues = append(issues, "❌ No active academic year")
+	}
+	classCount := 0
+	for _, c := range h.Store.Classes {
+		if c.SchoolID == ctx.SchoolID {
+			classCount++
+		}
+	}
+	if classCount == 0 {
+		issues = append(issues, "❌ No classes created")
+	}
+	if len(issues) == 0 {
+		return chatResponse{Reply: "✅ System looks healthy! No issues found."}
+	}
+	return chatResponse{
+		Reply:    "🔍 **Issues Found:**\n\n" + strings.Join(issues, "\n"),
+		Analysis: fmt.Sprintf("%d issue(s) detected that may be causing problems.", len(issues)),
+		QuickButtons: []ActionButton{
+			{Label: "Create Year", Route: "/admin/academic-years/create", ActionType: "create"},
+			{Label: "Create Class", Route: "/admin/classes/create", ActionType: "create"},
+		},
+	}
+}
+
+func (h *Handler) searchStudent(ctx *api.RequestContext, name string) chatResponse {
+	h.Store.RLock()
+	defer h.Store.RUnlock()
+	nameLower := strings.ToLower(name)
+	for _, s := range h.Store.Students {
+		if s.SchoolID != ctx.SchoolID {
+			continue
+		}
+		if strings.Contains(strings.ToLower(s.FirstName+" "+s.LastName), nameLower) {
+			return chatResponse{
+				Reply:    fmt.Sprintf("👤 **%s %s**\nAdmission: %s | Class: %s | Status: %s", s.FirstName, s.LastName, s.AdmissionNo, s.ClassID, s.Status),
+				ToolUsed: "student_search",
+			}
+		}
+	}
+	return chatResponse{Reply: fmt.Sprintf("Student \"%s\" not found.", name)}
+}
+
+func (h *Handler) searchClass(ctx *api.RequestContext, name string) chatResponse {
+	h.Store.RLock()
+	defer h.Store.RUnlock()
+	nameLower := strings.ToLower(name)
+	for _, c := range h.Store.Classes {
+		if c.SchoolID == ctx.SchoolID && strings.Contains(strings.ToLower(c.Name), nameLower) {
+			count := 0
+			for _, s := range h.Store.Students {
+				if s.ClassID == c.ID {
+					count++
+				}
+			}
+			return chatResponse{Reply: fmt.Sprintf("🏛️ **%s** — %d students | Status: %s", c.Name, count, c.Status)}
+		}
+	}
+	return chatResponse{Reply: fmt.Sprintf("Class \"%s\" not found.", name)}
+}
+
+func (h *Handler) searchTeacher(ctx *api.RequestContext, name string) chatResponse {
+	h.Store.RLock()
+	defer h.Store.RUnlock()
+	nameLower := strings.ToLower(name)
+	for _, t := range h.Store.Teachers {
+		if t.SchoolID == ctx.SchoolID && strings.Contains(strings.ToLower(t.FirstName+" "+t.LastName), nameLower) {
+			return chatResponse{Reply: fmt.Sprintf("👨‍🏫 **%s %s**\nEmail: %s | Phone: %s | Status: %s", t.FirstName, t.LastName, t.Email, t.Phone, t.Status)}
+		}
+	}
+	return chatResponse{Reply: fmt.Sprintf("Teacher \"%s\" not found.", name)}
+}
+
+// keywordFallback is the original keyword-matching logic.
+func (h *Handler) keywordFallback(ctx *api.RequestContext, msg string) chatResponse {
+	switch {
+	case containsAny(msg, "student", "students", "kitne student", "total student"):
+		return h.toolGetStudentCount(ctx)
+	case containsAny(msg, "attendance", "present", "absent", "hazri"):
+		return h.toolGetAttendanceSummary(ctx)
+	case containsAny(msg, "fee", "fees", "pending fee", "collection"):
+		return h.toolGetFeeSummary(ctx)
+	case containsAny(msg, "teacher", "teachers", "faculty"):
+		return h.toolGetTeacherList(ctx)
+	case containsAny(msg, "exam", "exams", "test"):
+		return h.toolGetUpcomingExams(ctx)
+	case containsAny(msg, "timetable", "schedule", "period"):
+		return h.toolGetTimetableSummary(ctx)
+	case containsAny(msg, "result", "results", "marks"):
+		return h.toolGetRecentResults(ctx)
+	case containsAny(msg, "class", "classes"):
+		return h.toolGetClassInfo(ctx)
+	case containsAny(msg, "hello", "hi", "salam"):
+		return chatResponse{Reply: "Hello! 👋 I'm EduBot. Ask me about students, fees, attendance, exams, or anything else!"}
+	case containsAny(msg, "help", "support", "madad"):
+		return chatResponse{Reply: "🆘 Support: support@eduplexo.com | +92 300 1234567"}
+	case containsAny(msg, "academic year", "session"):
+		return h.handleAcademicYear(ctx)
+	default:
+		return h.toolGetSchoolStats(ctx)
+	}
 }
 
 // ─── Tool Implementations ────────────────────────────────────────────────

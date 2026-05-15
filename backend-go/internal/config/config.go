@@ -42,6 +42,11 @@ type Config struct {
 	// Set to "true" to bypass MemStore entirely. Can also be controlled
 	// per-entity via USE_DIRECT_PG_STUDENTS, USE_DIRECT_PG_TEACHERS, etc.
 	UseDirectPG bool
+
+	// GeminiAPIKey for the AI School Assistant (Google Gemini).
+	GeminiAPIKey    string
+	GeminiModel     string
+	GeminiTimeoutMs int
 }
 
 // Load reads env vars (with sensible defaults for local development) and
@@ -56,6 +61,9 @@ func Load() Config {
 		DatabaseURL:    os.Getenv("DATABASE_URL"),
 		RedisURL:       os.Getenv("REDIS_URL"),
 		UseDirectPG:    os.Getenv("USE_DIRECT_PG") == "true",
+		GeminiAPIKey:   os.Getenv("GEMINI_API_KEY"),
+		GeminiModel:    getenv("GEMINI_MODEL", "gemini-2.0-flash"),
+		GeminiTimeoutMs: 2500,
 	}
 
 	if cfg.JWTSecret == "" {

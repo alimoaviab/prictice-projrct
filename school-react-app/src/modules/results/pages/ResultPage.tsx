@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { Card, DataState, Skeleton, TableSkeleton, Badge, DataTable, DataTableColumn, RowAction, StatCardGrid } from "@/components/ui";
 import { useSafeAsync } from "@/hooks/useSafeAsync";
 import { serviceRequest } from "@/services/service-client";
@@ -11,14 +11,21 @@ import { useExams } from "../../exams/hooks/useExams";
 import { useQueryParams } from "@/hooks/useQueryParams";
 import { exportMarksheet } from "@/utils/marksheet";
 import { showToast } from "@/utils/toast";
+import { useAuth } from "@/hooks/useAuth";
 
 export function ResultPage() {
+    const navigate = useNavigate();
+    const { pathname } = useLocation();
+    const isTeacher = pathname.includes("/teacher");
     const { currentParams, updateQuery } = useQueryParams();
     const exam_id = currentParams.get("exam_id") || "all";
     const class_id = currentParams.get("class_id") || "all";
     const today = new Date().toISOString().split('T')[0];
     const date_filter = currentParams.get("date") || today;
     
+    const { user } = useAuth();
+    const schoolName = (user as any)?.schoolName || (user as any)?.school_name || "School";
+
     const { state: classState } = useClasses();
     const { state: examListState } = useExams(class_id !== "all" ? { class_id } : {});
 
@@ -157,11 +164,20 @@ export function ResultPage() {
 
     const rowActions: RowAction<ResultRow>[] = [
         {
+          icon: "visibility",
+          label: "View",
+          variant: "ghost",
+          onClick: (row) => {
+            const base = isTeacher ? "/teacher" : "/admin";
+            navigate(`${base}/results/${row._id}`);
+          },
+        },
+        {
           icon: "download",
           label: "Marksheet",
           variant: "primary",
           onClick: (row) => {
-            exportMarksheet(row);
+            exportMarksheet(row, { schoolName });
             showToast("Generating marksheet…", "info");
           },
         },
@@ -394,11 +410,20 @@ export function ResultPage() {
                                         </div>
 
                                         <div className="mt-auto px-5 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between group-hover:bg-white transition-all">
-                                            <button className="text-[10px] font-bold text-slate-400 normal-case  hover:text-blue-600 flex items-center gap-1 transition-colors">
+                                            <button 
+                                              onClick={() => exportMarksheet(row, { schoolName })}
+                                              className="text-[10px] font-bold text-slate-400 normal-case  hover:text-blue-600 flex items-center gap-1 transition-colors"
+                                            >
                                                 <span className="material-symbols-outlined text-sm">history_edu</span>
                                                 Report
                                             </button>
-                                            <button className="group/btn h-8 px-4 rounded-lg bg-blue-600 text-[10px] font-bold text-white normal-case  hover:bg-blue-700 transition-all flex items-center gap-2 shadow-sm active:scale-95">
+                                            <button 
+                                              onClick={() => {
+                                                const base = isTeacher ? "/teacher" : "/admin";
+                                                navigate(`${base}/results/${row._id}`);
+                                              }}
+                                              className="group/btn h-8 px-4 rounded-lg bg-blue-600 text-[10px] font-bold text-white normal-case  hover:bg-blue-700 transition-all flex items-center gap-2 shadow-sm active:scale-95"
+                                            >
                                                 Details
                                                 <span className="material-symbols-outlined text-sm transition-transform group-hover/btn:translate-x-1">query_stats</span>
                                             </button>

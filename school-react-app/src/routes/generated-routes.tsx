@@ -108,6 +108,7 @@ export const adminRoutes: RouteObject[] = [
   // Results
   { path: "/admin/results", element: lazyPage(() => import("@/pages/role/admin/results"), "AdminResultsPage") },
   { path: "/admin/results/create", element: lazyPage(() => import("@/pages/role/admin/results/create"), "AdminResultCreatePage") },
+  { path: "/admin/results/:id", element: lazyPage(() => import("@/pages/role/admin/results/Param_id"), "AdminResultDetailPage") },
 
   // Salary
   { path: "/admin/salary", element: lazyPage(() => import("@/pages/role/admin/salary"), "SalaryPage") },
@@ -169,6 +170,7 @@ export const teacherRoutes: RouteObject[] = [
   { path: "/teacher/live-exam/:id/questions", element: lazyPage(() => import("@/pages/role/teacher/live-exam/Param_id/questions"), "ExamQuestionsPage") },
   { path: "/teacher/results", element: lazyPage(() => import("@/pages/role/teacher/results"), "TeacherResultsPage") },
   { path: "/teacher/results/create", element: lazyPage(() => import("@/pages/role/teacher/results/create"), "TeacherResultCreatePage") },
+  { path: "/teacher/results/:id", element: lazyPage(() => import("@/pages/role/teacher/results/Param_id"), "TeacherResultDetailPage") },
   { path: "/teacher/timetable", element: lazyPage(() => import("@/pages/role/teacher/timetable"), "TeacherTimetablePage") },
   { path: "/teacher/leave", element: lazyPage(() => import("@/pages/role/teacher/leave")) },
 ];
@@ -185,6 +187,7 @@ export const parentRoutes: RouteObject[] = [
   { path: "/parent/exams", element: lazyPage(() => import("@/pages/role/parent/exams"), "ParentExamsPage") },
   { path: "/parent/fees", element: lazyPage(() => import("@/pages/role/parent/fees"), "ParentFeesPage") },
   { path: "/parent/homework", element: lazyPage(() => import("@/pages/role/parent/homework"), "ParentHomeworkPage") },
+  { path: "/parent/live-classes", element: lazyPage(() => import("@/pages/role/parent/live-classes"), "ParentLiveClassesPage") },
   { path: "/parent/profile", element: lazyPage(() => import("@/pages/role/parent/profile"), "ParentStudentProfilePage") },
   { path: "/parent/results", element: lazyPage(() => import("@/pages/role/parent/results"), "ParentResultsPage") },
   { path: "/parent/student-attendance", element: lazyPage(() => import("@/pages/role/parent/student-attendance"), "ParentStudentAttendancePage") },
