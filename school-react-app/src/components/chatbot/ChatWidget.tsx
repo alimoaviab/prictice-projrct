@@ -186,11 +186,13 @@ export function ChatWidget() {
                 : "bg-white text-slate-700 rounded-2xl rounded-tl-sm border border-slate-200 shadow-sm"
             }`}>
               {msg.role === "assistant" ? (
-                <div className="whitespace-pre-wrap" dangerouslySetInnerHTML={{
-                  __html: msg.content
-                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/\n/g, '<br/>')
-                }} />
+                <div className="whitespace-pre-wrap">
+                  {msg.content.split(/(\*\*.*?\*\*|\n)/g).map((part, i) => {
+                    if (part === '\n') return <br key={i} />;
+                    if (part.startsWith('**') && part.endsWith('**')) return <strong key={i}>{part.slice(2, -2)}</strong>;
+                    return <span key={i}>{part}</span>;
+                  })}
+                </div>
               ) : (
                 <span>{msg.content}</span>
               )}
