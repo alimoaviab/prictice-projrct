@@ -28,7 +28,7 @@ export const WhyChooseUsSection = () => {
   ];
 
   return (
-    <section className="py-24 bg-white relative overflow-hidden">
+    <section id="security" className="py-24 bg-white relative overflow-hidden">
       {/* Decorative background element - simplified for performance */}
       <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-50 to-transparent opacity-60 -translate-y-1/2 translate-x-1/3 pointer-events-none" />
 

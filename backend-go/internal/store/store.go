@@ -25,7 +25,8 @@ import (
 // (no concurrency benchmarks, single-process server). Phase 3 swaps this for
 // PostgreSQL via the repository interfaces below.
 type MemStore struct {
-	mu sync.RWMutex
+	mu    sync.RWMutex
+	idxMu sync.RWMutex
 
 	Schools        []*School
 	Users          []*User
@@ -389,7 +390,6 @@ func NewID(prefix string) string {
 	_, _ = rand.Read(b)
 	return prefix + "_" + hex.EncodeToString(b)
 }
-
 
 // ─── Lookup index helpers (perf phase 1) ───────────────────────────────
 //

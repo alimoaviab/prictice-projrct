@@ -4,28 +4,7 @@ import { SchoolShell } from "@/layouts/SchoolShell";
 import { useAuth } from "@/hooks/useAuth";
 import { useSafeAsync } from "@/hooks/useSafeAsync";
 import { serviceRequest } from "@/services/service-client";
-
-type ProfileResponse = {
-    student: {
-        id: string;
-        name: string;
-        roll_no: string;
-        email: string;
-        phone: string;
-        date_of_birth: string | null;
-        class: string;
-        section: string;
-        academic_year: string;
-        status: string;
-    };
-    guardian: {
-        name: string;
-        relationship: string;
-        phone: string;
-        email: string;
-    };
-    enrolled_subjects: Array<{ id: string; name: string; code?: string }>;
-};
+import { normalizeStudentInfo, type StudentProfileData } from "../student-info";
 
 async function resolveStudentId(studentId?: string) {
     if (studentId) return studentId;
@@ -35,16 +14,18 @@ async function resolveStudentId(studentId?: string) {
 
 export function StudentProfilePage() {
     const { user } = useAuth();
-    const { state, run } = useSafeAsync<ProfileResponse>();
+    const { state, run } = useSafeAsync<StudentProfileData>();
 
     useEffect(() => {
         void run(async () => {
             const studentId = await resolveStudentId(user?.studentId);
             if (!studentId) throw new Error("No linked student found.");
 
-            const result = await serviceRequest<ProfileResponse>(`/api/parent/student-info?student_id=${studentId}`);
+            const result = await serviceRequest<unknown>(`/api/parent/student-info?student_id=${studentId}`);
             if (!result.ok) throw new Error(result.error.message || "Failed to load profile");
-            return result.data;
+            const normalizedProfile = normalizeStudentInfo(result.data);
+            if (!normalizedProfile) throw new Error("Failed to load profile");
+            return normalizedProfile;
         }).catch(() => {
             // handled by useSafeAsync
         });
@@ -78,17 +59,19 @@ export function StudentProfilePage() {
                     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                         <div>
                             <p className="text-sm text-slate-500">Student</p>
-                            <h2 className="mt-1 text-3xl font-bold text-slate-900">{profile.student.name}</h2>
-                            <p className="mt-2 text-sm text-slate-500">{profile.student.class} {profile.student.section ? `- ${profile.student.section}` : ""}</p>
+                            <h2 className="mt-1 text-3xl font-bold text-slate-900">{profile.student.name || "Student"}</h2>
+                            <p className="mt-2 text-sm text-slate-500">
+                                {profile.student.class || "Class not set"} {profile.student.section ? `- ${profile.student.section}` : ""}
+                            </p>
                         </div>
-                        <Badge variant="success">{profile.student.status}</Badge>
+                        <Badge variant="success">{profile.student.status || "N/A"}</Badge>
                     </div>
 
                     <div className="mt-6 grid gap-4 md:grid-cols-2">
                         {[
-                            ["Roll No", profile.student.roll_no],
-                            ["Academic Year", profile.student.academic_year],
-                            ["Email", profile.student.email],
+                            ["Roll No", profile.student.roll_no || "—"],
+                            ["Academic Year", profile.student.academic_year || "—"],
+                            ["Email", profile.student.email || "—"],
                             ["Phone", profile.student.phone || "—"],
                             ["Date of Birth", profile.student.date_of_birth || "—"]
                         ].map(([label, value]) => (
@@ -104,7 +87,6 @@ export function StudentProfilePage() {
                     <h3 className="text-lg font-bold text-slate-900">Guardian</h3>
                     <div className="mt-4 space-y-3 text-sm text-slate-600">
                         <p><span className="font-semibold text-slate-900">Name:</span> {profile.guardian.name || "—"}</p>
-                        <p><span className="font-semibold text-slate-900">Relationship:</span> {profile.guardian.relationship}</p>
                         <p><span className="font-semibold text-slate-900">Phone:</span> {profile.guardian.phone || "—"}</p>
                         <p><span className="font-semibold text-slate-900">Email:</span> {profile.guardian.email || "—"}</p>
                     </div>

@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, Building2 } from "lucide-react";
 
+import { whatsappUrl, WhatsappMessages } from "@/lib/whatsapp";
+
 export const PricingSection = () => {
   const [isYearly, setIsYearly] = useState(false);
 
@@ -123,17 +125,26 @@ export const PricingSection = () => {
                 ))}
               </div>
 
-              <button className={`w-full py-4 rounded-xl font-bold transition-all duration-300 flex justify-center items-center gap-2 ${
-                plan.isPopular
-                  ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 hover:bg-blue-700"
-                  : "bg-slate-50 text-slate-900 border border-slate-200 hover:bg-slate-100"
-              }`}>
+              <a
+                href={
+                  plan.priceMonthly === "Custom"
+                    ? whatsappUrl(WhatsappMessages.contactSales(plan.name))
+                    : whatsappUrl(WhatsappMessages.freeTrial(plan.name))
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`w-full py-4 rounded-xl font-bold transition-all duration-300 flex justify-center items-center gap-2 ${
+                  plan.isPopular
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 hover:bg-blue-700"
+                    : "bg-slate-50 text-slate-900 border border-slate-200 hover:bg-slate-100"
+                }`}
+              >
                 {plan.priceMonthly === "Custom" ? (
                   <><Building2 className="w-5 h-5" /> Contact Sales</>
                 ) : (
                   "Start Free Trial"
                 )}
-              </button>
+              </a>
             </motion.div>
           ))}
         </div>

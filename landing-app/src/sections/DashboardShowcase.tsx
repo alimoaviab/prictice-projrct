@@ -14,6 +14,8 @@ export const DashboardShowcase = () => {
 
   return (
     <section id="dashboard" className="py-24 bg-white overflow-hidden">
+      {/* Anchor alias for footer/navbar links that use "#platform". */}
+      <span id="platform" aria-hidden="true" className="block -translate-y-20" />
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex flex-col lg:flex-row items-center gap-16">
 

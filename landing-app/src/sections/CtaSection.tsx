@@ -1,7 +1,8 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle2, ShieldCheck } from "lucide-react";
-import { LOGIN_URL } from "@/lib/config";
+
+import { whatsappUrl, WhatsappMessages } from "@/lib/whatsapp";
 
 export const CtaSection = () => {
   return (
@@ -34,13 +35,17 @@ export const CtaSection = () => {
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-12">
               <a
-                href={LOGIN_URL}
+                href={whatsappUrl(WhatsappMessages.freeTrial())}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-full sm:w-auto px-10 py-5 bg-blue-600 text-white rounded-full font-bold shadow-lg shadow-blue-600/30 hover:bg-blue-500 hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2 text-lg"
               >
                 Start Free Trial <ArrowRight className="w-5 h-5" />
               </a>
               <a
-                href="#demo"
+                href={whatsappUrl(WhatsappMessages.bookDemo())}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-full sm:w-auto px-10 py-5 bg-white/5 text-white border border-white/20 rounded-full font-bold hover:bg-white/10 hover:-translate-y-1 transition-all duration-300 flex items-center justify-center text-lg"
               >
                 Book a Demo

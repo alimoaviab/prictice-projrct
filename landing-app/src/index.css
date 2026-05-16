@@ -6,6 +6,13 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Anchored sections (#features, #platform, #security, #pricing) sit just
+   under the fixed navbar instead of being hidden behind it. */
+section[id],
+[id="platform"] {
+  scroll-margin-top: 96px;
+}
+
 body {
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
