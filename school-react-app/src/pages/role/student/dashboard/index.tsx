@@ -5,6 +5,7 @@ import { SchoolShell } from "@/layouts/SchoolShell";
 import { useAuth } from "@/hooks/useAuth";
 import { useSafeAsync } from "@/hooks/useSafeAsync";
 import { serviceRequest } from "@/services/service-client";
+import { normalizeStudentInfo, type StudentProfileData } from "../student-info";
 
 type StudentInfoResponse = {
     student: {
@@ -162,7 +163,7 @@ function MetricCard({ label, value, tone }: { label: string; value: string | num
 export function StudentDashboardPage() {
     const { user } = useAuth();
     const { state, run } = useSafeAsync<{
-        profile: StudentInfoResponse;
+        profile: StudentProfileData;
         stats: DashboardStatsResponse | null;
         results: StudentResultsResponse | null;
         attendance: AttendanceResponse | null;
@@ -180,7 +181,7 @@ export function StudentDashboardPage() {
             }
 
             const [profile, stats, results, attendance, fees, homework, announcements] = await Promise.all([
-                serviceRequest<StudentInfoResponse>(`/api/parent/student-info?student_id=${studentId}`),
+                serviceRequest<unknown>(`/api/parent/student-info?student_id=${studentId}`),
                 serviceRequest<DashboardStatsResponse>("/api/parent/dashboard/stats"),
                 serviceRequest<StudentResultsResponse>(`/api/parent/student-results?student_id=${studentId}`),
                 serviceRequest<AttendanceResponse>(`/api/parent/student-attendance?student_id=${studentId}`),
@@ -193,8 +194,13 @@ export function StudentDashboardPage() {
                 throw new Error(profile.error.message || "Failed to load student profile");
             }
 
+            const normalizedProfile = normalizeStudentInfo(profile.data);
+            if (!normalizedProfile) {
+                throw new Error("Failed to load student profile");
+            }
+
             return {
-                profile: profile.data,
+                profile: normalizedProfile,
                 stats: stats.ok ? stats.data : null,
                 results: results.ok ? results.data : null,
                 attendance: attendance.ok ? attendance.data : null,
