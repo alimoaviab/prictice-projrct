@@ -2,19 +2,125 @@
 // portal pages. Mirrors old-app/shared/services/parent-portal.service.ts —
 // each endpoint preserves the original response shape exactly so the React
 // parent pages render unchanged.
+//
+// Caching:
+//
+//	The parent portal is the most-hit area of the platform per
+//	authenticated session — every page mount triggers a fan-out of
+//	heavy slice scans (Attendance, Results, Exams, Homework, Fees).
+//	Phase 3 adds an optional Redis read-through cache, scoped per
+//	(school, student), so repeat reads inside a short window become
+//	microsecond responses instead of multi-millisecond scans.
+//
+//	Invalidation strategy is purely TTL-based: 60 seconds for stats
+//	that change frequently (attendance, results), 5 minutes for
+//	slow-moving lists (homework). This avoids touching any write
+//	handler — staleness is bounded and acceptable for a parent
+//	dashboard that polls/refreshes naturally on navigation.
+//
+//	Graceful degrade: a nil/unavailable cache makes every cache
+//	helper a no-op. The handler then runs the original code path
+//	identically. Behaviour is wire-byte-equivalent on cache miss.
 package parent
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"sort"
+	"time"
 
 	"github.com/eduplexo/backend-go/internal/api"
+	"github.com/eduplexo/backend-go/internal/cache"
 	"github.com/eduplexo/backend-go/internal/store"
 )
 
-type Handler struct{ Store *store.MemStore }
+// Cache TTLs — frequent data uses a 60-second window so the parent's
+// own writes (homework submissions, etc.) are visible quickly.
+const (
+	parentDashTTL       = 60 * time.Second
+	parentResultsTTL    = 60 * time.Second
+	parentAttendanceTTL = 60 * time.Second
+	parentHomeworkTTL   = 5 * time.Minute
+	parentChartTTL      = 60 * time.Second
+)
 
+type Handler struct {
+	Store *store.MemStore
+	Cache *cache.Client
+}
+
+// New keeps the original signature for callers that don't pass cache
+// (graceful degrade: no caching, identical behaviour).
 func New(s *store.MemStore) *Handler { return &Handler{Store: s} }
+
+// NewWithCache attaches a Redis client. Pass nil to opt out.
+func NewWithCache(s *store.MemStore, c *cache.Client) *Handler {
+	return &Handler{Store: s, Cache: c}
+}
+
+// serveCached is a small helper that turns a "build the ServiceResult"
+// function into a cached HTTP handler. It hits Redis first; on miss it
+// runs the build, marshals the envelope once, ships the bytes, and
+// stores the same bytes for next time.
+//
+// The cached envelope is the FULL ServiceResult (matches what
+// api.WriteResult would produce), so consumers can't tell whether they
+// got a hit or a miss based on the body alone — the X-Cache header is
+// the only signal.
+//
+// On Redis failure or when the cache is nil, this falls through to the
+// original code path with no observable behaviour change.
+func (h *Handler) serveCached(
+	w http.ResponseWriter,
+	r *http.Request,
+	cacheKey string,
+	ttl time.Duration,
+	build func() api.ServiceResult,
+) {
+	if h.Cache != nil && h.Cache.Available() && cacheKey != "" {
+		if b, err := h.Cache.Get(r.Context(), cacheKey); err == nil && b != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("X-Cache", "HIT")
+			_, _ = w.Write(b)
+			return
+		}
+	}
+
+	result := build()
+	bytes, err := json.Marshal(result)
+	if err != nil {
+		api.WriteResult(w, api.Fail("INTERNAL", "Failed to encode response.", 500, nil))
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if h.Cache != nil && h.Cache.Available() && cacheKey != "" {
+		w.Header().Set("X-Cache", "MISS")
+	}
+	if !result.Ok {
+		status := http.StatusBadRequest
+		if result.Error != nil && result.Error.Status != 0 {
+			status = result.Error.Status
+		}
+		w.WriteHeader(status)
+		_, _ = w.Write(bytes)
+		return
+	}
+	_, _ = w.Write(bytes)
+
+	// Only cache successful responses so a transient backend hiccup
+	// doesn't get pinned for the entire TTL window.
+	if h.Cache != nil && h.Cache.Available() && cacheKey != "" {
+		_ = h.Cache.Set(r.Context(), cacheKey, bytes, ttl)
+	}
+}
+
+// parentCacheKey produces a stable key for a (school, student, scope)
+// triple. We always include the school_id so cross-tenant cache leaks
+// are impossible by construction.
+func parentCacheKey(scope, schoolID, studentID string) string {
+	return fmt.Sprintf("parent:%s:%s:%s", scope, schoolID, studentID)
+}
 
 // resolveStudent returns the active student for the parent flow. When the
 // caller passes ?student_id, that one is preferred; otherwise we use the
@@ -155,9 +261,23 @@ func (h *Handler) Children(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) DashboardStats(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	studentID := r.URL.Query().Get("student_id")
-	api.WriteResult(w, api.ServiceTry(func() (any, error) {
-		s := h.resolveStudent(ctx, studentID)
-		attendance := map[string]any{"present": 0, "total": 0, "percentage": 0}
+	// Resolve the student outside the cache key so the parent flow
+	// without an explicit student_id still caches by the resolved ID
+	// (otherwise the same parent would miss every other request).
+	resolved := h.resolveStudent(ctx, studentID)
+	cacheStudent := studentID
+	if cacheStudent == "" && resolved != nil {
+		cacheStudent = resolved.ID
+	}
+	key := ""
+	if cacheStudent != "" {
+		key = parentCacheKey("dash", ctx.SchoolID, cacheStudent)
+	}
+
+	h.serveCached(w, r, key, parentDashTTL, func() api.ServiceResult {
+		return api.ServiceTry(func() (any, error) {
+			s := resolved
+			attendance := map[string]any{"present": 0, "total": 0, "percentage": 0}
 		exams := []map[string]any{}
 		results := []map[string]any{}
 		feeDue := map[string]any{"amount": 0, "due_date": nil}
@@ -341,89 +461,102 @@ func (h *Handler) DashboardStats(w http.ResponseWriter, r *http.Request) {
 			"recentResults": results,
 			"feeDue":        feeDue,
 		}, nil
-	}))
+		})
+	})
 }
 
 // StudentResults implements GET /api/parent/student-results.
 func (h *Handler) StudentResults(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	studentID := r.URL.Query().Get("student_id")
-	api.WriteResult(w, api.ServiceTry(func() (any, error) {
-		s := h.resolveStudent(ctx, studentID)
-		if s == nil {
-			return []map[string]any{}, nil
-		}
-		h.Store.RLock()
-		defer h.Store.RUnlock()
-		examByID := map[string]*store.Exam{}
-		for _, e := range h.Store.Exams {
-			examByID[e.ID] = e
-		}
-		out := make([]map[string]any, 0)
-		for _, r := range h.Store.Results {
-			if r.SchoolID != ctx.SchoolID || r.StudentID != s.ID {
-				continue
+	resolved := h.resolveStudent(ctx, studentID)
+	cacheStudent := studentID
+	if cacheStudent == "" && resolved != nil {
+		cacheStudent = resolved.ID
+	}
+	key := ""
+	if cacheStudent != "" {
+		key = parentCacheKey("results", ctx.SchoolID, cacheStudent)
+	}
+
+	h.serveCached(w, r, key, parentResultsTTL, func() api.ServiceResult {
+		return api.ServiceTry(func() (any, error) {
+			s := resolved
+			if s == nil {
+				return []map[string]any{}, nil
 			}
-			ex := examByID[r.ExamID]
-			max := 0
-			title, subject := "", ""
-			subjectsOut := make([]map[string]any, 0)
-			if ex != nil {
-				title = ex.Title
-				// New architecture: aggregate max from exam.Subjects[],
-				// fall back to legacy MaxMarks for older rows.
-				if len(ex.Subjects) > 0 {
-					for _, s := range ex.Subjects {
-						max += s.MaxMarks
-					}
-					// Joined display string for legacy widgets.
-					for i, s := range ex.Subjects {
-						if i > 0 {
-							subject += ", "
+			h.Store.RLock()
+			defer h.Store.RUnlock()
+			examByID := map[string]*store.Exam{}
+			for _, e := range h.Store.Exams {
+				examByID[e.ID] = e
+			}
+			out := make([]map[string]any, 0)
+			for _, r := range h.Store.Results {
+				if r.SchoolID != ctx.SchoolID || r.StudentID != s.ID {
+					continue
+				}
+				ex := examByID[r.ExamID]
+				max := 0
+				title, subject := "", ""
+				subjectsOut := make([]map[string]any, 0)
+				if ex != nil {
+					title = ex.Title
+					// New architecture: aggregate max from exam.Subjects[],
+					// fall back to legacy MaxMarks for older rows.
+					if len(ex.Subjects) > 0 {
+						for _, s := range ex.Subjects {
+							max += s.MaxMarks
 						}
-						subject += s.SubjectName
+						// Joined display string for legacy widgets.
+						for i, s := range ex.Subjects {
+							if i > 0 {
+								subject += ", "
+							}
+							subject += s.SubjectName
+						}
+					} else {
+						max = ex.MaxMarks
+						subject = ex.Subject
 					}
-				} else {
-					max = ex.MaxMarks
-					subject = ex.Subject
 				}
-			}
-			// Per-subject breakdown — pair the result subjects with the
-			// exam's per-subject max so the parent UI can render one
-			// chip per subject just like the admin/teacher views.
-			examSubByID := map[string]store.ExamSubject{}
-			if ex != nil {
-				for _, es := range ex.Subjects {
-					examSubByID[es.SubjectID] = es
+				// Per-subject breakdown — pair the result subjects with the
+				// exam's per-subject max so the parent UI can render one
+				// chip per subject just like the admin/teacher views.
+				examSubByID := map[string]store.ExamSubject{}
+				if ex != nil {
+					for _, es := range ex.Subjects {
+						examSubByID[es.SubjectID] = es
+					}
 				}
-			}
-			for _, rs := range r.Subjects {
-				meta := examSubByID[rs.SubjectID]
-				name := rs.SubjectName
-				if name == "" {
-					name = meta.SubjectName
+				for _, rs := range r.Subjects {
+					meta := examSubByID[rs.SubjectID]
+					name := rs.SubjectName
+					if name == "" {
+						name = meta.SubjectName
+					}
+					subjectsOut = append(subjectsOut, map[string]any{
+						"subject_id":     rs.SubjectID,
+						"subject_name":   name,
+						"obtained_marks": rs.ObtainedMarks,
+						"max_marks":      meta.MaxMarks,
+					})
 				}
-				subjectsOut = append(subjectsOut, map[string]any{
-					"subject_id":     rs.SubjectID,
-					"subject_name":   name,
-					"obtained_marks": rs.ObtainedMarks,
-					"max_marks":      meta.MaxMarks,
+				out = append(out, map[string]any{
+					"_id":            r.ID,
+					"exam_id":        r.ExamID,
+					"exam_title":     title,
+					"exam_subject":   subject,
+					"subjects":       subjectsOut,
+					"obtained_marks": r.ObtainedMarks,
+					"max_marks":      max,
+					"graded_at":      r.GradedAt,
+					"remarks":        r.Remarks,
 				})
 			}
-			out = append(out, map[string]any{
-				"_id":            r.ID,
-				"exam_id":        r.ExamID,
-				"exam_title":     title,
-				"exam_subject":   subject,
-				"subjects":       subjectsOut,
-				"obtained_marks": r.ObtainedMarks,
-				"max_marks":      max,
-				"graded_at":      r.GradedAt,
-				"remarks":        r.Remarks,
-			})
-		}
-		return out, nil
-	}))
+			return out, nil
+		})
+	})
 }
 
 // StudentAttendance implements GET /api/parent/student-attendance.
@@ -445,119 +578,131 @@ func (h *Handler) StudentResults(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) StudentAttendance(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	studentID := r.URL.Query().Get("student_id")
-	api.WriteResult(w, api.ServiceTry(func() (any, error) {
-		s := h.resolveStudent(ctx, studentID)
-		empty := map[string]any{
-			"student": "",
-			"class":   "",
-			"attendance_summary": map[string]any{
-				"present_days":          0,
-				"absent_days":           0,
-				"late_days":             0,
-				"leave_days":            0,
-				"total_days":            0,
-				"attendance_percentage": 0,
-			},
-			"recent_records": []map[string]any{},
-		}
-		if s == nil {
-			return empty, nil
-		}
-		h.Store.RLock()
-		defer h.Store.RUnlock()
+	resolved := h.resolveStudent(ctx, studentID)
+	cacheStudent := studentID
+	if cacheStudent == "" && resolved != nil {
+		cacheStudent = resolved.ID
+	}
+	key := ""
+	if cacheStudent != "" {
+		key = parentCacheKey("attendance", ctx.SchoolID, cacheStudent)
+	}
 
-		records := make([]map[string]any, 0)
-		var present, absent, late, leave int
-		// Group by date so a single school day counts as one record
-		// even when attendance was marked across multiple periods.
-		byDate := map[string][]*store.Attendance{}
-		for _, a := range h.Store.Attendance {
-			if a.SchoolID != ctx.SchoolID || a.StudentID != s.ID {
-				continue
+	h.serveCached(w, r, key, parentAttendanceTTL, func() api.ServiceResult {
+		return api.ServiceTry(func() (any, error) {
+			s := resolved
+			empty := map[string]any{
+				"student": "",
+				"class":   "",
+				"attendance_summary": map[string]any{
+					"present_days":          0,
+					"absent_days":           0,
+					"late_days":             0,
+					"leave_days":            0,
+					"total_days":            0,
+					"attendance_percentage": 0,
+				},
+				"recent_records": []map[string]any{},
 			}
-			date := api.FormatDate(a.Date)
-			byDate[date] = append(byDate[date], a)
-		}
-		for date, arr := range byDate {
-			// Status priority: present > late > leave > absent. Any
-			// "present" period across the day means present.
-			status := "absent"
-			period := 0
-			note := ""
-			for _, a := range arr {
-				if a.Status == "present" {
-					status = "present"
-				} else if a.Status == "late" && status != "present" {
-					status = "late"
-				} else if a.Status == "leave" && status != "present" && status != "late" {
-					status = "leave"
-				}
-				if a.Period > period {
-					period = a.Period
-				}
-				if a.Note != "" {
-					note = a.Note
-				}
+			if s == nil {
+				return empty, nil
 			}
-			switch status {
-			case "present":
-				present++
-			case "absent":
-				absent++
-			case "late":
-				late++
-			case "leave":
-				leave++
+			h.Store.RLock()
+			defer h.Store.RUnlock()
+
+			records := make([]map[string]any, 0)
+			var present, absent, late, leave int
+			// Group by date so a single school day counts as one record
+			// even when attendance was marked across multiple periods.
+			byDate := map[string][]*store.Attendance{}
+			for _, a := range h.Store.Attendance {
+				if a.SchoolID != ctx.SchoolID || a.StudentID != s.ID {
+					continue
+				}
+				date := api.FormatDate(a.Date)
+				byDate[date] = append(byDate[date], a)
 			}
-			records = append(records, map[string]any{
-				"date":   date,
-				"status": status,
-				"period": period,
-				"note":   note,
+			for date, arr := range byDate {
+				// Status priority: present > late > leave > absent. Any
+				// "present" period across the day means present.
+				status := "absent"
+				period := 0
+				note := ""
+				for _, a := range arr {
+					if a.Status == "present" {
+						status = "present"
+					} else if a.Status == "late" && status != "present" {
+						status = "late"
+					} else if a.Status == "leave" && status != "present" && status != "late" {
+						status = "leave"
+					}
+					if a.Period > period {
+						period = a.Period
+					}
+					if a.Note != "" {
+						note = a.Note
+					}
+				}
+				switch status {
+				case "present":
+					present++
+				case "absent":
+					absent++
+				case "late":
+					late++
+				case "leave":
+					leave++
+				}
+				records = append(records, map[string]any{
+					"date":   date,
+					"status": status,
+					"period": period,
+					"note":   note,
+				})
+			}
+			sort.SliceStable(records, func(i, j int) bool {
+				return records[i]["date"].(string) > records[j]["date"].(string)
 			})
-		}
-		sort.SliceStable(records, func(i, j int) bool {
-			return records[i]["date"].(string) > records[j]["date"].(string)
-		})
-		// Cap recent records — the page only renders the latest activity.
-		recent := records
-		if len(recent) > 30 {
-			recent = recent[:30]
-		}
-
-		total := present + absent + late + leave
-		percentage := 0
-		if total > 0 {
-			// Late counts as half-attendance for the percentage to
-			// match the rest of the system's calculation.
-			percentage = ((present*2 + late) * 50) / total
-		}
-
-		className := ""
-		for _, c := range h.Store.Classes {
-			if c.ID == s.ClassID {
-				className = c.Name
-				if s.Section != "" {
-					className += " - " + s.Section
-				}
-				break
+			// Cap recent records — the page only renders the latest activity.
+			recent := records
+			if len(recent) > 30 {
+				recent = recent[:30]
 			}
-		}
 
-		return map[string]any{
-			"student": s.FirstName + " " + s.LastName,
-			"class":   className,
-			"attendance_summary": map[string]any{
-				"present_days":          present,
-				"absent_days":           absent,
-				"late_days":             late,
-				"leave_days":            leave,
-				"total_days":            total,
-				"attendance_percentage": percentage,
-			},
-			"recent_records": recent,
-		}, nil
-	}))
+			total := present + absent + late + leave
+			percentage := 0
+			if total > 0 {
+				// Late counts as half-attendance for the percentage to
+				// match the rest of the system's calculation.
+				percentage = ((present*2 + late) * 50) / total
+			}
+
+			className := ""
+			for _, c := range h.Store.Classes {
+				if c.ID == s.ClassID {
+					className = c.Name
+					if s.Section != "" {
+						className += " - " + s.Section
+					}
+					break
+				}
+			}
+
+			return map[string]any{
+				"student": s.FirstName + " " + s.LastName,
+				"class":   className,
+				"attendance_summary": map[string]any{
+					"present_days":          present,
+					"absent_days":           absent,
+					"late_days":             late,
+					"leave_days":            leave,
+					"total_days":            total,
+					"attendance_percentage": percentage,
+				},
+				"recent_records": recent,
+			}, nil
+		})
+	})
 }
 
 // Fees implements GET /api/parent/fees — Phase 2 ships an empty ledger;
@@ -573,52 +718,64 @@ func (h *Handler) Fees(w http.ResponseWriter, _ *http.Request) {
 func (h *Handler) ChildHomework(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	studentID := r.URL.Query().Get("student_id")
-	api.WriteResult(w, api.ServiceTry(func() (any, error) {
-		s := h.resolveStudent(ctx, studentID)
-		if s == nil {
-			return []map[string]any{}, nil
-		}
-		h.Store.RLock()
-		defer h.Store.RUnlock()
-		
-		teacherByID := map[string]*store.Teacher{}
-		for _, t := range h.Store.Teachers {
-			teacherByID[t.ID] = t
-		}
+	resolved := h.resolveStudent(ctx, studentID)
+	cacheStudent := studentID
+	if cacheStudent == "" && resolved != nil {
+		cacheStudent = resolved.ID
+	}
+	key := ""
+	if cacheStudent != "" {
+		key = parentCacheKey("homework", ctx.SchoolID, cacheStudent)
+	}
 
-		out := make([]map[string]any, 0)
-		for _, hw := range h.Store.Homework {
-			if hw.SchoolID != ctx.SchoolID || hw.ClassID != s.ClassID {
-				continue
+	h.serveCached(w, r, key, parentHomeworkTTL, func() api.ServiceResult {
+		return api.ServiceTry(func() (any, error) {
+			s := resolved
+			if s == nil {
+				return []map[string]any{}, nil
 			}
-			if hw.Section != "" && hw.Section != s.Section {
-				continue
-			}
-			if hw.Status == "draft" {
-				continue
-			}
+			h.Store.RLock()
+			defer h.Store.RUnlock()
 
-			teacherName := "Teacher"
-			if t := teacherByID[hw.TeacherID]; t != nil {
-				teacherName = t.FirstName + " " + t.LastName
+			teacherByID := map[string]*store.Teacher{}
+			for _, t := range h.Store.Teachers {
+				teacherByID[t.ID] = t
 			}
 
-			out = append(out, map[string]any{
-				"_id":          hw.ID,
-				"id":           hw.ID,
-				"title":        hw.Title,
-				"subject":      hw.Subject,
-				"subject_name": hw.Subject,
-				"due_at":       api.FormatDate(hw.DueAt),
-				"status":       hw.Status,
-				"teacher_name": teacherName,
+			out := make([]map[string]any, 0)
+			for _, hw := range h.Store.Homework {
+				if hw.SchoolID != ctx.SchoolID || hw.ClassID != s.ClassID {
+					continue
+				}
+				if hw.Section != "" && hw.Section != s.Section {
+					continue
+				}
+				if hw.Status == "draft" {
+					continue
+				}
+
+				teacherName := "Teacher"
+				if t := teacherByID[hw.TeacherID]; t != nil {
+					teacherName = t.FirstName + " " + t.LastName
+				}
+
+				out = append(out, map[string]any{
+					"_id":          hw.ID,
+					"id":           hw.ID,
+					"title":        hw.Title,
+					"subject":      hw.Subject,
+					"subject_name": hw.Subject,
+					"due_at":       api.FormatDate(hw.DueAt),
+					"status":       hw.Status,
+					"teacher_name": teacherName,
+				})
+			}
+			sort.SliceStable(out, func(i, j int) bool {
+				return out[i]["due_at"].(string) < out[j]["due_at"].(string)
 			})
-		}
-		sort.SliceStable(out, func(i, j int) bool {
-			return out[i]["due_at"].(string) < out[j]["due_at"].(string)
+			return out, nil
 		})
-		return out, nil
-	}))
+	})
 }
 
 // ChildAnnouncements implements GET /api/parent/child/announcements.
@@ -645,41 +802,53 @@ func (h *Handler) ChildAnnouncements(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) PerformanceChart(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	studentID := r.URL.Query().Get("student_id")
-	api.WriteResult(w, api.ServiceTry(func() (any, error) {
-		s := h.resolveStudent(ctx, studentID)
-		labels := []string{}
-		data := []float64{}
-		if s == nil {
+	resolved := h.resolveStudent(ctx, studentID)
+	cacheStudent := studentID
+	if cacheStudent == "" && resolved != nil {
+		cacheStudent = resolved.ID
+	}
+	key := ""
+	if cacheStudent != "" {
+		key = parentCacheKey("chart", ctx.SchoolID, cacheStudent)
+	}
+
+	h.serveCached(w, r, key, parentChartTTL, func() api.ServiceResult {
+		return api.ServiceTry(func() (any, error) {
+			s := resolved
+			labels := []string{}
+			data := []float64{}
+			if s == nil {
+				return map[string]any{"labels": labels, "data": data}, nil
+			}
+			h.Store.RLock()
+			defer h.Store.RUnlock()
+			examByID := map[string]*store.Exam{}
+			for _, e := range h.Store.Exams {
+				examByID[e.ID] = e
+			}
+			rows := make([]*store.Result, 0)
+			for _, r := range h.Store.Results {
+				if r.SchoolID == ctx.SchoolID && r.StudentID == s.ID {
+					rows = append(rows, r)
+				}
+			}
+			sort.SliceStable(rows, func(i, j int) bool { return rows[i].GradedAt.Before(rows[j].GradedAt) })
+			for _, r := range rows {
+				ex := examByID[r.ExamID]
+				label := r.ExamID
+				max := 0.0
+				if ex != nil {
+					label = ex.Title
+					max = float64(ex.MaxMarks)
+				}
+				pct := 0.0
+				if max > 0 {
+					pct = r.ObtainedMarks / max * 100
+				}
+				labels = append(labels, label)
+				data = append(data, pct)
+			}
 			return map[string]any{"labels": labels, "data": data}, nil
-		}
-		h.Store.RLock()
-		defer h.Store.RUnlock()
-		examByID := map[string]*store.Exam{}
-		for _, e := range h.Store.Exams {
-			examByID[e.ID] = e
-		}
-		rows := make([]*store.Result, 0)
-		for _, r := range h.Store.Results {
-			if r.SchoolID == ctx.SchoolID && r.StudentID == s.ID {
-				rows = append(rows, r)
-			}
-		}
-		sort.SliceStable(rows, func(i, j int) bool { return rows[i].GradedAt.Before(rows[j].GradedAt) })
-		for _, r := range rows {
-			ex := examByID[r.ExamID]
-			label := r.ExamID
-			max := 0.0
-			if ex != nil {
-				label = ex.Title
-				max = float64(ex.MaxMarks)
-			}
-			pct := 0.0
-			if max > 0 {
-				pct = r.ObtainedMarks / max * 100
-			}
-			labels = append(labels, label)
-			data = append(data, pct)
-		}
-		return map[string]any{"labels": labels, "data": data}, nil
-	}))
+		})
+	})
 }

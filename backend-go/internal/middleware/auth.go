@@ -33,32 +33,56 @@ func Authenticator(cfg config.Config, s *store.MemStore) func(http.Handler) http
 
 			ctx := auth.ContextFromClaims(claims)
 
-			// Fast status check for suspended users or schools
-			s.RLock()
+			// Fast status check for suspended users or schools.
+			//
+			// We try the in-memory lookup index first (O(1) map). If
+			// the index hasn't been built yet, or the user/school was
+			// just inserted and the periodic rebuild hasn't fired,
+			// we fall back to the original slice scan so behaviour
+			// is identical to before — a stale index can never make
+			// auth incorrect.
 			isSuspended := false
 			foundUser := false
-			for _, u := range s.Users {
-				if u.ID == ctx.UserID || u.Email == ctx.ActorEmail {
-					foundUser = true
-					if u.Status == "suspended" {
-						isSuspended = true
-					}
-					break
+
+			if u := s.LookupUser(ctx.UserID, ctx.ActorEmail); u != nil {
+				foundUser = true
+				if u.Status == "suspended" {
+					isSuspended = true
 				}
 			}
-
-			// If user is active, check if their school is suspended
-			if foundUser && !isSuspended && ctx.SchoolID != "system" {
-				for _, sch := range s.Schools {
-					if sch.SchoolID == ctx.SchoolID {
-						if sch.Status == "suspended" || sch.Status == "expired" {
+			if !foundUser {
+				s.RLock()
+				for _, u := range s.Users {
+					if u.ID == ctx.UserID || u.Email == ctx.ActorEmail {
+						foundUser = true
+						if u.Status == "suspended" {
 							isSuspended = true
 						}
 						break
 					}
 				}
+				s.RUnlock()
 			}
-			s.RUnlock()
+
+			// If user is active, check if their school is suspended.
+			if foundUser && !isSuspended && ctx.SchoolID != "system" {
+				if sch := s.LookupSchool(ctx.SchoolID); sch != nil {
+					if sch.Status == "suspended" || sch.Status == "expired" {
+						isSuspended = true
+					}
+				} else {
+					s.RLock()
+					for _, sch := range s.Schools {
+						if sch.SchoolID == ctx.SchoolID {
+							if sch.Status == "suspended" || sch.Status == "expired" {
+								isSuspended = true
+							}
+							break
+						}
+					}
+					s.RUnlock()
+				}
+			}
 
 			if isSuspended {
 				api.WriteResult(w, api.Fail("FORBIDDEN", "Your account or school is currently suspended. Please contact support.", 403, nil))

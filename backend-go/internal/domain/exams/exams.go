@@ -26,7 +26,10 @@
 package exams
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sort"
 	"time"
@@ -34,6 +37,7 @@ import (
 	"github.com/eduplexo/backend-go/internal/api"
 	"github.com/eduplexo/backend-go/internal/audit"
 	"github.com/eduplexo/backend-go/internal/auth"
+	"github.com/eduplexo/backend-go/internal/cache"
 	"github.com/eduplexo/backend-go/internal/domain/tenant"
 	"github.com/eduplexo/backend-go/internal/store"
 	"github.com/go-chi/chi/v5"
@@ -42,6 +46,7 @@ import (
 type Handler struct {
 	Store   *store.MemStore
 	Persist func(table string, doc any)
+	Cache   *cache.Client
 }
 
 func New(s *store.MemStore, save func(string, any)) *Handler {
@@ -49,6 +54,37 @@ func New(s *store.MemStore, save func(string, any)) *Handler {
 		save = func(string, any) {}
 	}
 	return &Handler{Store: s, Persist: save}
+}
+
+// NewWithCache attaches a Redis client. Pass nil to opt out — handler
+// degrades to the original behaviour with no caching.
+func NewWithCache(s *store.MemStore, save func(string, any), c *cache.Client) *Handler {
+	h := New(s, save)
+	h.Cache = c
+	return h
+}
+
+// examsListCacheTTL — short window so admin scheduling new exams or
+// teachers grading results sees the change quickly. The 60-second
+// window also bounds staleness from cross-cutting writes (results
+// affect `results_count` in the response).
+const examsListCacheTTL = 60 * time.Second
+
+// listCacheKey hashes the filter set for a stable per-tenant key.
+func listCacheKey(schoolID, yearID, classID, statusQ, typeQ, query string) string {
+	src := fmt.Sprintf("%s|%s|%s|%s|%s|%s", schoolID, yearID, classID, statusQ, typeQ, query)
+	h := sha1.Sum([]byte(src))
+	return fmt.Sprintf("exams:list:%s:%s", schoolID, hex.EncodeToString(h[:])[:16])
+}
+
+// invalidateList drops every cached exams:list:{school}:* entry on
+// write. Pattern delete is bounded — a school has a small filter
+// surface (admin + teachers × class/type/status combos).
+func (h *Handler) invalidateList(r *http.Request, schoolID string) {
+	if h.Cache == nil || !h.Cache.Available() {
+		return
+	}
+	_, _ = h.Cache.DelPattern(r.Context(), fmt.Sprintf("exams:list:%s:*", schoolID))
 }
 
 // ─── Hydration ──────────────────────────────────────────────────────
@@ -168,15 +204,28 @@ func (h *Handler) hydrate(rows []*store.Exam) []map[string]any {
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	q := r.URL.Query()
-	api.WriteResult(w, api.ServiceTry(func() (any, error) {
-		if err := auth.AssertPermission(ctx, "exams", auth.ActionView); err != nil {
-			return nil, err
-		}
-		yearID := tenant.ResolveAcademicYearID(h.Store, ctx, q.Get("academic_year_id"))
-		classID := q.Get("class_id")
-		statusQ := q.Get("status")
-		typeQ := q.Get("type")
 
+	if err := auth.AssertPermission(ctx, "exams", auth.ActionView); err != nil {
+		api.WriteResult(w, api.Fail("FORBIDDEN", err.Error(), 403, nil))
+		return
+	}
+
+	yearID := tenant.ResolveAcademicYearID(h.Store, ctx, q.Get("academic_year_id"))
+	classID := q.Get("class_id")
+	statusQ := q.Get("status")
+	typeQ := q.Get("type")
+
+	cacheKey := listCacheKey(ctx.SchoolID, yearID, classID, statusQ, typeQ, q.Encode())
+	if h.Cache != nil && h.Cache.Available() {
+		if b, err := h.Cache.Get(r.Context(), cacheKey); err == nil && b != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("X-Cache", "HIT")
+			_, _ = w.Write(b)
+			return
+		}
+	}
+
+	result := api.ServiceTry(func() (any, error) {
 		h.Store.RLock()
 		rows := make([]*store.Exam, 0)
 		for _, e := range h.Store.Exams {
@@ -209,7 +258,31 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 			return hydrated, nil
 		}
 		return api.BuildPaginated(api.SafeSlice(hydrated, page.Skip, page.Skip+page.Limit), len(hydrated), page), nil
-	}))
+	})
+
+	bytes, err := json.Marshal(result)
+	if err != nil {
+		api.WriteResult(w, api.Fail("INTERNAL", "Failed to encode exams.", 500, nil))
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if h.Cache != nil && h.Cache.Available() {
+		w.Header().Set("X-Cache", "MISS")
+	}
+	if !result.Ok {
+		status := http.StatusBadRequest
+		if result.Error != nil && result.Error.Status != 0 {
+			status = result.Error.Status
+		}
+		w.WriteHeader(status)
+		_, _ = w.Write(bytes)
+		return
+	}
+	_, _ = w.Write(bytes)
+
+	if h.Cache != nil && h.Cache.Available() {
+		_ = h.Cache.Set(r.Context(), cacheKey, bytes, examsListCacheTTL)
+	}
 }
 
 // ─── Get ────────────────────────────────────────────────────────────
@@ -386,6 +459,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		audit.Write(h.Store, ctx, audit.Input{
 			Action: "create", EntityType: "exam", EntityID: newRow.ID, After: newRow,
 		})
+		h.invalidateList(r, ctx.SchoolID)
 
 		return h.hydrate([]*store.Exam{newRow})[0], nil
 	}))
@@ -464,6 +538,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 				audit.Write(h.Store, ctx, audit.Input{
 					Action: "update", EntityType: "exam", EntityID: id, Before: before, After: *e,
 				})
+				h.invalidateList(r, ctx.SchoolID)
 				return h.hydrate([]*store.Exam{e})[0], nil
 			}
 		}
@@ -490,6 +565,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 				audit.Write(h.Store, ctx, audit.Input{
 					Action: "delete", EntityType: "exam", EntityID: id, Before: before,
 				})
+				h.invalidateList(r, ctx.SchoolID)
 				return map[string]any{"success": true, "id": id}, nil
 			}
 		}

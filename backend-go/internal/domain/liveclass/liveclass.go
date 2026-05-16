@@ -8,8 +8,10 @@ package liveclass
 
 import (
 	"crypto/rand"
+	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"sort"
@@ -19,15 +21,21 @@ import (
 	"github.com/eduplexo/backend-go/internal/api"
 	"github.com/eduplexo/backend-go/internal/audit"
 	"github.com/eduplexo/backend-go/internal/auth"
+	"github.com/eduplexo/backend-go/internal/cache"
 	"github.com/eduplexo/backend-go/internal/domain/tenant"
 	"github.com/eduplexo/backend-go/internal/store"
 	"github.com/go-chi/chi/v5"
 )
 
+// liveClassListCacheTTL — short window so newly-scheduled live classes
+// surface quickly. Same TTL as other phase-8 list caches.
+const liveClassListCacheTTL = 60 * time.Second
+
 // Handler holds dependencies for live class endpoints.
 type Handler struct {
 	Store *store.MemStore
 	Save  func(table string, doc any)
+	Cache *cache.Client
 }
 
 // New returns a live class handler. `save` is optional — pass nil for
@@ -37,6 +45,30 @@ func New(s *store.MemStore, save func(string, any)) *Handler {
 		save = func(string, any) {}
 	}
 	return &Handler{Store: s, Save: save}
+}
+
+// NewWithCache attaches a Redis client. Pass nil to opt out — handler
+// degrades to original (no-cache) behaviour.
+func NewWithCache(s *store.MemStore, save func(string, any), c *cache.Client) *Handler {
+	h := New(s, save)
+	h.Cache = c
+	return h
+}
+
+// listCacheKey hashes filter inputs for a stable per-tenant key.
+// Role + profile id are part of the key because students see only their
+// own class while admins/teachers can see the whole school.
+func listCacheKey(schoolID, role, profileID, query string) string {
+	src := fmt.Sprintf("%s|%s|%s|%s", schoolID, role, profileID, query)
+	h := sha1.Sum([]byte(src))
+	return fmt.Sprintf("liveclass:list:%s:%s", schoolID, hex.EncodeToString(h[:])[:16])
+}
+
+func (h *Handler) invalidateList(r *http.Request, schoolID string) {
+	if h.Cache == nil || !h.Cache.Available() {
+		return
+	}
+	_, _ = h.Cache.DelPattern(r.Context(), fmt.Sprintf("liveclass:list:%s:*", schoolID))
 }
 
 // ─── Jitsi Room URL Generator ────────────────────────────────────────────
@@ -119,10 +151,37 @@ func (h *Handler) hydrate(rows []*store.LiveClass) []map[string]any {
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	q := r.URL.Query()
-	api.WriteResult(w, api.ServiceTry(func() (any, error) {
-		if err := auth.AssertPermission(ctx, "classes", auth.ActionView); err != nil {
-			return nil, err
+
+	if err := auth.AssertPermission(ctx, "classes", auth.ActionView); err != nil {
+		api.WriteResult(w, api.Fail("FORBIDDEN", err.Error(), 403, nil))
+		return
+	}
+
+	// Resolve student profile id outside the cache-key calc so students
+	// from different classes don't share a cache entry.
+	var profileID string
+	if ctx.Role == "student" {
+		h.Store.RLock()
+		for _, s := range h.Store.Students {
+			if s.SchoolID == ctx.SchoolID && s.UserID == ctx.UserID {
+				profileID = s.ID
+				break
+			}
 		}
+		h.Store.RUnlock()
+	}
+
+	cacheKey := listCacheKey(ctx.SchoolID, ctx.Role, profileID, q.Encode())
+	if h.Cache != nil && h.Cache.Available() {
+		if b, err := h.Cache.Get(r.Context(), cacheKey); err == nil && b != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("X-Cache", "HIT")
+			_, _ = w.Write(b)
+			return
+		}
+	}
+
+	result := api.ServiceTry(func() (any, error) {
 		yearID := tenant.ResolveAcademicYearID(h.Store, ctx, q.Get("academic_year_id"))
 		classID := q.Get("class_id")
 		statusQ := q.Get("status")
@@ -168,7 +227,31 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 			return hydrated, nil
 		}
 		return api.BuildPaginated(api.SafeSlice(hydrated, page.Skip, page.Skip+page.Limit), len(hydrated), page), nil
-	}))
+	})
+
+	bytes, err := json.Marshal(result)
+	if err != nil {
+		api.WriteResult(w, api.Fail("INTERNAL", "Failed to encode live classes.", 500, nil))
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if h.Cache != nil && h.Cache.Available() {
+		w.Header().Set("X-Cache", "MISS")
+	}
+	if !result.Ok {
+		status := http.StatusBadRequest
+		if result.Error != nil && result.Error.Status != 0 {
+			status = result.Error.Status
+		}
+		w.WriteHeader(status)
+		_, _ = w.Write(bytes)
+		return
+	}
+	_, _ = w.Write(bytes)
+
+	if h.Cache != nil && h.Cache.Available() {
+		_ = h.Cache.Set(r.Context(), cacheKey, bytes, liveClassListCacheTTL)
+	}
 }
 
 // ─── Schedule (Create) ───────────────────────────────────────────────────
@@ -237,6 +320,7 @@ func (h *Handler) Schedule(w http.ResponseWriter, r *http.Request) {
 		audit.Write(h.Store, ctx, audit.Input{
 			Action: "create", EntityType: "live_class", EntityID: row.ID, After: row,
 		})
+		h.invalidateList(r, ctx.SchoolID)
 		return h.hydrate([]*store.LiveClass{row})[0], nil
 	}))
 }
@@ -313,6 +397,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		audit.Write(h.Store, ctx, audit.Input{
 			Action: "update", EntityType: "live_class", EntityID: id, Before: before, After: snapshot,
 		})
+		h.invalidateList(r, ctx.SchoolID)
 		return h.hydrate([]*store.LiveClass{&snapshot})[0], nil
 	}))
 }
@@ -346,6 +431,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		audit.Write(h.Store, ctx, audit.Input{
 			Action: "delete", EntityType: "live_class", EntityID: id, Before: *removed,
 		})
+		h.invalidateList(r, ctx.SchoolID)
 		return map[string]any{"success": true, "id": id}, nil
 	}))
 }

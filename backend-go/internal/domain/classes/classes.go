@@ -1,10 +1,30 @@
 // Package classes implements /api/classes endpoints. Mirrors
 // old-app/shared/services/class.service.ts with the subset of fields the
 // React frontend currently consumes.
+//
+// Caching:
+//
+//	The list endpoint enriches every class with student count,
+//	attendance %, and fee aggregates — that's a per-class fan-out
+//	scan over Students/Attendance/Fees. On a school with 50 classes
+//	and 1000 students this turns into a heavy walk on every page
+//	mount. Phase 4 adds an optional Redis read-through cache, scoped
+//	per (school, year, role, teacher_profile, filter_hash). Writes
+//	from this module invalidate the cache. Cross-cutting writes
+//	(students enroll, fees pay, attendance mark) don't touch the
+//	cache directly — the 60-second TTL absorbs that staleness.
+//
+//	Get / GetSubjects are intentionally NOT cached — they're
+//	cheap single-row reads and parents/forms hit them frequently
+//	with arbitrary IDs (would balloon the keyspace for marginal
+//	gain).
 package classes
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sort"
 	"strings"
@@ -13,16 +33,24 @@ import (
 	"github.com/eduplexo/backend-go/internal/api"
 	"github.com/eduplexo/backend-go/internal/audit"
 	"github.com/eduplexo/backend-go/internal/auth"
+	"github.com/eduplexo/backend-go/internal/cache"
 	"github.com/eduplexo/backend-go/internal/domain/tenant"
 	"github.com/eduplexo/backend-go/internal/store"
 	"github.com/go-chi/chi/v5"
 )
 
+// classesListCacheTTL — short window so admin add/remove/student-enroll
+// flows show up quickly without explicit cross-module invalidation.
+const classesListCacheTTL = 60 * time.Second
+
 type Handler struct {
 	Store   *store.MemStore
 	Persist func(table string, doc any)
+	Cache   *cache.Client
 }
 
+// New keeps the original signature for callers that haven't migrated.
+// Without a cache, behaviour is exactly the same as before this phase.
 func New(s *store.MemStore, save func(string, any)) *Handler {
 	if save == nil {
 		save = func(string, any) {}
@@ -30,16 +58,73 @@ func New(s *store.MemStore, save func(string, any)) *Handler {
 	return &Handler{Store: s, Persist: save}
 }
 
+// NewWithCache attaches a Redis client. Pass nil to opt out.
+func NewWithCache(s *store.MemStore, save func(string, any), c *cache.Client) *Handler {
+	h := New(s, save)
+	h.Cache = c
+	return h
+}
+
+// listCacheKey builds a stable per-tenant key. We hash the filter set
+// (year + role + teacher profile + pagination) so two requests with the
+// same observable inputs share the same cached blob.
+func listCacheKey(schoolID, yearID, role, teacherProfileID, query string) string {
+	src := fmt.Sprintf("%s|%s|%s|%s|%s", schoolID, yearID, role, teacherProfileID, query)
+	h := sha1.Sum([]byte(src))
+	return fmt.Sprintf("classes:list:%s:%s", schoolID, hex.EncodeToString(h[:])[:16])
+}
+
+// invalidateList drops every cached classes:list:{school}:* entry. We
+// use DelPattern because the per-tenant key set is small (the school's
+// admin/teachers, with at most a handful of filter combos) so the
+// SCAN stays cheap.
+func (h *Handler) invalidateList(r *http.Request, schoolID string) {
+	if h.Cache == nil || !h.Cache.Available() {
+		return
+	}
+	_, _ = h.Cache.DelPattern(r.Context(), fmt.Sprintf("classes:list:%s:*", schoolID))
+}
+
 // List implements GET /api/classes.
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	q := r.URL.Query()
-	api.WriteResult(w, api.ServiceTry(func() (any, error) {
-		if err := auth.AssertPermission(ctx, "classes", auth.ActionView); err != nil {
-			return nil, err
-		}
-		yearID := tenant.ResolveAcademicYearID(h.Store, ctx, q.Get("academic_year_id"))
 
+	// Permission check FIRST — never serve cached bytes to an
+	// unauthorized caller.
+	if err := auth.AssertPermission(ctx, "classes", auth.ActionView); err != nil {
+		api.WriteResult(w, api.Fail("FORBIDDEN", err.Error(), 403, nil))
+		return
+	}
+
+	yearID := tenant.ResolveAcademicYearID(h.Store, ctx, q.Get("academic_year_id"))
+
+	// Resolve the teacher profile (if any) outside the cache so the
+	// key reflects the actual scoping that's about to apply. Two
+	// teachers with different IDs must not share a cache entry.
+	var teacherProfileID string
+	if ctx.Role == "teacher" {
+		h.Store.RLock()
+		for _, t := range h.Store.Teachers {
+			if t.SchoolID == ctx.SchoolID && t.UserID == ctx.UserID {
+				teacherProfileID = t.ID
+				break
+			}
+		}
+		h.Store.RUnlock()
+	}
+
+	cacheKey := listCacheKey(ctx.SchoolID, yearID, ctx.Role, teacherProfileID, q.Encode())
+	if h.Cache != nil && h.Cache.Available() {
+		if b, err := h.Cache.Get(r.Context(), cacheKey); err == nil && b != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("X-Cache", "HIT")
+			_, _ = w.Write(b)
+			return
+		}
+	}
+
+	result := api.ServiceTry(func() (any, error) {
 		h.Store.RLock()
 		rows := make([]*store.Class, 0)
 
@@ -94,7 +179,7 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 			rows = append(rows, c)
 		}
 		h.Store.RUnlock()
-		
+
 		// Enrich classes with stats before returning
 		h.Store.RLock()
 		for _, c := range rows {
@@ -145,7 +230,31 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 				"pages": pages,
 			},
 		}, nil
-	}))
+	})
+
+	bytes, err := json.Marshal(result)
+	if err != nil {
+		api.WriteResult(w, api.Fail("INTERNAL", "Failed to encode classes.", 500, nil))
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if h.Cache != nil && h.Cache.Available() {
+		w.Header().Set("X-Cache", "MISS")
+	}
+	if !result.Ok {
+		status := http.StatusBadRequest
+		if result.Error != nil && result.Error.Status != 0 {
+			status = result.Error.Status
+		}
+		w.WriteHeader(status)
+		_, _ = w.Write(bytes)
+		return
+	}
+	_, _ = w.Write(bytes)
+
+	if h.Cache != nil && h.Cache.Available() {
+		_ = h.Cache.Set(r.Context(), cacheKey, bytes, classesListCacheTTL)
+	}
 }
 
 // Get implements GET /api/classes/:id.
@@ -262,6 +371,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		audit.Write(h.Store, ctx, audit.Input{
 			Action: "create", EntityType: "class", EntityID: newClass.ID, After: newClass,
 		})
+		h.invalidateList(r, ctx.SchoolID)
 		return newClass, nil
 	}))
 }
@@ -332,6 +442,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 					Action: "update", EntityType: "class", EntityID: id,
 					Before: before, After: *c,
 				})
+				h.invalidateList(r, ctx.SchoolID)
 				return c, nil
 			}
 		}
@@ -357,6 +468,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 				audit.Write(h.Store, ctx, audit.Input{
 					Action: "delete", EntityType: "class", EntityID: id, Before: before,
 				})
+				h.invalidateList(r, ctx.SchoolID)
 				return map[string]any{"success": true, "id": id}, nil
 			}
 		}

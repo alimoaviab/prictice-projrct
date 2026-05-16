@@ -44,6 +44,13 @@ func main() {
 	// without a database)
 	store.EnsureBootstrapUsers(s)
 
+	// Build the in-memory lookup indexes (userByID/userByEmail/schoolByID)
+	// so the auth middleware can do O(1) lookups instead of scanning the
+	// Users slice on every request. The indexes are refreshed periodically
+	// below; a stale entry never breaks correctness because callers fall
+	// back to the slice scan on miss.
+	s.RebuildIndexes()
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -64,6 +71,10 @@ func main() {
 		// Ensure bootstrap admin users exist even after loading from PG.
 		// This guarantees we can always log in as the platform owner.
 		store.EnsureBootstrapUsers(s)
+		// Refresh the lookup indexes now that PG has hydrated all users
+		// and schools — the maps built earlier only saw the bootstrap
+		// rows.
+		s.RebuildIndexes()
 		// Push the in-memory seed to PG when DB was empty.
 		if err := pg.FullSnapshot(ctx, s); err != nil {
 			log.Printf("[server] initial snapshot failed: %v", err)
@@ -101,6 +112,24 @@ func main() {
 		WriteTimeout:      30 * time.Second,
 		IdleTimeout:       120 * time.Second,
 	}
+
+	// Periodic refresh of the in-memory lookup indexes. Handlers that
+	// insert/update users (signup, student create, teacher create) keep
+	// mutating the slices directly — the indexes stay correct because
+	// the auth middleware falls back to a scan when a key is missing,
+	// and this ticker promotes those rows to the fast path within ~30s.
+	go func() {
+		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				s.RebuildIndexes()
+			}
+		}
+	}()
 
 	go func() {
 		log.Printf("[server] listening on http://0.0.0.0%s (app=%s, allowed_origins=%v, db=%v)",
