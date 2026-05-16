@@ -62,7 +62,7 @@ function ProtectedRouter() {
 
     if (user && inAuthGroup) {
       const home = ROLE_HOME[user.role] ?? '/(admin)';
-      router.replace(home as `/${string}`);
+      router.replace(home as never);
     }
   }, [hydrated, segments, user, router]);
 

@@ -7,6 +7,7 @@
 
 import { useState } from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -125,6 +126,13 @@ export default function SignupScreen() {
       >
         <View style={[styles.card, shadows.floating]}>
           <View style={styles.header}>
+            <View style={styles.logoBadge}>
+              <Image
+                source={require('@assets/images/logo.png')}
+                style={styles.logoImage}
+                resizeMode="cover"
+              />
+            </View>
             <Text style={styles.title}>Create Account</Text>
             <Text style={styles.subtitle}>JOIN THE EDUPLEXO NETWORK</Text>
           </View>
@@ -248,6 +256,18 @@ const styles = StyleSheet.create({
     gap: spacing.xl,
   },
   header: { alignItems: 'center', gap: 6 },
+  logoBadge: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.gray200,
+    marginBottom: spacing.md,
+    ...shadows.card,
+  },
+  logoImage: { width: '100%', height: '100%' },
   title: { ...typography.h1, color: colors.gray900 },
   subtitle: { ...typography.labelXs, color: colors.gray400, letterSpacing: 1.5 },
   form: { gap: spacing.lg },

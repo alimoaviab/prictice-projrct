@@ -233,6 +233,9 @@ export function SignupPage() {
         >
           <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <div className="text-center mb-10">
+              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-slate-200/70">
+                <img src="/logo.jpeg" alt="Eduplexo" className="h-full w-full object-cover" />
+              </div>
               <h2 className="text-4xl font-bold text-gray-900 mb-2 tracking-tight">
                 Create Account
               </h2>

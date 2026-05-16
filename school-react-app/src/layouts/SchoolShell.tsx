@@ -407,8 +407,8 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
       >
         <div className={`flex h-11 items-center gap-2 px-3 ${isCollapsed ? "justify-center" : "justify-between"}`}>
           <div className="flex items-center gap-2">
-            <div className="flex h-5.5 w-5.5 flex-shrink-0 items-center justify-center rounded bg-blue-600 shadow-sm">
-              <span className="material-symbols-outlined text-[13px] font-bold text-white">school</span>
+            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center overflow-hidden rounded-md bg-white shadow-sm ring-1 ring-slate-200">
+              <img src="/logo.jpeg" alt="Eduplexo" className="h-full w-full object-cover" />
             </div>
             {!isCollapsed && (
               <span className="text-[13px] font-bold tracking-tight text-slate-900">Eduplexo</span>

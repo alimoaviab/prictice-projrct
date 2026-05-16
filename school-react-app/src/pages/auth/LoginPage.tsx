@@ -145,6 +145,9 @@ export function LoginPage() {
           className="bg-white rounded-[24px] shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-gray-100 p-6 md:p-9 relative z-10"
         >
           <div className="text-center mb-10">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-slate-200/70">
+              <img src="/logo.jpeg" alt="Eduplexo" className="h-full w-full object-cover" />
+            </div>
             <h2 className="text-4xl font-bold text-gray-900 mb-2 tracking-tight">Welcome Back!</h2>
             <p className="text-gray-400 font-semibold normal-case tracking-[0.15em] text-xs">Log in to continue</p>
           </div>
