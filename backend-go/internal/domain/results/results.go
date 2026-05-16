@@ -14,7 +14,10 @@
 package results
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sort"
 	"time"
@@ -22,6 +25,7 @@ import (
 	"github.com/eduplexo/backend-go/internal/api"
 	"github.com/eduplexo/backend-go/internal/audit"
 	"github.com/eduplexo/backend-go/internal/auth"
+	"github.com/eduplexo/backend-go/internal/cache"
 	"github.com/eduplexo/backend-go/internal/domain/tenant"
 	"github.com/eduplexo/backend-go/internal/store"
 	"github.com/go-chi/chi/v5"
@@ -30,6 +34,7 @@ import (
 type Handler struct {
 	Store   *store.MemStore
 	Persist func(table string, doc any)
+	Cache   *cache.Client
 }
 
 func New(s *store.MemStore, save func(string, any)) *Handler {
@@ -37,6 +42,34 @@ func New(s *store.MemStore, save func(string, any)) *Handler {
 		save = func(string, any) {}
 	}
 	return &Handler{Store: s, Persist: save}
+}
+
+// NewWithCache attaches a Redis client. Pass nil to opt out — handler
+// degrades to original (no-cache) behaviour.
+func NewWithCache(s *store.MemStore, save func(string, any), c *cache.Client) *Handler {
+	h := New(s, save)
+	h.Cache = c
+	return h
+}
+
+// resultsListCacheTTL — short window so a fresh marks save shows up
+// quickly without explicit cross-module invalidation. 60s also matches
+// what the audit doc recommended.
+const resultsListCacheTTL = 60 * time.Second
+
+// listCacheKey hashes filter inputs for a stable per-tenant key.
+func listCacheKey(schoolID, yearID, examID, studentID, classID, query string) string {
+	src := fmt.Sprintf("%s|%s|%s|%s|%s|%s", schoolID, yearID, examID, studentID, classID, query)
+	h := sha1.Sum([]byte(src))
+	return fmt.Sprintf("results:list:%s:%s", schoolID, hex.EncodeToString(h[:])[:16])
+}
+
+// invalidateList drops all results:list:{school}:* entries on a write.
+func (h *Handler) invalidateList(r *http.Request, schoolID string) {
+	if h.Cache == nil || !h.Cache.Available() {
+		return
+	}
+	_, _ = h.Cache.DelPattern(r.Context(), fmt.Sprintf("results:list:%s:*", schoolID))
 }
 
 // calculateGrade matches the original `calculateGrade` thresholds.
@@ -191,15 +224,28 @@ func (h *Handler) hydrate(rows []*store.Result) []map[string]any {
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	q := r.URL.Query()
-	api.WriteResult(w, api.ServiceTry(func() (any, error) {
-		if err := auth.AssertPermission(ctx, "exams", auth.ActionView); err != nil {
-			return nil, err
-		}
-		yearID := tenant.ResolveAcademicYearID(h.Store, ctx, q.Get("academic_year_id"))
-		examID := q.Get("exam_id")
-		studentID := q.Get("student_id")
-		classID := q.Get("class_id")
 
+	if err := auth.AssertPermission(ctx, "exams", auth.ActionView); err != nil {
+		api.WriteResult(w, api.Fail("FORBIDDEN", err.Error(), 403, nil))
+		return
+	}
+
+	yearID := tenant.ResolveAcademicYearID(h.Store, ctx, q.Get("academic_year_id"))
+	examID := q.Get("exam_id")
+	studentID := q.Get("student_id")
+	classID := q.Get("class_id")
+
+	cacheKey := listCacheKey(ctx.SchoolID, yearID, examID, studentID, classID, q.Encode())
+	if h.Cache != nil && h.Cache.Available() {
+		if b, err := h.Cache.Get(r.Context(), cacheKey); err == nil && b != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("X-Cache", "HIT")
+			_, _ = w.Write(b)
+			return
+		}
+	}
+
+	result := api.ServiceTry(func() (any, error) {
 		h.Store.RLock()
 		rows := make([]*store.Result, 0)
 		for _, r := range h.Store.Results {
@@ -231,7 +277,31 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 			return hydrated, nil
 		}
 		return api.BuildPaginated(api.SafeSlice(hydrated, page.Skip, page.Skip+page.Limit), len(hydrated), page), nil
-	}))
+	})
+
+	bytes, err := json.Marshal(result)
+	if err != nil {
+		api.WriteResult(w, api.Fail("INTERNAL", "Failed to encode results.", 500, nil))
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if h.Cache != nil && h.Cache.Available() {
+		w.Header().Set("X-Cache", "MISS")
+	}
+	if !result.Ok {
+		status := http.StatusBadRequest
+		if result.Error != nil && result.Error.Status != 0 {
+			status = result.Error.Status
+		}
+		w.WriteHeader(status)
+		_, _ = w.Write(bytes)
+		return
+	}
+	_, _ = w.Write(bytes)
+
+	if h.Cache != nil && h.Cache.Available() {
+		_ = h.Cache.Set(r.Context(), cacheKey, bytes, resultsListCacheTTL)
+	}
 }
 
 // ListForExam implements GET /api/exams/:id/results — same shape, scoped to one exam.
@@ -406,6 +476,7 @@ func (h *Handler) Save(w http.ResponseWriter, r *http.Request) {
 			Action: "update", EntityType: "exam", EntityID: examID,
 			Metadata: map[string]any{"count": saved, "scope": "results"},
 		})
+		h.invalidateList(r, ctx.SchoolID)
 		return map[string]any{"saved": saved}, nil
 	}))
 }

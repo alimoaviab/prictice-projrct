@@ -3,7 +3,10 @@
 package homework
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sort"
 	"time"
@@ -11,14 +14,20 @@ import (
 	"github.com/eduplexo/backend-go/internal/api"
 	"github.com/eduplexo/backend-go/internal/audit"
 	"github.com/eduplexo/backend-go/internal/auth"
+	"github.com/eduplexo/backend-go/internal/cache"
 	"github.com/eduplexo/backend-go/internal/domain/tenant"
 	"github.com/eduplexo/backend-go/internal/store"
 	"github.com/go-chi/chi/v5"
 )
 
+// homeworkListCacheTTL — short window so newly-assigned homework
+// shows up quickly without forcing cross-module invalidation.
+const homeworkListCacheTTL = 60 * time.Second
+
 type Handler struct {
 	Store   *store.MemStore
 	Persist func(table string, doc any)
+	Cache   *cache.Client
 }
 
 func New(s *store.MemStore, save func(string, any)) *Handler {
@@ -26,6 +35,29 @@ func New(s *store.MemStore, save func(string, any)) *Handler {
 		save = func(string, any) {}
 	}
 	return &Handler{Store: s, Persist: save}
+}
+
+// NewWithCache attaches a Redis client. Pass nil to opt out.
+func NewWithCache(s *store.MemStore, save func(string, any), c *cache.Client) *Handler {
+	h := New(s, save)
+	h.Cache = c
+	return h
+}
+
+// listCacheKey hashes filter inputs for a stable per-tenant key.
+// Role + profile id are part of the key because the list is scoped
+// per-role (student/teacher see different rows than admin).
+func listCacheKey(schoolID, role, profileID, query string) string {
+	src := fmt.Sprintf("%s|%s|%s|%s", schoolID, role, profileID, query)
+	h := sha1.Sum([]byte(src))
+	return fmt.Sprintf("homework:list:%s:%s", schoolID, hex.EncodeToString(h[:])[:16])
+}
+
+func (h *Handler) invalidateList(r *http.Request, schoolID string) {
+	if h.Cache == nil || !h.Cache.Available() {
+		return
+	}
+	_, _ = h.Cache.DelPattern(r.Context(), fmt.Sprintf("homework:list:%s:*", schoolID))
 }
 
 func (h *Handler) hydrate(rows []*store.Homework) []map[string]any {
@@ -94,10 +126,46 @@ func (h *Handler) hydrate(rows []*store.Homework) []map[string]any {
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	q := r.URL.Query()
-	api.WriteResult(w, api.ServiceTry(func() (any, error) {
-		if err := auth.AssertPermission(ctx, "homework", auth.ActionView); err != nil {
-			return nil, err
+
+	if err := auth.AssertPermission(ctx, "homework", auth.ActionView); err != nil {
+		api.WriteResult(w, api.Fail("FORBIDDEN", err.Error(), 403, nil))
+		return
+	}
+
+	// Resolve scoping profile outside the cache key so two different
+	// teachers/students don't share a cache entry.
+	var profileID string
+	if ctx.Role == "student" {
+		h.Store.RLock()
+		for _, s := range h.Store.Students {
+			if s.SchoolID == ctx.SchoolID && s.UserID == ctx.UserID {
+				profileID = s.ID
+				break
+			}
 		}
+		h.Store.RUnlock()
+	} else if ctx.Role == "teacher" {
+		h.Store.RLock()
+		for _, t := range h.Store.Teachers {
+			if t.SchoolID == ctx.SchoolID && t.UserID == ctx.UserID {
+				profileID = t.ID
+				break
+			}
+		}
+		h.Store.RUnlock()
+	}
+
+	cacheKey := listCacheKey(ctx.SchoolID, ctx.Role, profileID, q.Encode())
+	if h.Cache != nil && h.Cache.Available() {
+		if b, err := h.Cache.Get(r.Context(), cacheKey); err == nil && b != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("X-Cache", "HIT")
+			_, _ = w.Write(b)
+			return
+		}
+	}
+
+	result := api.ServiceTry(func() (any, error) {
 		yearID := tenant.ResolveAcademicYearID(h.Store, ctx, q.Get("academic_year_id"))
 		classID := q.Get("class_id")
 		section := q.Get("section")
@@ -193,7 +261,31 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 			return hydrated, nil
 		}
 		return api.BuildPaginated(api.SafeSlice(hydrated, page.Skip, page.Skip+page.Limit), len(hydrated), page), nil
-	}))
+	})
+
+	bytes, err := json.Marshal(result)
+	if err != nil {
+		api.WriteResult(w, api.Fail("INTERNAL", "Failed to encode homework.", 500, nil))
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if h.Cache != nil && h.Cache.Available() {
+		w.Header().Set("X-Cache", "MISS")
+	}
+	if !result.Ok {
+		status := http.StatusBadRequest
+		if result.Error != nil && result.Error.Status != 0 {
+			status = result.Error.Status
+		}
+		w.WriteHeader(status)
+		_, _ = w.Write(bytes)
+		return
+	}
+	_, _ = w.Write(bytes)
+
+	if h.Cache != nil && h.Cache.Available() {
+		_ = h.Cache.Set(r.Context(), cacheKey, bytes, homeworkListCacheTTL)
+	}
 }
 
 // Get implements GET /api/homework/:id.
@@ -374,6 +466,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		audit.Write(h.Store, ctx, audit.Input{
 			Action: "create", EntityType: "homework", EntityID: newRow.ID, After: newRow,
 		})
+		h.invalidateList(r, ctx.SchoolID)
 
 		// Take a brief read lock for hydration (joining class/teacher/subject names).
 		h.Store.RLock()
@@ -437,6 +530,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 				audit.Write(h.Store, ctx, audit.Input{
 					Action: "update", EntityType: "homework", EntityID: id, Before: before, After: *hw,
 				})
+				h.invalidateList(r, ctx.SchoolID)
 				return h.hydrate([]*store.Homework{hw})[0], nil
 			}
 		}
@@ -461,6 +555,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 				audit.Write(h.Store, ctx, audit.Input{
 					Action: "delete", EntityType: "homework", EntityID: id, Before: before,
 				})
+				h.invalidateList(r, ctx.SchoolID)
 				return map[string]any{"success": true, "id": id}, nil
 			}
 		}

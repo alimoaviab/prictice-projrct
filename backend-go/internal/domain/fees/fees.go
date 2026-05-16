@@ -37,14 +37,21 @@ import (
 	"github.com/eduplexo/backend-go/internal/api"
 	"github.com/eduplexo/backend-go/internal/audit"
 	"github.com/eduplexo/backend-go/internal/auth"
+	"github.com/eduplexo/backend-go/internal/cache"
 	"github.com/eduplexo/backend-go/internal/domain/tenant"
 	"github.com/eduplexo/backend-go/internal/store"
 	"github.com/go-chi/chi/v5"
 )
 
+// feesCacheTTL — short window so fee mutations surface quickly. Same
+// TTL as other phase-8 list caches. Per-school invalidation runs on
+// every mutation regardless.
+const feesCacheTTL = 60 * time.Second
+
 type Handler struct {
 	Store *store.MemStore
 	Save  func(table string, doc any)
+	Cache *cache.Client
 }
 
 // New returns a fees handler. `save` is the persistence write-through;
@@ -54,6 +61,101 @@ func New(s *store.MemStore, save func(string, any)) *Handler {
 		save = func(string, any) {}
 	}
 	return &Handler{Store: s, Save: save}
+}
+
+// NewWithCache attaches a Redis client. Pass nil to opt out — handler
+// degrades to the original (no-cache) behaviour.
+func NewWithCache(s *store.MemStore, save func(string, any), c *cache.Client) *Handler {
+	h := New(s, save)
+	h.Cache = c
+	return h
+}
+
+// readCacheKey hashes role + scope + query into a stable key prefixed
+// by `kind` so different read endpoints share a single per-school
+// namespace and a single invalidation sweep covers them all.
+func readCacheKey(kind, schoolID, role, profileID, query string) string {
+	src := fmt.Sprintf("%s|%s|%s|%s|%s", kind, schoolID, role, profileID, query)
+	h := sha1.Sum([]byte(src))
+	return fmt.Sprintf("fees:%s:%s:%s", kind, schoolID, hex.EncodeToString(h[:])[:16])
+}
+
+// invalidateAll wipes every cached fee read for a school.
+//
+// We use a wide pattern (`fees:*:{schoolID}:*`) so a single payment or
+// adjustment write doesn't have to know which downstream reads it
+// affects. Misses are cheap; staleness is the real cost.
+func (h *Handler) invalidateAll(r *http.Request, schoolID string) {
+	if h.Cache == nil || !h.Cache.Available() {
+		return
+	}
+	_, _ = h.Cache.DelPattern(r.Context(), fmt.Sprintf("fees:*:%s:*", schoolID))
+}
+
+// resolveProfileID returns the role-scoped profile id used to make sure
+// per-student/per-parent reads are not shared across users.
+func (h *Handler) resolveProfileID(ctx *api.RequestContext) string {
+	if ctx == nil {
+		return ""
+	}
+	switch ctx.Role {
+	case "student":
+		h.Store.RLock()
+		defer h.Store.RUnlock()
+		for _, s := range h.Store.Students {
+			if s.SchoolID == ctx.SchoolID && s.UserID == ctx.UserID {
+				return s.ID
+			}
+		}
+	case "parent":
+		// Parents pass student_id explicitly via query — UserID is enough
+		// to namespace the cache.
+		return ctx.UserID
+	}
+	return ""
+}
+
+// serveCached is a small helper that wraps the marshal-once-cache-once
+// flow for read endpoints. Permission check MUST be done by the caller
+// before invoking this so unauthorized callers never observe cached
+// bytes.
+func (h *Handler) serveCached(w http.ResponseWriter, r *http.Request, kind string, fn func() (any, error)) {
+	ctx := api.FromRequest(r)
+	cacheKey := readCacheKey(kind, ctx.SchoolID, ctx.Role, h.resolveProfileID(ctx), r.URL.RawQuery)
+
+	if h.Cache != nil && h.Cache.Available() {
+		if b, err := h.Cache.Get(r.Context(), cacheKey); err == nil && b != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("X-Cache", "HIT")
+			_, _ = w.Write(b)
+			return
+		}
+	}
+
+	result := api.ServiceTry(fn)
+	bytes, err := json.Marshal(result)
+	if err != nil {
+		api.WriteResult(w, api.Fail("INTERNAL", "Failed to encode response.", 500, nil))
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if h.Cache != nil && h.Cache.Available() {
+		w.Header().Set("X-Cache", "MISS")
+	}
+	if !result.Ok {
+		status := http.StatusBadRequest
+		if result.Error != nil && result.Error.Status != 0 {
+			status = result.Error.Status
+		}
+		w.WriteHeader(status)
+		_, _ = w.Write(bytes)
+		return
+	}
+	_, _ = w.Write(bytes)
+
+	if h.Cache != nil && h.Cache.Available() {
+		_ = h.Cache.Set(r.Context(), cacheKey, bytes, feesCacheTTL)
+	}
 }
 
 // ─── Helpers (calculation logic — same shape as the original) ────────────
@@ -152,10 +254,11 @@ func feeTypeName(s *store.MemStore, schoolID, feeTypeID string) string {
 
 func (h *Handler) ListFeeTypes(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
-	api.WriteResult(w, api.ServiceTry(func() (any, error) {
-		if err := auth.AssertPermission(ctx, "fees", auth.ActionView); err != nil {
-			return nil, err
-		}
+	if err := auth.AssertPermission(ctx, "fees", auth.ActionView); err != nil {
+		api.WriteResult(w, api.Fail("FORBIDDEN", err.Error(), 403, nil))
+		return
+	}
+	h.serveCached(w, r, "types", func() (any, error) {
 		h.Store.RLock()
 		defer h.Store.RUnlock()
 		out := make([]map[string]any, 0)
@@ -177,7 +280,7 @@ func (h *Handler) ListFeeTypes(w http.ResponseWriter, r *http.Request) {
 		}
 		sort.Slice(out, func(i, j int) bool { return out[i]["name"].(string) < out[j]["name"].(string) })
 		return out, nil
-	}))
+	})
 }
 
 type feeTypeInput struct {
@@ -226,6 +329,7 @@ func (h *Handler) CreateFeeType(w http.ResponseWriter, r *http.Request) {
 		h.Store.Unlock()
 		h.Save("fee_types", ft)
 		audit.Write(h.Store, ctx, audit.Input{Action: "create", EntityType: "fee", EntityID: ft.ID, After: ft})
+		h.invalidateAll(r, ctx.SchoolID)
 		return ft, nil
 	}))
 }
@@ -235,10 +339,11 @@ func (h *Handler) CreateFeeType(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) ListClassFees(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	classID := chi.URLParam(r, "id")
-	api.WriteResult(w, api.ServiceTry(func() (any, error) {
-		if err := auth.AssertPermission(ctx, "fees", auth.ActionView); err != nil {
-			return nil, err
-		}
+	if err := auth.AssertPermission(ctx, "fees", auth.ActionView); err != nil {
+		api.WriteResult(w, api.Fail("FORBIDDEN", err.Error(), 403, nil))
+		return
+	}
+	h.serveCached(w, r, "classfees:"+classID, func() (any, error) {
 		yearID := tenant.ResolveAcademicYearID(h.Store, ctx, "")
 		h.Store.RLock()
 		defer h.Store.RUnlock()
@@ -307,7 +412,7 @@ func (h *Handler) ListClassFees(w http.ResponseWriter, r *http.Request) {
 			"one_time_fees":     oneTimeTotal,
 			"fees":              fees,
 		}, nil
-	}))
+	})
 }
 
 type classFeeInput struct {
@@ -412,6 +517,7 @@ func (h *Handler) AddClassFee(w http.ResponseWriter, r *http.Request) {
 		h.Save("class_fees", cf)
 		h.syncInvoicesForClass(ctx, classID)
 		audit.Write(h.Store, ctx, audit.Input{Action: "create", EntityType: "fee", EntityID: cf.ID, After: cf, Metadata: map[string]any{"scope": "class_fee"}})
+		h.invalidateAll(r, ctx.SchoolID)
 		return cf, nil
 	}))
 }
@@ -458,6 +564,7 @@ func (h *Handler) UpdateClassFee(w http.ResponseWriter, r *http.Request) {
 				h.Save("class_fees", cf)
 				h.syncInvoicesForClass(ctx, cf.ClassID)
 				audit.Write(h.Store, ctx, audit.Input{Action: "update", EntityType: "fee", EntityID: cf.ID, Before: before, After: *cf, Metadata: map[string]any{"scope": "class_fee"}})
+				h.invalidateAll(r, ctx.SchoolID)
 				return cf, nil
 			}
 		}
@@ -481,6 +588,7 @@ func (h *Handler) DeleteClassFee(w http.ResponseWriter, r *http.Request) {
 				h.Save("class_fees:delete", before.ID)
 				h.syncInvoicesForClass(ctx, cf.ClassID)
 				audit.Write(h.Store, ctx, audit.Input{Action: "delete", EntityType: "fee", EntityID: feeID, Before: before, Metadata: map[string]any{"scope": "class_fee"}})
+				h.invalidateAll(r, ctx.SchoolID)
 				return map[string]any{"success": true, "id": feeID}, nil
 			}
 		}
@@ -509,6 +617,7 @@ func (h *Handler) ToggleClassFee(w http.ResponseWriter, r *http.Request) {
 				h.Save("class_fees", cf)
 				h.syncInvoicesForClass(ctx, cf.ClassID)
 				audit.Write(h.Store, ctx, audit.Input{Action: "update", EntityType: "fee", EntityID: feeID, Before: before, After: *cf, Metadata: map[string]any{"scope": "class_fee_toggle"}})
+				h.invalidateAll(r, ctx.SchoolID)
 				return cf, nil
 			}
 		}
@@ -702,6 +811,7 @@ func (h *Handler) Generate(w http.ResponseWriter, r *http.Request) {
 			Action: "create", EntityType: "fee", EntityID: body.ClassID,
 			Metadata: map[string]any{"scope": "monthly_generate", "month": body.Month, "year": body.Year, "generated": generated},
 		})
+		h.invalidateAll(r, ctx.SchoolID)
 		return map[string]any{"generated": generated, "students": len(students)}, nil
 	}))
 }
@@ -711,10 +821,11 @@ func (h *Handler) Generate(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) ListMonthly(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	q := r.URL.Query()
-	api.WriteResult(w, api.ServiceTry(func() (any, error) {
-		if err := auth.AssertPermission(ctx, "fees", auth.ActionView); err != nil {
-			return nil, err
-		}
+	if err := auth.AssertPermission(ctx, "fees", auth.ActionView); err != nil {
+		api.WriteResult(w, api.Fail("FORBIDDEN", err.Error(), 403, nil))
+		return
+	}
+	h.serveCached(w, r, "monthly", func() (any, error) {
 		yearID := tenant.ResolveAcademicYearID(h.Store, ctx, q.Get("academic_year_id"))
 		classID := q.Get("class_id")
 		studentID := q.Get("student_id")
@@ -755,7 +866,7 @@ func (h *Handler) ListMonthly(w http.ResponseWriter, r *http.Request) {
 			return rows, nil
 		}
 		return api.BuildPaginated(api.SafeSlice(rows, page.Skip, page.Skip+page.Limit), len(rows), page), nil
-	}))
+	})
 }
 
 func (h *Handler) feeRow(f *store.Fee) map[string]any {
@@ -816,10 +927,11 @@ type adjustmentInput struct {
 func (h *Handler) ListAdjustments(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	q := r.URL.Query()
-	api.WriteResult(w, api.ServiceTry(func() ([]*store.FeeAdjustment, error) {
-		if err := auth.AssertPermission(ctx, "fees", auth.ActionView); err != nil {
-			return nil, err
-		}
+	if err := auth.AssertPermission(ctx, "fees", auth.ActionView); err != nil {
+		api.WriteResult(w, api.Fail("FORBIDDEN", err.Error(), 403, nil))
+		return
+	}
+	h.serveCached(w, r, "adjustments", func() (any, error) {
 		studentID := q.Get("student_id")
 		yearID := tenant.ResolveAcademicYearID(h.Store, ctx, q.Get("academic_year_id"))
 		h.Store.RLock()
@@ -838,7 +950,7 @@ func (h *Handler) ListAdjustments(w http.ResponseWriter, r *http.Request) {
 			rows = append(rows, a)
 		}
 		return rows, nil
-	}))
+	})
 }
 
 func (h *Handler) CreateAdjustment(w http.ResponseWriter, r *http.Request) {
@@ -891,6 +1003,7 @@ func (h *Handler) CreateAdjustment(w http.ResponseWriter, r *http.Request) {
 		h.Store.Unlock()
 		h.Save("fee_adjustments", adj)
 		audit.Write(h.Store, ctx, audit.Input{Action: "create", EntityType: "fee", EntityID: adj.ID, After: adj, Metadata: map[string]any{"scope": "adjustment"}})
+		h.invalidateAll(r, ctx.SchoolID)
 		return adj, nil
 	}))
 }
@@ -910,6 +1023,7 @@ func (h *Handler) DeleteAdjustment(w http.ResponseWriter, r *http.Request) {
 				h.Store.FeeAdjustments = append(h.Store.FeeAdjustments[:i], h.Store.FeeAdjustments[i+1:]...)
 				h.Save("fee_adjustments:delete", before.ID)
 				audit.Write(h.Store, ctx, audit.Input{Action: "delete", EntityType: "fee", EntityID: id, Before: before, Metadata: map[string]any{"scope": "adjustment"}})
+				h.invalidateAll(r, ctx.SchoolID)
 				return map[string]any{"success": true, "id": id}, nil
 			}
 		}
@@ -1042,6 +1156,7 @@ func (h *Handler) RecordPayment(w http.ResponseWriter, r *http.Request) {
 			Metadata: map[string]any{"scope": "payment", "fee_id": fee.ID, "amount": applied},
 		})
 		h.syncInvoicesForClassLocked(ctx, fee.ClassID)
+		h.invalidateAll(r, ctx.SchoolID)
 		return pay, nil
 	}))
 }
@@ -1049,10 +1164,11 @@ func (h *Handler) RecordPayment(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) ListPayments(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	q := r.URL.Query()
-	api.WriteResult(w, api.ServiceTry(func() (any, error) {
-		if err := auth.AssertPermission(ctx, "fees", auth.ActionView); err != nil {
-			return nil, err
-		}
+	if err := auth.AssertPermission(ctx, "fees", auth.ActionView); err != nil {
+		api.WriteResult(w, api.Fail("FORBIDDEN", err.Error(), 403, nil))
+		return
+	}
+	h.serveCached(w, r, "payments", func() (any, error) {
 		studentID := q.Get("student_id")
 		methodQ := q.Get("payment_method")
 		from, hasFrom := api.ParseDate(q.Get("from"))
@@ -1084,14 +1200,18 @@ func (h *Handler) ListPayments(w http.ResponseWriter, r *http.Request) {
 			return rows, nil
 		}
 		return api.BuildPaginated(api.SafeSlice(rows, page.Skip, page.Skip+page.Limit), len(rows), page), nil
-	}))
+	})
 }
 
 // ─── Dashboards / Summaries ──────────────────────────────────────────────
 
 func (h *Handler) DashboardStats(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
-	api.WriteResult(w, api.ServiceTry(func() (any, error) {
+	if err := auth.AssertPermission(ctx, "fees", auth.ActionView); err != nil {
+		api.WriteResult(w, api.Fail("FORBIDDEN", err.Error(), 403, nil))
+		return
+	}
+	h.serveCached(w, r, "dashboard", func() (any, error) {
 		yearID := tenant.ResolveAcademicYearID(h.Store, ctx, "")
 		h.Store.RLock()
 		defer h.Store.RUnlock()
@@ -1122,12 +1242,16 @@ func (h *Handler) DashboardStats(w http.ResponseWriter, r *http.Request) {
 			"collection_rate": rate,
 			"pending_count":   pendingCount,
 		}, nil
-	}))
+	})
 }
 
 func (h *Handler) ClassesSummary(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
-	api.WriteResult(w, api.ServiceTry(func() (any, error) {
+	if err := auth.AssertPermission(ctx, "fees", auth.ActionView); err != nil {
+		api.WriteResult(w, api.Fail("FORBIDDEN", err.Error(), 403, nil))
+		return
+	}
+	h.serveCached(w, r, "classes-summary", func() (any, error) {
 		yearID := tenant.ResolveAcademicYearID(h.Store, ctx, "")
 		h.Store.RLock()
 		defer h.Store.RUnlock()
@@ -1177,7 +1301,7 @@ func (h *Handler) ClassesSummary(w http.ResponseWriter, r *http.Request) {
 		}
 		sort.Slice(out, func(i, j int) bool { return out[i]["name"].(string) < out[j]["name"].(string) })
 		return out, nil
-	}))
+	})
 }
 
 // LedgerDashboard implements GET /api/fees/ledger.
@@ -1228,10 +1352,11 @@ func (h *Handler) resolveExpectedComponents(schoolID, classID, yearID, month str
 func (h *Handler) LedgerDashboard(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	q := r.URL.Query()
-	api.WriteResult(w, api.ServiceTry(func() (any, error) {
-		if err := auth.AssertPermission(ctx, "fees", auth.ActionView); err != nil {
-			return nil, err
-		}
+	if err := auth.AssertPermission(ctx, "fees", auth.ActionView); err != nil {
+		api.WriteResult(w, api.Fail("FORBIDDEN", err.Error(), 403, nil))
+		return
+	}
+	h.serveCached(w, r, "ledger", func() (any, error) {
 		yearID := tenant.ResolveAcademicYearID(h.Store, ctx, q.Get("academic_year_id"))
 		classID := q.Get("class_id")
 		statusQ := strings.ToLower(strings.TrimSpace(q.Get("status")))
@@ -1608,7 +1733,7 @@ func (h *Handler) LedgerDashboard(w http.ResponseWriter, r *http.Request) {
 				"pages": pages,
 			},
 		}, nil
-	}))
+	})
 }
 
 // ─── Parent / Student visibility ─────────────────────────────────────────
@@ -1619,7 +1744,7 @@ func (h *Handler) LedgerDashboard(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) StudentFees(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	studentID := r.URL.Query().Get("student_id")
-	api.WriteResult(w, api.ServiceTry(func() (any, error) {
+	h.serveCached(w, r, "student", func() (any, error) {
 		// resolve student
 		h.Store.RLock()
 		defer h.Store.RUnlock()
@@ -1693,14 +1818,18 @@ func (h *Handler) StudentFees(w http.ResponseWriter, r *http.Request) {
 			"student_id":   stu.ID,
 			"student_name": stu.FirstName + " " + stu.LastName,
 		}, nil
-	}))
+	})
 }
 
 // DailyCollection implements GET /api/fees/daily-collection.
 func (h *Handler) DailyCollection(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	dateQ := r.URL.Query().Get("date")
-	api.WriteResult(w, api.ServiceTry(func() (any, error) {
+	if err := auth.AssertPermission(ctx, "fees", auth.ActionView); err != nil {
+		api.WriteResult(w, api.Fail("FORBIDDEN", err.Error(), 403, nil))
+		return
+	}
+	h.serveCached(w, r, "daily", func() (any, error) {
 		target := time.Now()
 		if d, ok := api.ParseDate(dateQ); ok {
 			target = d
@@ -1732,7 +1861,7 @@ func (h *Handler) DailyCollection(w http.ResponseWriter, r *http.Request) {
 			"payments":       rows,
 			"payments_count": len(rows),
 		}, nil
-	}))
+	})
 }
 
 // ─── tiny helpers ────────────────────────────────────────────────────────

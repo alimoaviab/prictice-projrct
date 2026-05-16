@@ -15,6 +15,8 @@ package students
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -32,6 +34,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+// studentsListCacheTTL — short window so newly created students surface
+// quickly. Same value used across phase-8 list caches.
+const studentsListCacheTTL = 60 * time.Second
 
 // Handler serves the /api/students/* routes.
 type Handler struct {
@@ -70,16 +76,52 @@ func (h *Handler) invalidateDashboardCaches(ctx context.Context, schoolID, yearI
 	)
 }
 
+// listCacheKey hashes scope + filters into a stable key. Role + profile
+// id are part of the key because students see only themselves and
+// teachers may see only their assigned classes once row-level scoping
+// is added at the handler.
+func listCacheKey(schoolID, yearID, role, profileID, query string) string {
+	src := fmt.Sprintf("%s|%s|%s|%s|%s", schoolID, yearID, role, profileID, query)
+	h := sha1.Sum([]byte(src))
+	return fmt.Sprintf("students:%s:%s:list:%s", schoolID, yearID, hex.EncodeToString(h[:])[:16])
+}
+
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	q := r.URL.Query()
 
-	api.WriteResult(w, api.ServiceTry(func() (any, error) {
-		if err := auth.AssertPermission(ctx, "students", auth.ActionView); err != nil {
-			return nil, err
-		}
+	if err := auth.AssertPermission(ctx, "students", auth.ActionView); err != nil {
+		api.WriteResult(w, api.Fail("FORBIDDEN", err.Error(), 403, nil))
+		return
+	}
 
-		yearID := tenant.ResolveAcademicYearID(h.Store, ctx, q.Get("academic_year_id"))
+	yearID := tenant.ResolveAcademicYearID(h.Store, ctx, q.Get("academic_year_id"))
+
+	// Resolve teacher profile id outside the cache key so different
+	// teachers don't share a cache entry once row-level scoping is added.
+	var profileID string
+	if ctx.Role == "teacher" {
+		h.Store.RLock()
+		for _, t := range h.Store.Teachers {
+			if t.SchoolID == ctx.SchoolID && t.UserID == ctx.UserID {
+				profileID = t.ID
+				break
+			}
+		}
+		h.Store.RUnlock()
+	}
+
+	cacheKey := listCacheKey(ctx.SchoolID, yearID, ctx.Role, profileID, q.Encode())
+	if h.Cache != nil && h.Cache.Available() {
+		if b, err := h.Cache.Get(r.Context(), cacheKey); err == nil && b != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("X-Cache", "HIT")
+			_, _ = w.Write(b)
+			return
+		}
+	}
+
+	result := api.ServiceTry(func() (any, error) {
 		classID := q.Get("class_id")
 		status := q.Get("status")
 		search := strings.TrimSpace(q.Get("search"))
@@ -147,7 +189,31 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 			end = total
 		}
 		return api.BuildPaginated(rows[start:end], total, pagination), nil
-	}))
+	})
+
+	bytes, err := json.Marshal(result)
+	if err != nil {
+		api.WriteResult(w, api.Fail("INTERNAL", "Failed to encode students.", 500, nil))
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if h.Cache != nil && h.Cache.Available() {
+		w.Header().Set("X-Cache", "MISS")
+	}
+	if !result.Ok {
+		status := http.StatusBadRequest
+		if result.Error != nil && result.Error.Status != 0 {
+			status = result.Error.Status
+		}
+		w.WriteHeader(status)
+		_, _ = w.Write(bytes)
+		return
+	}
+	_, _ = w.Write(bytes)
+
+	if h.Cache != nil && h.Cache.Available() {
+		_ = h.Cache.Set(r.Context(), cacheKey, bytes, studentsListCacheTTL)
+	}
 }
 
 func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {

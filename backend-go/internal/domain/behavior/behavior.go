@@ -3,7 +3,10 @@
 package behavior
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sort"
 	"time"
@@ -11,13 +14,40 @@ import (
 	"github.com/eduplexo/backend-go/internal/api"
 	"github.com/eduplexo/backend-go/internal/audit"
 	"github.com/eduplexo/backend-go/internal/auth"
+	"github.com/eduplexo/backend-go/internal/cache"
 	"github.com/eduplexo/backend-go/internal/store"
 	"github.com/go-chi/chi/v5"
 )
 
-type Handler struct{ Store *store.MemStore }
+const behaviorListCacheTTL = 60 * time.Second
+
+type Handler struct {
+	Store *store.MemStore
+	Cache *cache.Client
+}
 
 func New(s *store.MemStore) *Handler { return &Handler{Store: s} }
+
+// NewWithCache attaches a Redis client. Pass nil to opt out.
+func NewWithCache(s *store.MemStore, c *cache.Client) *Handler {
+	return &Handler{Store: s, Cache: c}
+}
+
+// listCacheKey hashes (school, role, query) — role matters because
+// parents/students see only critical reports while admin/teacher see
+// everything.
+func listCacheKey(schoolID, role, query string) string {
+	src := fmt.Sprintf("%s|%s|%s", schoolID, role, query)
+	h := sha1.Sum([]byte(src))
+	return fmt.Sprintf("behavior:list:%s:%s", schoolID, hex.EncodeToString(h[:])[:16])
+}
+
+func (h *Handler) invalidateList(r *http.Request, schoolID string) {
+	if h.Cache == nil || !h.Cache.Available() {
+		return
+	}
+	_, _ = h.Cache.DelPattern(r.Context(), fmt.Sprintf("behavior:list:%s:*", schoolID))
+}
 
 func (h *Handler) hydrate(rows []*store.Behavior) []map[string]any {
 	studentByID := map[string]*store.Student{}
@@ -82,10 +112,23 @@ func (h *Handler) hydrate(rows []*store.Behavior) []map[string]any {
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	q := r.URL.Query()
-	api.WriteResult(w, api.ServiceTry(func() (any, error) {
-		if err := auth.AssertPermission(ctx, "behavior", auth.ActionView); err != nil {
-			return nil, err
+
+	if err := auth.AssertPermission(ctx, "behavior", auth.ActionView); err != nil {
+		api.WriteResult(w, api.Fail("FORBIDDEN", err.Error(), 403, nil))
+		return
+	}
+
+	cacheKey := listCacheKey(ctx.SchoolID, ctx.Role, q.Encode())
+	if h.Cache != nil && h.Cache.Available() {
+		if b, err := h.Cache.Get(r.Context(), cacheKey); err == nil && b != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("X-Cache", "HIT")
+			_, _ = w.Write(b)
+			return
 		}
+	}
+
+	result := api.ServiceTry(func() (any, error) {
 		studentID := q.Get("student_id")
 		classID := q.Get("class_id")
 		teacherID := q.Get("teacher_id")
@@ -143,7 +186,31 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 			return hydrated, nil
 		}
 		return api.BuildPaginated(api.SafeSlice(hydrated, page.Skip, page.Skip+page.Limit), len(hydrated), page), nil
-	}))
+	})
+
+	bytes, err := json.Marshal(result)
+	if err != nil {
+		api.WriteResult(w, api.Fail("INTERNAL", "Failed to encode behaviors.", 500, nil))
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if h.Cache != nil && h.Cache.Available() {
+		w.Header().Set("X-Cache", "MISS")
+	}
+	if !result.Ok {
+		status := http.StatusBadRequest
+		if result.Error != nil && result.Error.Status != 0 {
+			status = result.Error.Status
+		}
+		w.WriteHeader(status)
+		_, _ = w.Write(bytes)
+		return
+	}
+	_, _ = w.Write(bytes)
+
+	if h.Cache != nil && h.Cache.Available() {
+		_ = h.Cache.Set(r.Context(), cacheKey, bytes, behaviorListCacheTTL)
+	}
 }
 
 func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
@@ -256,6 +323,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		audit.Write(h.Store, ctx, audit.Input{
 			Action: "create", EntityType: "behavior", EntityID: row.ID, After: row,
 		})
+		h.invalidateList(r, ctx.SchoolID)
 		// Build response inline (we hold the write lock, so we cannot call
 		// hydrate which would try to acquire a read lock — that deadlocks).
 		studentName := stu.FirstName + " " + stu.LastName
@@ -351,6 +419,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 				audit.Write(h.Store, ctx, audit.Input{
 					Action: "update", EntityType: "behavior", EntityID: id, Before: before, After: *b,
 				})
+				h.invalidateList(r, ctx.SchoolID)
 				return h.hydrate([]*store.Behavior{b})[0], nil
 			}
 		}
@@ -374,6 +443,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 				audit.Write(h.Store, ctx, audit.Input{
 					Action: "delete", EntityType: "user", EntityID: id, Before: before,
 				})
+				h.invalidateList(r, ctx.SchoolID)
 				return map[string]any{"success": true, "id": id}, nil
 			}
 		}

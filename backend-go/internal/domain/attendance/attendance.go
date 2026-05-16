@@ -4,7 +4,10 @@
 package attendance
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sort"
 	"strconv"
@@ -14,14 +17,20 @@ import (
 	"github.com/eduplexo/backend-go/internal/api"
 	"github.com/eduplexo/backend-go/internal/audit"
 	"github.com/eduplexo/backend-go/internal/auth"
+	"github.com/eduplexo/backend-go/internal/cache"
 	"github.com/eduplexo/backend-go/internal/domain/tenant"
 	"github.com/eduplexo/backend-go/internal/store"
 	"github.com/go-chi/chi/v5"
 )
 
+// attendanceListCacheTTL — short window so newly marked attendance
+// surfaces quickly. Same TTL as other phase-8 list caches.
+const attendanceListCacheTTL = 60 * time.Second
+
 type Handler struct {
 	Store   *store.MemStore
 	Persist func(table string, doc any)
+	Cache   *cache.Client
 }
 
 func New(s *store.MemStore, save func(string, any)) *Handler {
@@ -29,6 +38,29 @@ func New(s *store.MemStore, save func(string, any)) *Handler {
 		save = func(string, any) {}
 	}
 	return &Handler{Store: s, Persist: save}
+}
+
+// NewWithCache attaches a Redis client. Pass nil to opt out — handler
+// degrades to the original (no-cache) behaviour.
+func NewWithCache(s *store.MemStore, save func(string, any), c *cache.Client) *Handler {
+	h := New(s, save)
+	h.Cache = c
+	return h
+}
+
+// listCacheKey hashes role + scoping profile + query so different
+// callers (admin vs teacher vs student) don't share a cache entry.
+func listCacheKey(schoolID, role, profileID, query string) string {
+	src := fmt.Sprintf("%s|%s|%s|%s", schoolID, role, profileID, query)
+	h := sha1.Sum([]byte(src))
+	return fmt.Sprintf("attendance:list:%s:%s", schoolID, hex.EncodeToString(h[:])[:16])
+}
+
+func (h *Handler) invalidateList(r *http.Request, schoolID string) {
+	if h.Cache == nil || !h.Cache.Available() {
+		return
+	}
+	_, _ = h.Cache.DelPattern(r.Context(), fmt.Sprintf("attendance:list:%s:*", schoolID))
 }
 
 // hydrated mirrors the populated row shape returned by the original
@@ -96,11 +128,37 @@ func (h *Handler) hydrate(rows []*store.Attendance) []map[string]any {
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	q := r.URL.Query()
-	api.WriteResult(w, api.ServiceTry(func() (any, error) {
-		if err := auth.AssertPermission(ctx, "attendance", auth.ActionView); err != nil {
-			return nil, err
-		}
 
+	if err := auth.AssertPermission(ctx, "attendance", auth.ActionView); err != nil {
+		api.WriteResult(w, api.Fail("FORBIDDEN", err.Error(), 403, nil))
+		return
+	}
+
+	// Resolve student profile id outside the cache key calc — students
+	// from different classes must NOT share a cache entry.
+	var profileID string
+	if ctx.Role == "student" {
+		h.Store.RLock()
+		for _, s := range h.Store.Students {
+			if s.SchoolID == ctx.SchoolID && s.UserID == ctx.UserID {
+				profileID = s.ID
+				break
+			}
+		}
+		h.Store.RUnlock()
+	}
+
+	cacheKey := listCacheKey(ctx.SchoolID, ctx.Role, profileID, q.Encode())
+	if h.Cache != nil && h.Cache.Available() {
+		if b, err := h.Cache.Get(r.Context(), cacheKey); err == nil && b != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("X-Cache", "HIT")
+			_, _ = w.Write(b)
+			return
+		}
+	}
+
+	result := api.ServiceTry(func() (any, error) {
 		yearID := tenant.ResolveAcademicYearID(h.Store, ctx, q.Get("academic_year_id"))
 		classID := q.Get("class_id")
 		studentID := q.Get("student_id")
@@ -223,7 +281,31 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		}
 		total := len(hydrated)
 		return api.BuildPaginated(api.SafeSlice(hydrated, page.Skip, page.Skip+page.Limit), total, page), nil
-	}))
+	})
+
+	bytes, err := json.Marshal(result)
+	if err != nil {
+		api.WriteResult(w, api.Fail("INTERNAL", "Failed to encode attendance.", 500, nil))
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if h.Cache != nil && h.Cache.Available() {
+		w.Header().Set("X-Cache", "MISS")
+	}
+	if !result.Ok {
+		status := http.StatusBadRequest
+		if result.Error != nil && result.Error.Status != 0 {
+			status = result.Error.Status
+		}
+		w.WriteHeader(status)
+		_, _ = w.Write(bytes)
+		return
+	}
+	_, _ = w.Write(bytes)
+
+	if h.Cache != nil && h.Cache.Available() {
+		_ = h.Cache.Set(r.Context(), cacheKey, bytes, attendanceListCacheTTL)
+	}
 }
 
 type createInput struct {
@@ -312,6 +394,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		audit.Write(h.Store, ctx, audit.Input{
 			Action: "create", EntityType: "attendance", EntityID: newRow.ID, After: newRow,
 		})
+		h.invalidateList(r, ctx.SchoolID)
 		return newRow, nil
 	}))
 }
@@ -429,6 +512,7 @@ func (h *Handler) MarkBulk(w http.ResponseWriter, r *http.Request) {
 			EntityID:   body.ClassID,
 			Metadata:   map[string]any{"saved": saved, "date": api.FormatDate(date), "period": period},
 		})
+		h.invalidateList(r, ctx.SchoolID)
 		return map[string]int{"saved": saved}, nil
 	}))
 }
@@ -492,6 +576,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 				audit.Write(h.Store, ctx, audit.Input{
 					Action: "update", EntityType: "attendance", EntityID: id, Before: before, After: *a,
 				})
+				h.invalidateList(r, ctx.SchoolID)
 				return a, nil
 			}
 		}
@@ -517,6 +602,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 				audit.Write(h.Store, ctx, audit.Input{
 					Action: "delete", EntityType: "attendance", EntityID: id, Before: before,
 				})
+				h.invalidateList(r, ctx.SchoolID)
 				return map[string]any{"success": true, "id": id}, nil
 			}
 		}

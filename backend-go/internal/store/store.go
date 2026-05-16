@@ -59,13 +59,22 @@ type MemStore struct {
 	FeeAdjustments []*FeeAdjustment
 	ClassFees      []*ClassFee
 
-	// Finance collections.
-	SchoolPackages []*SchoolPackage
-	Expenses       []*Expense
-	RevenueRecords []*RevenueRecord
-	Invoices       []*Invoice
-	Transactions   []*Transaction
-	Subscriptions  []*Subscription
+	// ─── Lookup indexes (perf phase 1) ──────────────────────────────────
+	//
+	// These are read-mostly maps maintained by RebuildIndexes() and
+	// consulted by the auth middleware (and other hot paths) to avoid
+	// O(N) scans of the Users / Schools slices on every request.
+	//
+	// They are intentionally NOT a source of truth — handlers continue
+	// to mutate the underlying slices exactly as before, and the maps
+	// are rebuilt periodically (and on bootstrap / persistence load).
+	// Any caller that misses the map is expected to fall through to
+	// the slice scan, so a few-second-stale index never breaks
+	// correctness.
+	idxMu       sync.RWMutex
+	userByID    map[string]*User
+	userByEmail map[string]*User
+	schoolByID  map[string]*School
 }
 
 // New returns an empty MemStore. The system bootstraps a fresh school via
@@ -379,4 +388,94 @@ func NewID(prefix string) string {
 	b := make([]byte, 8)
 	_, _ = rand.Read(b)
 	return prefix + "_" + hex.EncodeToString(b)
+}
+
+
+// ─── Lookup index helpers (perf phase 1) ───────────────────────────────
+//
+// RebuildIndexes refreshes the userByID / userByEmail / schoolByID
+// lookup maps from the underlying slices. It's safe to call from any
+// goroutine — it acquires the data RLock to read the slices and a
+// dedicated index lock to publish the new maps atomically.
+//
+// Callers don't have to hold the data lock when invoking this; the
+// method does it internally.
+func (s *MemStore) RebuildIndexes() {
+	if s == nil {
+		return
+	}
+	s.RLock()
+	users := make(map[string]*User, len(s.Users))
+	emails := make(map[string]*User, len(s.Users))
+	for _, u := range s.Users {
+		if u == nil {
+			continue
+		}
+		if u.ID != "" {
+			users[u.ID] = u
+		}
+		if u.Email != "" {
+			// Last-write-wins on duplicate emails — same as the
+			// pre-existing slice scan which used the first match.
+			// We want the same observed behaviour.
+			lower := strings.ToLower(u.Email)
+			if _, exists := emails[lower]; !exists {
+				emails[lower] = u
+			}
+		}
+	}
+	schools := make(map[string]*School, len(s.Schools))
+	for _, sch := range s.Schools {
+		if sch == nil || sch.SchoolID == "" {
+			continue
+		}
+		schools[sch.SchoolID] = sch
+	}
+	s.RUnlock()
+
+	s.idxMu.Lock()
+	s.userByID = users
+	s.userByEmail = emails
+	s.schoolByID = schools
+	s.idxMu.Unlock()
+}
+
+// LookupUser returns the user matching either id or email (case-
+// insensitive). Returns nil if neither matches OR if the index hasn't
+// been built yet — callers should treat that as a cache miss and fall
+// through to a slice scan.
+func (s *MemStore) LookupUser(id, email string) *User {
+	if s == nil {
+		return nil
+	}
+	s.idxMu.RLock()
+	defer s.idxMu.RUnlock()
+	if id != "" && s.userByID != nil {
+		if u, ok := s.userByID[id]; ok {
+			return u
+		}
+	}
+	if email != "" && s.userByEmail != nil {
+		if u, ok := s.userByEmail[strings.ToLower(email)]; ok {
+			return u
+		}
+	}
+	return nil
+}
+
+// LookupSchool returns the school matching the given ID or nil if not
+// indexed. Same fall-through semantics as LookupUser.
+func (s *MemStore) LookupSchool(schoolID string) *School {
+	if s == nil || schoolID == "" {
+		return nil
+	}
+	s.idxMu.RLock()
+	defer s.idxMu.RUnlock()
+	if s.schoolByID == nil {
+		return nil
+	}
+	if sch, ok := s.schoolByID[schoolID]; ok {
+		return sch
+	}
+	return nil
 }

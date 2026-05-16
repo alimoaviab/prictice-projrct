@@ -3,7 +3,10 @@
 package leave
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sort"
 	"time"
@@ -11,13 +14,39 @@ import (
 	"github.com/eduplexo/backend-go/internal/api"
 	"github.com/eduplexo/backend-go/internal/audit"
 	"github.com/eduplexo/backend-go/internal/auth"
+	"github.com/eduplexo/backend-go/internal/cache"
 	"github.com/eduplexo/backend-go/internal/store"
 	"github.com/go-chi/chi/v5"
 )
 
-type Handler struct{ Store *store.MemStore }
+const leaveListCacheTTL = 60 * time.Second
+
+type Handler struct {
+	Store *store.MemStore
+	Cache *cache.Client
+}
 
 func New(s *store.MemStore) *Handler { return &Handler{Store: s} }
+
+func NewWithCache(s *store.MemStore, c *cache.Client) *Handler {
+	return &Handler{Store: s, Cache: c}
+}
+
+// listCacheKey hashes (school, role, requesterID, query). Role +
+// requester id matter because a student is force-scoped to their own
+// leave records — sharing a cache entry across users would leak.
+func listCacheKey(schoolID, role, requesterID, query string) string {
+	src := fmt.Sprintf("%s|%s|%s|%s", schoolID, role, requesterID, query)
+	h := sha1.Sum([]byte(src))
+	return fmt.Sprintf("leave:list:%s:%s", schoolID, hex.EncodeToString(h[:])[:16])
+}
+
+func (h *Handler) invalidateList(r *http.Request, schoolID string) {
+	if h.Cache == nil || !h.Cache.Available() {
+		return
+	}
+	_, _ = h.Cache.DelPattern(r.Context(), fmt.Sprintf("leave:list:%s:*", schoolID))
+}
 
 func (h *Handler) hydrate(rows []*store.Leave) []map[string]any {
 	out := make([]map[string]any, 0, len(rows))
@@ -49,10 +78,46 @@ func (h *Handler) hydrate(rows []*store.Leave) []map[string]any {
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	q := r.URL.Query()
-	api.WriteResult(w, api.ServiceTry(func() (any, error) {
-		if err := auth.AssertPermission(ctx, "leave", auth.ActionView); err != nil {
-			return nil, err
+
+	if err := auth.AssertPermission(ctx, "leave", auth.ActionView); err != nil {
+		api.WriteResult(w, api.Fail("FORBIDDEN", err.Error(), 403, nil))
+		return
+	}
+
+	// Resolve scoping requester id outside the cache key so two
+	// different students never share an entry.
+	var scopedRequesterID string
+	if ctx.Role == "student" {
+		h.Store.RLock()
+		for _, s := range h.Store.Students {
+			if s.UserID == ctx.UserID {
+				scopedRequesterID = s.ID
+				break
+			}
 		}
+		h.Store.RUnlock()
+	} else if ctx.Role == "teacher" {
+		h.Store.RLock()
+		for _, t := range h.Store.Teachers {
+			if t.UserID == ctx.UserID {
+				scopedRequesterID = t.ID
+				break
+			}
+		}
+		h.Store.RUnlock()
+	}
+
+	cacheKey := listCacheKey(ctx.SchoolID, ctx.Role, scopedRequesterID, q.Encode())
+	if h.Cache != nil && h.Cache.Available() {
+		if b, err := h.Cache.Get(r.Context(), cacheKey); err == nil && b != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("X-Cache", "HIT")
+			_, _ = w.Write(b)
+			return
+		}
+	}
+
+	result := api.ServiceTry(func() (any, error) {
 		statusQ := q.Get("status")
 		requesterType := q.Get("requester_type")
 		requesterID := q.Get("requester_id")
@@ -120,7 +185,31 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 			return hydrated, nil
 		}
 		return api.BuildPaginated(api.SafeSlice(hydrated, page.Skip, page.Skip+page.Limit), len(hydrated), page), nil
-	}))
+	})
+
+	bytes, err := json.Marshal(result)
+	if err != nil {
+		api.WriteResult(w, api.Fail("INTERNAL", "Failed to encode leave records.", 500, nil))
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if h.Cache != nil && h.Cache.Available() {
+		w.Header().Set("X-Cache", "MISS")
+	}
+	if !result.Ok {
+		status := http.StatusBadRequest
+		if result.Error != nil && result.Error.Status != 0 {
+			status = result.Error.Status
+		}
+		w.WriteHeader(status)
+		_, _ = w.Write(bytes)
+		return
+	}
+	_, _ = w.Write(bytes)
+
+	if h.Cache != nil && h.Cache.Available() {
+		_ = h.Cache.Set(r.Context(), cacheKey, bytes, leaveListCacheTTL)
+	}
 }
 
 func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
@@ -280,6 +369,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		h.Store.Leaves = append(h.Store.Leaves, row)
 		h.Store.Unlock()
 		audit.Write(h.Store, ctx, audit.Input{Action: "create", EntityType: "leave", EntityID: row.ID, After: row})
+		h.invalidateList(r, ctx.SchoolID)
 		return h.hydrate([]*store.Leave{row})[0], nil
 	}))
 }
@@ -348,6 +438,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 				audit.Write(h.Store, ctx, audit.Input{
 					Action: "update", EntityType: "leave", EntityID: id, Before: before, After: *l,
 				})
+				h.invalidateList(r, ctx.SchoolID)
 				return h.hydrate([]*store.Leave{l})[0], nil
 			}
 		}
@@ -374,6 +465,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 				audit.Write(h.Store, ctx, audit.Input{
 					Action: "delete", EntityType: "leave", EntityID: id, Before: before,
 				})
+				h.invalidateList(r, ctx.SchoolID)
 				return map[string]any{"success": true, "id": id}, nil
 			}
 		}

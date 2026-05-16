@@ -144,7 +144,7 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Put("/teachers/{id}", tcH.Update)
 			r.Delete("/teachers/{id}", tcH.Delete)
 
-			clH := classes.New(s, saveFn)
+			clH := classes.NewWithCache(s, saveFn, rdb)
 			r.Get("/classes", clH.List)
 			r.Post("/classes", clH.Create)
 			r.Get("/classes/{id}", clH.Get)
@@ -153,7 +153,7 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Put("/classes/{id}", clH.Update)
 			r.Delete("/classes/{id}", clH.Delete)
 
-			suH := subjects.New(s, saveFn)
+			suH := subjects.NewWithCache(s, saveFn, rdb)
 			r.Get("/subjects", suH.List)
 			r.Post("/subjects", suH.Create)
 			r.Get("/subjects/{id}", suH.Get)
@@ -170,7 +170,7 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			compH := dashboard.NewComposite(s, rdb)
 			r.Get("/dashboard/composite", compH.Get)
 
-			atH := attendance.New(s, saveFn)
+			atH := attendance.NewWithCache(s, saveFn, rdb)
 			atPG := attendance.NewPG(pg.Pool(), rdb, s)
 			r.Get("/attendance", atH.List)
 			r.Post("/attendance", atH.Create)
@@ -181,7 +181,7 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Post("/attendance/mark", atPG.MarkBulkPG) // Direct PG batch insert
 			r.Get("/attendance/sheet", atPG.Sheet)       // Direct PG JOIN query
 
-			exH := exams.New(s, saveFn)
+			exH := exams.NewWithCache(s, saveFn, rdb)
 			r.Get("/exams", exH.List)
 			r.Post("/exams", exH.Create)
 			r.Get("/exams/{id}", exH.Get)
@@ -197,7 +197,7 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Put("/tests/{id}", exH.Update)
 			r.Delete("/tests/{id}", exH.Delete)
 
-			rsH := results.New(s, saveFn)
+			rsH := results.NewWithCache(s, saveFn, rdb)
 			r.Get("/results", rsH.List)
 			r.Post("/results", rsH.Save)
 			r.Get("/results/{id}", rsH.Get)
@@ -206,7 +206,7 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Get("/tests/{id}/results", rsH.ListForExam)
 			r.Post("/tests/{id}/results", rsH.Save)
 
-			hwH := homework.New(s, saveFn)
+			hwH := homework.NewWithCache(s, saveFn, rdb)
 			r.Get("/homework", hwH.List)
 			r.Post("/homework", hwH.Create)
 			r.Get("/homework/{id}", hwH.Get)
@@ -214,7 +214,7 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Put("/homework/{id}", hwH.Update)
 			r.Delete("/homework/{id}", hwH.Delete)
 
-			bhH := behavior.New(s)
+			bhH := behavior.NewWithCache(s, rdb)
 			r.Get("/behavior", bhH.List)
 			r.Post("/behavior", bhH.Create)
 			r.Get("/behavior/{id}", bhH.Get)
@@ -222,7 +222,7 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Put("/behavior/{id}", bhH.Update)
 			r.Delete("/behavior/{id}", bhH.Delete)
 
-			evH := events.New(s)
+			evH := events.NewWithCache(s, rdb)
 			r.Get("/events", evH.List)
 			r.Post("/events", evH.Create)
 			r.Get("/events/{id}", evH.Get)
@@ -230,7 +230,7 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Put("/events/{id}", evH.Update)
 			r.Delete("/events/{id}", evH.Delete)
 
-			lvH := leave.New(s)
+			lvH := leave.NewWithCache(s, rdb)
 			r.Get("/leave", lvH.List)
 			r.Post("/leave", lvH.Create)
 			r.Get("/leave/{id}", lvH.Get)
@@ -247,7 +247,7 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Put("/timetable/{id}", ttH.Update)
 			r.Delete("/timetable/{id}", ttH.Delete)
 
-			anH := announcements.New(s)
+			anH := announcements.NewWithCache(s, rdb)
 			r.Get("/announcements", anH.List)
 			r.Post("/announcements", anH.Create)
 			r.Get("/announcements/{id}", anH.Get)
@@ -255,7 +255,7 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Put("/announcements/{id}", anH.Update)
 			r.Delete("/announcements/{id}", anH.Delete)
 
-			lcH := liveclass.New(s, saveFn)
+			lcH := liveclass.NewWithCache(s, saveFn, rdb)
 			r.Get("/live/classes", lcH.List)
 			r.Post("/live/classes/schedule", lcH.Schedule)
 			r.Get("/live/classes/{id}", lcH.Get)
@@ -266,13 +266,13 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Get("/notifications", ntH.List)
 			r.Patch("/notifications/{id}/read", ntH.MarkRead)
 
-			seH := settings.New(s)
+			seH := settings.NewWithCache(s, rdb)
 			r.Get("/settings", seH.Get)
 			r.Patch("/settings", seH.Update)
 			r.Put("/settings", seH.Update)
 
 			// ─── Fees domain (full implementation) ────────────────────────
-			fH := fees.New(s, saveFn)
+			fH := fees.NewWithCache(s, saveFn, rdb)
 			r.Get("/school/fees/types", fH.ListFeeTypes)
 			r.Get("/fees/types", fH.ListFeeTypes)
 			r.Post("/fees/types", fH.CreateFeeType)
@@ -380,7 +380,7 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Post("/parents/link-student", stubs.NotImplemented(""))
 
 			// Parent portal
-			pH := parent.New(s)
+			pH := parent.NewWithCache(s, rdb)
 			r.Get("/parent/student-info", pH.StudentInfo)
 			r.Get("/parent/children", pH.Children)
 			r.Get("/parent/dashboard/stats", pH.DashboardStats)
