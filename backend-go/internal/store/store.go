@@ -60,14 +60,19 @@ type MemStore struct {
 	FeeAdjustments []*FeeAdjustment
 	ClassFees      []*ClassFee
 
-	// Finance collections.
-	SchoolPackages []*SchoolPackage
-	Expenses       []*Expense
-	RevenueRecords []*RevenueRecord
-	Invoices       []*Invoice
-	Transactions   []*Transaction
-	Subscriptions  []*Subscription
-
+	// ─── Lookup indexes (perf phase 1) ──────────────────────────────────
+	//
+	// These are read-mostly maps maintained by RebuildIndexes() and
+	// consulted by the auth middleware (and other hot paths) to avoid
+	// O(N) scans of the Users / Schools slices on every request.
+	//
+	// They are intentionally NOT a source of truth — handlers continue
+	// to mutate the underlying slices exactly as before, and the maps
+	// are rebuilt periodically (and on bootstrap / persistence load).
+	// Any caller that misses the map is expected to fall through to
+	// the slice scan, so a few-second-stale index never breaks
+	// correctness.
+	idxMu       sync.RWMutex
 	userByID    map[string]*User
 	userByEmail map[string]*User
 	schoolByID  map[string]*School
