@@ -21,6 +21,7 @@ import (
 	"github.com/eduplexo/backend-go/internal/domain/events"
 	"github.com/eduplexo/backend-go/internal/domain/exams"
 	"github.com/eduplexo/backend-go/internal/domain/fees"
+	"github.com/eduplexo/backend-go/internal/domain/finance"
 	"github.com/eduplexo/backend-go/internal/domain/homework"
 	"github.com/eduplexo/backend-go/internal/domain/leave"
 	"github.com/eduplexo/backend-go/internal/domain/liveclass"
@@ -358,6 +359,16 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Get("/super-admin/plans", saH.ListPlans)
 			r.Get("/super-admin/users", saH.ListUsers)
 			r.Get("/super-admin/activity", saH.RecentActivity)
+
+			// Finance Management (Super Admin only)
+			finH := finance.New(s)
+			r.Post("/super-admin/packages", finH.CreatePackage)
+			r.Get("/super-admin/packages", finH.ListPackages)
+			r.Put("/super-admin/packages/{id}", finH.UpdatePackage)
+			r.Delete("/super-admin/packages/{id}", finH.DeletePackage)
+			r.Post("/super-admin/expenses", finH.CreateExpense)
+			r.Get("/super-admin/expenses", finH.ListExpenses)
+			r.Get("/super-admin/finance/dashboard", finH.GetFinanceDashboard)
 
 			// Parents — admin/teacher use these to link students to
 			// existing parent accounts during student creation. The

@@ -11,13 +11,31 @@
  *   - On 401 responses, clear the stale token and redirect to /auth/login.
  *
  * URL behaviour:
- *   - Relative paths (e.g. "/api/students") are sent as-is. In dev, Vite
- *     either proxies them to the Go backend (when VITE_API_PROXY_TARGET is
- *     set) or MSW intercepts them and serves mock data.
- *   - Absolute URLs are honoured untouched.
+ *   - When VITE_API_URL is set (production), it's prepended to /api/* paths.
+ *     This is needed when the frontend (Vercel) and backend (separate host)
+ *     are on different domains.
+ *   - Otherwise relative paths (e.g. "/api/students") are sent as-is. In dev,
+ *     Vite either proxies them to the Go backend (when VITE_API_PROXY_TARGET
+ *     is set) or MSW intercepts them and serves mock data.
+ *   - Absolute URLs (http://...) are honoured untouched.
  */
 
 import type { ServiceResult } from "@/types/core";
+
+// Base URL for the backend API. Set VITE_API_URL in production (e.g. Vercel)
+// to point at the deployed Go backend. Leave empty in development to use
+// Vite's proxy or MSW mocks.
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+
+function resolveUrl(url: string): string {
+  // Absolute URLs pass through.
+  if (/^https?:\/\//.test(url)) return url;
+  // No base URL configured → return relative path (dev/proxy/MSW mode).
+  if (!API_BASE_URL) return url;
+  // Prefix /api/* paths with the base URL.
+  if (url.startsWith("/")) return API_BASE_URL + url;
+  return `${API_BASE_URL}/${url}`;
+}
 
 function readToken(): string | undefined {
   if (typeof window === "undefined") return undefined;
@@ -59,7 +77,7 @@ export async function serviceRequest<T>(
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     try {
       const token = readToken();
-      const response = await fetch(url, {
+      const response = await fetch(resolveUrl(url), {
         ...options,
         credentials: "include",
         headers: {

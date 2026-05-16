@@ -6,6 +6,9 @@ const navItems = [
   { label: 'Schools', href: '/schools', icon: 'apartment' },
   { label: 'Plans', href: '/plans', icon: 'credit_card' },
   { label: 'Payments', href: '/payments', icon: 'payments' },
+  { label: 'Finance', href: '/finance', icon: 'trending_up' },
+  { label: 'Packages', href: '/packages', icon: 'inventory_2' },
+  { label: 'Expenses', href: '/expenses', icon: 'receipt_long' },
   { label: 'Users', href: '/users', icon: 'group' },
 ]
 

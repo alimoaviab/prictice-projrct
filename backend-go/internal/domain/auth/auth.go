@@ -563,12 +563,19 @@ func (h *Handler) uniqueSchoolCode(name string) string {
 }
 
 func (h *Handler) setSessionCookie(w http.ResponseWriter, token string) {
+	// Cross-site cookie support: when CookieSecure is true (production with HTTPS),
+	// use SameSite=None so the cookie is sent on cross-origin requests from the
+	// frontend (e.g. Vercel) to the backend on a different domain.
+	sameSite := http.SameSiteLaxMode
+	if h.Cfg.CookieSecure {
+		sameSite = http.SameSiteNoneMode
+	}
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session",
 		Value:    token,
 		HttpOnly: true,
 		Secure:   h.Cfg.CookieSecure,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: sameSite,
 		Path:     "/",
 		MaxAge:   60 * 60 * 8,
 	})

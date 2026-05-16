@@ -38,6 +38,8 @@ services:
         condition: service_healthy
       backend-go-2:
         condition: service_healthy
+      super-admin-build:
+        condition: service_completed_successfully
     deploy:
       resources:
         limits:
@@ -304,6 +306,24 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  # ─── Super Admin App (builds dist for nginx) ──────────────────────────
+  super-admin-build:
+    build:
+      context: ./super-admin-app
+      dockerfile: Dockerfile
+    container_name: eduplexo_super_admin_build
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    volumes:
+      - ./super-admin-app/dist:/app/dist:ro
+    restart: "no"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "2"
 
 volumes:
   postgres_data:

@@ -7,6 +7,9 @@ import { SchoolDetailPage } from './pages/SchoolDetailPage'
 import { PlansPage } from './pages/PlansPage'
 import { UsersPage } from './pages/UsersPage'
 import { PaymentsPage } from './pages/PaymentsPage'
+import { FinanceDashboardPage } from './pages/FinanceDashboardPage'
+import { PackagesPage } from './pages/PackagesPage'
+import { ExpensesPage } from './pages/ExpensesPage'
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -20,6 +23,9 @@ export const router = createBrowserRouter([
       { path: '/plans', element: <PlansPage /> },
       { path: '/users', element: <UsersPage /> },
       { path: '/payments', element: <PaymentsPage /> },
+      { path: '/finance', element: <FinanceDashboardPage /> },
+      { path: '/packages', element: <PackagesPage /> },
+      { path: '/expenses', element: <ExpensesPage /> },
     ],
   },
 ])

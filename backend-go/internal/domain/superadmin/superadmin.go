@@ -5,6 +5,7 @@ package superadmin
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"sort"
 	"strings"
@@ -27,8 +28,16 @@ func New(s *store.MemStore) *Handler { return &Handler{Store: s} }
 // GET /api/super-admin/dashboard
 func (h *Handler) DashboardStats(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
+	if ctx == nil {
+		api.WriteResult(w, api.Fail("UNAUTHENTICATED", "Authentication required.", 401, nil))
+		return
+	}
+	
+	// DEBUG LOG
+	log.Printf("[super-admin] Request from %s (Role: %s)", ctx.ActorEmail, ctx.Role)
+
 	if ctx.Role != "super_admin" && ctx.Role != "admin" {
-		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin access required.", 403, nil))
+		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin access required. (Found role: "+ctx.Role+")", 403, nil))
 		return
 	}
 

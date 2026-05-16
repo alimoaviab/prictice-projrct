@@ -13,8 +13,11 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
 	"sync"
 	"time"
+
+	"github.com/eduplexo/backend-go/internal/auth"
 )
 
 // MemStore is the singleton in-memory data store. Every collection lives in
@@ -24,16 +27,16 @@ import (
 type MemStore struct {
 	mu sync.RWMutex
 
-	Schools         []*School
-	Users           []*User
-	AcademicYears   []*AcademicYear
-	Students        []*Student
-	Teachers        []*Teacher
-	Classes         []*Class
-	Subjects        []*Subject
-	Parents         []*Parent
-	StudentParents  []*StudentParent
-	AuditLogs       []*AuditLog
+	Schools        []*School
+	Users          []*User
+	AcademicYears  []*AcademicYear
+	Students       []*Student
+	Teachers       []*Teacher
+	Classes        []*Class
+	Subjects       []*Subject
+	Parents        []*Parent
+	StudentParents []*StudentParent
+	AuditLogs      []*AuditLog
 
 	// Phase 2.1 collections.
 	Attendance     []*Attendance
@@ -125,11 +128,13 @@ func EnsureBootstrapUsers(s *MemStore) {
 
 	schoolID := "school_default"
 
-	// Check existing users and update passwords if they exist, or create them
+	// Check existing users and update roles/passwords
 	var superUser *User
 	var schoolUser *User
 	for _, u := range s.Users {
-		if u.Email == superEmail && u.Role == "super_admin" {
+		if u.Email == superEmail {
+			u.Role = "super_admin"
+			u.Permissions = []string{"*"}
 			superUser = u
 		}
 		if u.Email == schoolEmail && u.Role == "admin" {
@@ -202,7 +207,7 @@ func EnsureBootstrapUsers(s *MemStore) {
 			ID:           NewID("user"),
 			SchoolID:     "system",
 			Email:        superEmail,
-			PasswordHash: superPassword,
+			PasswordHash: func() string { h, _ := auth.HashPassword(superPassword); return h }(),
 			Password:     superPassword,
 			Role:         "super_admin",
 			Permissions:  []string{"*"},
@@ -214,14 +219,16 @@ func EnsureBootstrapUsers(s *MemStore) {
 	}
 
 	if schoolUser != nil {
-		schoolUser.PasswordHash = schoolPassword
+		hash, _ := auth.HashPassword(schoolPassword)
+		schoolUser.PasswordHash = hash
 		schoolUser.Password = schoolPassword
 	} else {
+		hash, _ := auth.HashPassword(schoolPassword)
 		s.Users = append(s.Users, &User{
 			ID:           NewID("user"),
 			SchoolID:     schoolID,
 			Email:        schoolEmail,
-			PasswordHash: schoolPassword,
+			PasswordHash: hash,
 			Password:     schoolPassword,
 			Role:         "admin",
 			Permissions:  []string{"*"},
@@ -313,11 +320,12 @@ func bootstrapAdmin(s *MemStore) {
 		UpdatedAt: now,
 	})
 
+	hash, _ := auth.HashPassword(superPassword)
 	s.Users = append(s.Users, &User{
 		ID:           NewID("user"),
-		SchoolID:     "system", // Super admins are system-wide
+		SchoolID:     "system",
 		Email:        superEmail,
-		PasswordHash: superPassword,
+		PasswordHash: hash,
 		Password:     superPassword,
 		Role:         "super_admin",
 		Permissions:  []string{"*"},
