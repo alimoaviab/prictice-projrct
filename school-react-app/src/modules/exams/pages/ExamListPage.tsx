@@ -57,7 +57,8 @@ export function ExamListPage({
     const q = searchQuery.trim().toLowerCase();
     return rows.filter((row) => {
       const subjectsConcat = (row.subjects || [])
-        .map((s) => s.subject_name)
+        .filter((s) => s)
+        .map((s) => s?.subject_name || "")
         .join(" ")
         .toLowerCase();
       const queryMatch =
@@ -81,7 +82,7 @@ export function ExamListPage({
           </span>
           <span className="text-[10px] text-slate-500 font-bold tracking-tight truncate max-w-[260px]">
             {row.subject_count || (row.subjects || []).length} subj ·{" "}
-            {(row.subjects || []).map((s) => s.subject_name).join(", ") || row.subject}
+            {(row.subjects || []).filter((s) => s).map((s) => s?.subject_name || "Unknown").join(", ") || row.subject}
           </span>
         </div>
       ),
@@ -285,7 +286,7 @@ export function ExamListPage({
           message="No upcoming or past exams found for the selected criteria."
         />
       ) : viewMode === "grid" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {filteredRows.map((exam) => (
             <ExamCard
               key={exam._id}
@@ -344,13 +345,13 @@ function ExamCard({
 
       {/* Subject chips. Wrap, cap visible at 6, then "+N more". */}
       <div className="flex flex-wrap gap-1 mb-3 min-h-[20px]">
-        {subjects.slice(0, 6).map((s) => (
+        {subjects.filter((s) => s).slice(0, 6).map((s) => (
           <span
-            key={s.subject_id}
+            key={s?.subject_id}
             className="inline-flex items-center gap-1 h-5 px-1.5 rounded-md bg-slate-50 border border-slate-100 text-[9px] font-bold text-slate-700 truncate max-w-[110px]"
-            title={`${s.subject_name} · max ${s.max_marks}`}
+            title={`${s?.subject_name || "Unknown"} · max ${s?.max_marks || 0}`}
           >
-            {s.subject_name}
+            {s?.subject_name || "Unknown"}
           </span>
         ))}
         {subjects.length > 6 && (
