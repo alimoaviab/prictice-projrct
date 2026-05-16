@@ -1,13 +1,27 @@
 // Super Admin API client
 
+// Base URL for the backend API. Set VITE_API_URL in production (Vercel) to
+// point at the deployed Go backend. Leave empty in dev to use Vite proxy.
+const API_BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+
+function resolveUrl(url: string): string {
+  if (/^https?:\/\//.test(url)) return url
+  if (!API_BASE_URL) return url
+  if (url.startsWith('/')) return API_BASE_URL + url
+  return `${API_BASE_URL}/${url}`
+}
+
 function getToken(): string | null {
   return localStorage.getItem('sa_token')
 }
 
-export async function apiRequest<T = any>(url: string, options: RequestInit = {}): Promise<{ ok: boolean; data?: T; message?: string; error?: any }> {
+export async function apiRequest<T = any>(
+  url: string,
+  options: RequestInit = {}
+): Promise<{ ok: boolean; data?: T; message?: string; error?: any }> {
   try {
     const token = getToken()
-    const res = await fetch(url, {
+    const res = await fetch(resolveUrl(url), {
       ...options,
       credentials: 'include',
       headers: {
@@ -20,11 +34,14 @@ export async function apiRequest<T = any>(url: string, options: RequestInit = {}
     const text = await res.text()
     let payload: any = null
     if (text) {
-      try { payload = JSON.parse(text) } catch { payload = null }
+      try {
+        payload = JSON.parse(text)
+      } catch {
+        payload = null
+      }
     }
 
     if (res.status === 401) {
-      // Don't redirect if we're already on the login page
       const onLogin = window.location.pathname === '/login'
       if (!onLogin) {
         localStorage.removeItem('sa_token')
