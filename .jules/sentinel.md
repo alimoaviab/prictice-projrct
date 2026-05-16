@@ -1,0 +1,4 @@
+## 2025-05-16 - Timing Attack User Enumeration in Login
+**Vulnerability:** The login endpoint in the Go backend (`HandleLogin`) returned immediately if a user was not found by email, but computed a bcrypt password hash check if the user *was* found. This created a significant timing difference (bcrypt is slow by design), allowing an attacker to determine if an email exists in the database by measuring the response time.
+**Learning:** This is a classic user enumeration timing attack pattern. When porting auth logic, it's easy to miss that failing fast on an unknown user creates a side channel.
+**Prevention:** Always perform a dummy bcrypt comparison (using a static, valid hash) when a user is not found, ensuring that the login response time is consistent regardless of whether the email exists.

@@ -85,6 +85,10 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	h.Store.RUnlock()
 
 	if user == nil {
+		// Prevent user enumeration via timing attack. Compute hash check
+		// with a static, valid bcrypt hash even when user is not found.
+		authpkg.VerifyPassword(body.Password, "$2a$10$SOEXdN0jgxQlq7bF5hmmrOcoHV/RxOjTE5KnzmmwZSX4tXq4frXJu")
+
 		api.WriteJSON(w, http.StatusUnauthorized, map[string]any{
 			"ok":      false,
 			"message": "Invalid email or password",
