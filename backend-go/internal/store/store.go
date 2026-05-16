@@ -14,9 +14,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/eduplexo/backend-go/internal/auth"
 	"sync"
 	"time"
+
+	"github.com/eduplexo/backend-go/internal/auth"
 )
 
 // MemStore is the singleton in-memory data store. Every collection lives in
@@ -26,16 +27,16 @@ import (
 type MemStore struct {
 	mu sync.RWMutex
 
-	Schools         []*School
-	Users           []*User
-	AcademicYears   []*AcademicYear
-	Students        []*Student
-	Teachers        []*Teacher
-	Classes         []*Class
-	Subjects        []*Subject
-	Parents         []*Parent
-	StudentParents  []*StudentParent
-	AuditLogs       []*AuditLog
+	Schools        []*School
+	Users          []*User
+	AcademicYears  []*AcademicYear
+	Students       []*Student
+	Teachers       []*Teacher
+	Classes        []*Class
+	Subjects       []*Subject
+	Parents        []*Parent
+	StudentParents []*StudentParent
+	AuditLogs      []*AuditLog
 
 	// Phase 2.1 collections.
 	Attendance     []*Attendance
@@ -197,7 +198,7 @@ func EnsureBootstrapUsers(s *MemStore) {
 			ID:           NewID("user"),
 			SchoolID:     "system",
 			Email:        superEmail,
-			PasswordHash: superPassword,
+			PasswordHash: func() string { h, _ := auth.HashPassword(superPassword); return h }(),
 			Password:     superPassword,
 			Role:         "super_admin",
 			Permissions:  []string{"*"},
