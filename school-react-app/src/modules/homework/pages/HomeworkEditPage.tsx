@@ -1,9 +1,22 @@
+/**
+ * /admin/homework/edit/:id — Homework edit page.
+ *
+ * Fixed: uses serviceRequest() instead of raw fetch() so JWT + academic
+ * year headers are attached (same root cause as the create page).
+ */
+
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
-import { Card, Skeleton } from "@/components/ui";
+import {
+  Skeleton,
+  EntityCreateLayout,
+  GuidanceSection,
+  GuidanceCallout,
+} from "@/components/ui";
 import { HomeworkForm } from "../components/HomeworkForm";
 import { showToast } from "@/utils/toast";
+import { serviceRequest } from "@/services/service-client";
+import { publish } from "@/services/data-bus";
 
 interface HomeworkEditPageProps {
   role: "ADMIN" | "TEACHER";
@@ -15,43 +28,46 @@ export function HomeworkEditPage({ role, id }: HomeworkEditPageProps) {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [homework, setHomework] = useState<any>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    classes: any[];
+    subjects: any[];
+    teachers: any[];
+  }>({
     classes: [],
     subjects: [],
-    teachers: []
+    teachers: [],
   });
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const isTeacher = role === "TEACHER";
-      const endpoints = [
-        fetch(isTeacher ? "/api/school/my-classes" : "/api/classes", { credentials: "include" }),
-        fetch("/api/school/subjects", { credentials: "include" }),
-        fetch(`/api/homework/${id}`, { credentials: "include" }),
-        ...(role === "ADMIN" ? [fetch("/api/teachers", { credentials: "include" })] : [])
-      ];
+      const [classesRes, subjectsRes, hwRes, teachersRes] = await Promise.all([
+        serviceRequest<any>(isTeacher ? "/api/school/my-classes" : "/api/classes"),
+        serviceRequest<any>("/api/subjects"),
+        serviceRequest<any>(`/api/homework/${encodeURIComponent(id)}`),
+        role === "ADMIN"
+          ? serviceRequest<any>("/api/teachers")
+          : Promise.resolve({ ok: true, data: [] } as any),
+      ]);
 
-      const responses = await Promise.all(endpoints);
-      const jsonData = await Promise.all(responses.map(r => r.json()));
-
-      const extractArray = (res: any, key?: string) => {
-        if (!res) return [];
-        if (Array.isArray(res)) return res;
-        if (Array.isArray(res.data)) return res.data;
-        if (key && Array.isArray(res.data?.[key])) return res.data[key];
-        if (key && Array.isArray(res[key])) return res[key];
+      const extractArray = (res: any): any[] => {
+        if (!res.ok) return [];
+        const d = res.data;
+        if (Array.isArray(d)) return d;
+        if (d && Array.isArray(d.data)) return d.data;
+        if (d && Array.isArray(d.items)) return d.items;
         return [];
       };
 
       setFormData({
-        classes: isTeacher ? extractArray(jsonData[0], "classes") : extractArray(jsonData[0]),
-        subjects: extractArray(jsonData[1]),
-        teachers: extractArray(jsonData[3])
+        classes: extractArray(classesRes),
+        subjects: extractArray(subjectsRes),
+        teachers: extractArray(teachersRes),
       });
-      setHomework(jsonData[2]?.data);
+      setHomework(hwRes.ok ? hwRes.data : null);
     } catch (error) {
-      console.error(error);
+      console.error("[HomeworkEditPage] Failed to load data:", error);
       showToast("Failed to load required data", "error");
     } finally {
       setLoading(false);
@@ -65,66 +81,78 @@ export function HomeworkEditPage({ role, id }: HomeworkEditPageProps) {
   const handleSubmit = async (data: any) => {
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/homework/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(data),
-      });
+      const result = await serviceRequest<any>(
+        `/api/homework/${encodeURIComponent(id)}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(data),
+        }
+      );
 
-      const result = await res.json();
-      if (res.ok && result.success) {
+      if (result.ok) {
         showToast("Homework updated successfully", "success");
+        publish("homework");
         navigate(role === "ADMIN" ? "/admin/homework" : "/teacher/homework");
-
       } else {
-        showToast(result.error?.message || "Failed to update homework", "error");
+        showToast(
+          result.error?.message || result.message || "Failed to update homework",
+          "error"
+        );
       }
-    } catch (err) {
-      console.error(err);
-      showToast("An error occurred", "error");
+    } catch (err: any) {
+      console.error("[HomeworkEditPage] Submit error:", err);
+      showToast(err.message || "An error occurred", "error");
     } finally {
       setSubmitting(false);
     }
   };
 
+  const backPath = role === "ADMIN" ? "/admin/homework" : "/teacher/homework";
+
   return (
-    <div className="max-w-full mx-auto space-y-6">
-      <Link
-        to={role === "ADMIN" ? "/admin/homework" : "/teacher/homework"}
-        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-indigo-600 transition-colors"
-      >
-        <span className="material-symbols-outlined text-lg">arrow_back</span>
-        Back to Homework List
-      </Link>
-
-      <Card className="p-8">
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-slate-900 normal-case tracking-tight">Edit Homework</h2>
-          <p className="text-sm text-slate-500 mt-1 font-medium">Modify the assignment details.</p>
-        </div>
-
-        {loading ? (
-          <div className="space-y-6">
-            <Skeleton className="h-14 w-full rounded-2xl" />
-            <div className="grid grid-cols-2 gap-6">
-              <Skeleton className="h-14 w-full rounded-2xl" />
-              <Skeleton className="h-14 w-full rounded-2xl" />
-            </div>
-            <Skeleton className="h-48 w-full rounded-[2.5rem]" />
+    <EntityCreateLayout
+      backTo={backPath}
+      backLabel="Return to Homework"
+      eyebrow="Assignment Editor"
+      icon="edit_note"
+      title="Edit Homework"
+      subtitle="Modify the assignment details, due date, or reassign."
+      asideTitle="Edit Notes"
+      aside={
+        <>
+          <GuidanceSection title="What changes?">
+            Updating the class or subject won't retroactively change existing
+            submissions. Students already notified keep their pending status.
+          </GuidanceSection>
+          <GuidanceSection title="Due date extension">
+            <GuidanceCallout tone="amber">
+              Extending the due date re-opens submissions for students who
+              haven't submitted yet.
+            </GuidanceCallout>
+          </GuidanceSection>
+        </>
+      }
+    >
+      {loading || !homework ? (
+        <div className="space-y-4">
+          <Skeleton className="h-11 w-full rounded-xl" />
+          <div className="grid grid-cols-2 gap-4">
+            <Skeleton className="h-11 w-full rounded-xl" />
+            <Skeleton className="h-11 w-full rounded-xl" />
           </div>
-        ) : (
-          <HomeworkForm
-            onSubmit={handleSubmit}
-            classes={formData.classes}
-            subjects={formData.subjects}
-            teachers={formData.teachers}
-            initialValues={homework}
-            showTeacherField={role === "ADMIN"}
-            loading={submitting}
-          />
-        )}
-      </Card>
-    </div>
+          <Skeleton className="h-32 w-full rounded-xl" />
+        </div>
+      ) : (
+        <HomeworkForm
+          onSubmit={handleSubmit}
+          classes={formData.classes}
+          subjects={formData.subjects}
+          teachers={formData.teachers}
+          initialValues={homework}
+          showTeacherField={role === "ADMIN"}
+          loading={submitting}
+        />
+      )}
+    </EntityCreateLayout>
   );
 }

@@ -461,14 +461,10 @@ func (p *Persister) loadHomework(ctx context.Context, s *store.MemStore) error {
 	hwById := map[string]*store.Homework{}
 	for rows.Next() {
 		v := &store.Homework{}
-		var attachmentsRaw []byte
 		if err := rows.Scan(&v.ID, &v.SchoolID, &v.AcademicYearID, &v.ClassID, &v.Section, &v.TeacherID,
-			&v.SubjectID, &v.Subject, &v.Title, &v.Instructions, &v.DueAt, &v.Status, &attachmentsRaw,
+			&v.SubjectID, &v.Subject, &v.Title, &v.Instructions, &v.DueAt, &v.Status, &v.Attachments,
 			&v.Visibility, &v.CreatedBy, &v.CreatedByRole, &v.CreatedAt, &v.UpdatedAt); err != nil {
 			return err
-		}
-		if len(attachmentsRaw) > 0 {
-			_ = json.Unmarshal(attachmentsRaw, &v.Attachments)
 		}
 		hwById[v.ID] = v
 		s.Homework = append(s.Homework, v)

@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { Card, DataState, Skeleton, TableSkeleton, Badge, DataTable, DataTableColumn, RowAction, StatCardGrid } from "@/components/ui";
 import { useSafeAsync } from "@/hooks/useSafeAsync";
 import { serviceRequest } from "@/services/service-client";
@@ -11,14 +11,21 @@ import { useExams } from "../../exams/hooks/useExams";
 import { useQueryParams } from "@/hooks/useQueryParams";
 import { exportMarksheet } from "@/utils/marksheet";
 import { showToast } from "@/utils/toast";
+import { useAuth } from "@/hooks/useAuth";
 
 export function ResultPage() {
+    const navigate = useNavigate();
+    const { pathname } = useLocation();
+    const isTeacher = pathname.includes("/teacher");
     const { currentParams, updateQuery } = useQueryParams();
     const exam_id = currentParams.get("exam_id") || "all";
     const class_id = currentParams.get("class_id") || "all";
     const today = new Date().toISOString().split('T')[0];
     const date_filter = currentParams.get("date") || today;
     
+    const { user } = useAuth();
+    const schoolName = (user as any)?.schoolName || (user as any)?.school_name || "School";
+
     const { state: classState } = useClasses();
     const { state: examListState } = useExams(class_id !== "all" ? { class_id } : {});
 
@@ -100,7 +107,7 @@ export function ResultPage() {
     const columns: DataTableColumn<ResultRow>[] = [
         {
             key: "student",
-            label: "Student Performance",
+            label: "Student performance",
             render: (row) => (
                 <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-lg bg-slate-900 text-white flex items-center justify-center text-[10px] font-bold normal-case">
@@ -125,7 +132,7 @@ export function ResultPage() {
         },
         {
             key: "score",
-            label: "Performance Index",
+            label: "Performance score",
             render: (row) => {
                 const percentage = (row.obtained_marks / row.max_marks) * 100;
                 return (
@@ -146,7 +153,7 @@ export function ResultPage() {
         },
         {
             key: "grade",
-            label: "Merit",
+            label: "Grade",
             render: (row) => (
                 <Badge variant={row.grade === "A" || row.grade === "A+" ? "success" : row.grade === "F" ? "error" : "primary"} className="text-[10px] font-bold normal-case px-2 py-0.5">
                     {row.grade}
@@ -157,11 +164,20 @@ export function ResultPage() {
 
     const rowActions: RowAction<ResultRow>[] = [
         {
+          icon: "visibility",
+          label: "View",
+          variant: "ghost",
+          onClick: (row) => {
+            const base = isTeacher ? "/teacher" : "/admin";
+            navigate(`${base}/results/${row._id}`);
+          },
+        },
+        {
           icon: "download",
           label: "Marksheet",
           variant: "primary",
           onClick: (row) => {
-            exportMarksheet(row);
+            exportMarksheet(row, { schoolName });
             showToast("Generating marksheet…", "info");
           },
         },
@@ -204,7 +220,7 @@ export function ResultPage() {
             />
 
             {/* Toolbar Section - Unified & Sticky */}
-            <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md sticky top-[72px] z-20 border-slate-200/60 shadow-sm rounded-xl">
+            <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md border-slate-200/60 shadow-sm rounded-xl no-print">
                 <div className="flex flex-1 items-center gap-2 max-w-2xl">
                     <div className="relative flex-1">
                         <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
@@ -265,7 +281,15 @@ export function ResultPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <div className="flex items-center rounded-lg bg-slate-100 p-1 shadow-inner">
+                    <button
+                        onClick={() => window.print()}
+                        className="h-9 px-4 rounded-xl border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all flex items-center gap-2 no-print"
+                    >
+                        <span className="material-symbols-outlined text-base">print</span>
+                        Print report
+                    </button>
+                    <div className="h-6 w-px bg-slate-200 no-print" />
+                    <div className="flex items-center rounded-lg bg-slate-100 p-1 shadow-inner no-print">
                         <button
                             onClick={() => setViewMode("grid")}
                             className={`flex h-7 items-center gap-2 rounded-md px-3 text-[11px] font-bold transition-all ${
@@ -285,19 +309,19 @@ export function ResultPage() {
                             List
                         </button>
                     </div>
-                    <div className="h-6 w-px bg-slate-200" />
-                    <span className="text-[10px] font-bold text-slate-900 normal-case  px-2 whitespace-nowrap">
+                    <div className="h-6 w-px bg-slate-200 no-print" />
+                    <span className="text-[10px] font-bold text-slate-900 normal-case  px-2 whitespace-nowrap no-print">
                         {filteredRows.length} <span className="text-slate-400">Records</span>
                     </span>
-                    <div className="h-6 w-px bg-slate-200" />
+                    <div className="h-6 w-px bg-slate-200 no-print" />
                     <button
                         onClick={() => setIsAdding(!isAdding)}
-                        className={`inline-flex h-9 items-center gap-2 px-5 text-[11px] font-bold normal-case  transition-all rounded-xl shadow-lg active:scale-95 ${
+                        className={`inline-flex h-9 items-center gap-2 px-5 text-[11px] font-bold normal-case  transition-all rounded-xl shadow-lg active:scale-95 no-print ${
                             isAdding ? "bg-slate-900 text-white" : "bg-blue-600 text-white shadow-blue-600/20 hover:bg-blue-700"
                         }`}
                     >
                         <span className="material-symbols-outlined text-lg">{isAdding ? "close" : "add_box"}</span>
-                        {isAdding ? "Cancel Entry" : "Record Result"}
+                        {isAdding ? "Cancel" : "Add result"}
                     </button>
                 </div>
             </div>
@@ -306,8 +330,8 @@ export function ResultPage() {
             {isAdding && (
                 <div className="premium-card p-6 bg-white border-blue-100 shadow-xl shadow-blue-900/5 animate-in slide-in-from-top-4 duration-300">
                     <div className="mb-6">
-                        <h2 className="text-lg font-bold text-slate-900">Record Assessment Results</h2>
-                        <p className="text-[11px] font-bold text-slate-400 normal-case  mt-1">Single Student entry mode</p>
+                        <h2 className="text-lg font-bold text-slate-900">Add assessment results</h2>
+                        <p className="text-[11px] font-bold text-slate-400 normal-case  mt-1">Single student entry</p>
                     </div>
                     {isDependencyLoading ? (
                         <div className="space-y-4">
@@ -362,7 +386,7 @@ export function ResultPage() {
 
                                             <div className="bg-slate-50/50 rounded-xl p-3 border border-slate-100/50 mb-6">
                                                 <div className="flex items-center justify-between mb-2">
-                                                    <span className="text-[10px] font-bold text-slate-400 normal-case ">Score Analysis</span>
+                                                    <span className="text-[10px] font-bold text-slate-400 normal-case ">Score analysis</span>
                                                     <span className={`text-[11px] font-bold ${percentage >= 80 ? 'text-emerald-600' : 'text-blue-600'}`}>{percentage.toFixed(1)}%</span>
                                                 </div>
                                                 <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
@@ -386,12 +410,21 @@ export function ResultPage() {
                                         </div>
 
                                         <div className="mt-auto px-5 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between group-hover:bg-white transition-all">
-                                            <button className="text-[10px] font-bold text-slate-400 normal-case  hover:text-blue-600 flex items-center gap-1 transition-colors">
+                                            <button 
+                                              onClick={() => exportMarksheet(row, { schoolName })}
+                                              className="text-[10px] font-bold text-slate-400 normal-case  hover:text-blue-600 flex items-center gap-1 transition-colors"
+                                            >
                                                 <span className="material-symbols-outlined text-sm">history_edu</span>
-                                                Transcript
+                                                Report
                                             </button>
-                                            <button className="group/btn h-8 px-4 rounded-lg bg-blue-600 text-[10px] font-bold text-white normal-case  hover:bg-blue-700 transition-all flex items-center gap-2 shadow-sm active:scale-95">
-                                                Analytics
+                                            <button 
+                                              onClick={() => {
+                                                const base = isTeacher ? "/teacher" : "/admin";
+                                                navigate(`${base}/results/${row._id}`);
+                                              }}
+                                              className="group/btn h-8 px-4 rounded-lg bg-blue-600 text-[10px] font-bold text-white normal-case  hover:bg-blue-700 transition-all flex items-center gap-2 shadow-sm active:scale-95"
+                                            >
+                                                Details
                                                 <span className="material-symbols-outlined text-sm transition-transform group-hover/btn:translate-x-1">query_stats</span>
                                             </button>
                                         </div>
@@ -414,25 +447,7 @@ export function ResultPage() {
                 )}
             </div>
 
-            {/* Pagination Footer - Premium ERP Style */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100">
-                <p className="text-[10px] font-bold text-slate-400 normal-case ">
-                    Showing <span className="text-blue-600">1</span> to <span className="text-slate-900">{filteredRows.length}</span> of <span className="text-slate-900">{filteredRows.length}</span> Academic Records
-                </p>
-                <div className="flex items-center gap-2">
-                    <button className="h-9 px-4 rounded-xl border border-slate-200 text-[10px] font-bold normal-case  text-slate-400 cursor-not-allowed flex items-center gap-2">
-                        <span className="material-symbols-outlined text-base">chevron_left</span>
-                        Previous
-                    </button>
-                    <div className="flex items-center gap-1">
-                        <button className="h-9 w-9 rounded-xl bg-blue-600 text-[10px] font-bold text-white shadow-lg shadow-blue-600/20">1</button>
-                    </div>
-                    <button className="h-9 px-4 rounded-xl border border-slate-200 text-[10px] font-bold normal-case  text-slate-400 cursor-not-allowed flex items-center gap-2">
-                        Next
-                        <span className="material-symbols-outlined text-base">chevron_right</span>
-                    </button>
-                </div>
-            </div>
+            {/* Real pagination is rendered by <DataTable paginated={N}> in the list view. */}
         </div>
     );
 }

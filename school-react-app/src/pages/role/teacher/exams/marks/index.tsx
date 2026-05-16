@@ -2,15 +2,15 @@ import { useSearchParams } from "react-router-dom";
 import { Suspense } from "react";
 export const dynamic = "force-dynamic";
 import { SchoolShell } from "@/layouts/SchoolShell";
-import { ExamMarksEntryPage } from "@/modules/exams/pages/ExamMarksEntryPage";
+import { ExamMarksGroupEntryPage } from "@/modules/exams/pages/ExamMarksGroupEntryPage";
 
 function ExamMarksContent() {
   const [searchParams] = useSearchParams();
   const examId = searchParams.get("exam_id") || "";
 
   return (
-    <SchoolShell eyebrow="Teacher Dashboard" title="Marks Entry Workspace">
-      <ExamMarksEntryPage examId={examId} />
+    <SchoolShell>
+      <ExamMarksGroupEntryPage examId={examId} role="TEACHER" />
     </SchoolShell>
   );
 }

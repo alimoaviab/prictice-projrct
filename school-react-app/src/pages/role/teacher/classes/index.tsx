@@ -81,9 +81,10 @@ export function TeacherClassesPage() {
     section: "all"
   });
 
+
+
   const teacherId = useMemo(() => {
-    const profileId = user?.profileId;
-    return profileId && /^[a-fA-F0-9]{24}$/.test(profileId) ? profileId : "session";
+    return user?.profileId || "session";
   }, [user?.profileId]);
 
   const fetchClasses = () => {
@@ -142,7 +143,16 @@ export function TeacherClassesPage() {
     );
   }
 
-  const { stats } = state.data;
+  const raw = state.data as any;
+  const classes = raw?.classes || [];
+  const stats = raw?.stats || {
+    totalClasses: 0,
+    totalStudents: 0,
+    pendingAttendance: 0,
+    todayLectures: 0,
+    upcomingExams: 0
+  };
+  const school = raw?.school || { name: "", session: "" };
 
   return (
     <SchoolShell eyebrow="Academic Operations" title="My Classes">
@@ -172,7 +182,7 @@ export function TeacherClassesPage() {
                 {label: "2024-25", value: "2024-25"},
                 {label: "2025-26", value: "2025-26"}
               ]} 
-              value={filters.academicYear || state.data.school.session}
+              value={filters.academicYear || school.session}
               onChange={(e: any) => setFilters(p => ({ ...p, academicYear: e.target.value }))}
               className="h-9 w-28 text-[10px] font-bold uppercase tracking-tight border-slate-200 bg-white"
             />
@@ -307,7 +317,7 @@ function ClassCard({ classItem }: { classItem: ClassItem }) {
         {/* STUDENT PREVIEW */}
         <div className="pt-4 flex items-center justify-between border-t border-slate-50">
           <div className="flex -space-x-2">
-            {classItem.students_preview.map((s, i) => (
+            {(classItem.students_preview || []).map((s, i) => (
               <div key={s.id} className="h-6 w-6 rounded-md border-2 border-white bg-slate-100 flex items-center justify-center text-[8px] font-black text-slate-600 shadow-sm" title={s.name}>
                 {s.name[0]}
               </div>

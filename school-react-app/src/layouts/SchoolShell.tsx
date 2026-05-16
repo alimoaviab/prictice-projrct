@@ -20,14 +20,12 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Breadcrumb } from "@/components/ui";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
-import { AIAssistant } from "@/components/ai/AIAssistant";
 import {
   getSelectedAcademicYearId,
   setSelectedAcademicYearId,
 } from "@/services/academic-year-context";
 import { useAuth, type Role } from "@/hooks/useAuth";
 import { ChildSwitcher } from "@/components/parent/ChildSwitcher";
-import { SelectedChildProvider } from "@/contexts/SelectedChildContext";
 
 type NavItem = {
   label: string;
@@ -43,20 +41,23 @@ type NavGroup = {
 const adminNavGroups: NavGroup[] = [
   {
     label: "Reports",
-    items: [{ label: "Dashboard", href: "/admin/dashboard", icon: "dashboard" }],
+    items: [
+      { label: "Dashboard", href: "/admin/dashboard", icon: "dashboard" },
+      { label: "AI Copilot", href: "/admin/ai", icon: "smart_toy" },
+    ],
   },
   {
     label: "Academic",
     items: [
-      { label: "Academic Years", href: "/admin/academic-years", icon: "calendar_month" },
+      { label: "Academic years", href: "/admin/academic-years", icon: "calendar_month" },
       { label: "Classes", href: "/admin/classes", icon: "groups" },
       { label: "Timetable", href: "/admin/timetable", icon: "schedule" },
       { label: "Attendance", href: "/admin/attendance", icon: "fact_check" },
       { label: "Exams", href: "/admin/exams", icon: "quiz" },
       { label: "Tests", href: "/admin/tests", icon: "assignment_turned_in" },
       { label: "Results", href: "/admin/results", icon: "leaderboard" },
-      { label: "Live Class", href: "/admin/live-class", icon: "videocam" },
-      { label: "Home Work", href: "/admin/homework", icon: "assignment" },
+      { label: "Live classes", href: "/admin/live-class", icon: "videocam" },
+      { label: "Homework", href: "/admin/homework", icon: "assignment" },
     ],
   },
   {
@@ -80,6 +81,10 @@ const adminNavGroups: NavGroup[] = [
   {
     label: "Finance",
     items: [{ label: "Fee", href: "/admin/fee", icon: "payments" }],
+  },
+  {
+    label: "Subscription",
+    items: [{ label: "Subscription", href: "/admin/subscription", icon: "card_membership" }],
   },
   {
     label: "Domain",
@@ -107,9 +112,9 @@ const teacherNavGroups: NavGroup[] = [
       { label: "Tests", href: "/teacher/tests", icon: "assignment_turned_in" },
       { label: "Results", href: "/teacher/results", icon: "leaderboard" },
       { label: "Attendance", href: "/teacher/attendance", icon: "fact_check" },
-      { label: "Live Class", href: "/teacher/live-class", icon: "videocam" },
-      { label: "Home Work", href: "/teacher/homework", icon: "assignment" },
-      { label: "Leave", href: "/admin/leave", icon: "event_available" },
+      { label: "Live classes", href: "/teacher/live-class", icon: "videocam" },
+      { label: "Homework", href: "/teacher/homework", icon: "assignment" },
+      { label: "Leave", href: "/teacher/leave", icon: "event_available" },
     ],
   },
   {
@@ -135,6 +140,7 @@ const parentNavGroups: NavGroup[] = [
       { label: "Results", href: "/parent/results", icon: "leaderboard" },
       { label: "Attendance", href: "/parent/attendance", icon: "fact_check" },
       { label: "Homework", href: "/parent/homework", icon: "assignment" },
+      { label: "Live Classes", href: "/parent/live-classes", icon: "videocam" },
       { label: "Fee Ledger", href: "/parent/fees", icon: "receipt_long" },
     ],
   },
@@ -159,8 +165,8 @@ const studentNavGroups: NavGroup[] = [
       { label: "Exams", href: "/student/exams", icon: "quiz" },
       { label: "Results", href: "/student/results", icon: "leaderboard" },
       { label: "Attendance", href: "/student/attendance", icon: "fact_check" },
-      { label: "Live Class", href: "/student/live-class", icon: "videocam" },
-      { label: "Home Work", href: "/student/homework", icon: "assignment" },
+      { label: "Live classes", href: "/student/live-class", icon: "videocam" },
+      { label: "Homework", href: "/student/homework", icon: "assignment" },
       { label: "Leave", href: "/student/leave", icon: "event_available" },
     ],
   },
@@ -236,8 +242,8 @@ function Tooltip({ children, text }: { children: ReactNode; text: string }) {
 
 interface SchoolShellProps {
   children: ReactNode;
-  title: string;
-  eyebrow: string;
+  title?: string;
+  eyebrow?: string;
   description?: string;
   actions?: ReactNode;
 }
@@ -267,7 +273,6 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
   const [academyYears, setAcademyYears] = useState<AcademicYearRow[]>([]);
   const [selectedAcademyYearId, setSelectedAcademicYearIdState] = useState<string>("");
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
-  const [showAIAssistant, setShowAIAssistant] = useState(false);
 
   const navGroups = useMemo(() => navGroupsForRole(user?.role), [user]);
 
@@ -386,21 +391,6 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
 
   const content = (
     <div className="flex h-screen bg-background text-slate-900 font-sans overflow-hidden">
-      {showAIAssistant ? (
-        <div className="fixed inset-0 z-50 pointer-events-none">
-          <div className="pointer-events-auto">
-            <AIAssistant onClose={() => setShowAIAssistant(false)} />
-          </div>
-        </div>
-      ) : (
-        <button
-          onClick={() => setShowAIAssistant(true)}
-          className="fixed bottom-6 right-6 z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-white shadow-2xl hover:scale-105 transition-transform animate-glow"
-          aria-label="Open AI Assistant"
-        >
-          <span className="material-symbols-outlined text-[28px]">smart_toy</span>
-        </button>
-      )}
       {/* Sidebar */}
       {/* Mobile overlay backdrop */}
       {!isCollapsed && (
@@ -418,7 +408,7 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
         <div className={`flex h-11 items-center gap-2 px-3 ${isCollapsed ? "justify-center" : "justify-between"}`}>
           <div className="flex items-center gap-2">
             <div className="flex h-5.5 w-5.5 flex-shrink-0 items-center justify-center rounded bg-blue-600 shadow-sm">
-              <span className="material-symbols-outlined text-[12px] font-bold text-white">school</span>
+              <span className="material-symbols-outlined text-[13px] font-bold text-white">school</span>
             </div>
             {!isCollapsed && (
               <span className="text-[13px] font-bold tracking-tight text-slate-900">Eduplexo</span>
@@ -441,27 +431,16 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
             const isExpanded = expandedGroups[group.label] !== false;
             return (
               <div key={group.label} className="space-y-0.5">
-                {!isCollapsed && (
-                  <button
-                    onClick={() => toggleGroup(group.label)}
-                    className="group flex w-full items-center justify-between px-2 py-1 text-[8px] font-bold normal-case tracking-[0.15em] text-blue-600/40 transition-colors hover:text-blue-600"
-                  >
-                    <span>{group.label}</span>
-                    <span className={`material-symbols-outlined text-[10px] transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}>
-                      expand_more
-                    </span>
-                  </button>
-                )}
-                <div className={`overflow-hidden space-y-0.5 transition-all duration-300 ${!isCollapsed && !isExpanded ? "max-h-0 opacity-0" : "max-h-[800px] opacity-100"}`}>
+                <div className="space-y-0.5">
                   {group.items.map((item) => {
                     const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
                     return isCollapsed ? (
                       <Tooltip key={item.href} text={item.label}>
                         <Link
                           to={item.href}
-                          className={`flex h-7 w-7 items-center justify-center rounded transition-all duration-200 ${isActive ? "bg-blue-600 text-white shadow-sm" : "text-blue-600/50 hover:bg-blue-50 hover:text-blue-600"}`}
+                          className={`flex h-7 w-7 items-center justify-center rounded transition-all duration-200 ${isActive ? "bg-blue-600 !text-white shadow-sm" : "text-slate-400 hover:bg-blue-50 hover:text-blue-600"}`}
                         >
-                          <span className={`material-symbols-outlined text-[15px] ${isActive ? "font-bold" : ""}`}>
+                          <span className={`material-symbols-outlined text-[16px] ${isActive ? "font-bold" : ""}`}>
                             {item.icon}
                           </span>
                         </Link>
@@ -470,9 +449,9 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
                       <Link
                         key={item.href}
                         to={item.href}
-                        className={`premium-nav-item group flex h-6.5 items-center gap-2 px-2.5 py-1 text-[11px] font-bold ${isActive ? "bg-blue-600 text-white shadow-md shadow-blue-600/20" : "text-slate-600 hover:bg-blue-50/50 hover:text-blue-600"}`}
+                        className={`group flex h-7 items-center gap-2.5 px-2.5 py-1 text-[11px] font-bold transition-all duration-200 rounded-lg ${isActive ? "bg-blue-600 !text-white shadow-md shadow-blue-600/20" : "text-slate-500 hover:bg-blue-50/50 hover:text-blue-600"}`}
                       >
-                        <span className={`material-symbols-outlined text-[14px] transition-colors ${isActive ? "font-bold text-white" : "text-slate-400 group-hover:text-blue-600"}`}>
+                        <span className={`material-symbols-outlined text-[16px] transition-colors ${isActive ? "text-white" : "text-slate-400 group-hover:text-blue-600"}`}>
                           {item.icon}
                         </span>
                         <span className="truncate tracking-tight">{item.label}</span>
@@ -486,7 +465,17 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
           })}
         </nav>
 
-        <div className={`mt-auto border-t border-slate-50 p-1.5 ${isCollapsed ? "flex justify-center" : ""}`}>
+        <div className={`mt-auto border-t border-slate-50 p-1.5 space-y-1 ${isCollapsed ? "flex flex-col items-center" : ""}`}>
+          {(user.role === "admin" || user.role === "super_admin") && (
+            <Link
+              to="/admin/ai"
+              className={`w-full rounded border border-blue-100 bg-blue-50/70 px-2 py-1.5 transition-colors hover:bg-blue-100 hover:border-blue-200 ${isCollapsed ? "flex items-center justify-center" : "flex items-center gap-2"}`}
+              aria-label="Open AI copilot"
+            >
+              <span className="material-symbols-outlined text-[15px] text-blue-600">smart_toy</span>
+              {!isCollapsed && <span className="text-[10px] font-bold text-blue-700">AI Copilot</span>}
+            </Link>
+          )}
           <div className={`flex w-full items-center gap-2 rounded border border-slate-50 bg-slate-50/30 px-2 py-1 transition-colors group ${isCollapsed ? "justify-center" : ""}`}>
             <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded bg-blue-600 shadow-sm">
               <span className="text-[9px] font-bold text-white">
@@ -505,9 +494,9 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
                 </div>
                 <button
                   onClick={logout}
-                  className="rounded p-0.5 text-slate-300 transition-colors hover:bg-red-50 hover:text-red-500"
+                  className="rounded p-1 text-slate-300 transition-colors hover:bg-red-50 hover:text-red-500"
                 >
-                  <span className="material-symbols-outlined text-[14px]">logout</span>
+                  <span className="material-symbols-outlined text-[15px]">logout</span>
                 </button>
               </>
             )}
@@ -568,7 +557,7 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
                   }
                   window.location.reload();
                 }}
-                className={`bg-transparent text-[10px] font-black uppercase tracking-widest text-slate-500 focus:outline-none ${user.role === "student" ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+                className={`bg-transparent text-[10px] font-black tracking-widest text-slate-500 focus:outline-none ${user.role === "student" ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
               >
                 {academyYears.map((row) => (
                   <option key={row._id} value={row._id}>
@@ -594,22 +583,7 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
           </div>
         </header>
 
-        <div key={pathname} className="w-full flex-1 overflow-y-auto animate-fade-in-up px-4 py-6 md:px-8 custom-scrollbar relative z-10">
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="h-px w-4 bg-blue-600/30" />
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600/60">{eyebrow}</p>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-black tracking-tight text-slate-900">{title}</h1>
-                {description && (
-                  <p className="mt-1 text-sm font-medium text-slate-500 max-w-2xl">{description}</p>
-                )}
-              </div>
-              {actions && <div className="flex items-center gap-2">{actions}</div>}
-            </div>
-          </div>
+        <div key={pathname} className="w-full flex-1 overflow-y-auto animate-fade-in-up px-3 py-3 md:px-6 md:py-4 lg:px-8 custom-scrollbar relative z-10">
           <ErrorBoundary
             title="This page ran into a problem"
             message="A part of this page failed to render. Try the action again, or refresh the page."
@@ -621,10 +595,10 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
     </div>
   );
 
-  // Wrap with SelectedChildProvider for parent role
-  if (user.role === "parent") {
-    return <SelectedChildProvider>{content}</SelectedChildProvider>;
-  }
+  // SelectedChildProvider lives at the router layer (ParentLayout) so
+  // every parent page is already inside the provider before SchoolShell
+  // renders. Wrapping again here would create a stale inner context
+  // that masks the outer one.
 
   // Suppress unused-import warning for Breadcrumb until module pages opt in.
   void Breadcrumb;

@@ -1,7 +1,27 @@
+/**
+ * Results list page.
+ *
+ * Architecture: ONE result row per (exam, student) — the row carries a
+ * `subjects[]` breakdown so we can render every subject's mark in the
+ * same visual unit instead of duplicating the row N times.
+ *
+ * The UI shows the aggregate obtained / max + percentage on the main
+ * line and the per-subject breakdown as compact chips underneath. This
+ * makes it instantly clear that a multi-subject "Mid-Term" is one
+ * result, not four.
+ */
+
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { useLocation } from "react-router-dom";
-import { DataTable, DataTableColumn, RowAction, Badge, DataState, Skeleton, TableSkeleton, StatCardGrid } from "@/components/ui";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  DataTable,
+  DataTableColumn,
+  RowAction,
+  Badge,
+  DataState,
+  TableSkeleton,
+  StatCardGrid,
+} from "@/components/ui";
 import { useResults } from "../hooks/useResults";
 import { ResultRow } from "../types/result.types";
 import { showToast } from "@/utils/toast";
@@ -11,21 +31,32 @@ import { useExams } from "../../exams/hooks/useExams";
 import { exportMarksheet, exportExamMarksheet } from "@/utils/marksheet";
 import { useAuth } from "@/hooks/useAuth";
 
-export function ResultListPage({ filters }: { filters?: { exam_id?: string; student_id?: string } }) {
+export function ResultListPage({
+  filters,
+}: {
+  filters?: { exam_id?: string; student_id?: string };
+}) {
   const pathname = useLocation().pathname;
+  const navigate = useNavigate();
   const isParent = pathname.includes("/parent");
   const { currentParams, updateQuery, withQuery } = useQueryParams();
   const { state: classState } = useClasses();
-  
+
   const [searchQuery, setSearchQuery] = useState(currentParams.get("search") || "");
   const [gradeFilter, setGradeFilter] = useState<string>(currentParams.get("grade") || "all");
-  const [classFilter, setClassFilter] = useState<string>(currentParams.get("class_id") || "all");
-  const [examFilter, setExamFilter] = useState<string>(currentParams.get("exam_id") || "all");
+  const [classFilter, setClassFilter] = useState<string>(
+    currentParams.get("class_id") || "all"
+  );
+  const [examFilter, setExamFilter] = useState<string>(
+    currentParams.get("exam_id") || "all"
+  );
 
-  const { state: examState } = useExams(classFilter !== "all" ? { class_id: classFilter } : {});
-  const { state, updateResult, deleteResult } = useResults({
+  const { state: examState } = useExams(
+    classFilter !== "all" ? { class_id: classFilter } : {}
+  );
+  const { state } = useResults({
     exam_id: examFilter !== "all" ? examFilter : undefined,
-    ...(filters || {})
+    ...(filters || {}),
   });
 
   useEffect(() => {
@@ -35,157 +66,325 @@ export function ResultListPage({ filters }: { filters?: { exam_id?: string; stud
     setExamFilter(currentParams.get("exam_id") || "all");
   }, [currentParams.toString()]);
 
-  const filteredRows = useMemo(() => {
+  // De-dupe defensively in case the API returns more than one row for
+  // the same (exam_id, student_id) pair (legacy data with per-subject
+  // exams). We keep the most recently graded row.
+  const dedupedRows = useMemo(() => {
     const rows = state.data || [];
+    const map = new Map<string, ResultRow>();
+    for (const row of rows) {
+      const key = `${row.exam_id}::${row.student_id}`;
+      const existing = map.get(key);
+      if (
+        !existing ||
+        new Date(row.graded_at).getTime() > new Date(existing.graded_at).getTime()
+      ) {
+        map.set(key, row);
+      }
+    }
+    return Array.from(map.values());
+  }, [state.data]);
+
+  const filteredRows = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return rows.filter((row) => {
+    return dedupedRows.filter((row) => {
+      const subjectsConcat = (row.subjects || [])
+        .map((s) => s.subject_name)
+        .join(" ")
+        .toLowerCase();
       const queryMatch =
         q.length === 0 ||
         row.exam_title.toLowerCase().includes(q) ||
         row.student_name.toLowerCase().includes(q) ||
-        row.admission_no.toLowerCase().includes(q);
-      
+        row.admission_no.toLowerCase().includes(q) ||
+        (row.exam_subject || "").toLowerCase().includes(q) ||
+        subjectsConcat.includes(q);
       const gradeMatch = gradeFilter === "all" ? true : row.grade === gradeFilter;
       const classMatch = classFilter === "all" ? true : row.class_id === classFilter;
-
       return queryMatch && gradeMatch && classMatch;
     });
-  }, [state.data, searchQuery, gradeFilter, classFilter]);
+  }, [dedupedRows, searchQuery, gradeFilter, classFilter]);
 
   const stats = useMemo(() => {
-    const data = state.data || [];
-    const passCount = data.filter(r => r.grade !== 'F').length;
-    
+    const passCount = filteredRows.filter((r) => r.grade !== "F").length;
     let avg = 0;
-    if (data.length > 0) {
-      const sum = data.reduce((acc, r) => acc + (r.obtained_marks / (r.max_marks || 100)), 0);
-      avg = Math.round((sum / data.length) * 100);
+    if (filteredRows.length > 0) {
+      const sum = filteredRows.reduce((acc, r) => {
+        const max = r.max_marks || 100;
+        return acc + r.obtained_marks / max;
+      }, 0);
+      avg = Math.round((sum / filteredRows.length) * 100);
     }
-
     return {
-      total: data.length,
-      passRate: data.length > 0 ? `${Math.round((passCount / data.length) * 100)}%` : "0%",
+      total: filteredRows.length,
+      passRate:
+        filteredRows.length > 0
+          ? `${Math.round((passCount / filteredRows.length) * 100)}%`
+          : "0%",
       avgMarks: `${avg}%`,
     };
-  }, [state.data]);
+  }, [filteredRows]);
 
-  const columns: DataTableColumn<ResultRow>[] = useMemo(() => [
-    {
-      key: "exam",
-      label: "Assessment Title",
-      render: (row) => (
-        <div className="flex flex-col">
-          <span className="text-[12px] font-black text-slate-900 leading-none mb-1 tracking-tight">{row.exam_title}</span>
-          <span className="text-[10px] text-blue-600 font-bold uppercase tracking-widest">{row.exam_subject}</span>
-        </div>
-      ),
-      sortable: true,
-    },
-    {
-      key: "marks",
-      label: "Performance Index",
-      render: (row) => {
-        const ratio = row.obtained_marks / row.max_marks;
-        return (
-          <div className="flex flex-col w-32">
-            <div className="flex items-center justify-between mb-1">
-               <span className="text-[11px] font-black text-slate-900">{row.obtained_marks} <span className="text-slate-400 font-medium">/ {row.max_marks}</span></span>
-               <span className="text-[10px] font-black text-blue-600">{Math.round(ratio * 100)}%</span>
-            </div>
-            <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-700 ${ratio >= 0.4 ? "bg-blue-600" : "bg-rose-500"}`}
-                style={{ width: `${ratio * 100}%` }}
-              />
-            </div>
+  const columns: DataTableColumn<ResultRow>[] = useMemo(
+    () => [
+      {
+        key: "student",
+        label: "Student",
+        render: (row) => (
+          <div className="flex flex-col">
+            <span className="text-[12px] font-bold text-slate-900 leading-tight">
+              {row.student_name}
+            </span>
+            <span className="text-[10px] font-bold text-slate-400 mt-0.5">
+              {row.admission_no}
+            </span>
           </div>
-        );
+        ),
+        sortable: true,
+        sortFn: (a, b) => a.student_name.localeCompare(b.student_name),
       },
-    },
-    {
-      key: "grade",
-      label: "Evaluation",
-      render: (row) => (
-        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${
-          row.grade === 'F' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-blue-50 text-blue-600 border-blue-100'
-        }`}>
-          Grade {row.grade}
-        </span>
-      ),
-    },
-    {
+      {
+        key: "exam",
+        label: "Exam",
+        render: (row) => (
+          <div className="flex flex-col">
+            <span className="text-[12px] font-black text-slate-900 leading-none mb-1 tracking-tight">
+              {row.exam_title}
+            </span>
+            {row.subjects && row.subjects.length > 0 ? (
+              <span className="text-[10px] font-bold text-slate-500 truncate max-w-[260px]">
+                {row.subjects.length}{" "}
+                {row.subjects.length === 1 ? "subject" : "subjects"}:{" "}
+                {row.subjects.map((s) => s.subject_name).join(", ")}
+              </span>
+            ) : (
+              <span className="text-[10px] font-bold text-blue-600">
+                {row.exam_subject}
+              </span>
+            )}
+          </div>
+        ),
+        sortable: true,
+      },
+      {
+        key: "subject_breakdown",
+        label: "Subject breakdown",
+        render: (row) => {
+          const subjects = row.subjects || [];
+          if (subjects.length === 0) {
+            return (
+              <span className="text-[10px] font-bold text-slate-400">
+                —
+              </span>
+            );
+          }
+          return (
+            <div className="flex flex-wrap gap-1 max-w-[320px]">
+              {subjects.map((s) => {
+                const isAbsent = s.obtained_marks === -1;
+                const pct = s.max_marks > 0 && !isAbsent
+                  ? (s.obtained_marks / s.max_marks) * 100
+                  : 0;
+                const tone = isAbsent
+                  ? "bg-rose-50 border-rose-100 text-rose-700"
+                  : pct >= 50
+                    ? "bg-emerald-50 border-emerald-100 text-emerald-700"
+                    : "bg-amber-50 border-amber-100 text-amber-700";
+                return (
+                  <span
+                    key={s.subject_id}
+                    title={`${s.subject_name}: ${
+                      isAbsent ? "Absent" : `${s.obtained_marks} / ${s.max_marks}`
+                    }`}
+                    className={`inline-flex items-center gap-1 h-5 px-1.5 rounded-md border text-[9px] font-bold ${tone}`}
+                  >
+                    <span className="truncate max-w-[80px]">{s.subject_name}</span>
+                    <span className="text-slate-500/80">
+                      {isAbsent ? "AB" : `${s.obtained_marks}/${s.max_marks}`}
+                    </span>
+                  </span>
+                );
+              })}
+            </div>
+          );
+        },
+      },
+      {
+        key: "marks",
+        label: "Total",
+        render: (row) => {
+          const max = row.max_marks || 1;
+          const ratio = row.obtained_marks / max;
+          const pct = Math.round(ratio * 100);
+          return (
+            <div className="flex flex-col w-32">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[11px] font-black text-slate-900">
+                  {row.obtained_marks}{" "}
+                  <span className="text-slate-400 font-medium">/ {row.max_marks}</span>
+                </span>
+                <span className="text-[10px] font-black text-blue-600">{pct}%</span>
+              </div>
+              <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-700 ${
+                    ratio >= 0.4 ? "bg-blue-600" : "bg-rose-500"
+                  }`}
+                  style={{ width: `${Math.max(0, Math.min(100, pct))}%` }}
+                />
+              </div>
+            </div>
+          );
+        },
+      },
+      {
+        key: "grade",
+        label: "Grade",
+        render: (row) => (
+          <span
+            className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${
+              row.grade === "F"
+                ? "bg-rose-50 text-rose-600 border-rose-100"
+                : "bg-blue-50 text-blue-600 border-blue-100"
+            }`}
+          >
+            {row.grade}
+          </span>
+        ),
+      },
+      {
         key: "period",
         label: "Graded On",
-        render: (row) => <span className="text-[10px] font-bold text-slate-400">{new Date(row.graded_at).toLocaleDateString()}</span>,
-    }
-  ], []);
+        render: (row) => (
+          <span className="text-[10px] font-bold text-slate-400">
+            {new Date(row.graded_at).toLocaleDateString()}
+          </span>
+        ),
+      },
+    ],
+    []
+  );
 
   const { user } = useAuth();
-  const schoolName = (user as any)?.schoolName || (user as any)?.school_name || "School";
+  const schoolName =
+    (user as any)?.schoolName || (user as any)?.school_name || "School";
 
-  const rowActions: RowAction<ResultRow>[] = useMemo(() => [
-    {
-      icon: "download",
-      label: "Marksheet",
-      variant: "primary",
-      onClick: (row) => {
-        exportMarksheet(row, { schoolName });
-        showToast("Generating marksheet…", "info");
+  const rowActions: RowAction<ResultRow>[] = useMemo(
+    () => [
+      {
+        icon: "visibility",
+        label: "View",
+        variant: "ghost",
+        onClick: (row) => {
+          const base = pathname.includes("/teacher") ? "/teacher" : "/admin";
+          navigate(`${base}/results/${row._id}`);
+        },
       },
-    },
-  ], [schoolName]);
+      {
+        icon: "download",
+        label: "Marksheet",
+        variant: "primary",
+        onClick: (row) => {
+          exportMarksheet(row, { schoolName });
+          showToast("Generating marksheet…", "info");
+        },
+      },
+    ],
+    [schoolName, navigate, pathname]
+  );
 
   if (state.status === "loading" && !state.data) {
     return <TableSkeleton />;
   }
 
+  if (state.status === "error") {
+    return <DataState variant="error" title="Failed to load results" message={state.error} />;
+  }
+
+  const examOptions = examState.data || [];
+
   return (
     <div className="space-y-6">
-      {/* Metrics Strip */}
       <StatCardGrid
         items={[
           { label: "Evaluations", value: stats.total, icon: "grading", accent: "blue" },
           { label: "Success Rate", value: stats.passRate, icon: "verified", accent: "emerald" },
-          { label: "Avg. Performance", value: stats.avgMarks, icon: "leaderboard", accent: "purple" },
+          {
+            label: "Avg. Performance",
+            value: stats.avgMarks,
+            icon: "leaderboard",
+            accent: "purple",
+          },
           {
             label: "Top Grade",
             value:
-              (state.data || []).reduce<string>(
+              filteredRows.reduce<string>(
                 (best, r) => (best === "F" || (r.grade && r.grade < best) ? r.grade : best),
                 "F"
-              ),
+              ) || "—",
             icon: "workspace_premium",
             accent: "amber",
           },
         ]}
       />
 
-      {/* Toolbar */}
       {!isParent && (
         <div className="bg-white p-2 rounded-xl border border-slate-100 shadow-sm flex flex-wrap items-center gap-3">
           <div className="relative flex-1 min-w-[200px]">
-            <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
+            <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-lg text-slate-400">
+              search
+            </span>
             <input
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Filter by student or exam..."
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                updateQuery({ search: e.target.value });
+              }}
+              placeholder="Filter by student, exam or subject…"
               className="h-9 w-full rounded-lg border border-slate-50 bg-slate-50/50 pl-9 pr-3 text-[11px] font-bold text-slate-700 outline-none transition-all focus:bg-white focus:border-blue-400"
             />
           </div>
-          
+
           <select
             value={classFilter}
-            onChange={(e) => setClassFilter(e.target.value)}
+            onChange={(e) => {
+              setClassFilter(e.target.value);
+              updateQuery({ class_id: e.target.value });
+            }}
             className="h-9 rounded-lg border border-slate-100 bg-white px-3 text-[10px] font-black uppercase text-slate-600 outline-none cursor-pointer"
           >
             <option value="all">All Classes</option>
             {((classState.data as any)?.data || []).map((c: any) => (
-              <option key={c.id || c._id} value={c.id || c._id}>{c.name}</option>
+              <option key={c.id || c._id} value={c.id || c._id}>
+                {c.name}
+              </option>
             ))}
           </select>
 
+          {examOptions.length > 0 && (
+            <select
+              value={examFilter}
+              onChange={(e) => {
+                setExamFilter(e.target.value);
+                updateQuery({ exam_id: e.target.value });
+              }}
+              className="h-9 rounded-lg border border-slate-100 bg-white px-3 text-[10px] font-black uppercase text-slate-600 outline-none cursor-pointer"
+            >
+              <option value="all">All Exams</option>
+              {examOptions.map((e) => (
+                <option key={e._id} value={e._id}>
+                  {e.title}
+                </option>
+              ))}
+            </select>
+          )}
+
           <Link
-            to={withQuery(pathname.includes("/teacher") ? "/teacher/results/create" : "/admin/results/create")}
+            to={withQuery(
+              pathname.includes("/teacher")
+                ? "/teacher/results/create"
+                : "/admin/results/create"
+            )}
             className="h-9 flex items-center gap-2 px-4 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm active:scale-95 transition-all"
           >
             <span className="material-symbols-outlined text-[16px]">add_chart</span>
@@ -209,7 +408,6 @@ export function ResultListPage({ filters }: { filters?: { exam_id?: string; stud
         </div>
       )}
 
-      {/* Table Section */}
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
         <DataTable
           columns={columns}

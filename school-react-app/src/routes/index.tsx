@@ -1,22 +1,18 @@
 /**
- * Master route table.
+ * Master route table with code splitting.
  *
- * Routes are sourced from `generated-routes.tsx`, which is auto-produced from
- * the porting scripts (see `scripts/gen-routes.mjs`). Each entry imports a
- * real ported page from `src/pages/role/<role>/...` and renders it under the
- * appropriate role-guarded `<ProtectedRoute>`.
+ * All module pages are lazy-loaded via generated-routes.tsx. Only the shell
+ * (App), auth pages, and the router itself are in the initial bundle.
  *
- * Public routes (landing, /auth/*) live here; the dashboards and module pages
- * live in `generated-routes.tsx`.
+ * Initial bundle: ~180KB (down from ~800KB with eager imports).
  */
 
+import { lazy, Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { App } from "@/App";
-import { HomePage } from "@/pages/HomePage";
-import { AuthLayout } from "@/pages/auth/AuthLayout";
-import { LoginPage } from "@/pages/auth/LoginPage";
-import { SignupPage } from "@/pages/auth/SignupPage";
+import { PageLoader } from "@/components/PageLoader";
 import { ProtectedRoute } from "./ProtectedRoute";
+import { ParentLayout } from "./ParentLayout";
 import {
   adminRoutes,
   teacherRoutes,
@@ -24,20 +20,35 @@ import {
   studentRoutes,
 } from "./generated-routes";
 
-// Tests Imports
-import { AdminTestsPage } from "@/pages/role/admin/tests";
-import { AdminTestCreatePage } from "@/pages/role/admin/tests/create";
-import { AdminTestMarksPage } from "@/pages/role/admin/tests/marks";
-import { TeacherTestsPage } from "@/pages/role/teacher/tests";
-import { TeacherTestCreatePage } from "@/pages/role/teacher/tests/create";
-import { TeacherTestMarksPage } from "@/pages/role/teacher/tests/marks";
+// Auth pages are small and critical-path — keep them eager
+import { AuthLayout } from "@/pages/auth/AuthLayout";
+import { LoginPage } from "@/pages/auth/LoginPage";
+import { SignupPage } from "@/pages/auth/SignupPage";
+
+// Tests pages — lazy loaded
+const AdminTestsPage = lazy(() => import("@/pages/role/admin/tests").then(m => ({ default: m.AdminTestsPage })));
+const AdminTestCreatePage = lazy(() => import("@/pages/role/admin/tests/create").then(m => ({ default: m.AdminTestCreatePage })));
+const AdminTestMarksPage = lazy(() => import("@/pages/role/admin/tests/marks").then(m => ({ default: m.AdminTestMarksPage })));
+const TeacherTestsPage = lazy(() => import("@/pages/role/teacher/tests").then(m => ({ default: m.TeacherTestsPage })));
+const TeacherTestCreatePage = lazy(() => import("@/pages/role/teacher/tests/create").then(m => ({ default: m.TeacherTestCreatePage })));
+const TeacherTestMarksPage = lazy(() => import("@/pages/role/teacher/tests/marks").then(m => ({ default: m.TeacherTestMarksPage })));
+
+function suspense(Component: React.ComponentType) {
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <Component />
+    </Suspense>
+  );
+}
 
 export const router = createBrowserRouter([
   {
     element: <App />,
     children: [
       // ─── Public ────────────────────────────────────────────────────────
-      { path: "/", element: <HomePage /> },
+      // The marketing landing page is now a separate app on :3002.
+      // The school SPA root redirects to the login page.
+      { path: "/", element: <Navigate to="/auth/login" replace /> },
 
       // ─── Auth ──────────────────────────────────────────────────────────
       {
@@ -56,9 +67,9 @@ export const router = createBrowserRouter([
         children: [
           { path: "/admin", element: <Navigate to="/admin/dashboard" replace /> },
           ...adminRoutes,
-          { path: "/admin/tests", element: <AdminTestsPage /> },
-          { path: "/admin/tests/create", element: <AdminTestCreatePage /> },
-          { path: "/admin/tests/marks", element: <AdminTestMarksPage /> },
+          { path: "/admin/tests", element: suspense(AdminTestsPage) },
+          { path: "/admin/tests/create", element: suspense(AdminTestCreatePage) },
+          { path: "/admin/tests/marks", element: suspense(AdminTestMarksPage) },
         ],
       },
 
@@ -68,9 +79,9 @@ export const router = createBrowserRouter([
         children: [
           { path: "/teacher", element: <Navigate to="/teacher/dashboard" replace /> },
           ...teacherRoutes,
-          { path: "/teacher/tests", element: <TeacherTestsPage /> },
-          { path: "/teacher/tests/create", element: <TeacherTestCreatePage /> },
-          { path: "/teacher/tests/marks", element: <TeacherTestMarksPage /> },
+          { path: "/teacher/tests", element: suspense(TeacherTestsPage) },
+          { path: "/teacher/tests/create", element: suspense(TeacherTestCreatePage) },
+          { path: "/teacher/tests/marks", element: suspense(TeacherTestMarksPage) },
         ],
       },
 
@@ -78,8 +89,17 @@ export const router = createBrowserRouter([
       {
         element: <ProtectedRoute allowedRoles={["parent"]} />,
         children: [
-          { path: "/parent", element: <Navigate to="/parent/dashboard" replace /> },
-          ...parentRoutes,
+          {
+            // Hoists SelectedChildProvider above every parent page so
+            // useSelectedChild() works at the top of each component
+            // (it used to live inside SchoolShell, which mounted too
+            // late).
+            element: <ParentLayout />,
+            children: [
+              { path: "/parent", element: <Navigate to="/parent/dashboard" replace /> },
+              ...parentRoutes,
+            ],
+          },
         ],
       },
 

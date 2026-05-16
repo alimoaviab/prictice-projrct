@@ -1,12 +1,22 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Send, Bot, RefreshCcw, User, MessageSquare, Plus, Trash2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { useNavigate } from "react-router-dom";
 import { SchoolShell } from "@/layouts/SchoolShell";
+import { serviceRequest } from "@/services/service-client";
 
-type Message = { role: "user" | "ai" | "tool"; content: string };
+type ActionButton = {
+  label: string;
+  route: string;
+  action_type?: string;
+  icon?: string;
+};
+
+type Message = { role: "user" | "ai" | "tool"; content: string; buttons?: ActionButton[] };
 type Thread = { id: string; title: string; updatedAt: number; messages: Message[] };
 
 export function AdminAIPage() {
+  const navigate = useNavigate();
   const [threads, setThreads] = useState<Thread[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -89,82 +99,43 @@ export function AdminAIPage() {
     setInput("");
     setIsLoading(true);
 
-    let currentThreadId = activeThreadId;
+    const currentThreadId = activeThreadId ?? `thread-${Date.now()}`;
 
     try {
-      const token = typeof window !== "undefined" ? (localStorage.getItem("token") || sessionStorage.getItem("token")) : "";
-
-      const response = await fetch("/api/ai", {
+      const response = await serviceRequest<{ reply: string; quick_buttons?: ActionButton[]; tool_used?: string; data?: any }>("/api/chatbot/message", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
           message: userMessage,
-          thread_id: currentThreadId
+          history: newMessages.slice(-10).map((m) => ({
+            role: m.role === "user" ? "user" : "assistant",
+            content: m.content,
+          })),
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch response");
+      if (!response.ok || !response.data) {
+        throw new Error(response.message || "Failed to fetch response");
       }
 
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder("utf-8");
+      const finalMessages = [
+        ...newMessages,
+        {
+          role: "ai" as const,
+          content: response.data.reply || "I couldn't process that request.",
+          buttons: response.data.quick_buttons || [],
+        },
+      ];
 
-      if (reader) {
-        let isFirstChunk = true;
-        let aiFullResponse = "";
-        let finalMessages = [...newMessages];
-
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) {
-            if (currentThreadId) {
-              updateThreadHistory(currentThreadId, finalMessages);
-            }
-            break;
-          }
-
-          const chunkString = decoder.decode(value, { stream: true });
-          const lines = chunkString.split('\n').filter(l => l.trim() !== '');
-
-          for (const line of lines) {
-            try {
-              const data = JSON.parse(line);
-              if (data.type === 'meta') {
-                currentThreadId = data.thread_id;
-                setActiveThreadId(currentThreadId);
-              } else if (data.type === 'chunk') {
-                setIsLoading(false);
-                aiFullResponse += data.content;
-                
-                if (isFirstChunk) {
-                  isFirstChunk = false;
-                  finalMessages = [...finalMessages, { role: "ai", content: aiFullResponse }];
-                } else {
-                  finalMessages[finalMessages.length - 1].content = aiFullResponse;
-                }
-                setMessages([...finalMessages]);
-              } else if (data.type === 'tool') {
-                finalMessages = [...finalMessages, { role: "tool", content: data.content }];
-                setMessages([...finalMessages]);
-              } else if (data.type === 'error') {
-                finalMessages = [...finalMessages, { role: "ai", content: `**Error:** ${data.content}` }];
-                setMessages([...finalMessages]);
-                setIsLoading(false);
-              }
-            } catch (e) {
-              // ignore unparseable line
-            }
-          }
-        }
-      }
+      setMessages(finalMessages);
+      setActiveThreadId(currentThreadId);
+      updateThreadHistory(currentThreadId, finalMessages);
     } catch (error: any) {
       const finalMsgs = [...newMessages, { role: "ai" as const, content: `**Error:** ${error.message}` }];
       setMessages(finalMsgs);
-      if (currentThreadId) updateThreadHistory(currentThreadId, finalMsgs);
+      updateThreadHistory(currentThreadId, finalMsgs);
     } finally {
       setIsLoading(false);
     }
@@ -290,11 +261,29 @@ export function AdminAIPage() {
                       }`}
                     >
                       {msg.role === "ai" ? (
-                        <div className="prose prose-slate prose-p:leading-relaxed prose-pre:bg-slate-800 prose-pre:text-slate-100 max-w-none">
+                        <div className="prose prose-slate prose-p:leading-relaxed prose-pre:bg-slate-800 prose-pre:text-slate-100 max-w-none max-h-[28rem] overflow-y-auto break-words pr-1">
                           <ReactMarkdown>{msg.content}</ReactMarkdown>
+                          {msg.buttons && msg.buttons.length > 0 && (
+                            <div className="mt-4 flex flex-wrap gap-2 not-prose">
+                              {msg.buttons.map((btn, buttonIndex) => (
+                                <button
+                                  key={buttonIndex}
+                                  onClick={() => {
+                                    if (btn.action_type === "navigate" || btn.action_type === "create" || btn.action_type === "edit") {
+                                      navigate(btn.route);
+                                    }
+                                  }}
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-blue-100 bg-blue-50 px-3 py-1.5 text-[11px] font-bold text-blue-600 shadow-sm transition-all hover:border-blue-600 hover:bg-blue-600 hover:text-white"
+                                >
+                                  {btn.icon && <span className="material-symbols-outlined text-[14px]">{btn.icon}</span>}
+                                  {btn.label}
+                                </button>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       ) : (
-                        msg.content
+                        <span className="whitespace-pre-wrap break-words">{msg.content}</span>
                       )}
                     </div>
                     

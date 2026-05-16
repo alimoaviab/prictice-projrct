@@ -1,13 +1,19 @@
-// Package liveclass implements /api/live/classes endpoints. Mirrors
-// old-app/shared/services/live/live-class.service.ts. Live classes are
-// ordinary scheduled meetings tied to a class — there is no WebSocket layer
-// in the original, just a REST resource the React UI polls.
+// Package liveclass implements /api/live/classes endpoints.
+//
+// Live classes use public Jitsi Meet rooms (https://meet.jit.si). The backend
+// generates a unique, secure room URL per session and stores it in the
+// database. Teachers and students join by clicking the link — Jitsi handles
+// all audio/video/WebRTC/media. No self-hosted infrastructure required.
 package liveclass
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
+	"log"
 	"net/http"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/eduplexo/backend-go/internal/api"
@@ -18,9 +24,60 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-type Handler struct{ Store *store.MemStore }
+// Handler holds dependencies for live class endpoints.
+type Handler struct {
+	Store *store.MemStore
+	Save  func(table string, doc any)
+}
 
-func New(s *store.MemStore) *Handler { return &Handler{Store: s} }
+// New returns a live class handler. `save` is optional — pass nil for
+// in-memory-only mode (tests, dev without PG).
+func New(s *store.MemStore, save func(string, any)) *Handler {
+	if save == nil {
+		save = func(string, any) {}
+	}
+	return &Handler{Store: s, Save: save}
+}
+
+// ─── Jitsi Room URL Generator ────────────────────────────────────────────
+
+// generateJitsiURL creates a unique, secure Jitsi Meet room URL.
+// Format: https://meet.jit.si/eduplexo-{schoolID}-{randomHex}
+//
+// The room name is:
+//   - Prefixed with "eduplexo-" to avoid collisions with other Jitsi users
+//   - Includes the school_id for traceability in logs
+//   - Ends with 16 random hex chars (64 bits of entropy) — effectively
+//     unguessable by outsiders
+//   - Sanitized to only contain URL-safe characters
+func generateJitsiURL(schoolID string) string {
+	// Generate 8 random bytes = 16 hex chars
+	b := make([]byte, 8)
+	if _, err := rand.Read(b); err != nil {
+		// Fallback to timestamp-based if crypto/rand fails (extremely rare)
+		b = []byte(time.Now().Format("20060102150405"))
+	}
+	randomPart := hex.EncodeToString(b)
+
+	// Sanitize school ID: only keep alphanumeric and hyphens
+	safe := strings.Map(func(r rune) rune {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '-' {
+			return r
+		}
+		return -1
+	}, schoolID)
+	if safe == "" {
+		safe = "school"
+	}
+	// Keep school prefix short
+	if len(safe) > 20 {
+		safe = safe[:20]
+	}
+
+	return "https://meet.jit.si/eduplexo-" + safe + "-" + randomPart
+}
+
+// ─── Hydration (response shaping) ───────────────────────────────────────
 
 func (h *Handler) hydrate(rows []*store.LiveClass) []map[string]any {
 	classByID := map[string]*store.Class{}
@@ -42,6 +99,7 @@ func (h *Handler) hydrate(rows []*store.LiveClass) []map[string]any {
 			"class_name":       className,
 			"subject":          l.Subject,
 			"title":            l.Title,
+			"description":      l.Description,
 			"starts_at":        l.StartsAt,
 			"ends_at":          l.EndsAt,
 			"host_teacher_id":  l.HostTeacherID,
@@ -54,6 +112,8 @@ func (h *Handler) hydrate(rows []*store.LiveClass) []map[string]any {
 	}
 	return out
 }
+
+// ─── List ────────────────────────────────────────────────────────────────
 
 // List implements GET /api/live/classes.
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
@@ -97,9 +157,11 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 			rows = append(rows, l)
 		}
 		h.Store.RUnlock()
+
 		sort.SliceStable(rows, func(i, j int) bool {
 			return rows[i].StartsAt.After(rows[j].StartsAt)
 		})
+
 		hydrated := h.hydrate(rows)
 		page := api.ParsePagination(q)
 		if !page.Enabled {
@@ -109,18 +171,20 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	}))
 }
 
+// ─── Schedule (Create) ───────────────────────────────────────────────────
+
 type scheduleInput struct {
 	ClassID       string `json:"class_id"`
 	Subject       string `json:"subject"`
 	Title         string `json:"title"`
+	Description   string `json:"description"`
 	StartsAt      string `json:"starts_at"`
 	EndsAt        string `json:"ends_at"`
 	HostTeacherID string `json:"host_teacher_id"`
-	JoinURL       string `json:"join_url"`
-	Provider      string `json:"provider"`
 }
 
 // Schedule implements POST /api/live/classes/schedule.
+// Generates a unique Jitsi room URL and saves the live class record.
 func (h *Handler) Schedule(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	var body scheduleInput
@@ -141,11 +205,10 @@ func (h *Handler) Schedule(w http.ResponseWriter, r *http.Request) {
 			return nil, api.NewControlledError("VALIDATION_ERROR", "ends_at must be after starts_at.", 400, nil)
 		}
 
-		// Auto-generate a join URL if not provided
-		joinURL := body.JoinURL
-		if joinURL == "" {
-			joinURL = "https://meet.google.com/edu-" + store.NewID("")[0:8]
-		}
+		// Generate a real, working Jitsi meeting link
+		joinURL := generateJitsiURL(ctx.SchoolID)
+
+		log.Printf("[liveclass] scheduled: school=%s title=%q join_url=%s", ctx.SchoolID, body.Title, joinURL)
 
 		now := time.Now()
 		row := &store.LiveClass{
@@ -155,25 +218,30 @@ func (h *Handler) Schedule(w http.ResponseWriter, r *http.Request) {
 			ClassID:        body.ClassID,
 			Subject:        body.Subject,
 			Title:          body.Title,
+			Description:    body.Description,
 			StartsAt:       startsAt,
 			EndsAt:         endsAt,
 			HostTeacherID:  body.HostTeacherID,
 			JoinURL:        joinURL,
-			Provider:       orDefault(body.Provider, "google_meet"),
+			Provider:       "jitsi",
 			Status:         "scheduled",
 			CreatedAt:      now,
 			UpdatedAt:      now,
 		}
+
 		h.Store.Lock()
 		h.Store.LiveClasses = append(h.Store.LiveClasses, row)
 		h.Store.Unlock()
+		h.Save("live_classes", row)
+
 		audit.Write(h.Store, ctx, audit.Input{
-			Action: "create", EntityType: "class", EntityID: row.ID, After: row,
-			Metadata: map[string]any{"scope": "live_class"},
+			Action: "create", EntityType: "live_class", EntityID: row.ID, After: row,
 		})
 		return h.hydrate([]*store.LiveClass{row})[0], nil
 	}))
 }
+
+// ─── Get ─────────────────────────────────────────────────────────────────
 
 // Get implements GET /api/live/classes/:id.
 func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
@@ -191,8 +259,9 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	}))
 }
 
-// UpdateStatus implements PATCH /api/live/classes/:id with `status` payload —
-// matches `LiveClassService.updateClassStatus` in the original.
+// ─── Update ──────────────────────────────────────────────────────────────
+
+// Update implements PATCH /api/live/classes/:id.
 func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	id := chi.URLParam(r, "id")
@@ -206,39 +275,49 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 		h.Store.Lock()
-		defer h.Store.Unlock()
+		var found *store.LiveClass
 		for _, l := range h.Store.LiveClasses {
 			if l.ID == id && l.SchoolID == ctx.SchoolID {
-				before := *l
-				if v, ok := body["title"]; ok {
-					_ = json.Unmarshal(v, &l.Title)
-				}
-				if v, ok := body["subject"]; ok {
-					_ = json.Unmarshal(v, &l.Subject)
-				}
-				if v, ok := body["status"]; ok {
-					_ = json.Unmarshal(v, &l.Status)
-				}
-				if v, ok := body["join_url"]; ok {
-					_ = json.Unmarshal(v, &l.JoinURL)
-				}
-				if v, ok := body["starts_at"]; ok {
-					_ = json.Unmarshal(v, &l.StartsAt)
-				}
-				if v, ok := body["ends_at"]; ok {
-					_ = json.Unmarshal(v, &l.EndsAt)
-				}
-				l.UpdatedAt = time.Now()
-				audit.Write(h.Store, ctx, audit.Input{
-					Action: "update", EntityType: "class", EntityID: id, Before: before, After: *l,
-					Metadata: map[string]any{"scope": "live_class"},
-				})
-				return h.hydrate([]*store.LiveClass{l})[0], nil
+				found = l
+				break
 			}
 		}
-		return nil, api.NewControlledError("NOT_FOUND", "Live class not found.", 404, nil)
+		if found == nil {
+			h.Store.Unlock()
+			return nil, api.NewControlledError("NOT_FOUND", "Live class not found.", 404, nil)
+		}
+		before := *found
+		if v, ok := body["title"]; ok {
+			_ = json.Unmarshal(v, &found.Title)
+		}
+		if v, ok := body["subject"]; ok {
+			_ = json.Unmarshal(v, &found.Subject)
+		}
+		if v, ok := body["description"]; ok {
+			_ = json.Unmarshal(v, &found.Description)
+		}
+		if v, ok := body["status"]; ok {
+			_ = json.Unmarshal(v, &found.Status)
+		}
+		if v, ok := body["starts_at"]; ok {
+			_ = json.Unmarshal(v, &found.StartsAt)
+		}
+		if v, ok := body["ends_at"]; ok {
+			_ = json.Unmarshal(v, &found.EndsAt)
+		}
+		found.UpdatedAt = time.Now()
+		snapshot := *found
+		h.Store.Unlock()
+
+		h.Save("live_classes", &snapshot)
+		audit.Write(h.Store, ctx, audit.Input{
+			Action: "update", EntityType: "live_class", EntityID: id, Before: before, After: snapshot,
+		})
+		return h.hydrate([]*store.LiveClass{&snapshot})[0], nil
 	}))
 }
+
+// ─── Delete ──────────────────────────────────────────────────────────────
 
 // Delete implements DELETE /api/live/classes/:id.
 func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -249,25 +328,24 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 		h.Store.Lock()
-		defer h.Store.Unlock()
+		var removed *store.LiveClass
 		for i, l := range h.Store.LiveClasses {
 			if l.ID == id && l.SchoolID == ctx.SchoolID {
-				before := *l
+				removed = l
 				h.Store.LiveClasses = append(h.Store.LiveClasses[:i], h.Store.LiveClasses[i+1:]...)
-				audit.Write(h.Store, ctx, audit.Input{
-					Action: "delete", EntityType: "class", EntityID: id, Before: before,
-					Metadata: map[string]any{"scope": "live_class"},
-				})
-				return map[string]any{"success": true, "id": id}, nil
+				break
 			}
 		}
-		return nil, api.NewControlledError("NOT_FOUND", "Live class not found.", 404, nil)
-	}))
-}
+		h.Store.Unlock()
 
-func orDefault(v, d string) string {
-	if v == "" {
-		return d
-	}
-	return v
+		if removed == nil {
+			return nil, api.NewControlledError("NOT_FOUND", "Live class not found.", 404, nil)
+		}
+
+		h.Save("live_classes:delete", id)
+		audit.Write(h.Store, ctx, audit.Input{
+			Action: "delete", EntityType: "live_class", EntityID: id, Before: *removed,
+		})
+		return map[string]any{"success": true, "id": id}, nil
+	}))
 }

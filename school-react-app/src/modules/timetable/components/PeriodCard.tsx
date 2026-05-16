@@ -1,110 +1,179 @@
-import { TimetableRecord } from "../types/timetable.types";
-import { Badge } from "@/components/ui";
-import { useState } from "react";
+/**
+ * Status-aware period card. Renders a single (day, period) cell on the
+ * grid. Reuses the platform's compact card chrome — no new tokens.
+ *
+ * Status colors:
+ *   current   → emerald accent + pulse dot
+ *   upcoming  → blue accent
+ *   completed → slate, dimmed
+ *   conflict  → rose accent (overrides above)
+ */
+
+import { memo } from "react";
+import type { TimetableRecord, PeriodStatus } from "../types/timetable.types";
 
 interface PeriodCardProps {
   slot: TimetableRecord;
-  conflicts: { type: 'teacher' | 'room' | 'class'; record: TimetableRecord }[];
+  status: PeriodStatus;
+  hasConflict: boolean;
   onEdit?: (record: TimetableRecord) => void;
   onDelete?: (id: string) => void;
   isCompact?: boolean;
+  canManage?: boolean;
 }
 
-const SUBJECT_COLORS: Record<string, { bg: string; text: string; border: string; dot: string; gradient: string }> = {
-  Default: { 
-    bg: "bg-blue-50/40", 
-    text: "text-blue-700", 
-    border: "border-blue-100/60", 
-    dot: "bg-blue-600",
-    gradient: "from-blue-600/5 to-transparent"
+const toneByStatus: Record<
+  Exclude<PeriodStatus, "free" | "conflict">,
+  { bg: string; border: string; text: string; bar: string; meta: string; pill: string }
+> = {
+  current: {
+    bg: "bg-emerald-50/80",
+    border: "border-emerald-200",
+    text: "text-emerald-900",
+    bar: "bg-emerald-500",
+    meta: "text-emerald-700/80",
+    pill: "bg-emerald-100 text-emerald-700 border-emerald-200",
   },
-  Primary: { 
-    bg: "bg-blue-600 text-white", 
-    text: "text-white", 
-    border: "border-blue-700", 
-    dot: "bg-white",
-    gradient: "from-white/10 to-transparent"
+  upcoming: {
+    bg: "bg-white",
+    border: "border-slate-200",
+    text: "text-slate-900",
+    bar: "bg-blue-500",
+    meta: "text-slate-500",
+    pill: "bg-blue-50 text-blue-700 border-blue-200",
   },
-  Secondary: { 
-    bg: "bg-slate-50", 
-    text: "text-slate-700", 
-    border: "border-slate-200", 
-    dot: "bg-blue-600",
-    gradient: "from-blue-600/5 to-transparent"
-  }
+  completed: {
+    bg: "bg-slate-50",
+    border: "border-slate-100",
+    text: "text-slate-500",
+    bar: "bg-slate-300",
+    meta: "text-slate-400",
+    pill: "bg-slate-100 text-slate-500 border-slate-200",
+  },
 };
 
-export function PeriodCard({ slot, conflicts, onEdit, onDelete, isCompact }: PeriodCardProps) {
-  const [isHovered, setIsHovered] = useState(false);
-  const style = SUBJECT_COLORS.Default;
-  const hasConflict = conflicts.length > 0;
+const conflictTone = {
+  bg: "bg-rose-50",
+  border: "border-rose-200",
+  text: "text-rose-900",
+  bar: "bg-rose-500",
+  meta: "text-rose-700/80",
+  pill: "bg-rose-100 text-rose-700 border-rose-200",
+};
+
+function statusLabel(status: PeriodStatus): string {
+  switch (status) {
+    case "current":
+      return "Live";
+    case "upcoming":
+      return "Upcoming";
+    case "completed":
+      return "Done";
+    case "conflict":
+      return "Conflict";
+    default:
+      return "";
+  }
+}
+
+function PeriodCardImpl({
+  slot,
+  status,
+  hasConflict,
+  onEdit,
+  onDelete,
+  isCompact,
+  canManage = true,
+}: PeriodCardProps) {
+  const effective: PeriodStatus = hasConflict ? "conflict" : status;
+  const tone =
+    effective === "conflict"
+      ? conflictTone
+      : toneByStatus[effective as Exclude<PeriodStatus, "free" | "conflict">];
 
   return (
     <div
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className={`
-        group relative overflow-hidden rounded-xl border transition-all duration-300
-        ${hasConflict ? 'border-red-200 bg-red-50/50' : `${style.bg} ${style.border}`}
-        ${isHovered ? 'shadow-xl shadow-slate-200/50 scale-[1.02] -translate-y-0.5' : 'shadow-sm'}
-        ${isCompact ? 'p-2' : 'p-3'}
-        cursor-pointer min-h-full flex flex-col justify-between
-      `}
+      className={`group relative rounded-lg border ${tone.border} ${tone.bg} ${
+        isCompact ? "px-2 py-1.5" : "px-2.5 py-2"
+      } shadow-[0_2px_8px_rgb(0,0,0,0.02)] hover:shadow-[0_4px_14px_rgb(0,0,0,0.05)] transition-shadow flex flex-col gap-1 h-full overflow-hidden`}
     >
-      {/* Subject Line Indicator */}
-      <div className={`absolute left-0 top-0 bottom-0 w-1 ${hasConflict ? 'bg-red-500' : style.dot} opacity-60`} />
+      {/* Status bar */}
+      <div className={`absolute left-0 top-0 bottom-0 w-0.5 ${tone.bar}`} />
 
-      <div className="relative z-10 flex flex-col h-full gap-1">
-        <div className="flex justify-between items-start gap-2">
-          <h4 className={`text-[11px] font-black leading-tight normal-case tracking-tight truncate ${hasConflict ? 'text-red-700' : style.text}`}>
-            {slot.subject_name}
-          </h4>
-          
-          <div className={`flex gap-1 transition-all duration-300 ${isHovered && !slot.is_class_schedule ? 'opacity-100' : 'opacity-0'}`}>
-            {!slot.is_class_schedule && onEdit && (
-              <button 
-                onClick={(e) => { e.stopPropagation(); onEdit(slot); }} 
-                className="h-6 w-6 flex items-center justify-center rounded-lg bg-white/90 text-slate-500 hover:text-blue-600 shadow-sm border border-slate-100 transition-colors"
-              >
-                <span className="material-symbols-outlined text-[14px] font-black">edit</span>
-              </button>
+      {/* Top row: subject + status pill */}
+      <div className="flex items-start justify-between gap-1.5">
+        <p
+          className={`text-[11px] font-bold tracking-tight leading-tight truncate ${tone.text}`}
+          title={slot.subject_name}
+        >
+          {slot.subject_name || "Untitled"}
+        </p>
+        {effective !== "upcoming" && (
+          <span
+            className={`shrink-0 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md border text-[8px] font-bold uppercase tracking-wider ${tone.pill}`}
+          >
+            {effective === "current" && (
+              <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
             )}
-            {!slot.is_class_schedule && onDelete && (
-              <button 
-                onClick={(e) => { e.stopPropagation(); onDelete(slot._id); }} 
-                className="h-6 w-6 flex items-center justify-center rounded-lg bg-white/90 text-slate-500 hover:text-red-600 shadow-sm border border-slate-100 transition-colors"
-              >
-                <span className="material-symbols-outlined text-[14px] font-black">delete</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div className="mt-auto space-y-1">
-          <div className="flex flex-col">
-            {slot.class_name && (
-              <span className="text-[8px] font-black text-blue-600/60 uppercase tracking-tighter leading-none mb-0.5">
-                {slot.class_name} {slot.section ? `(${slot.section})` : ''}
-              </span>
-            )}
-            <p className="text-[9px] font-bold text-slate-600 truncate uppercase tracking-tighter leading-none">
-              {slot.teacher_name}
-            </p>
-          </div>
-          
-          <div className="flex items-center justify-between gap-2 border-t border-slate-100/50 pt-1">
-            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest truncate">{slot.room || "No Room"}</span>
-            <span className="text-[8px] font-black tabular-nums text-slate-400 opacity-60 shrink-0">{slot.start_time}-{slot.end_time}</span>
-          </div>
-        </div>
-
-        {hasConflict && (
-          <div className="mt-1 pt-1 border-t border-red-100 flex items-center gap-1 text-red-600">
-            <span className="material-symbols-outlined text-[10px] font-black">warning</span>
-            <span className="text-[8px] font-black uppercase tracking-tighter">Conflict</span>
-          </div>
+            {statusLabel(effective)}
+          </span>
         )}
       </div>
+
+      {/* Teacher + class */}
+      <p className={`text-[10px] font-medium leading-tight truncate ${tone.meta}`}>
+        {slot.teacher_name || "No teacher"}
+      </p>
+
+      {/* Bottom row: time + room */}
+      {!isCompact && (
+        <div className="flex items-center justify-between gap-1 pt-1 mt-auto border-t border-slate-100/60">
+          <span className={`text-[10px] font-medium tabular-nums ${tone.meta}`}>
+            {slot.start_time}–{slot.end_time}
+          </span>
+          {slot.room && (
+            <span className={`text-[10px] font-bold uppercase tracking-tight truncate max-w-[80px] ${tone.meta}`}>
+              {slot.room}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Hover actions */}
+      {canManage && (onEdit || onDelete) && (
+        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5">
+          {onEdit && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(slot);
+              }}
+              className="h-5 w-5 inline-flex items-center justify-center rounded-md bg-white/95 border border-slate-200 text-slate-500 hover:text-blue-600 shadow-sm"
+              title="Edit"
+              aria-label="Edit period"
+            >
+              <span className="material-symbols-outlined text-[12px]">edit</span>
+            </button>
+          )}
+          {onDelete && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(slot._id);
+              }}
+              className="h-5 w-5 inline-flex items-center justify-center rounded-md bg-white/95 border border-slate-200 text-slate-500 hover:text-rose-600 shadow-sm"
+              title="Delete"
+              aria-label="Delete period"
+            >
+              <span className="material-symbols-outlined text-[12px]">delete</span>
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
+
+export const PeriodCard = memo(PeriodCardImpl);

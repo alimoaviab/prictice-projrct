@@ -97,7 +97,7 @@ export function ClassPage() {
             {!isDependencyLoading && hasAcademicYears ? (
                 <Card className="max-w-4xl p-4">
                     <div className="mb-3">
-                        <h2 className="text-lg font-bold tracking-tight text-slate-900 leading-none">Create New Class</h2>
+                        <h2 className="text-lg font-bold tracking-tight text-slate-900 leading-none">Add class</h2>
                         <p className="mt-1 text-[13px] font-medium text-slate-500">Set up a new classroom and assign teachers and subjects.</p>
                     </div>
                     <ClassForm
@@ -135,7 +135,7 @@ export function ClassPage() {
             {state.status === "success" && state.data && (state.data as any).data.length > 0 ? (
                 <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-base font-semibold tracking-tight text-slate-950">Classes List</h3>
+                        <h3 className="text-base font-semibold tracking-tight text-slate-950">Classes list</h3>
                         <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold normal-case tracking-[0.08em] text-slate-600">
                             {filteredRows.length} visible
                         </span>
@@ -148,7 +148,7 @@ export function ClassPage() {
                         filterValue={statusFilter}
                         onFilterChange={(value) => setStatusFilter(value as "all" | "active" | "inactive")}
                         filterOptions={[
-                            { value: "all", label: "All statuses" },
+                            { value: "all", label: "All" },
                             { value: "active", label: "Active" },
                             { value: "inactive", label: "Inactive" },
                         ]}

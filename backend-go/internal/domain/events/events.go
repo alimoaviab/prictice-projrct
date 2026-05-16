@@ -57,6 +57,12 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		eventType := q.Get("event_type")
 		visibility := q.Get("visibility")
 		classID := q.Get("class_id")
+		// `for_class_id` widens the filter: include events that target
+		// this class AND school-wide events that target everyone. This
+		// is what the parent portal wants — show "Sports Day" to every
+		// parent, plus class-specific events for the linked child.
+		// Falls back to `class_id` for the strict filter the admin uses.
+		forClassID := q.Get("for_class_id")
 		startDate, hasStart := api.ParseDate(q.Get("start_date"))
 		endDate, hasEnd := api.ParseDate(q.Get("end_date"))
 
@@ -79,6 +85,20 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 				match := false
 				for _, c := range e.TargetClassIDs {
 					if c == classID {
+						match = true
+						break
+					}
+				}
+				if !match {
+					continue
+				}
+			}
+			if forClassID != "" {
+				// Visible to this class if either targeted explicitly
+				// or the event is school-wide (no specific targets).
+				match := len(e.TargetClassIDs) == 0
+				for _, c := range e.TargetClassIDs {
+					if c == forClassID {
 						match = true
 						break
 					}

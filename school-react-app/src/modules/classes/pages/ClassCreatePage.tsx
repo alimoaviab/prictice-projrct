@@ -63,10 +63,19 @@ export function ClassCreatePage() {
   }
 
   return (
-    <div className="w-full py-8 px-6">
-      <div className="mb-8">
-        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Register New Class</h2>
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Institutional Unit Initialization</p>
+    <div className="max-w-7xl mx-auto py-2 px-4 sm:px-6">
+      <div className="mb-3 flex items-center justify-between">
+        <Link
+          to="/admin/classes"
+          className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-400 normal-case hover:text-slate-900 transition-all group"
+        >
+          <span className="material-symbols-outlined text-[16px] group-hover:-translate-x-0.5 transition-transform">arrow_back</span>
+          Return to Classes
+        </Link>
+        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 normal-case ">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          Academic
+        </div>
       </div>
 
       {academicYearState.status === "error" ? (
@@ -93,7 +102,7 @@ export function ClassCreatePage() {
                       <p className="text-[10px] text-amber-600 font-medium">You need to create at least one academic session to register a class.</p>
                    </div>
                 </div>
-                <Link 
+                <Link
                   to="/admin/academic-years"
                   className="h-9 px-4 rounded-lg bg-amber-600 text-[10px] font-bold text-white hover:bg-amber-700 transition-all shadow-sm flex items-center"
                 >

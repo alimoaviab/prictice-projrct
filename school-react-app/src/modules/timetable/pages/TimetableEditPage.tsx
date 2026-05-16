@@ -1,14 +1,32 @@
+/**
+ * /admin/timetable/edit/:id — uses the same EntityCreateLayout as the
+ * create page so the experience is symmetrical.
+ *
+ * `id` is the synthetic cell id `{timetableId}_{day}_{period}` that the
+ * grid uses; the Go handler parses it and updates only the matching
+ * session.
+ */
+
 import { useCallback, useEffect } from "react";
-import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-import { Card, Skeleton, DataState } from "@/components/ui";
+
+const NEVER_EMPTY = (): boolean => false;
+import {
+  Skeleton,
+  DataState,
+  EntityCreateLayout,
+  GuidanceSection,
+  GuidanceCallout,
+} from "@/components/ui";
 import { useSafeAsync } from "@/hooks/useSafeAsync";
 import { serviceRequest } from "@/services/service-client";
 import { TimetableForm } from "../components/TimetableForm";
 import { useTimetable } from "../hooks/useTimetable";
-import { TimetableFormInput, TimetableRecord, getDayLabel } from "../types/timetable.types";
+import {
+  TimetableFormInput,
+  TimetableRecord,
+} from "../types/timetable.types";
 import { showToast } from "@/utils/toast";
-import { findTimetableConflicts } from "../utils/conflicts";
 import * as service from "../services/timetable.service";
 
 interface TimetableEditPageProps {
@@ -17,129 +35,139 @@ interface TimetableEditPageProps {
 
 export function TimetableEditPage({ id }: TimetableEditPageProps) {
   const navigate = useNavigate();
-  const { state: timetableState, updateTimetable } = useTimetable();
+  const { updateTimetable } = useTimetable();
 
-  const { state: recordState, run: runRecord } = useSafeAsync<TimetableRecord>();
-  const { state: classState, run: runClasses } = useSafeAsync<Array<{ _id: string; name: string }>>();
-  const { state: teacherState, run: runTeachers } = useSafeAsync<Array<{ _id: string; name: string }>>();
+  // NEVER_EMPTY must be a stable reference — an inline () => false
+  // here triggers a re-render loop via useSafeAsync's useCallback deps.
+  const { state: recordState, run: runRecord } = useSafeAsync<TimetableRecord>(NEVER_EMPTY);
+  const { state: classState, run: runClasses } = useSafeAsync<Array<{ _id: string; name: string; section?: string }>>();
+  const { state: teacherState, run: runTeachers } = useSafeAsync<Array<{ _id: string; first_name?: string; last_name?: string; name?: string }>>();
   const { state: subjectState, run: runSubjects } = useSafeAsync<Array<{ _id: string; name: string }>>();
 
-  const loadDependencies = useCallback(() => {
+  const load = useCallback(() => {
     return Promise.all([
-      runRecord(() => service.getTimetable(id).then(r => {
-          if (!r.ok) throw new Error(r.error?.message);
-          return r.data!;
-      })),
+      runRecord(async () => {
+        const r = await service.getTimetable(id);
+        if (!r.ok) throw new Error(r.error?.message || "Period not found");
+        return r.data!;
+      }),
       runClasses(async () => {
-        const result = await serviceRequest<Array<{ _id: string; name: string }>>("/api/classes");
-        if (!result.ok) throw new Error(result.error.message || "Failed to load classes");
-        return result.data;
+        const r = await serviceRequest<any>("/api/classes");
+        if (!r.ok) throw new Error(r.error?.message || "Failed to load classes");
+        return Array.isArray(r.data) ? r.data : Array.isArray((r.data as any)?.data) ? (r.data as any).data : [];
       }),
       runTeachers(async () => {
-        const result = await serviceRequest<Array<{ _id: string; name: string }>>("/api/teachers");
-        if (!result.ok) throw new Error(result.error.message || "Failed to load teachers");
-        return result.data;
+        const r = await serviceRequest<any>("/api/teachers");
+        if (!r.ok) throw new Error(r.error?.message || "Failed to load teachers");
+        return Array.isArray(r.data) ? r.data : Array.isArray((r.data as any)?.data) ? (r.data as any).data : [];
       }),
       runSubjects(async () => {
-        const result = await serviceRequest<Array<{ _id: string; name: string }>>("/api/subjects");
-        if (!result.ok) throw new Error(result.error.message || "Failed to load subjects");
-        return result.data;
+        const r = await serviceRequest<any>("/api/subjects");
+        if (!r.ok) throw new Error(r.error?.message || "Failed to load subjects");
+        return Array.isArray(r.data) ? r.data : Array.isArray((r.data as any)?.data) ? (r.data as any).data : [];
       }),
     ]);
   }, [id, runRecord, runClasses, runTeachers, runSubjects]);
 
   useEffect(() => {
-    void loadDependencies().catch(() => { });
-  }, [loadDependencies]);
+    void load().catch(() => {});
+  }, [load]);
 
   const isLoading =
     recordState.status === "loading" ||
+    recordState.status === "idle" ||
     classState.status === "loading" ||
     teacherState.status === "loading" ||
-    subjectState.status === "loading" ||
-    recordState.status === "idle";
+    subjectState.status === "loading";
 
-  async function handleUpdate(input: TimetableFormInput) {
-    try {
-      // Exclude current record from conflict check
-      const otherRecords = (timetableState.data || []).filter(r => r._id !== id);
-      const conflicts = findTimetableConflicts(otherRecords, input);
-      
-      if (conflicts.length > 0) {
-        return {
-          ok: false,
-          error: { message: "Conflict detected! Same class or same teacher cannot be assigned in the same time slot." }
-        };
-      }
-
-      const result = await updateTimetable(id, input);
-      if (result.ok) {
-        showToast("Timetable entry updated successfully", "success");
-        navigate("/admin/timetable");
-
-      } else {
-        showToast(result.error?.message || "Failed to update entry", "error");
-      }
-      return result;
-    } catch (error: any) {
-      console.error("[TimetableEditPage] Error:", error);
-      showToast(error.message || "Failed to update entry", "error");
-      return { ok: false, error: { message: error.message } };
-    }
-  }
-
-  if (recordState.status === "error" || classState.status === "error" || teacherState.status === "error" || subjectState.status === "error") {
+  if (
+    recordState.status === "error" ||
+    classState.status === "error" ||
+    teacherState.status === "error" ||
+    subjectState.status === "error"
+  ) {
     return (
       <DataState
         variant="error"
-        title="Failed to load data"
-        message={recordState.error || classState.error || teacherState.error || subjectState.error}
+        title="Couldn't load this period"
+        message={
+          recordState.error || classState.error || teacherState.error || subjectState.error
+        }
       />
     );
   }
 
-  const classOptions = ((classState.data as any)?.data || classState.data || []).map((o: any) => ({ id: o._id, label: o.name }));
-  const teacherOptions = (teacherState.data ?? []).map(o => ({ id: o._id, label: o.name }));
-  const subjectOptions = (subjectState.data ?? []).map(o => ({ id: o._id, label: o.name }));
+  const classOptions = (classState.data ?? []).map((c) => ({
+    id: c._id,
+    label: c.section ? `${c.name} (${c.section})` : c.name,
+  }));
+  const teacherOptions = (teacherState.data ?? []).map((t) => ({
+    id: t._id,
+    label:
+      (t as any).name ||
+      `${t.first_name ?? ""} ${t.last_name ?? ""}`.trim() ||
+      t._id,
+  }));
+  const subjectOptions = (subjectState.data ?? []).map((s) => ({ id: s._id, label: s.name }));
+
+  async function handleUpdate(input: TimetableFormInput) {
+    const result = await updateTimetable(id, input);
+    if (result.ok) {
+      showToast("Period updated.", "success");
+      const dest = input.class_id
+        ? `/admin/timetable?class_id=${encodeURIComponent(input.class_id)}`
+        : "/admin/timetable";
+      navigate(dest);
+    } else if (result.error?.code !== "CONFLICT") {
+      showToast(result.error?.message || "Failed to update period.", "error");
+    }
+    return result as { ok: boolean; error?: { message?: string; details?: unknown } };
+  }
 
   return (
-    <div className="max-w-full mx-auto space-y-6">
-      <Link
-        to="/admin/timetable"
-        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition-colors"
-      >
-        <span className="material-symbols-outlined text-lg">arrow_back</span>
-        Back to Timetable
-      </Link>
-
-      <Card>
-        <div className="mb-6">
-          <h2 className="text-xl font-bold text-gray-900">Edit Timetable Entry</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Modify the schedule entry for this class, subject, and teacher.
-          </p>
-        </div>
-
-        {isLoading ? (
-          <div className="space-y-4">
-            <Skeleton className="h-10 w-full" />
-            <div className="grid grid-cols-2 gap-4">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </div>
+    <EntityCreateLayout
+      backTo="/admin/timetable"
+      backLabel="Back to timetable"
+      eyebrow="Timetable Composer"
+      icon="schedule"
+      title="Edit period"
+      subtitle="Adjust the time, teacher, room or subject for this slot."
+      asideTitle="Live conflict checks"
+      aside={
+        <>
+          <GuidanceSection title="What you can change">
+            Subject, day, time, period, teacher and room. The class is fixed —
+            move the period to another class by deleting and re-creating.
+          </GuidanceSection>
+          <GuidanceSection title="Be careful with rooms">
+            <GuidanceCallout tone="amber">
+              Reusing a room at the same time as another class is flagged as a
+              room conflict and rejected.
+            </GuidanceCallout>
+          </GuidanceSection>
+        </>
+      }
+    >
+      {isLoading || !recordState.data ? (
+        <div className="space-y-3">
+          <Skeleton className="h-11 w-full rounded-xl" />
+          <div className="grid grid-cols-2 gap-3">
+            <Skeleton className="h-11 w-full rounded-xl" />
+            <Skeleton className="h-11 w-full rounded-xl" />
           </div>
-        ) : (
-          <TimetableForm
-            onSubmit={handleUpdate}
-            onCancel={() => navigate(-1)}
-            classOptions={classOptions}
-            teacherOptions={teacherOptions}
-            subjectOptions={subjectOptions}
-            isLoading={isLoading}
-            initialValues={recordState.data}
-          />
-        )}
-      </Card>
-    </div>
+          <Skeleton className="h-24 w-full rounded-xl" />
+        </div>
+      ) : (
+        <TimetableForm
+          onSubmit={handleUpdate}
+          onCancel={() => navigate(-1)}
+          classOptions={classOptions}
+          teacherOptions={teacherOptions}
+          subjectOptions={subjectOptions}
+          initialValues={recordState.data}
+          isLoading={isLoading}
+        />
+      )}
+    </EntityCreateLayout>
   );
 }

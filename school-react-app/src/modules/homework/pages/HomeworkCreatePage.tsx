@@ -1,8 +1,13 @@
 /**
- * Homework create page rebuilt on the Academic Year design system.
+ * /admin/homework/create — Homework assignment creation page.
  *
- * Reuses the existing HomeworkForm component (which fetches its own
- * subjects-by-class) and just provides the AY-style chrome around it.
+ * Root causes of the previous broken state:
+ *   1. Raw fetch() without Authorization header → 401 → empty dropdowns
+ *   2. Wrong subject endpoint (/api/school/subjects/class/{id} ignores classId)
+ *   3. section_id vs section field name mismatch
+ *
+ * Fix: use serviceRequest() for all API calls (attaches JWT + academic
+ * year header automatically), use correct endpoints, fix field names.
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -18,6 +23,7 @@ import {
 import { HomeworkForm } from "../components/HomeworkForm";
 import { showToast } from "@/utils/toast";
 import { bindRefresh, publish } from "@/services/data-bus";
+import { serviceRequest } from "@/services/service-client";
 
 interface HomeworkCreatePageProps {
   role: "ADMIN" | "TEACHER";
@@ -42,37 +48,34 @@ export function HomeworkCreatePage({ role }: HomeworkCreatePageProps) {
     setLoading(true);
     try {
       const isTeacher = role === "TEACHER";
-      const endpoints = [
-        fetch(isTeacher ? "/api/school/my-classes" : "/api/classes", {
-          credentials: "include",
-        }),
-        fetch("/api/school/subjects", { credentials: "include" }),
-        ...(role === "ADMIN"
-          ? [fetch("/api/teachers", { credentials: "include" })]
-          : []),
-      ];
 
-      const responses = await Promise.all(endpoints);
-      const jsonData = await Promise.all(responses.map((r) => r.json()));
+      // Use serviceRequest which attaches JWT + academic-year header.
+      // Raw fetch() was the root cause of empty dropdowns — it didn't
+      // send the Authorization header so the backend returned 401.
+      const [classesRes, subjectsRes, teachersRes] = await Promise.all([
+        serviceRequest<any>(isTeacher ? "/api/school/my-classes" : "/api/classes"),
+        serviceRequest<any>("/api/subjects"),
+        role === "ADMIN"
+          ? serviceRequest<any>("/api/teachers")
+          : Promise.resolve({ ok: true, data: [] } as any),
+      ]);
 
-      const extractArray = (res: any, key?: string) => {
-        if (!res) return [];
-        if (Array.isArray(res)) return res;
-        if (Array.isArray(res.data)) return res.data;
-        if (key && Array.isArray(res.data?.[key])) return res.data[key];
-        if (key && Array.isArray(res[key])) return res[key];
+      const extractArray = (res: any): any[] => {
+        if (!res.ok) return [];
+        const d = res.data;
+        if (Array.isArray(d)) return d;
+        if (d && Array.isArray(d.data)) return d.data;
+        if (d && Array.isArray(d.items)) return d.items;
         return [];
       };
 
       setFormData({
-        classes: isTeacher
-          ? extractArray(jsonData[0], "classes")
-          : extractArray(jsonData[0]),
-        subjects: extractArray(jsonData[1]),
-        teachers: extractArray(jsonData[2]),
+        classes: extractArray(classesRes),
+        subjects: extractArray(subjectsRes),
+        teachers: extractArray(teachersRes),
       });
     } catch (error) {
-      console.error(error);
+      console.error("[HomeworkCreatePage] Failed to load data:", error);
       showToast("Failed to load required data", "error");
     } finally {
       setLoading(false);
@@ -81,7 +84,6 @@ export function HomeworkCreatePage({ role }: HomeworkCreatePageProps) {
 
   useEffect(() => {
     fetchData();
-    // Refresh dependencies when classes/teachers/subjects change anywhere.
     const offC = bindRefresh("classes", fetchData);
     const offT = bindRefresh("teachers", fetchData);
     const offS = bindRefresh("subjects", fetchData);
@@ -95,24 +97,22 @@ export function HomeworkCreatePage({ role }: HomeworkCreatePageProps) {
   const handleSubmit = async (data: any) => {
     setSubmitting(true);
     try {
-      const res = await fetch("/api/homework", {
+      // Use serviceRequest (not raw fetch) so JWT is attached.
+      const result = await serviceRequest<any>("/api/homework", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify(data),
       });
 
-      const result = await res.json();
-      if (res.ok && result.success) {
+      if (result.ok) {
         showToast("Homework assigned successfully", "success");
         publish("homework");
         navigate(role === "ADMIN" ? "/admin/homework" : "/teacher/homework");
       } else {
-        showToast(result.error?.message || "Failed to assign homework", "error");
+        showToast(result.error?.message || result.message || "Failed to assign homework", "error");
       }
-    } catch (err) {
-      console.error(err);
-      showToast("An error occurred", "error");
+    } catch (err: any) {
+      console.error("[HomeworkCreatePage] Submit error:", err);
+      showToast(err.message || "An error occurred", "error");
     } finally {
       setSubmitting(false);
     }
@@ -155,13 +155,13 @@ export function HomeworkCreatePage({ role }: HomeworkCreatePageProps) {
       }
     >
       {loading ? (
-        <div className="space-y-6">
-          <Skeleton className="h-12 w-full rounded-2xl" />
+        <div className="space-y-4">
+          <Skeleton className="h-11 w-full rounded-xl" />
           <div className="grid grid-cols-2 gap-4">
-            <Skeleton className="h-12 w-full rounded-2xl" />
-            <Skeleton className="h-12 w-full rounded-2xl" />
+            <Skeleton className="h-11 w-full rounded-xl" />
+            <Skeleton className="h-11 w-full rounded-xl" />
           </div>
-          <Skeleton className="h-40 w-full rounded-2xl" />
+          <Skeleton className="h-32 w-full rounded-xl" />
         </div>
       ) : (
         <HomeworkForm

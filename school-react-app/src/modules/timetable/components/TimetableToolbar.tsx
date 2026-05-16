@@ -1,150 +1,241 @@
-import { useMemo, useState } from "react";
+/**
+ * Compact, scalable toolbar for /admin/timetable.
+ *
+ * Why this rebuild:
+ *   The previous toolbar used 28-style rounded-3xl-plus chrome and a
+ *   fixed-width brand block, which broke on tablets and grew oversized
+ *   when the school had dozens of classes.
+ *
+ * Design contract — matches the rest of the platform:
+ *   - bg-white / border-slate-200 / ring-1 ring-slate-900/5 / rounded-xl
+ *   - 9x9 blue-600 icon square
+ *   - text-[11px] uppercase eyebrow, text-[13px] page title
+ *   - Compact searchable popover for the class selector — supports
+ *     hundreds of classes via virtualization-friendly window slicing
+ *     (cap 250 visible at a time).
+ */
 
-interface TimetableToolbarProps {
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+
+interface ClassOption {
+  id: string;
+  label: string;
+  section?: string;
+}
+
+interface Props {
   classId: string;
   onClassChange: (id: string) => void;
-  classOptions: { id: string; label: string }[];
+  classOptions: ClassOption[];
   onNewEntry: () => void;
-  selectedClass?: any;
   conflictsCount: number;
   isCompact: boolean;
   onCompactToggle: () => void;
+  canCreate?: boolean;
 }
 
-export function TimetableToolbar({ 
-  classId, 
-  onClassChange, 
-  classOptions, 
-  onNewEntry, 
-  selectedClass,
+const VISIBLE_CAP = 250;
+
+export function TimetableToolbar({
+  classId,
+  onClassChange,
+  classOptions,
+  onNewEntry,
   conflictsCount,
   isCompact,
-  onCompactToggle
-}: TimetableToolbarProps) {
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  onCompactToggle,
+  canCreate = true,
+}: Props) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const popoverRef = useRef<HTMLDivElement>(null);
 
-  const filteredOptions = useMemo(() => {
-    return classOptions.filter(opt => 
-      opt.label.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [classOptions, searchTerm]);
+  // Close on outside click + ESC
+  useEffect(() => {
+    if (!open) return;
+    function onClick(e: MouseEvent) {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
-  const activeClass = classOptions.find(opt => opt.id === classId);
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return classOptions.slice(0, VISIBLE_CAP);
+    return classOptions
+      .filter((o) => o.label.toLowerCase().includes(q))
+      .slice(0, VISIBLE_CAP);
+  }, [classOptions, search]);
+
+  const active = classOptions.find((o) => o.id === classId);
 
   return (
-    <div className="flex flex-col gap-2 bg-white/80 backdrop-blur-3xl p-3 rounded-[2.5rem] border border-slate-200/60 shadow-[0_20px_50px_rgba(0,0,0,0.05)] sticky top-6 z-50 transition-all duration-500 hover:shadow-[0_30px_70px_rgba(0,0,0,0.08)]">
-      <div className="flex items-center justify-between gap-4">
-        {/* Left Side: Brand & Class Selector */}
-        <div className="flex items-center gap-6">
-          <div className="flex h-12 w-12 items-center justify-center rounded-[1.25rem] bg-blue-600 text-white shadow-xl shadow-blue-600/20 shrink-0 relative group">
-             <span className="material-symbols-outlined text-[22px] group-hover:rotate-12 transition-transform">calendar_month</span>
-             <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-blue-600 border-2 border-white animate-pulse" />
-          </div>
-          
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <h1 className="text-sm font-black text-slate-900 uppercase tracking-tighter">Timetable</h1>
-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-50 border border-blue-100">
-                <div className="h-1 w-1 rounded-full bg-blue-600 animate-pulse" />
-                <span className="text-[8px] font-black text-blue-600 uppercase tracking-widest">Live Sync</span>
-              </div>
-            </div>
-            
-            <div className="relative group mt-1">
-              <div 
-                onClick={() => setIsSearchOpen(!isSearchOpen)}
-                className="flex items-center gap-2.5 px-0 py-0 transition-all cursor-pointer min-w-[200px]"
-              >
-                <p className="text-[13px] font-black text-slate-400 uppercase tracking-tight group-hover/btn:text-blue-600 transition-colors">
-                  {activeClass ? activeClass.label : "All Institutional Classes"}
-                </p>
-                <span className="material-symbols-outlined text-slate-300 text-base group-hover:text-blue-600 transition-colors">expand_circle_down</span>
-              </div>
+    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 px-4 py-3 shadow-[0_4px_18px_rgb(0,0,0,0.03)]">
+      {/* Left — brand + class selector */}
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white shrink-0 shadow-sm shadow-blue-600/15">
+          <span className="material-symbols-outlined text-lg">calendar_month</span>
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-bold text-slate-400 normal-case truncate">
+            Schedule · {classOptions.length} {classOptions.length === 1 ? "class" : "classes"}
+          </p>
+          <div className="relative mt-0.5" ref={popoverRef}>
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              className="inline-flex items-center gap-1.5 text-[13px] font-bold text-slate-900 tracking-tight hover:text-blue-600 transition-colors max-w-full"
+              aria-haspopup="listbox"
+              aria-expanded={open}
+            >
+              <span className="truncate max-w-[220px] md:max-w-[320px]">
+                {active ? active.label : "All classes"}
+              </span>
+              <span className="material-symbols-outlined text-base text-slate-400">
+                {open ? "expand_less" : "expand_more"}
+              </span>
+            </button>
 
-              {isSearchOpen && (
-                <div className="absolute top-full left-0 mt-4 w-[280px] bg-white rounded-3xl border border-slate-200 shadow-[0_30px_100px_rgba(0,0,0,0.15)] z-[100] overflow-hidden animate-in fade-in zoom-in-95 duration-300">
-                  <div className="p-3 bg-slate-50/50 border-b border-slate-100">
-                    <div className="flex items-center gap-3 px-4 py-2 bg-white rounded-xl border border-slate-200 focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-50 transition-all">
-                      <span className="material-symbols-outlined text-slate-400 text-sm">search</span>
-                      <input 
-                        autoFocus
-                        type="text" 
-                        placeholder="Search class..." 
-                        className="bg-transparent border-none p-0 text-[11px] font-black focus:ring-0 w-full placeholder:text-slate-300"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div className="max-h-[300px] overflow-y-auto p-2 custom-scrollbar">
-                    {filteredOptions.length > 0 ? (
-                      filteredOptions.map(opt => (
-                        <button
-                          key={opt.id}
-                          onClick={() => {
-                            onClassChange(opt.id);
-                            setIsSearchOpen(false);
-                            setSearchTerm("");
-                          }}
-                          className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-left transition-all mb-1 last:mb-0 ${classId === opt.id ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-slate-50 text-slate-600'}`}
-                        >
-                          <span className="font-black normal-case tracking-tight text-[11px]">{opt.label}</span>
-                          {classId === opt.id && <span className="material-symbols-outlined text-sm">check_circle</span>}
-                        </button>
-                      ))
-                    ) : (
-                      <div className="p-8 text-center">
-                        <span className="material-symbols-outlined text-slate-200 text-3xl mb-2">search_off</span>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No Matches</p>
-                      </div>
+            {open && (
+              <div
+                className="absolute left-0 mt-2 w-[300px] bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 shadow-[0_20px_50px_rgb(0,0,0,0.08)] z-40 overflow-hidden"
+                role="listbox"
+              >
+                <div className="p-2 border-b border-slate-100">
+                  <div className="flex items-center gap-2 px-2.5 py-1.5 bg-slate-50 rounded-lg border border-slate-200 focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-600/10 transition-all">
+                    <span className="material-symbols-outlined text-slate-400 text-base">
+                      search
+                    </span>
+                    <input
+                      autoFocus
+                      type="text"
+                      placeholder="Search class…"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="flex-1 bg-transparent border-none outline-none p-0 text-[12px] font-medium placeholder:text-slate-400"
+                    />
+                    {search && (
+                      <button
+                        type="button"
+                        onClick={() => setSearch("")}
+                        className="text-slate-400 hover:text-slate-600"
+                      >
+                        <span className="material-symbols-outlined text-sm">close</span>
+                      </button>
                     )}
                   </div>
                 </div>
-              )}
-            </div>
+                <ul className="max-h-[300px] overflow-y-auto py-1">
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClassChange("");
+                        setOpen(false);
+                        setSearch("");
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 text-left transition-colors ${
+                        !classId ? "bg-blue-50 text-blue-700" : "hover:bg-slate-50 text-slate-700"
+                      }`}
+                    >
+                      <span className="text-[12px] font-bold">All classes</span>
+                      {!classId && (
+                        <span className="material-symbols-outlined text-base text-blue-600">check</span>
+                      )}
+                    </button>
+                  </li>
+                  {filtered.length === 0 ? (
+                    <li className="px-3 py-6 text-center text-[11px] font-bold text-slate-400 normal-case">
+                      No matches
+                    </li>
+                  ) : (
+                    filtered.map((opt) => (
+                      <li key={opt.id}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onClassChange(opt.id);
+                            setOpen(false);
+                            setSearch("");
+                          }}
+                          className={`w-full flex items-center justify-between px-3 py-2 text-left transition-colors ${
+                            classId === opt.id
+                              ? "bg-blue-50 text-blue-700"
+                              : "hover:bg-slate-50 text-slate-700"
+                          }`}
+                        >
+                          <span className="text-[12px] font-bold truncate">{opt.label}</span>
+                          {classId === opt.id && (
+                            <span className="material-symbols-outlined text-base text-blue-600">check</span>
+                          )}
+                        </button>
+                      </li>
+                    ))
+                  )}
+                  {classOptions.length > VISIBLE_CAP && search === "" && (
+                    <li className="px-3 py-2 text-[10px] font-bold text-slate-400 normal-case border-t border-slate-100">
+                      Showing first {VISIBLE_CAP}. Type to search.
+                    </li>
+                  )}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
+      </div>
 
-        {/* Right Side Actions */}
-        <div className="flex items-center gap-4">
-           {conflictsCount > 0 && (
-             <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-red-50 border border-red-100 animate-bounce">
-                <span className="material-symbols-outlined text-red-500 text-[16px] font-black">warning</span>
-                <span className="text-[10px] font-black text-red-600 uppercase tracking-tighter">
-                  {conflictsCount} Critical Conflicts
-                </span>
-             </div>
-           )}
+      {/* Right — actions */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {conflictsCount > 0 && (
+          <Link
+            to={`#conflicts`}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200 text-[10px] font-bold text-rose-600"
+            title="Scheduling conflicts detected"
+          >
+            <span className="material-symbols-outlined text-base">warning</span>
+            {conflictsCount} {conflictsCount === 1 ? "conflict" : "conflicts"}
+          </Link>
+        )}
 
-           <div className="flex items-center bg-slate-50 p-1.5 rounded-2xl border border-slate-200/60">
-              <button 
-                onClick={onCompactToggle}
-                className={`h-9 w-9 flex items-center justify-center rounded-[0.75rem] transition-all ${isCompact ? 'bg-white text-blue-600 shadow-sm border border-slate-100' : 'text-blue-600/40 hover:text-blue-600'}`}
-                title="Toggle Compact View"
-              >
-                <span className="material-symbols-outlined text-[20px] font-black">{isCompact ? 'compress' : 'expand'}</span>
-              </button>
-              <div className="w-px h-5 bg-blue-100 mx-1.5" />
-              <button 
-                className="h-9 w-9 flex items-center justify-center text-blue-600/40 hover:text-blue-600 transition-all"
-                title="Print Timetable"
-              >
-                <span className="material-symbols-outlined text-[20px] font-black">print</span>
-              </button>
-           </div>
-
-           <button
-              onClick={onNewEntry}
-              className="h-12 px-6 bg-blue-600 text-white rounded-[1.25rem] hover:bg-blue-700 transition-all shadow-[0_10px_30px_rgba(37,99,235,0.3)] active:scale-95 flex items-center gap-3 group"
-           >
-              <div className="h-6 w-6 rounded-lg bg-white/20 flex items-center justify-center group-hover:rotate-90 transition-transform duration-500">
-                <span className="material-symbols-outlined text-[18px] font-black text-white">add</span>
-              </div>
-              <span className="text-[10px] font-black uppercase tracking-[0.1em]">Create Record</span>
-           </button>
+        <div className="inline-flex items-center bg-slate-50 rounded-lg border border-slate-200 p-0.5">
+          <button
+            type="button"
+            onClick={onCompactToggle}
+            className={`h-8 px-2.5 rounded-md flex items-center gap-1 text-[11px] font-bold transition-colors ${
+              isCompact
+                ? "bg-white text-blue-600 shadow-sm"
+                : "text-slate-500 hover:text-slate-900"
+            }`}
+            title="Toggle compact view"
+          >
+            <span className="material-symbols-outlined text-base">
+              {isCompact ? "expand" : "compress"}
+            </span>
+            {isCompact ? "Spacious" : "Compact"}
+          </button>
         </div>
+
+        {canCreate && (
+          <button
+            type="button"
+            onClick={onNewEntry}
+            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-blue-600 text-white text-[12px] font-bold shadow-sm shadow-blue-600/15 hover:bg-blue-700 transition-colors active:scale-[0.98]"
+          >
+            <span className="material-symbols-outlined text-base">add</span>
+            New period
+          </button>
+        )}
       </div>
     </div>
   );

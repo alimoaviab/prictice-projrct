@@ -256,7 +256,46 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		audit.Write(h.Store, ctx, audit.Input{
 			Action: "create", EntityType: "behavior", EntityID: row.ID, After: row,
 		})
-		return h.hydrate([]*store.Behavior{row})[0], nil
+		// Build response inline (we hold the write lock, so we cannot call
+		// hydrate which would try to acquire a read lock — that deadlocks).
+		studentName := stu.FirstName + " " + stu.LastName
+		className := ""
+		for _, c := range h.Store.Classes {
+			if c.ID == row.ClassID {
+				className = c.Name
+				break
+			}
+		}
+		teacherName := ""
+		for _, t := range h.Store.Teachers {
+			if t.ID == row.TeacherID {
+				teacherName = t.FirstName + " " + t.LastName
+				break
+			}
+		}
+		return map[string]any{
+			"_id":             row.ID,
+			"id":              row.ID,
+			"school_id":       row.SchoolID,
+			"student_id":      row.StudentID,
+			"student_name":    studentName,
+			"class_id":        row.ClassID,
+			"class_name":      className,
+			"teacher_id":      row.TeacherID,
+			"teacher_name":    teacherName,
+			"category":        row.Category,
+			"incident_type":   row.IncidentType,
+			"description":     row.Description,
+			"severity":        row.Severity,
+			"action_taken":    row.ActionTaken,
+			"status":          row.Status,
+			"warning_count":   row.WarningCount,
+			"parent_notified": row.ParentNotified,
+			"notes":           row.Notes,
+			"attachments":     row.Attachments,
+			"created_at":      row.CreatedAt,
+			"updated_at":      row.UpdatedAt,
+		}, nil
 	}))
 }
 

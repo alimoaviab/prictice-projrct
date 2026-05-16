@@ -1,62 +1,77 @@
-import { TimetableFormInput, TimetableRecord, DayOfWeek } from "../types/timetable.types";
-
-const DAY_TO_NUMBER: Record<string, number> = {
-    "Monday": 1,
-    "Tuesday": 2,
-    "Wednesday": 3,
-    "Thursday": 4,
-    "Friday": 5,
-    "Saturday": 6,
-    "Sunday": 7
-};
+import { TimetableFormInput, TimetableRecord } from "../types/timetable.types";
 
 function timeToMinutes(time: string): number {
-    const [hours, minutes] = time.split(':').map(Number);
-    return hours * 60 + minutes;
+  if (!time) return -1;
+  const [hours, minutes] = time.split(":").map(Number);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return -1;
+  return hours * 60 + minutes;
 }
 
+export type ConflictKind = "teacher" | "room" | "class";
+
+export interface ClientConflict {
+  type: ConflictKind;
+  record: TimetableRecord;
+}
+
+/**
+ * Detects scheduling conflicts on the client for an inline preview.
+ * The server is authoritative — a CONFLICT response from the API will
+ * be surfaced regardless. This is purely for the form's "conflict
+ * before save" badge.
+ */
 export function findTimetableConflicts(
-    records: TimetableRecord[],
-    input: TimetableFormInput | TimetableRecord,
-    excludedRecordId?: string
-): { type: 'teacher' | 'room' | 'class'; record: TimetableRecord }[] {
-    const conflicts: { type: 'teacher' | 'room' | 'class'; record: TimetableRecord }[] = [];
-    
-    const inputDay = typeof input.day_of_week === 'string' 
-        ? DAY_TO_NUMBER[input.day_of_week as DayOfWeek] 
-        : input.day_of_week;
-        
-    const inputStart = timeToMinutes(input.start_time);
-    const inputEnd = timeToMinutes(input.end_time);
+  records: TimetableRecord[],
+  input: TimetableFormInput | TimetableRecord,
+  excludedRecordId?: string
+): ClientConflict[] {
+  const conflicts: ClientConflict[] = [];
+  const inputDay = Number(input.day_of_week);
+  const inputStart = timeToMinutes(input.start_time);
+  const inputEnd = timeToMinutes(input.end_time);
+  if (inputStart < 0 || inputEnd <= inputStart) return conflicts;
 
-    for (const record of records) {
-        if (excludedRecordId && record._id === excludedRecordId) continue;
-        if ('_id' in input && record._id === input._id) continue;
+  for (const record of records) {
+    if (excludedRecordId && record._id === excludedRecordId) continue;
+    if ("_id" in input && record._id === (input as TimetableRecord)._id) continue;
+    if (Number(record.day_of_week) !== inputDay) continue;
 
-        // Check if on the same day
-        if (record.day_of_week !== inputDay) continue;
+    const recordStart = timeToMinutes(record.start_time);
+    const recordEnd = timeToMinutes(record.end_time);
+    if (recordStart < 0 || recordEnd <= recordStart) continue;
 
-        // Check for time overlap
-        const recordStart = timeToMinutes(record.start_time);
-        const recordEnd = timeToMinutes(record.end_time);
+    const overlap = inputStart < recordEnd && inputEnd > recordStart;
+    if (!overlap) continue;
 
-        const hasOverlap = (inputStart < recordEnd && inputEnd > recordStart);
-
-        if (hasOverlap) {
-            // Teacher Conflict
-            if (record.teacher_id === input.teacher_id) {
-                conflicts.push({ type: 'teacher', record });
-            }
-            // Room Conflict
-            if (record.room && input.room && record.room === input.room) {
-                conflicts.push({ type: 'room', record });
-            }
-            // Class Conflict (same class, different subject at same time)
-            if (record.class_id === input.class_id) {
-                conflicts.push({ type: 'class', record });
-            }
-        }
+    if (record.teacher_id && record.teacher_id === input.teacher_id) {
+      conflicts.push({ type: "teacher", record });
     }
+    if (record.room && input.room && record.room === input.room) {
+      conflicts.push({ type: "room", record });
+    }
+    if (record.class_id === input.class_id) {
+      conflicts.push({ type: "class", record });
+    }
+  }
+  return conflicts;
+}
 
-    return conflicts;
+/**
+ * "Cell status" for a record: current / completed / upcoming.
+ * Free cells are computed by absence of a record on (day, period).
+ */
+export function periodStatus(
+  rec: TimetableRecord,
+  now: Date = new Date()
+): "current" | "completed" | "upcoming" {
+  const todayISO = now.getDay() === 0 ? 7 : now.getDay();
+  if (Number(rec.day_of_week) !== todayISO) return "upcoming";
+
+  const start = timeToMinutes(rec.start_time);
+  const end = timeToMinutes(rec.end_time);
+  const cur = now.getHours() * 60 + now.getMinutes();
+
+  if (cur >= start && cur < end) return "current";
+  if (cur >= end) return "completed";
+  return "upcoming";
 }

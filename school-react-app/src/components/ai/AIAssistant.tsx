@@ -3,8 +3,28 @@ import { Send, Bot, X, RefreshCcw, User, Maximize2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useNavigate } from "react-router-dom";
 
+const HISTORY_KEY = "edubot_sidebar_history";
+
+type AssistantMessage = { role: "user" | "ai" | "tool"; content: string; buttons?: any[] };
+
+function loadSavedMessages(): AssistantMessage[] {
+  if (typeof window === "undefined") {
+    return [];
+  }
+  try {
+    const saved = localStorage.getItem(HISTORY_KEY);
+    if (!saved) {
+      return [];
+    }
+    const parsed = JSON.parse(saved);
+    return Array.isArray(parsed) ? parsed.slice(-50) : [];
+  } catch {
+    return [];
+  }
+}
+
 export function AIAssistant({ onClose }: { onClose: () => void }) {
-  const [messages, setMessages] = useState<{ role: "user" | "ai" | "tool"; content: string }[]>([]);
+  const [messages, setMessages] = useState<AssistantMessage[]>(() => loadSavedMessages());
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [threadId, setThreadId] = useState<string | null>(null);
@@ -14,6 +34,15 @@ export function AIAssistant({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     endOfMessagesRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    if (messages.length > 0) {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(messages.slice(-50)));
+    }
   }, [messages]);
 
   const handleSend = async (message: string) => {
@@ -47,8 +76,9 @@ export function AIAssistant({ onClose }: { onClose: () => void }) {
 
       const data = await response.json();
       const reply = data?.data?.reply || data?.reply || "I couldn't process that request.";
+      const buttons = data?.data?.quick_buttons || data?.quick_buttons || [];
       
-      setMessages(prev => [...prev, { role: "ai", content: reply }]);
+      setMessages(prev => [...prev, { role: "ai", content: reply, buttons }]);
 
       if (data?.data?.tool_used) {
         // Optionally show tool info
@@ -68,7 +98,7 @@ export function AIAssistant({ onClose }: { onClose: () => void }) {
   ];
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex h-[600px] w-[400px] flex-col rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden">
+    <div className="fixed inset-4 z-50 flex h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl md:inset-6 md:h-[calc(100vh-3rem)] md:w-[calc(100vw-3rem)]">
       {/* Header */}
       <div className="flex items-center justify-between bg-blue-600 px-4 py-3 text-white">
         <div className="flex items-center gap-2">
@@ -135,11 +165,31 @@ export function AIAssistant({ onClose }: { onClose: () => void }) {
                 }`}
               >
                 {msg.role === "ai" ? (
-                  <div className="prose prose-sm prose-slate max-w-none">
+                  <div className="prose prose-sm prose-slate max-w-none max-h-72 overflow-y-auto break-words pr-1">
                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                     {msg.buttons && msg.buttons.length > 0 && (
+                       <div className="mt-4 flex flex-wrap gap-2">
+                         {msg.buttons.map((btn, bIdx) => (
+                           <button
+                             key={bIdx}
+                             onClick={() => {
+                               if (btn.action_type === "navigate" || btn.action_type === "create" || btn.action_type === "edit") {
+                                 navigate(btn.route);
+                               } else {
+                                 handleSend(btn.label);
+                               }
+                             }}
+                             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold bg-blue-50 border border-blue-100 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all shadow-sm"
+                           >
+                             {btn.icon && <span className="material-symbols-outlined text-[14px]">{btn.icon}</span>}
+                             {btn.label}
+                           </button>
+                         ))}
+                       </div>
+                     )}
                   </div>
                 ) : (
-                  msg.content
+                  <div className="max-h-72 overflow-y-auto whitespace-pre-wrap break-words pr-1">{msg.content}</div>
                 )}
               </div>
               {msg.role === "user" && (
@@ -189,7 +239,7 @@ export function AIAssistant({ onClose }: { onClose: () => void }) {
         </div>
         <div className="text-center mt-2 flex justify-between items-center px-1">
            <span className="text-[9px] text-slate-400 font-medium">Enterprise AI Copilot</span>
-           <button onClick={() => { setMessages([]); setThreadId(null); }} className="text-[10px] text-slate-400 hover:text-slate-600 flex items-center gap-1">
+           <button onClick={() => { setMessages([]); setThreadId(null); localStorage.removeItem(HISTORY_KEY); }} className="text-[10px] text-slate-400 hover:text-slate-600 flex items-center gap-1">
              <RefreshCcw size={10} /> Reset
            </button>
         </div>

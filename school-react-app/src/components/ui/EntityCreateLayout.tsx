@@ -2,8 +2,8 @@
  * Shared "create-entity" page chrome.
  *
  * Locked to the Academic Year reference standard:
- *   max-w-7xl mx-auto py-4 px-4 sm:px-6
- *   lg:flex-row gap-8 items-start mt-24
+ *   max-w-7xl mx-auto py-2 px-4 sm:px-6
+ *   lg:flex-row gap-8 items-start
  *   left form 68% / right guidance panel 32%
  *   rounded-[24px] cards with shadow-[0_8px_30px_rgb(0,0,0,0.04)]
  *   ring-1 ring-slate-900/5
@@ -12,6 +12,10 @@
  * Modules use this so the entire platform feels like one design system,
  * matching the Academic Year create page in spacing, typography rhythm,
  * card sizing, border radius, and right-side guidance panel structure.
+ *
+ * Top spacing is intentionally tight: parent SchoolShell pages now skip
+ * their giant H1 block when no title is passed, so the in-card eyebrow
+ * + form starts directly under the navbar with minimal gap.
  */
 
 import { ReactNode } from "react";
@@ -60,8 +64,8 @@ export function EntityCreateLayout({
   eyebrowDot = "emerald",
 }: EntityCreateLayoutProps) {
   return (
-    <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="max-w-7xl mx-auto py-2 px-4 sm:px-6">
+      <div className="mb-3 flex items-center justify-between">
         <Link
           to={backTo}
           className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-400 normal-case  hover:text-slate-900 transition-all group"
@@ -77,7 +81,7 @@ export function EntityCreateLayout({
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8 items-start mt-24">
+      <div className="flex flex-col lg:flex-row gap-8 items-start">
         <div className="w-full lg:w-[68%]">
           <div className="bg-white border border-slate-200 rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden ring-1 ring-slate-900/5 transition-all">
             <div className="relative px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-slate-50/50 to-white">

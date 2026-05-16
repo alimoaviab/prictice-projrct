@@ -16,15 +16,22 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-type Handler struct{ Store *store.MemStore }
+type Handler struct {
+	Store   *store.MemStore
+	Persist func(table string, doc any)
+}
 
-func New(s *store.MemStore) *Handler { return &Handler{Store: s} }
+func New(s *store.MemStore, save func(string, any)) *Handler {
+	if save == nil {
+		save = func(string, any) {}
+	}
+	return &Handler{Store: s, Persist: save}
+}
 
 func (h *Handler) hydrate(rows []*store.Homework) []map[string]any {
 	classByID := map[string]*store.Class{}
 	teacherByID := map[string]*store.Teacher{}
 	subjectByID := map[string]*store.Subject{}
-	h.Store.RLock()
 	for _, c := range h.Store.Classes {
 		classByID[c.ID] = c
 	}
@@ -34,7 +41,6 @@ func (h *Handler) hydrate(rows []*store.Homework) []map[string]any {
 	for _, s := range h.Store.Subjects {
 		subjectByID[s.ID] = s
 	}
-	h.Store.RUnlock()
 
 	out := make([]map[string]any, 0, len(rows))
 	for _, hw := range rows {
@@ -176,12 +182,12 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 
 			rows = append(rows, hw)
 		}
-		h.Store.RUnlock()
 		sort.SliceStable(rows, func(i, j int) bool {
 			return rows[i].DueAt.Before(rows[j].DueAt)
 		})
 
 		hydrated := h.hydrate(rows)
+		h.Store.RUnlock()
 		page := api.ParsePagination(q)
 		if !page.Enabled {
 			return hydrated, nil
@@ -267,7 +273,6 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		dueAt = time.Date(dueAt.Year(), dueAt.Month(), dueAt.Day(), 23, 59, 0, 0, time.UTC)
 
 		h.Store.Lock()
-		defer h.Store.Unlock()
 		
 		var class *store.Class
 		for _, c := range h.Store.Classes {
@@ -277,12 +282,12 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if class == nil {
+			h.Store.Unlock()
 			return nil, api.NewControlledError("NOT_FOUND", "Selected class was not found.", 404, nil)
 		}
 
 		teacherID := body.TeacherID
 		if teacherID == "" && ctx.Role == "teacher" {
-			// Resolve teacher profile for current user
 			for _, t := range h.Store.Teachers {
 				if t.SchoolID == ctx.SchoolID && t.UserID == ctx.UserID {
 					teacherID = t.ID
@@ -317,7 +322,6 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		submissions := make([]store.HomeworkSubmission, 0)
 		for _, s := range h.Store.Students {
 			if s.SchoolID == ctx.SchoolID && s.ClassID == body.ClassID && s.Status == "active" {
-				// Optional section filter
 				if body.Section != "" && s.Section != body.Section {
 					continue
 				}
@@ -355,10 +359,27 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		}
 		h.Store.Homework = append(h.Store.Homework, newRow)
 
+		// Release the lock BEFORE persistence and audit — these are
+		// non-blocking queue operations but holding the global write lock
+		// while they run blocks ALL other HTTP handlers (reads included),
+		// causing the entire app to freeze.
+		h.Store.Unlock()
+
+		// Persist subject first (FK dependency), then homework.
+		if subject != nil && body.SubjectID != "" && subject.ID != body.SubjectID {
+			h.Persist("subjects", subject)
+		}
+		h.Persist("homework", newRow)
+
 		audit.Write(h.Store, ctx, audit.Input{
 			Action: "create", EntityType: "homework", EntityID: newRow.ID, After: newRow,
 		})
-		return h.hydrate([]*store.Homework{newRow})[0], nil
+
+		// Take a brief read lock for hydration (joining class/teacher/subject names).
+		h.Store.RLock()
+		result := h.hydrate([]*store.Homework{newRow})[0]
+		h.Store.RUnlock()
+		return result, nil
 	}))
 }
 
@@ -412,6 +433,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 					_ = json.Unmarshal(v, &hw.Visibility)
 				}
 				hw.UpdatedAt = time.Now()
+				h.Persist("homework", hw)
 				audit.Write(h.Store, ctx, audit.Input{
 					Action: "update", EntityType: "homework", EntityID: id, Before: before, After: *hw,
 				})

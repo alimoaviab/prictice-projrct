@@ -1,6 +1,7 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Button, Input, Select } from "@/components/ui";
-import { StudentFormInput } from "../types/student.types";
+import { serviceRequest } from "@/services/service-client";
+import { StudentFormInput, StudentRow } from "../types/student.types";
 
 const initialForm: StudentFormInput = {
   admission_no: "",
@@ -24,19 +25,71 @@ type ExistingParent = {
   phone: string;
 };
 
-export function StudentForm({
-  onCreate,
-  classOptions
-}: {
+export type StudentFormMode = "create" | "edit";
+
+interface StudentFormProps {
+  onSubmit: (input: StudentFormInput) => Promise<unknown>;
+  classOptions: Array<{ id: string; label: string }>;
+  /** Existing student data — when present, the form runs in edit mode. */
+  initialValues?: StudentRow | null;
+  mode?: StudentFormMode;
+  onCancel?: () => void;
+}
+
+/** Backwards-compatible alias for legacy `onCreate` callers. */
+interface LegacyStudentFormProps {
   onCreate: (input: StudentFormInput) => Promise<unknown>;
   classOptions: Array<{ id: string; label: string }>;
-}) {
-  const [form, setForm] = useState<StudentFormInput>(initialForm);
+}
+
+function mapInitialValues(s: StudentRow): StudentFormInput {
+  return {
+    admission_no: s.admission_no ?? "",
+    first_name: s.first_name ?? "",
+    last_name: s.last_name ?? "",
+    class_id: s.class_id ?? "",
+    section: s.section ?? "",
+    email: s.guardian?.email ?? "",
+    password: "",
+    guardian: {
+      name: s.guardian?.name ?? "",
+      phone: s.guardian?.phone ?? "",
+      email: s.guardian?.email ?? "",
+    },
+  };
+}
+
+export function StudentForm(props: StudentFormProps | LegacyStudentFormProps) {
+  // Support both new `onSubmit` and legacy `onCreate` prop name.
+  const onSubmit =
+    "onSubmit" in props ? props.onSubmit : (props as LegacyStudentFormProps).onCreate;
+  const classOptions = props.classOptions;
+  const initialValues =
+    "initialValues" in props ? props.initialValues ?? null : null;
+  const mode: StudentFormMode =
+    "mode" in props && props.mode
+      ? props.mode
+      : initialValues
+        ? "edit"
+        : "create";
+  const onCancel = "onCancel" in props ? props.onCancel : undefined;
+
+  const [form, setForm] = useState<StudentFormInput>(() =>
+    initialValues ? mapInitialValues(initialValues) : initialForm
+  );
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [existingParent, setExistingParent] = useState<ExistingParent | null>(null);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [linkMode, setLinkMode] = useState(false);
+
+  // Re-populate when initialValues arrives late (edit page finishes
+  // loading the student record after first paint).
+  useEffect(() => {
+    if (initialValues) {
+      setForm(mapInitialValues(initialValues));
+    }
+  }, [initialValues]);
 
   function validate() {
     const newErrors: Record<string, string> = {};
@@ -46,9 +99,24 @@ export function StudentForm({
     if (!form.section?.trim()) newErrors.section = "Section is required";
     if (!form.guardian.name?.trim()) newErrors.guardian_name = "Guardian name is required";
     if (!form.guardian.phone?.trim()) newErrors.guardian_phone = "Guardian phone is required";
-    if (!form.email?.trim()) newErrors.email = "Parent email is required";
-    if (!form.password || form.password.length < 8) newErrors.password = "Password must be at least 8 characters";
-    
+
+    // Parent email + password are required only on create. In edit mode the
+    // guardian/parent account already exists; password is optional and only
+    // overwrites the current one when filled.
+    if (mode === "create") {
+      if (!form.email?.trim()) newErrors.email = "Parent email is required";
+      // Password is not required when we're linking the new student to
+      // an existing parent account — the parent already has credentials.
+      if (!linkMode && (!form.password || form.password.length < 8)) {
+        newErrors.password = "Password must be at least 8 characters";
+      }
+    } else {
+      // Edit mode: validate password only if user typed something.
+      if (form.password && form.password.length > 0 && form.password.length < 8) {
+        newErrors.password = "Password must be at least 8 characters";
+      }
+    }
+
     if (existingParent && (existingParent as any).role_mismatch) {
       newErrors.email = "This email is already in use by another role";
     }
@@ -59,24 +127,28 @@ export function StudentForm({
 
   async function checkParentEmail(email: string) {
     if (!email || !email.includes('@')) return;
-    
+
     setCheckingEmail(true);
     try {
-      const response = await fetch('/api/parents/check-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email })
+      // Route through serviceRequest so the bearer token + cookie are
+      // attached. Plain `fetch` here lost the auth header and the
+      // backend then rejected the call as UNAUTHENTICATED, which is
+      // why the inline "link to existing parent" card never appeared.
+      const result = await serviceRequest<{
+        exists: boolean;
+        parent?: ExistingParent & { children_count?: number; existing_role?: string; role_mismatch?: boolean };
+      }>("/api/parents/check-email", {
+        method: "POST",
+        body: JSON.stringify({ email }),
       });
-      
-      const result = await response.json();
-      if (result.ok && result.data?.exists) {
+      if (result.ok && result.data?.exists && result.data.parent) {
         setExistingParent(result.data.parent);
       } else {
         setExistingParent(null);
       }
     } catch (error) {
-      console.error('Failed to check parent email:', error);
+      // eslint-disable-next-line no-console
+      console.error("Failed to check parent email:", error);
       setExistingParent(null);
     } finally {
       setCheckingEmail(false);
@@ -88,8 +160,37 @@ export function StudentForm({
     if (!validate()) return;
     setSaving(true);
     try {
-      const result = (await onCreate(form)) as { ok?: boolean } | undefined;
-      if (result?.ok !== false) {
+      // Normalize admission_no: empty/whitespace → omit it entirely so the
+      // backend triggers its auto-generate path. Don't send the empty string
+      // (the backend's unique-index check then trips false-positive duplicate
+      // errors for any school with an existing blank-admission row).
+      const trimmedAdm = (form.admission_no || "").trim();
+      const trimmedPwd = (form.password || "").trim();
+      // When the admin chose to link to an existing parent we send the
+      // parent's user id so the backend skips both the duplicate-email
+      // check and the parent provisioning step. Password is also
+      // omitted because the existing parent already has one.
+      const linkParentUserID =
+        linkMode && existingParent && (existingParent as any)._id
+          ? String((existingParent as any)._id)
+          : "";
+      const payload: StudentFormInput & {
+        link_parent_user_id?: string;
+      } = {
+        ...form,
+        admission_no: trimmedAdm.length > 0 ? trimmedAdm : undefined,
+        // In edit mode, omit password if blank so the backend doesn't
+        // overwrite the existing parent's password hash. In create
+        // mode with linkMode on, also omit so we don't reset the
+        // linked parent's password.
+        password:
+          (mode === "edit" && trimmedPwd.length === 0) || linkParentUserID
+            ? (undefined as unknown as string)
+            : form.password,
+        link_parent_user_id: linkParentUserID || undefined,
+      };
+      const result = (await onSubmit(payload)) as { ok?: boolean } | undefined;
+      if (mode === "create" && result?.ok !== false) {
         setForm(initialForm);
       }
     } finally {
@@ -115,8 +216,12 @@ export function StudentForm({
             label="Admission Number"
             placeholder="Leave blank to auto-generate"
             value={form.admission_no || ""}
-            onChange={(e) => setForm({ ...form, admission_no: e.target.value || undefined })}
+            onChange={(e) => {
+              const v = e.target.value;
+              setForm({ ...form, admission_no: v.trim() === "" ? undefined : v });
+            }}
             error={errors.admission_no}
+            helperText="Leave blank — the system assigns a unique STU-XXXXX code automatically."
             className="h-11 rounded-xl bg-white"
           />
 
@@ -252,13 +357,26 @@ export function StudentForm({
           />
 
           <Input
-            label="Temporary Password"
-            placeholder="Minimum 8 characters"
+            label={
+              mode === "edit"
+                ? "New Password (leave blank to keep current)"
+                : linkMode
+                  ? "Password (managed by linked parent)"
+                  : "Temporary Password"
+            }
+            placeholder={
+              mode === "edit"
+                ? "Leave blank to keep current password"
+                : linkMode
+                  ? "Linked — password not needed"
+                  : "Minimum 8 characters"
+            }
             type="password"
-            value={form.password || ""}
+            value={linkMode ? "" : form.password || ""}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             error={errors.password}
-            required
+            required={mode === "create" && !linkMode}
+            disabled={linkMode}
             className="h-11 rounded-xl bg-white border-indigo-100 focus:border-indigo-400"
           />
 
@@ -377,17 +495,23 @@ export function StudentForm({
         <Button
           variant="secondary"
           type="button"
-          onClick={() => window.history.back()}
+          onClick={() => (onCancel ? onCancel() : window.history.back())}
           className="h-10 px-8 rounded-xl text-[10px] font-bold normal-case "
         >
           Cancel
         </Button>
         <Button
           type="submit"
-          disabled={saving || (existingParent && (existingParent as any).role_mismatch)}
+          disabled={saving || (existingParent && (existingParent as any).role_mismatch) || false}
           className="h-10 px-12 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-600/20 text-[10px] font-bold normal-case  transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {saving ? "Enrolling..." : "Enroll Student"}
+          {saving
+            ? mode === "edit"
+              ? "Updating..."
+              : "Enrolling..."
+            : mode === "edit"
+              ? "Update Student"
+              : "Enroll Student"}
         </Button>
       </div>
     </form>

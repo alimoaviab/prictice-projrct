@@ -42,12 +42,54 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 
 		h.Store.RLock()
 		rows := make([]*store.Class, 0)
+
+		// For teachers, resolve their teacher profile and filter to only
+		// classes they're assigned to (as class teacher, or via teacher_classes
+		// junction, or via timetable periods).
+		var teacherProfile *store.Teacher
+		if ctx.Role == "teacher" {
+			for _, t := range h.Store.Teachers {
+				if t.SchoolID == ctx.SchoolID && t.UserID == ctx.UserID {
+					teacherProfile = t
+					break
+				}
+			}
+		}
+
+		// Build a set of class IDs the teacher is assigned to.
+		teacherClassIDs := map[string]bool{}
+		if teacherProfile != nil {
+			// From teacher.ClassIDs (junction table)
+			for _, cid := range teacherProfile.ClassIDs {
+				teacherClassIDs[cid] = true
+			}
+			// From timetable sessions where this teacher has periods
+			for _, tt := range h.Store.Timetables {
+				if tt.SchoolID != ctx.SchoolID {
+					continue
+				}
+				for _, sess := range tt.Sessions {
+					if sess.TeacherID == teacherProfile.ID {
+						teacherClassIDs[tt.ClassID] = true
+						break
+					}
+				}
+			}
+		}
+
 		for _, c := range h.Store.Classes {
 			if c.SchoolID != ctx.SchoolID {
 				continue
 			}
 			if yearID != "" && c.AcademicYearID != yearID {
 				continue
+			}
+			// Teacher scoping: only show assigned classes.
+			if teacherProfile != nil {
+				isAssigned := teacherClassIDs[c.ID] || c.ClassTeacherID == teacherProfile.ID
+				if !isAssigned {
+					continue
+				}
 			}
 			rows = append(rows, c)
 		}
@@ -120,6 +162,31 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 			if c.ID == id && c.SchoolID == ctx.SchoolID {
 				h.enrichClass(c)
 				return c, nil
+			}
+		}
+		return nil, api.NewControlledError("NOT_FOUND", "Class not found.", 404, nil)
+	}))
+}
+
+// GetSubjects implements GET /api/classes/:id/subjects.
+func (h *Handler) GetSubjects(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	id := chi.URLParam(r, "id")
+	api.WriteResult(w, api.ServiceTry(func() (any, error) {
+		if err := auth.AssertPermission(ctx, "classes", auth.ActionView); err != nil {
+			return nil, err
+		}
+		h.Store.RLock()
+		defer h.Store.RUnlock()
+		for _, c := range h.Store.Classes {
+			if c.ID == id && c.SchoolID == ctx.SchoolID {
+				// We return the same shape as expected by the frontend: { subjects: [...] }
+				// If c.Subjects is nil, we return an empty slice to avoid null in JSON.
+				subs := c.Subjects
+				if subs == nil {
+					subs = []store.ClassSubject{}
+				}
+				return map[string]any{"subjects": subs}, nil
 			}
 		}
 		return nil, api.NewControlledError("NOT_FOUND", "Class not found.", 404, nil)

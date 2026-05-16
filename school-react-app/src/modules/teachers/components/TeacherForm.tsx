@@ -1,6 +1,20 @@
-import { FormEvent, useState } from "react";
+/**
+ * Shared teacher form. Used by both:
+ *   - /admin/teachers/create  →  mode="create"
+ *   - /admin/teachers/edit/:id → mode="edit" (with initialValues)
+ *
+ * In edit mode:
+ *   - The password field is optional (leave blank to keep current)
+ *   - The submit button reads "Update Teacher"
+ *   - Validation skips the required-password check
+ *
+ * The visual layout, sections, spacing, and inputs are identical between
+ * modes — the edit page is "the create page, but pre-filled".
+ */
+
+import { FormEvent, useEffect, useState } from "react";
 import { Button, Input, Select } from "@/components/ui";
-import { TeacherFormInput } from "../types/teacher.types";
+import { TeacherFormInput, TeacherRow } from "../types/teacher.types";
 
 const initialForm: TeacherFormInput = {
     first_name: "",
@@ -13,18 +27,55 @@ const initialForm: TeacherFormInput = {
     password: ""
 };
 
-export function TeacherForm({
-    onCreate,
-    classOptions,
-    showFooter = true
-}: {
+export type TeacherFormMode = "create" | "edit";
+
+interface TeacherFormProps {
+    /** Submit handler. Should return a promise; if it resolves with `{ ok: false }` the form keeps its values. */
+    onSubmit: (input: TeacherFormInput) => Promise<unknown>;
+    classOptions: Array<{ id: string; label: string }>;
+    /** Existing teacher record. When provided, the form runs in edit mode. */
+    initialValues?: TeacherRow | null;
+    mode?: TeacherFormMode;
+    showFooter?: boolean;
+    /** Optional cancel-button (rendered next to the submit) — used by the edit page. */
+    onCancel?: () => void;
+    saving?: boolean;
+}
+
+/** Backwards-compatible alias retained for older call sites. */
+export interface LegacyTeacherFormProps {
     onCreate: (input: TeacherFormInput) => Promise<unknown>;
     classOptions: Array<{ id: string; label: string }>;
     showFooter?: boolean;
-}) {
-    const [form, setForm] = useState<TeacherFormInput>(initialForm);
-    const [saving, setSaving] = useState(false);
+}
+
+export function TeacherForm({
+    onSubmit,
+    classOptions,
+    initialValues,
+    mode,
+    showFooter = true,
+    onCancel,
+    saving: savingProp,
+}: TeacherFormProps) {
+    const formMode: TeacherFormMode =
+        mode ?? (initialValues ? "edit" : "create");
+
+    const [form, setForm] = useState<TeacherFormInput>(() =>
+        initialValues ? mapInitialValues(initialValues) : initialForm
+    );
+    const [internalSaving, setInternalSaving] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
+
+    // Sync incoming initialValues — important when the edit page finishes
+    // loading the teacher record after first paint.
+    useEffect(() => {
+        if (initialValues) {
+            setForm(mapInitialValues(initialValues));
+        }
+    }, [initialValues]);
+
+    const saving = savingProp ?? internalSaving;
 
     function validate() {
         const newErrors: Record<string, string> = {};
@@ -35,7 +86,9 @@ export function TeacherForm({
             newErrors.email = "Invalid email address";
         }
         if (!form.phone.trim()) newErrors.phone = "Phone number is required";
-        if (!form.password.trim()) newErrors.password = "Password is required";
+        if (formMode === "create" && !form.password.trim()) {
+            newErrors.password = "Password is required";
+        }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     }
@@ -43,21 +96,30 @@ export function TeacherForm({
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         if (!validate()) return;
-        setSaving(true);
+        if (savingProp === undefined) setInternalSaving(true);
         try {
-            const result = (await onCreate(form)) as { ok?: boolean } | undefined;
-            if (result?.ok !== false) {
+            // In edit mode, drop the password field if it wasn't changed
+            // so the backend doesn't overwrite the existing hash.
+            const payload =
+                formMode === "edit" && !form.password.trim()
+                    ? { ...form, password: undefined as unknown as string }
+                    : form;
+
+            const result = (await onSubmit(payload)) as { ok?: boolean } | undefined;
+            if (formMode === "create" && result?.ok !== false) {
                 setForm(initialForm);
             }
         } finally {
-            setSaving(false);
+            if (savingProp === undefined) setInternalSaving(false);
         }
     }
 
     return (
-        <form id="teacher-form-quick" onSubmit={handleSubmit} className="space-y-8">
+        <form id="teacher-form" onSubmit={handleSubmit} className="space-y-8">
             <div className="space-y-6">
-                <h3 className="text-sm font-semibold text-gray-400 normal-case ">Account Credentials</h3>
+                <h3 className="text-sm font-semibold text-gray-400 normal-case ">
+                    Account Credentials
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Input
                         label="Email Address"
@@ -70,19 +132,29 @@ export function TeacherForm({
                     />
 
                     <Input
-                        label="Login Password"
-                        placeholder="Set password"
+                        label={
+                            formMode === "edit"
+                                ? "New Password (leave blank to keep current)"
+                                : "Login Password"
+                        }
+                        placeholder={
+                            formMode === "edit"
+                                ? "Leave blank to keep current password"
+                                : "Set password"
+                        }
                         type="password"
                         value={form.password}
                         onChange={(e) => setForm({ ...form, password: e.target.value })}
                         error={errors.password}
-                        required
+                        required={formMode === "create"}
                     />
                 </div>
             </div>
 
             <div className="space-y-6 border-t border-border pt-6">
-                <h3 className="text-sm font-semibold text-gray-400 normal-case ">Personal Details</h3>
+                <h3 className="text-sm font-semibold text-gray-400 normal-case ">
+                    Personal Details
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Input
                         label="First Name"
@@ -122,7 +194,9 @@ export function TeacherForm({
             </div>
 
             <div className="space-y-6 border-t border-border pt-6">
-                <h3 className="text-sm font-semibold text-gray-400 normal-case ">Professional Assignment</h3>
+                <h3 className="text-sm font-semibold text-gray-400 normal-case ">
+                    Professional Assignment
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Input
                         label="Subject Specialization"
@@ -150,23 +224,67 @@ export function TeacherForm({
                         }
                         options={[
                             { label: "Unassigned", value: "" },
-                            ...classOptions.map(o => ({ label: o.label, value: o.id }))
+                            ...classOptions.map((o) => ({ label: o.label, value: o.id })),
                         ]}
                     />
                 </div>
             </div>
 
             {showFooter && (
-                <div className="flex justify-end pt-4 border-t border-border">
+                <div className="flex justify-end gap-3 pt-4 border-t border-border">
+                    {onCancel && (
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={onCancel}
+                            disabled={saving}
+                            className="min-w-[120px]"
+                        >
+                            Cancel
+                        </Button>
+                    )}
                     <Button
                         type="submit"
                         disabled={saving}
                         className="w-full md:w-auto min-w-[150px]"
                     >
-                        {saving ? "Creating..." : "Add Teacher"}
+                        {saving
+                            ? formMode === "edit"
+                                ? "Updating..."
+                                : "Creating..."
+                            : formMode === "edit"
+                                ? "Update Teacher"
+                                : "Add Teacher"}
                     </Button>
                 </div>
             )}
         </form>
+    );
+}
+
+function mapInitialValues(t: TeacherRow): TeacherFormInput {
+    return {
+        first_name: t.first_name ?? "",
+        last_name: t.last_name ?? "",
+        email: t.email ?? "",
+        phone: t.phone ?? "",
+        qualification: t.qualification ?? "",
+        subjects: t.subjects ?? [],
+        class_ids: t.class_ids ?? [],
+        password: "",
+    };
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   Backwards-compatible wrapper for any older call site that still uses
+   `<TeacherForm onCreate={...} />`. New code should use `onSubmit`.
+   ───────────────────────────────────────────────────────────────────── */
+export function LegacyTeacherForm(props: LegacyTeacherFormProps) {
+    return (
+        <TeacherForm
+            onSubmit={props.onCreate}
+            classOptions={props.classOptions}
+            showFooter={props.showFooter}
+        />
     );
 }

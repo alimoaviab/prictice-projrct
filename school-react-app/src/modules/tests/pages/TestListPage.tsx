@@ -1,6 +1,30 @@
+/**
+ * /admin/tests — Test management dashboard.
+ *
+ * Layout (matches timetable/homework dashboard pattern):
+ *   1. 4-up summary stat tiles
+ *   2. Compact toolbar (search, status filter, view toggle, CTA)
+ *   3. 3-column responsive card grid (desktop) with compact cards
+ *   4. Proper empty state
+ *
+ * Grid: 3 cols desktop, 2 cols tablet, 1 col mobile.
+ * Cards: compact, status-bar left edge, tight spacing, clear hierarchy.
+ */
+
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import { DataTable, DataTableColumn, RowAction, Badge, DataState, Skeleton, TableSkeleton, StatCardGrid } from "@/components/ui";
+import {
+  DataTable,
+  DataTableColumn,
+  RowAction,
+  Badge,
+  DataState,
+  Skeleton,
+  StatCardGrid,
+  EntityCard,
+  EntityGrid,
+  EntityGridSkeleton,
+} from "@/components/ui";
 import { useTests } from "../hooks/useTests";
 import { TestRow } from "../types/test.types";
 import { useQueryParams } from "@/hooks/useQueryParams";
@@ -12,12 +36,14 @@ export function TestListPage({ filters }: { filters?: { class_id?: string; subje
   const marksBase = isTeacher ? "/teacher/tests/marks" : "/admin/tests/marks";
   const testsCreatePath = isTeacher ? "/teacher/tests/create" : "/admin/tests/create";
   const { currentParams, updateQuery, withQuery } = useQueryParams();
-  
-  const today = new Date().toISOString().split('T')[0];
-  
+
   const [searchQuery, setSearchQuery] = useState(currentParams.get("search") || "");
-  const [statusFilter, setStatusFilter] = useState<"all" | "scheduled" | "completed" | "cancelled">((currentParams.get("status") as any) || "all");
-  const [viewMode, setViewMode] = useState<"grid" | "list">((currentParams.get("view") as any) || "grid");
+  const [statusFilter, setStatusFilter] = useState<"all" | "scheduled" | "completed" | "cancelled">(
+    (currentParams.get("status") as any) || "all"
+  );
+  const [viewMode, setViewMode] = useState<"grid" | "list">(
+    (currentParams.get("view") as any) || "grid"
+  );
 
   const { state } = useTests(filters);
 
@@ -35,39 +61,57 @@ export function TestListPage({ filters }: { filters?: { class_id?: string; subje
         q.length === 0 ||
         row.title.toLowerCase().includes(q) ||
         row.subject.toLowerCase().includes(q);
-      const statusMatch = statusFilter === "all" ? true : row.status === statusFilter;
-      
+      const statusMatch = statusFilter === "all" || row.status === statusFilter;
       return queryMatch && statusMatch;
     });
   }, [state.data, searchQuery, statusFilter]);
 
+  const stats = useMemo(() => {
+    const all = state.data || [];
+    return {
+      total: all.length,
+      scheduled: all.filter((e) => e.status === "scheduled").length,
+      completed: all.filter((e) => e.status === "completed").length,
+      pending: all.filter((e) => e.status === "scheduled" && (e.results_count || 0) === 0).length,
+    };
+  }, [state.data]);
+
+  // ─── Table columns (list view) ────────────────────────────────────────
+
   const columns: DataTableColumn<TestRow>[] = [
     {
       key: "title",
-      label: "Testination",
+      label: "Test",
       render: (row) => (
         <div className="flex flex-col">
-          <span className="text-[12px] font-black text-slate-900 leading-none mb-1 tracking-tight">{row.title}</span>
-          <span className="text-[10px] text-blue-600 font-bold uppercase tracking-widest">{row.subject}</span>
+          <span className="text-[12px] font-bold text-slate-900 leading-tight">{row.title}</span>
+          <span className="text-[10px] text-blue-600 font-bold mt-0.5">{row.subject}</span>
         </div>
       ),
       sortable: true,
     },
     {
       key: "date",
-      label: "Schedule",
+      label: "Date",
       render: (row) => (
-        <div className="flex items-center gap-2">
-           <span className="material-symbols-outlined text-slate-300 text-[16px]">calendar_today</span>
-           <span className="text-[11px] font-bold text-slate-600">{row.starts_at}</span>
-        </div>
+        <span className="text-[11px] font-medium text-slate-600">{row.starts_at}</span>
+      ),
+    },
+    {
+      key: "max_marks",
+      label: "Marks",
+      render: (row) => (
+        <span className="text-[11px] font-bold text-slate-700">{row.max_marks}</span>
       ),
     },
     {
       key: "status",
-      label: "Current Status",
+      label: "Status",
       render: (row) => (
-        <Badge variant={row.status === "completed" ? "success" : row.status === "scheduled" ? "primary" : "gray"} className="text-[9px] font-bold normal-case px-2 py-0.5">
+        <Badge
+          variant={row.status === "completed" ? "success" : row.status === "scheduled" ? "primary" : "gray"}
+          className="text-[9px] font-bold px-2 py-0.5"
+        >
           {row.status}
         </Badge>
       ),
@@ -87,136 +131,261 @@ export function TestListPage({ filters }: { filters?: { class_id?: string; subje
         },
       ];
 
+  // ─── Loading ───────────────────────────────────────────────────────────
+
   if (state.status === "loading" || state.status === "idle") {
-    return <TableSkeleton />;
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-[72px] w-full rounded-xl" />
+          ))}
+        </div>
+        <Skeleton className="h-[52px] w-full rounded-xl" />
+        <EntityGridSkeleton count={6} />
+      </div>
+    );
   }
 
   if (state.status === "error") {
-    return <DataState variant="error" title="Synchronization Error" message={state.error} />;
+    return <DataState variant="error" title="Failed to load tests" message={state.error} />;
   }
 
+  // ─── Render ────────────────────────────────────────────────────────────
+
   return (
-    <div className="space-y-6">
-      {/* Stats Section */}
+    <div className="space-y-5">
+      {/* ─── Stats ────────────────────────────────────────────────────── */}
       <StatCardGrid
         items={[
-          { label: "Total Tests", value: state.data?.length || 0, icon: "quiz", accent: "blue" },
-          { label: "Upcoming", value: state.data?.filter(e => e.status === "scheduled").length || 0, icon: "event", accent: "purple" },
-          { label: "Completed", value: state.data?.filter(e => e.status === "completed").length || 0, icon: "task_alt", accent: "emerald" },
-          { label: "Results Pending", value: state.data?.filter(e => e.status === "scheduled" && (e.results_count || 0) === 0).length || 0, icon: "pending", accent: "amber" },
+          { label: "Total Tests", value: stats.total, icon: "quiz", accent: "blue" },
+          { label: "Upcoming", value: stats.scheduled, icon: "event", accent: "purple" },
+          { label: "Completed", value: stats.completed, icon: "task_alt", accent: "emerald" },
+          { label: "Results Pending", value: stats.pending, icon: "pending", accent: "amber" },
         ]}
       />
 
-      {/* Toolbar */}
-      <div className="bg-white p-2 rounded-xl border border-slate-100 shadow-sm flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-1 items-center gap-3">
-           <div className="relative flex-1 max-w-xs">
-              <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
-              <input
-                value={searchQuery}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setSearchQuery(v);
-                  updateQuery({ search: v });
+      {/* ─── Toolbar ──────────────────────────────────────────────────── */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 px-3 py-2.5 shadow-[0_4px_18px_rgb(0,0,0,0.03)]">
+        <div className="flex flex-1 items-center gap-2">
+          {/* Search */}
+          <div className="relative flex-1 max-w-[220px]">
+            <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-base text-slate-400">
+              search
+            </span>
+            <input
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                updateQuery({ search: e.target.value });
+              }}
+              placeholder="Search tests…"
+              className="h-8 w-full rounded-lg border border-slate-200 bg-white pl-8 pr-3 text-[12px] font-medium text-slate-700 outline-none transition-all focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 placeholder:text-slate-400"
+            />
+          </div>
+
+          {/* Status filter */}
+          <div className="inline-flex items-center bg-slate-50 rounded-lg border border-slate-200 p-0.5">
+            {(["all", "scheduled", "completed"] as const).map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => {
+                  setStatusFilter(s);
+                  updateQuery({ status: s });
                 }}
-                placeholder="Filter tests by title or subject..."
-                className="h-9 w-full rounded-lg border border-slate-50 bg-slate-50/50 pl-9 pr-3 text-[11px] font-bold text-slate-700 outline-none focus:bg-white focus:border-blue-400"
-              />
-           </div>
+                className={`h-7 px-2.5 rounded-md text-[11px] font-bold transition-colors capitalize ${
+                  statusFilter === s
+                    ? "bg-white text-blue-600 shadow-sm"
+                    : "text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
 
-           <select
-             value={statusFilter}
-             onChange={(e) => {
-               const v = e.target.value as any;
-               setStatusFilter(v);
-               updateQuery({ status: v });
-             }}
-             className="h-9 rounded-lg border border-slate-50 bg-slate-50/50 px-3 text-[10px] font-black uppercase text-slate-600 outline-none cursor-pointer hover:bg-slate-50 transition-colors"
-           >
-             <option value="all">All Status</option>
-             <option value="scheduled">Scheduled</option>
-             <option value="completed">Completed</option>
-             <option value="cancelled">Cancelled</option>
-           </select>
-
-           {(searchQuery || statusFilter !== "all") && (
-             <button
-               type="button"
-               onClick={() => {
-                 setSearchQuery("");
-                 setStatusFilter("all");
-                 updateQuery({ search: "", status: "all" });
-               }}
-               className="h-9 inline-flex items-center gap-1.5 px-3 rounded-lg border border-slate-200 bg-white text-[10px] font-bold text-slate-500 hover:text-slate-900 hover:border-slate-300 transition-colors"
-               title="Clear filters"
-             >
-               <span className="material-symbols-outlined text-[16px]">filter_alt_off</span>
-               Reset
-             </button>
-           )}
+          {(searchQuery || statusFilter !== "all") && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery("");
+                setStatusFilter("all");
+                updateQuery({ search: "", status: "all" });
+              }}
+              className="h-7 inline-flex items-center gap-1 px-2 rounded-md text-[11px] font-bold text-slate-400 hover:text-slate-700 transition-colors"
+              title="Clear filters"
+            >
+              <span className="material-symbols-outlined text-sm">close</span>
+              Clear
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
-           <div className="h-9 flex items-center bg-slate-100 p-1 rounded-lg">
-             <button onClick={() => { setViewMode("grid"); updateQuery({ view: "grid" }); }} className={`h-7 px-3 rounded-md text-[10px] font-black uppercase tracking-tight transition-all ${viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-400"}`}>Grid</button>
-             <button onClick={() => { setViewMode("list"); updateQuery({ view: "list" }); }} className={`h-7 px-3 rounded-md text-[10px] font-black uppercase tracking-tight transition-all ${viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-400"}`}>List</button>
-           </div>
+          {/* View toggle */}
+          <div className="inline-flex items-center bg-slate-50 rounded-lg border border-slate-200 p-0.5">
+            <button
+              type="button"
+              onClick={() => { setViewMode("grid"); updateQuery({ view: "grid" }); }}
+              className={`h-7 px-2 rounded-md flex items-center gap-1 text-[11px] font-bold transition-colors ${
+                viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500"
+              }`}
+            >
+              <span className="material-symbols-outlined text-sm">grid_view</span>
+              Grid
+            </button>
+            <button
+              type="button"
+              onClick={() => { setViewMode("list"); updateQuery({ view: "list" }); }}
+              className={`h-7 px-2 rounded-md flex items-center gap-1 text-[11px] font-bold transition-colors ${
+                viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500"
+              }`}
+            >
+              <span className="material-symbols-outlined text-sm">view_list</span>
+              List
+            </button>
+          </div>
 
-           {!isParent && (
-             <Link
-               to={withQuery(testsCreatePath)}
-               className="h-9 inline-flex items-center gap-2 px-4 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm active:scale-95 transition-all"
-             >
-               <span className="material-symbols-outlined text-[16px]">add</span>
-               New Test
-             </Link>
-           )}
+          {/* Create CTA */}
+          {!isParent && (
+            <Link
+              to={withQuery(testsCreatePath)}
+              className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg bg-blue-600 text-white text-[12px] font-bold shadow-sm shadow-blue-600/15 hover:bg-blue-700 transition-colors active:scale-[0.98]"
+            >
+              <span className="material-symbols-outlined text-base">add</span>
+              New test
+            </Link>
+          )}
         </div>
       </div>
 
-      {/* Grid / List Content */}
+      {/* ─── Content ──────────────────────────────────────────────────── */}
       {filteredRows.length === 0 ? (
-        <DataState variant="empty" title="No Tests Found" message="No upcoming or past tests found for the selected criteria." />
+        <EmptyState
+          hasFilters={!!searchQuery || statusFilter !== "all"}
+          onClear={() => {
+            setSearchQuery("");
+            setStatusFilter("all");
+            updateQuery({ search: "", status: "all" });
+          }}
+          createPath={isParent ? undefined : withQuery(testsCreatePath)}
+        />
       ) : viewMode === "grid" ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <EntityGrid>
           {filteredRows.map((test) => (
-            <div key={test._id} className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm hover:border-blue-200 transition-all flex flex-col">
-               <div className="flex items-center justify-between mb-4">
-                  <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
-                     <span className="material-symbols-outlined text-[18px]">description</span>
-                  </div>
-                  <Badge variant={test.status === "completed" ? "success" : "primary"} className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5">
-                    {test.status}
-                  </Badge>
-               </div>
-               <h3 className="text-[13px] font-black text-slate-900 mb-0.5 truncate">{test.title}</h3>
-               <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-4">{test.subject}</p>
-
-               <div className="flex items-center justify-between pt-3 border-t border-slate-50">
-                  <div className="flex items-center gap-2">
-                     <span className="material-symbols-outlined text-slate-300 text-[14px]">calendar_today</span>
-                     <span className="text-[10px] font-bold text-slate-400">{test.starts_at}</span>
-                  </div>
-                  <div className="text-[10px] font-black text-slate-900">{test.max_marks} Pts</div>
-               </div>
-
-               {!isParent && (
-                 <Link
-                   to={`${marksBase}?test_id=${encodeURIComponent(test._id)}`}
-                   className="mt-3 inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 active:scale-95 transition-all"
-                 >
-                   <span className="material-symbols-outlined text-[14px]">edit_note</span>
-                   Enter Marks
-                 </Link>
-               )}
-            </div>
+            <TestCard
+              key={test._id}
+              test={test}
+              marksBase={marksBase}
+              isParent={isParent}
+            />
           ))}
-        </div>
+        </EntityGrid>
       ) : (
-        <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
-           <DataTable columns={columns} rows={filteredRows} rowKey={(row) => row._id} rowActions={rowActions} />
+        <div className="bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 shadow-[0_4px_18px_rgb(0,0,0,0.03)] overflow-hidden">
+          <DataTable columns={columns} rows={filteredRows} rowKey={(row) => row._id} rowActions={rowActions} />
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── TestCard — uses universal EntityCard ───────────────────────────────
+
+function TestCard({
+  test,
+  marksBase,
+  isParent,
+}: {
+  test: TestRow;
+  marksBase: string;
+  isParent: boolean;
+}) {
+  const accent =
+    test.status === "completed"
+      ? "emerald"
+      : test.status === "scheduled"
+        ? "blue"
+        : "slate";
+
+  return (
+    <EntityCard
+      icon="description"
+      accent={accent}
+      title={test.title}
+      subtitle={test.subject}
+      status={{ label: test.status, accent }}
+      metrics={[
+        { label: "Date", value: test.starts_at || "—" },
+        { label: "Max Marks", value: `${test.max_marks} pts`, tone: "text-slate-800" },
+      ]}
+      actions={
+        isParent
+          ? []
+          : [
+              {
+                label: "Enter Marks",
+                icon: "edit_note",
+                to: `${marksBase}?test_id=${encodeURIComponent(test._id)}`,
+                accent: "blue",
+                primary: true,
+              },
+            ]
+      }
+    />
+  );
+}
+
+// ─── Empty State ─────────────────────────────────────────────────────────
+
+function EmptyState({
+  hasFilters,
+  onClear,
+  createPath,
+}: {
+  hasFilters: boolean;
+  onClear: () => void;
+  createPath?: string;
+}) {
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 shadow-[0_4px_18px_rgb(0,0,0,0.03)] px-6 py-10 text-center">
+      <div className="flex flex-col items-center justify-center gap-4 max-w-sm mx-auto">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+          <span className="material-symbols-outlined text-2xl">quiz</span>
+        </div>
+        <div className="space-y-1">
+          <h3 className="text-base font-bold text-slate-900 tracking-tight">
+            {hasFilters ? "No tests match your filters" : "No tests scheduled"}
+          </h3>
+          <p className="text-[13px] text-slate-500 font-medium leading-relaxed">
+            {hasFilters
+              ? "Try adjusting your search or status filter."
+              : "Schedule your first test and it will appear here."}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 mt-2">
+          {hasFilters && (
+            <button
+              type="button"
+              onClick={onClear}
+              className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg border border-slate-200 bg-white text-[12px] font-bold text-slate-700 hover:border-blue-300 hover:text-blue-700 transition-colors"
+            >
+              <span className="material-symbols-outlined text-base">filter_alt_off</span>
+              Clear filters
+            </button>
+          )}
+          {createPath && !hasFilters && (
+            <Link
+              to={createPath}
+              className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg bg-blue-600 text-white text-[12px] font-bold shadow-sm shadow-blue-600/15 hover:bg-blue-700 transition-colors active:scale-[0.98]"
+            >
+              <span className="material-symbols-outlined text-base">add</span>
+              Schedule first test
+            </Link>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -46,30 +47,129 @@ type write struct {
 	id     string
 }
 
+// extractSchoolID attempts to extract a SchoolID from known store types.
+func extractSchoolID(doc any) string {
+	if doc == nil {
+		return ""
+	}
+	switch v := doc.(type) {
+	case *store.School:
+		return v.SchoolID
+	case *store.User:
+		return v.SchoolID
+	case *store.AcademicYear:
+		return v.SchoolID
+	case *store.Subject:
+		return v.SchoolID
+	case *store.Class:
+		return v.SchoolID
+	case *store.Teacher:
+		return v.SchoolID
+	case *store.Student:
+		return v.SchoolID
+	case *store.Parent:
+		return v.SchoolID
+	case *store.StudentParent:
+		return v.SchoolID
+	case *store.Attendance:
+		return v.SchoolID
+	case *store.Exam:
+		return v.SchoolID
+	case *store.Result:
+		return v.SchoolID
+	case *store.Homework:
+		return v.SchoolID
+	case *store.Announcement:
+		return v.SchoolID
+	case *store.Behavior:
+		return v.SchoolID
+	case *store.Event:
+		return v.SchoolID
+	case *store.Leave:
+		return v.SchoolID
+	case *store.Timetable:
+		return v.SchoolID
+	case *store.LiveClass:
+		return v.SchoolID
+	case *store.Notification:
+		return v.SchoolID
+	case *store.FeeType:
+		return v.SchoolID
+	case *store.ClassFee:
+		return v.SchoolID
+	case *store.Fee:
+		return v.SchoolID
+	case *store.FeeAdjustment:
+		return v.SchoolID
+	case *store.FeePayment:
+		return v.SchoolID
+	case *store.SchoolSettings:
+		return v.SchoolID
+	case *store.AuditLog:
+		return v.SchoolID
+	default:
+		return ""
+	}
+}
+
 // New connects to the configured database. When `dsn` is empty, the
 // returned Persister is a no-op so the server can fall back to pure
 // in-memory mode (development convenience).
+//
+// Pool configuration:
+//   - MaxConns: 25 — sufficient for a 4-core VPS with SSD
+//   - MinConns: 5  — keep warm connections to avoid cold-start latency
+//   - MaxConnLifetime: 30 min — recycle connections to pick up PG config changes
+//   - MaxConnIdleTime: 5 min — release idle connections back to the OS
+//   - HealthCheckPeriod: 30s — detect broken connections before they're used
 func New(ctx context.Context, dsn string) (*Persister, error) {
 	if strings.TrimSpace(dsn) == "" {
 		log.Println("[persistence] DATABASE_URL is empty — running in pure in-memory mode (no durability).")
 		return &Persister{}, nil
 	}
 
-	pool, err := pgxpool.New(ctx, dsn)
+	poolConfig, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
-		return nil, fmt.Errorf("pgxpool.New: %w", err)
+		return nil, fmt.Errorf("pgxpool.ParseConfig: %w", err)
 	}
+
+	// Connection pool tuning for production workloads.
+	// Formula: MaxConns = (CPU cores × 2) + effective_spindle_count
+	// For 4-core VPS with SSD: (4×2)+1 = 9 minimum, 25 comfortable max.
+	poolConfig.MaxConns = 25
+	poolConfig.MinConns = 5
+	poolConfig.MaxConnLifetime = 30 * time.Minute
+	poolConfig.MaxConnIdleTime = 5 * time.Minute
+	poolConfig.HealthCheckPeriod = 30 * time.Second
+
+	pool, err := pgxpool.NewWithConfig(ctx, poolConfig)
+	if err != nil {
+		return nil, fmt.Errorf("pgxpool.NewWithConfig: %w", err)
+	}
+
 	pingCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	if err := pool.Ping(pingCtx); err != nil {
 		return nil, fmt.Errorf("postgres ping: %w", err)
 	}
-	log.Println("[persistence] connected to PostgreSQL")
+
+	log.Printf("[persistence] connected to PostgreSQL (pool: max=%d, min=%d, lifetime=%s)",
+		poolConfig.MaxConns, poolConfig.MinConns, poolConfig.MaxConnLifetime)
 	return &Persister{pool: pool, flushInterval: 1 * time.Second}, nil
 }
 
 // Available reports whether a PostgreSQL pool is configured.
 func (p *Persister) Available() bool { return p != nil && p.pool != nil }
+
+// Pool returns the underlying pgxpool.Pool for direct queries.
+// Returns nil if PostgreSQL is not configured. Domain handlers that need
+// direct PG access (bypassing MemStore) should check Available() first.
+func (p *Persister) Pool() *pgxpool.Pool {
+	if p == nil {
+		return nil
+	}
+	return p.pool
+}
 
 // Close releases the pool. Safe on nil.
 func (p *Persister) Close() {
@@ -103,6 +203,17 @@ func (p *Persister) Delete(table, id string) {
 	p.mu.Unlock()
 }
 
+// DeleteWithDoc schedules a delete using the provided document so the
+// persistence layer can extract the tenant (`SchoolID`) for RLS.
+func (p *Persister) DeleteWithDoc(table string, doc any) {
+	if p == nil || p.pool == nil {
+		return
+	}
+	p.mu.Lock()
+	p.queue = append(p.queue, write{table: table, doc: doc, delete: true})
+	p.mu.Unlock()
+}
+
 func (p *Persister) drainQueue() []write {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -111,7 +222,29 @@ func (p *Persister) drainQueue() []write {
 	return out
 }
 
+// tableOrder defines the FK-safe insertion order. Parent tables first,
+// child tables after. This prevents FK violations during flush.
+var tableOrder = []string{
+	"schools", "users", "academic_years", "subjects",
+	"teachers", "classes",
+	"students", "parents", "student_parents",
+	"attendance", "exams", "results", "homework", "announcements",
+	"behaviors", "events", "leaves", "timetables", "live_classes",
+	"notifications", "fee_types", "class_fees", "fees",
+	"fee_adjustments", "fee_payments", "school_settings", "audit_logs",
+}
+
+func tableOrderIndex(table string) int {
+	for i, t := range tableOrder {
+		if t == table {
+			return i
+		}
+	}
+	return len(tableOrder) // Unknown tables go last
+}
+
 // flush commits the queued writes inside a single transaction.
+// Writes are sorted by FK dependency order to prevent constraint violations.
 func (p *Persister) flush(ctx context.Context) error {
 	if p == nil || p.pool == nil {
 		return nil
@@ -120,27 +253,92 @@ func (p *Persister) flush(ctx context.Context) error {
 	if len(writes) == 0 {
 		return nil
 	}
+
+	// Sort writes by FK dependency order (parents before children)
+	sort.SliceStable(writes, func(i, j int) bool {
+		oi := tableOrderIndex(writes[i].table)
+		oj := tableOrderIndex(writes[j].table)
+		if oi != oj {
+			return oi < oj
+		}
+		// Deletes after inserts within same table
+		return !writes[i].delete && writes[j].delete
+	})
+
+	// Process each write in its own savepoint so one failure doesn't kill the batch
 	tx, err := p.pool.Begin(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 
+	var succeeded, failed int
 	for _, w := range writes {
-		if w.delete {
-			if err := deleteRow(ctx, tx, w.table, w.id); err != nil {
-				return fmt.Errorf("delete %s/%s: %w", w.table, w.id, err)
-			}
-			continue
+		// Set tenant context (best-effort)
+		if sid := extractSchoolID(w.doc); sid != "" {
+			_, _ = tx.Exec(ctx, "SELECT set_config('app.current_school_id', $1, true)", sid)
 		}
-		if err := upsertRow(ctx, tx, w.table, w.doc); err != nil {
-			// Log the failing document for debugging
-			docJSON, _ := json.Marshal(w.doc)
-			log.Printf("[persistence] upsert %s failed: %v | data: %s", w.table, err, string(docJSON))
-			return fmt.Errorf("upsert %s: %w", w.table, err)
+
+		// Use savepoint so individual failures don't abort the transaction
+		_, _ = tx.Exec(ctx, "SAVEPOINT sp")
+
+		var writeErr error
+		if w.delete {
+			writeErr = deleteRow(ctx, tx, w.table, w.id)
+		} else {
+			writeErr = upsertRow(ctx, tx, w.table, w.doc)
+		}
+
+		if writeErr != nil {
+			// Rollback to savepoint (keeps transaction alive for other writes)
+			_, _ = tx.Exec(ctx, "ROLLBACK TO SAVEPOINT sp")
+			failed++
+
+			// Only re-queue if it's a FK error (ordering issue, will succeed in snapshot).
+			// Don't re-queue unique constraint violations or other permanent errors.
+			if isFKError(writeErr) {
+				p.mu.Lock()
+				p.queue = append(p.queue, w)
+				p.mu.Unlock()
+			}
+
+			// Only log non-FK errors (FK errors are expected and handled by snapshot order)
+			if !isFKError(writeErr) {
+				docJSON, _ := json.Marshal(w.doc)
+				log.Printf("[persistence] upsert %s failed: %v | data: %.200s", w.table, writeErr, string(docJSON))
+			}
+		} else {
+			_, _ = tx.Exec(ctx, "RELEASE SAVEPOINT sp")
+			succeeded++
 		}
 	}
-	return tx.Commit(ctx)
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("flush commit: %w", err)
+	}
+
+	if failed > 0 {
+		log.Printf("[persistence] flush: %d succeeded, %d failed (will retry in snapshot)", succeeded, failed)
+	}
+	return nil
+}
+
+// isFKError checks if an error is a foreign key constraint violation.
+func isFKError(err error) bool {
+	if err == nil {
+		return false
+	}
+	s := err.Error()
+	return strings.Contains(s, "23503") || strings.Contains(s, "foreign key constraint")
+}
+
+// isUniqueError checks if an error is a unique constraint violation.
+func isUniqueError(err error) bool {
+	if err == nil {
+		return false
+	}
+	s := err.Error()
+	return strings.Contains(s, "23505") || strings.Contains(s, "duplicate key")
 }
 
 // StartBackground launches the flush + heartbeat goroutine. Cancel the
@@ -294,17 +492,33 @@ func (p *Persister) FullSnapshot(ctx context.Context, s *store.MemStore) error {
 		return err
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
+
+	var succeeded, failed int
 	for _, w := range plan {
+		// Use savepoint so one failure doesn't abort the entire snapshot
+		_, _ = tx.Exec(ctx, "SAVEPOINT snap_sp")
+
 		if err := upsertRow(ctx, tx, w.table, w.doc); err != nil {
-			// Log the failing document for debugging
-			docJSON, _ := json.Marshal(w.doc)
-			log.Printf("[persistence] snapshot upsert %s failed: %v | data: %s", w.table, err, string(docJSON))
-			return fmt.Errorf("upsert %s: %w", w.table, err)
+			_, _ = tx.Exec(ctx, "ROLLBACK TO SAVEPOINT snap_sp")
+			failed++
+			// Only log non-trivial errors (skip duplicate key which is expected)
+			if !isUniqueError(err) && !isFKError(err) {
+				docJSON, _ := json.Marshal(w.doc)
+				log.Printf("[persistence] snapshot upsert %s failed: %v | data: %.200s", w.table, err, string(docJSON))
+			}
+		} else {
+			_, _ = tx.Exec(ctx, "RELEASE SAVEPOINT snap_sp")
+			succeeded++
 		}
 	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
-	log.Printf("[persistence] full snapshot successful (%d entities)", len(plan))
+	if failed > 0 {
+		log.Printf("[persistence] full snapshot: %d succeeded, %d skipped", succeeded, failed)
+	} else {
+		log.Printf("[persistence] full snapshot successful (%d entities)", succeeded)
+	}
 	return nil
 }

@@ -1,9 +1,10 @@
 import { SchoolShell } from "@/layouts/SchoolShell";
 import { TestCreatePage } from "@/modules/tests/pages/TestCreatePage";
 
+// No giant page title — TestCreatePage owns its header.
 export function AdminTestCreatePage() {
     return (
-        <SchoolShell eyebrow="Academic" title="Schedule Test">
+        <SchoolShell>
             <TestCreatePage />
         </SchoolShell>
     );

@@ -21,7 +21,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/eduplexo/backend-go/internal/cache"
 	"github.com/eduplexo/backend-go/internal/config"
+	"github.com/eduplexo/backend-go/internal/domain/dashboard"
 	"github.com/eduplexo/backend-go/internal/persistence"
 	"github.com/eduplexo/backend-go/internal/server"
 	"github.com/eduplexo/backend-go/internal/store"
@@ -51,6 +53,10 @@ func main() {
 	}
 	defer pg.Close()
 
+	// Initialize Redis cache (graceful — won't crash if Redis is unavailable).
+	rdb := cache.New(cfg.RedisURL)
+	defer rdb.Close()
+
 	if pg.Available() {
 		if err := pg.Load(ctx, s); err != nil {
 			log.Fatalf("[server] persistence load failed: %v", err)
@@ -65,11 +71,31 @@ func main() {
 		pg.StartBackground(ctx, 30*time.Second, func(c context.Context) error {
 			return pg.FullSnapshot(c, s)
 		})
+
+		// Start materialized view refresh goroutine (every 5 minutes).
+		go func() {
+			// Initial refresh on boot
+			if err := dashboard.RefreshMaterializedViews(ctx, pg.Pool()); err != nil {
+				log.Printf("[server] initial matview refresh failed: %v", err)
+			}
+			ticker := time.NewTicker(5 * time.Minute)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-ticker.C:
+					if err := dashboard.RefreshMaterializedViews(ctx, pg.Pool()); err != nil {
+						log.Printf("[server] matview refresh failed: %v", err)
+					}
+				}
+			}
+		}()
 	}
 
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
-		Handler:           server.Router(cfg, s, pg),
+		Handler:           server.Router(cfg, s, pg, rdb),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      30 * time.Second,

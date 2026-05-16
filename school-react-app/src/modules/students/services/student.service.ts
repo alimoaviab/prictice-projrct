@@ -11,6 +11,10 @@ export function listStudents(filters?: { class_id?: string; status?: string; aca
   return serviceRequest<StudentRow[]>(`/api/students${qs}`);
 }
 
+export function getStudent(id: string) {
+  return serviceRequest<StudentRow>(`/api/students/${id}`);
+}
+
 export function createStudent(input: StudentFormInput) {
   return serviceRequest<StudentRow>("/api/students", {
     method: "POST",

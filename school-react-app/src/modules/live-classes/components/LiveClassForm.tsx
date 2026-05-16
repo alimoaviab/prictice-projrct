@@ -199,9 +199,9 @@ export function LiveClassForm({
                <span className="material-symbols-outlined">video_camera_front</span>
             </div>
             <div>
-               <h4 className="text-sm font-bold text-blue-900 normal-case tracking-tight">Google Meet Integration</h4>
+               <h4 className="text-sm font-bold text-blue-900 normal-case tracking-tight">Live Class Session</h4>
                <p className="mt-2 text-xs text-blue-700/70 leading-relaxed font-medium">
-                  Meeting links will be automatically generated and shared with students of the selected class once you save this session.
+                  A unique meeting link will be automatically generated and shared with students of the selected class once you save this session.
                </p>
             </div>
           </div>

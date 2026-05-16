@@ -19,6 +19,10 @@ export function listResults(filters?: { exam_id?: string; student_id?: string })
   return serviceRequest<any>(`${endpoint}${query ? `?${query}` : ""}`);
 }
 
+export function getResult(id: string) {
+  return serviceRequest<ResultRow>(`/api/results/${id}`);
+}
+
 export function saveResult(input: ResultFormInput) {
   return serviceRequest<ResultRow>("/api/results", {
     method: "POST",

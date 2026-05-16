@@ -169,7 +169,7 @@ export function AttendanceListPage({ filters: initialFilters }: { filters?: { cl
       </div>
 
       {/* Toolbar Section - Enhanced Alignment & Structure */}
-      <div className="premium-card p-3 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/90 backdrop-blur-md sticky top-[72px] z-20 border-slate-200/60 shadow-sm rounded-2xl">
+      <div className="premium-card p-3 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/90 backdrop-blur-md border-slate-200/60 shadow-sm rounded-2xl">
         <div className="flex flex-1 flex-wrap items-center gap-3 max-w-5xl">
           <div className="relative min-w-[200px] flex-1">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>

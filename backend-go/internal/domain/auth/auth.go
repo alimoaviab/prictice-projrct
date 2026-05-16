@@ -43,6 +43,9 @@ type loginResponseData struct {
 	Email                string `json:"email"`
 	SchoolID             string `json:"school_id"`
 	ActiveAcademicYearID string `json:"active_academic_year_id,omitempty"`
+	ProfileID            string `json:"profile_id,omitempty"`
+	ClassID              string `json:"class_id,omitempty"`
+	StudentID            string `json:"student_id,omitempty"`
 }
 
 // Login implements POST /api/auth/login. Behaviour mirrors
@@ -171,6 +174,30 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	h.setSessionCookie(w, token)
 
+	// Resolve profile_id for role-specific portals.
+	// Teachers need their teacher._id, students need student._id + class_id.
+	var profileID, classID, studentID string
+	h.Store.RLock()
+	switch user.Role {
+	case "teacher":
+		for _, t := range h.Store.Teachers {
+			if t.SchoolID == user.SchoolID && t.UserID == user.ID {
+				profileID = t.ID
+				break
+			}
+		}
+	case "student":
+		for _, s := range h.Store.Students {
+			if s.SchoolID == user.SchoolID && s.UserID == user.ID {
+				profileID = s.ID
+				studentID = s.ID
+				classID = s.ClassID
+				break
+			}
+		}
+	}
+	h.Store.RUnlock()
+
 	api.WriteJSON(w, http.StatusOK, map[string]any{
 		"ok": true,
 		"data": loginResponseData{
@@ -180,6 +207,9 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 			Email:                user.Email,
 			SchoolID:             user.SchoolID,
 			ActiveAcademicYearID: activeYearID,
+			ProfileID:            profileID,
+			ClassID:              classID,
+			StudentID:            studentID,
 		},
 	})
 }
@@ -244,9 +274,9 @@ func (h *Handler) Signup(w http.ResponseWriter, r *http.Request) {
 
 	h.Store.RLock()
 	for _, u := range h.Store.Users {
-		if u.Email == email {
+		if strings.EqualFold(u.Email, email) {
 			h.Store.RUnlock()
-			api.WriteJSON(w, http.StatusConflict, signupErr("Email already registered"))
+			api.WriteJSON(w, http.StatusConflict, signupErr("This email is already registered in the system."))
 			return
 		}
 	}

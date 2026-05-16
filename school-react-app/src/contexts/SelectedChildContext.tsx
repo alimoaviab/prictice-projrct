@@ -135,12 +135,30 @@ export function SelectedChildProvider({ children: reactChildren }: { children: R
   );
 }
 
+// Default value used when the hook is invoked outside a provider. We
+// previously threw, but several pages (and lazy-mounted dev/HMR
+// scenarios) end up calling the hook before the provider mounts, and
+// crashing the whole tree was the wrong tradeoff. The empty default
+// keeps the UI alive; once the provider mounts, the real values flow.
+const EMPTY_SELECTED_CHILD_CONTEXT: SelectedChildContextType = {
+  children: [],
+  selectedChild: null,
+  selectChild: () => {},
+  loading: false,
+  error: null,
+  refreshChildren: async () => {},
+};
+
 export function useSelectedChild() {
   const context = useContext(SelectedChildContext);
   if (context === undefined) {
-    throw new Error(
-      "useSelectedChild must be used within a SelectedChildProvider"
-    );
+    if (typeof window !== "undefined") {
+      // eslint-disable-next-line no-console
+      console.warn(
+        "[useSelectedChild] called outside SelectedChildProvider — falling back to empty state."
+      );
+    }
+    return EMPTY_SELECTED_CHILD_CONTEXT;
   }
   return context;
 }

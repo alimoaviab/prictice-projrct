@@ -5,6 +5,15 @@ import "./app/globals.css";
 import { router } from "@/routes";
 import { env } from "@/config/env";
 
+// CRITICAL: Handle "Failed to fetch dynamically imported module" errors gracefully.
+// This happens when a new build is deployed and the browser tries to load a stale asset hash.
+window.addEventListener("error", (event) => {
+  if (event.message?.includes("Failed to fetch dynamically imported module") || 
+      event.message?.includes("Importing a module script failed")) {
+    window.location.reload();
+  }
+});
+
 async function startMocksIfEnabled() {
   if (!env.enableMocks) return;
   try {

@@ -23,21 +23,28 @@ type Paginated[T any] struct {
 	Pages int `json:"pages"`
 }
 
-// ParsePagination reads `page` and `limit` from a URL query, applying the
-// same defaults as parsePagination in the Node helper.
+// ParsePagination reads `page` and `limit` (or `per_page`) from a URL
+// query, applying the same defaults as parsePagination in the Node helper.
+// Accepts both `limit` and `per_page` for backward compatibility.
 func ParsePagination(q url.Values) PaginationParams {
 	const defaultLimit = 25
 	const maxLimit = 200
 
 	hasPage := q.Get("page") != ""
-	hasLimit := q.Get("limit") != ""
+	hasLimit := q.Get("limit") != "" || q.Get("per_page") != ""
 	enabled := hasPage || hasLimit
 
 	page, _ := strconv.Atoi(q.Get("page"))
 	if page < 1 {
 		page = 1
 	}
-	limit, _ := strconv.Atoi(q.Get("limit"))
+
+	// Accept both "per_page" and "limit" — per_page takes precedence.
+	limitStr := q.Get("per_page")
+	if limitStr == "" {
+		limitStr = q.Get("limit")
+	}
+	limit, _ := strconv.Atoi(limitStr)
 	if limit < 1 {
 		limit = defaultLimit
 	}

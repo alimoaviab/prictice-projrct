@@ -7,7 +7,7 @@ import { StudentTable } from "../components/StudentTable";
 import { useStudents } from "../hooks/useStudents";
 
 export function StudentsPage() {
-  const { state, addStudent } = useStudents();
+  const { students, isLoading, isError, error, addStudent } = useStudents();
   const { state: classState, run } = useSafeAsync<Array<{ _id: string; name: string }>>();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
@@ -34,9 +34,9 @@ export function StudentsPage() {
   const classOptions = classes.map((item: any) => ({ id: item._id, label: item.name }));
 
   const filteredStudents = useMemo(() => {
-    const rows = state.data ?? [];
+    const rows = students ?? [];
     const q = searchQuery.trim().toLowerCase();
-    return rows.filter((row) => {
+    return rows.filter((row: any) => {
       const queryMatch =
         q.length === 0 ||
         row.admission_no.toLowerCase().includes(q) ||
@@ -47,7 +47,7 @@ export function StudentsPage() {
       const statusMatch = statusFilter === "all" ? true : row.status === statusFilter;
       return queryMatch && statusMatch;
     });
-  }, [state.data, searchQuery, statusFilter]);
+  }, [students, searchQuery, statusFilter]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -69,26 +69,15 @@ export function StudentsPage() {
         )}
       </Card>
 
-      {classState.status === "error" ? (
-        <DataState variant="error" title="Failed to load classes" message={classState.error} />
+      {isError ? (
+        <DataState variant="error" title="Failed to load students" message={String(error)} />
       ) : null}
 
-      {state.status === "loading" || state.status === "idle" ? (
-          <div className="space-y-3">
-           <Skeleton className="h-8 w-48" />
-           <TableSkeleton />
-        </div>
-      ) : null}
-
-      {state.status === "error" ? (
-        <DataState variant="error" title="Failed to load students" message={state.error} />
-      ) : null}
-
-      {state.status === "empty" ? (
+      {!isLoading && !isError && students && students.length === 0 ? (
         <DataState variant="empty" title="No students found" message="Create the first student record for this school." />
       ) : null}
 
-      {state.status === "success" && state.data && state.data.length > 0 ? (
+      {!isLoading && !isError && students && students.length > 0 ? (
         <div className="space-y-3">
             <div className="flex items-center justify-between">
                 <h3 className="text-base font-semibold tracking-tight text-slate-950">Students Directory</h3>

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -86,6 +87,12 @@ func (h *Handler) hydrate(rows []*store.Attendance) []map[string]any {
 }
 
 // List implements GET /api/attendance.
+//
+// Supports two pagination modes:
+//   1. Offset pagination: ?page=1&limit=50 (legacy, for backward compat)
+//   2. Date-cursor pagination: ?before_date=2026-05-14&limit=50
+//      Returns records older than before_date, with next_before_date for
+//      fetching the next page of older records.
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	q := r.URL.Query()
@@ -100,11 +107,10 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		dateQ := q.Get("date")
 		periodQ := q.Get("period")
 		statusQ := q.Get("status")
+		beforeDateQ := q.Get("before_date")
 
 		// Role-specific scoping: students can only see their own, parents
 		// must pass student_id, teachers see only their assigned classes.
-		// Phase 2 doesn't yet model teacher↔class assignment outside the
-		// Class.teacher_ids slice; we honor that.
 		if ctx.Role == "student" {
 			h.Store.RLock()
 			var self *store.Student
@@ -120,6 +126,23 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 			}
 			studentID = self.ID
 			classID = self.ClassID
+		}
+
+		// Parse limit for cursor pagination
+		limit := 50
+		if l, err := strconv.Atoi(q.Get("limit")); err == nil && l > 0 {
+			limit = l
+		}
+		if limit > 200 {
+			limit = 200
+		}
+
+		// Parse before_date cursor
+		var beforeDate time.Time
+		if beforeDateQ != "" {
+			if d, ok := api.ParseDate(beforeDateQ); ok {
+				beforeDate = d
+			}
 		}
 
 		h.Store.RLock()
@@ -154,6 +177,13 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 			}
+			// Date cursor: only include records BEFORE the cursor date
+			if !beforeDate.IsZero() {
+				dayStart, _ := api.DayBounds(beforeDate)
+				if !a.Date.Before(dayStart) {
+					continue
+				}
+			}
 			rows = append(rows, a)
 		}
 		h.Store.RUnlock()
@@ -162,6 +192,30 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 			return rows[i].Date.After(rows[j].Date)
 		})
 
+		// If using date-cursor pagination (before_date is present or no
+		// offset pagination params), return cursor-based response.
+		if beforeDateQ != "" {
+			hasMore := len(rows) > limit
+			if hasMore {
+				rows = rows[:limit]
+			}
+
+			hydrated := h.hydrate(rows)
+
+			var nextBeforeDate string
+			if hasMore && len(rows) > 0 {
+				lastRow := rows[len(rows)-1]
+				nextBeforeDate = api.FormatDate(lastRow.Date)
+			}
+
+			return map[string]any{
+				"data":             hydrated,
+				"next_before_date": nextBeforeDate,
+				"has_more":         hasMore,
+			}, nil
+		}
+
+		// Legacy offset pagination
 		hydrated := h.hydrate(rows)
 		page := api.ParsePagination(q)
 		if !page.Enabled {

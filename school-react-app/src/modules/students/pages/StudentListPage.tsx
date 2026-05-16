@@ -1,21 +1,27 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { useQueryParams } from "@/hooks/useQueryParams";
-import { DataTable, DataTableColumn, RowAction, Badge, DataState, ListToolbar, Skeleton, TableSkeleton, StatCardGrid } from "@/components/ui";
+import { DataTable, DataTableColumn, RowAction, Badge, DataState, ListToolbar, Skeleton, TableSkeleton, StatCardGrid, EntityCard, EntityGrid } from "@/components/ui";
 import { useStudents } from "../hooks/useStudents";
 import { useClasses } from "../../classes/hooks/useClasses";
 import { useSubjects } from "../../subjects/hooks/useSubjects";
-import { StudentRow, StudentPatchInput } from "../types/student.types";
+import { StudentRow } from "../types/student.types";
 import { showToast } from "@/utils/toast";
-import { StudentEditSidebar } from "../components/StudentEditSidebar";
 
 export function StudentListPage() {
-  const { state, updateStudent, deleteStudent } = useStudents();
-  const { state: classesState } = useClasses();
-  const { data: subjectsData } = useSubjects();
+  const navigate = useNavigate();
   const { currentParams, updateQuery, withQuery } = useQueryParams();
-  const [editingStudent, setEditingStudent] = useState<StudentRow | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
+  const classFilter = currentParams.get("class_id") || "";
+
+  // Pass the class_id from the URL straight into the hook so the API
+  // request is already scoped server-side (matters when the school has
+  // thousands of students and we shouldn't fetch all of them).
+  const { students, isLoading, isError, error, updateStudent, deleteStudent } = useStudents(
+    classFilter ? { class_id: classFilter } : undefined
+  );
+  const { state: classesState } = useClasses();
+  // subjects unused after sidebar removal but kept for ListToolbar parity
+  // (not currently consumed; left out intentionally).
   const [searchQuery, setSearchQuery] = useState(currentParams.get("search") || "");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">((currentParams.get("status") as any) || "all");
   const [viewMode, setViewMode] = useState<"grid" | "list">((currentParams.get("view") as any) || "grid");
@@ -26,16 +32,22 @@ export function StudentListPage() {
     setViewMode((currentParams.get("view") as any) || "grid");
   }, [currentParams.toString()]);
 
-  const subjectOptions = subjectsData.map((subj) => ({ id: (subj as any)._id || (subj as any).id || subj.name, label: subj.name }));
   const classOptions = ((classesState.data as any)?.data || []).map((cls: any) => ({
     id: cls._id,
     label: cls.name,
   }));
 
+  // Resolve a friendly class label for the "filtering by class" pill.
+  const activeClass = classOptions.find((c: { id: string; label: string }) => c.id === classFilter);
+
+  function goToEdit(id: string) {
+    navigate(`/admin/students/edit/${id}`);
+  }
+
   const filteredRows = useMemo(() => {
-    const rows = state.data || [];
+    const rows = students || [];
     const q = searchQuery.trim().toLowerCase();
-    return rows.filter((row) => {
+    return rows.filter((row: StudentRow) => {
       const queryMatch =
         q.length === 0 ||
         row.admission_no.toLowerCase().includes(q) ||
@@ -45,12 +57,12 @@ export function StudentListPage() {
       const statusMatch = statusFilter === "all" ? true : row.status === statusFilter;
       return queryMatch && statusMatch;
     });
-  }, [state.data, searchQuery, statusFilter]);
+  }, [students, searchQuery, statusFilter]);
 
   const columns: DataTableColumn<StudentRow>[] = [
     {
       key: "admission_no",
-      label: "Admission No",
+      label: "Roll number",
       render: (row) => <span className="font-mono text-xs text-gray-500">{row.admission_no}</span>,
     },
     {
@@ -62,7 +74,7 @@ export function StudentListPage() {
     },
     {
       key: "class",
-      label: "Class / Section",
+      label: "Class / section",
       render: (row) => (
         <div className="flex items-center gap-2">
           <span className="text-gray-700">{row.class_id}</span>
@@ -94,34 +106,23 @@ export function StudentListPage() {
   const rowActions: RowAction<StudentRow>[] = [
     {
       icon: "visibility",
-      label: "View Details",
-      variant: "primary",
+      label: "View",
       onClick: (row) => {
-        alert(`Student: ${row.first_name} ${row.last_name}\nAdmission: ${row.admission_no}\nGuardian: ${row.guardian.name} (${row.guardian.phone})`);
+        alert(`Student: ${row.first_name} ${row.last_name}\nID: ${row.admission_no}\nGuardian: ${row.guardian.name} (${row.guardian.phone})`);
       },
     },
     {
       icon: "edit",
-      label: "Edit Student",
+      label: "Edit student",
       variant: "ghost",
-      onClick: async (row) => {
-        const first_name = window.prompt("First name", row.first_name)?.trim();
-        if (!first_name) {
-          return;
-        }
-        const last_name = window.prompt("Last name", row.last_name)?.trim();
-        if (!last_name) {
-          return;
-        }
-        await updateStudent(row._id, { first_name, last_name });
-      },
+      onClick: (row) => goToEdit(row._id),
     },
     {
       icon: "delete",
-      label: "Delete Student",
+      label: "Delete student",
       variant: "danger",
       requireConfirm: true,
-      confirmTitle: "Delete Student",
+      confirmTitle: "Delete student",
       confirmMessage: (row: StudentRow) => `Are you sure you want to delete ${row.first_name} ${row.last_name}?`,
       onClick: async (row) => {
         const result = await deleteStudent(row._id);
@@ -132,7 +133,7 @@ export function StudentListPage() {
     },
   ];
 
-  if (state.status === "loading" || state.status === "idle") {
+  if (isLoading) {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -144,8 +145,8 @@ export function StudentListPage() {
     );
   }
 
-  if (state.status === "error") {
-    return <DataState variant="error" title="Failed to load students" message={state.error} />;
+  if (isError) {
+    return <DataState variant="error" title="Failed to load students" message={String(error)} />;
   }
 
   return (
@@ -153,15 +154,41 @@ export function StudentListPage() {
       {/* Stats Section */}
       <StatCardGrid
         items={[
-          { label: "Total Students", value: (state.data || []).length, icon: "groups", accent: "blue" },
-          { label: "Active Students", value: (state.data || []).filter(s => s.status === 'active').length, icon: "how_to_reg", accent: "emerald" },
-          { label: "Inactive", value: (state.data || []).filter(s => s.status !== 'active').length, icon: "person_off", accent: "amber" },
-          { label: "Classes", value: new Set((state.data || []).map(s => s.class_id)).size, icon: "door_front", accent: "purple" },
+          { label: "Total students", value: (students || []).length, icon: "groups", accent: "blue" },
+          { label: "Active students", value: (students || []).filter((s: StudentRow) => s.status === 'active').length, icon: "how_to_reg", accent: "emerald" },
+          { label: "Inactive", value: (students || []).filter((s: StudentRow) => s.status !== 'active').length, icon: "person_off", accent: "amber" },
+          { label: "Classes", value: new Set((students || []).map((s: StudentRow) => s.class_id)).size, icon: "door_front", accent: "purple" },
         ]}
       />
 
+      {/* Active class filter chip — appears whenever ?class_id=... is in the URL.
+          Lets the user see at a glance that the list is scoped, and one-click
+          back to "all students". */}
+      {classFilter && (
+        <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2 ring-1 ring-blue-900/5">
+          <span className="material-symbols-outlined text-base text-blue-600">filter_alt</span>
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+            Filtering by class
+          </span>
+          <span className="text-[12px] font-bold text-blue-700">
+            {activeClass?.label || classFilter}
+          </span>
+          <span className="ml-auto text-[11px] font-medium text-slate-500">
+            {(students || []).length} student{(students || []).length === 1 ? "" : "s"}
+          </span>
+          <button
+            type="button"
+            onClick={() => updateQuery({ class_id: "" })}
+            className="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg bg-white border border-blue-200 text-[11px] font-bold text-blue-700 hover:bg-blue-100 transition-colors"
+          >
+            <span className="material-symbols-outlined text-sm">close</span>
+            Show all
+          </button>
+        </div>
+      )}
+
       {/* Toolbar Section - Unified & Sticky */}
-      <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md sticky top-[72px] z-20 border-slate-200/60 shadow-sm rounded-xl">
+      <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md border-slate-200/60 shadow-sm rounded-xl">
         <div className="flex flex-1 items-center gap-2 max-w-2xl">
           <div className="relative flex-1">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
@@ -186,9 +213,9 @@ export function StudentListPage() {
             }}
             className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none cursor-pointer transition-all hover:border-slate-300 focus:border-blue-400"
           >
-            <option value="all">Lifecycle: All</option>
-            <option value="active">Active Only</option>
-            <option value="inactive">Archived / Withdrawn</option>
+            <option value="all">Status: All</option>
+            <option value="active">Active only</option>
+            <option value="inactive">Archived</option>
           </select>
         </div>
 
@@ -221,7 +248,7 @@ export function StudentListPage() {
           </div>
           <div className="h-6 w-px bg-slate-200" />
           <span className="text-[10px] font-bold text-slate-900 normal-case  px-2 whitespace-nowrap">
-            {filteredRows.length} <span className="text-slate-400">STUDENTS</span>
+            {filteredRows.length} <span className="text-slate-400">records</span>
           </span>
           <div className="h-6 w-px bg-slate-200" />
           <Link
@@ -229,7 +256,7 @@ export function StudentListPage() {
             className="inline-flex h-9 items-center gap-2 px-5 text-[11px] font-bold normal-case  text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
           >
             <span className="material-symbols-outlined text-lg">person_add</span>
-            Add Student
+            Add student
           </Link>
         </div>
       </div>
@@ -239,98 +266,95 @@ export function StudentListPage() {
         {filteredRows.length === 0 ? (
           <DataState 
             variant="empty" 
-            title="No Students Found" 
-            message={searchQuery ? "Try refining your search parameters." : "Start by admitting your first student to the academy."} 
+            title="No students found" 
+            message={searchQuery ? "Try refining your search parameters." : "Start by adding your first student."} 
           />
         ) : (
           viewMode === "grid" ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-              {filteredRows.map((row) => (
-                <div key={row._id} className="premium-card group relative flex flex-col p-4 transition-all duration-300 bg-white border-slate-200/60 hover:shadow-xl hover:shadow-slate-200/30 hover:-translate-y-0.5">
-                  {/* Top Row: Name & Actions */}
-                  <div className="flex items-start justify-between gap-4 mb-3.5">
-                    <div className="space-y-0.5 flex-1 min-w-0">
-                      <h3 className="text-base font-bold text-slate-900 tracking-tight leading-none truncate">{row.first_name} {row.last_name}</h3>
-                      <p className="text-[9px] font-bold text-slate-400 normal-case  mt-1">Student ID: {row.admission_no}</p>
-                    </div>
-                    
-                    <div className="flex items-center gap-0.5">
-                      <button 
-                        onClick={() => setEditingStudent(row)}
-                        className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all"
-                        title="Edit Student"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">edit_note</span>
-                      </button>
-                      <button 
-                        onClick={async () => {
+            <EntityGrid>
+              {filteredRows.map((row: StudentRow) => {
+                const accent = row.status === "active" ? "blue" : "slate";
+                return (
+                  <EntityCard
+                    key={row._id}
+                    icon="person"
+                    accent={accent}
+                    title={`${row.first_name} ${row.last_name}`}
+                    subtitle={`ID: ${row.admission_no}`}
+                    status={{
+                      label: row.status === "active" ? "Active" : "Inactive",
+                      accent: row.status === "active" ? "blue" : "slate",
+                    }}
+                    hoverActions={[
+                      {
+                        label: "View details",
+                        icon: "visibility",
+                        onClick: () => {
+                          alert(`Student: ${row.first_name} ${row.last_name}\nID: ${row.admission_no}\nGuardian: ${row.guardian.name} (${row.guardian.phone})`);
+                        },
+                        accent: "blue",
+                      },
+                      {
+                        label: "Edit student",
+                        icon: "edit",
+                        onClick: () => goToEdit(row._id),
+                        accent: "blue",
+                      },
+                      {
+                        label: "Delete student",
+                        icon: "delete",
+                        onClick: async () => {
                           if (window.confirm(`Are you sure you want to delete ${row.first_name}?`)) {
                             await deleteStudent(row._id);
                           }
-                        }}
-                        className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all"
-                        title="Delete"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">delete</span>
-                      </button>
-                    </div>
-                  </div>
+                        },
+                        accent: "rose",
+                      },
+                    ]}
+                    metrics={[
+                      { label: "Class", value: row.class_id },
+                      { label: "Section", value: row.section || "General" },
+                    ]}
+                  >
+                    <div className="space-y-2 mt-2">
+                      <div className="px-0.5">
+                        <p className="text-[8px] font-bold text-slate-400 normal-case mb-1">Contact</p>
+                        <p className="text-[10px] font-medium text-slate-500 line-clamp-1 leading-relaxed">
+                          {row.guardian?.name || "No guardian"} • {row.guardian?.phone || "No phone"}
+                        </p>
+                      </div>
 
-                  {/* Middle Row: Academic Placement (Pill Style) */}
-                  <div className="mb-3.5 p-3 rounded-xl bg-slate-50/50 border border-slate-100/50 flex items-center justify-between">
-                    <div className="flex-1">
-                      <p className="text-[8px] font-bold text-slate-400 normal-case  mb-1.5">Academic Placement</p>
-                      <div className="flex items-center gap-2 text-[10px] font-bold text-slate-700">
-                        <span className="bg-white px-1.5 py-0.5 rounded-md border border-slate-100">{row.class_id}</span>
-                        <span className="text-slate-300">→</span>
-                        <span className="bg-white px-1.5 py-0.5 rounded-md border border-slate-100">Section {row.section}</span>
+                      <div className="flex items-center justify-between bg-slate-50/30 rounded-lg p-1.5 border border-slate-100/30">
+                        <div className="flex items-center gap-1.5">
+                          {row.status === 'active' ? (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-bold normal-case text-blue-600 bg-blue-50">
+                              <span className="h-1 w-1 rounded-full bg-blue-500 animate-pulse" />
+                              Active
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold normal-case text-slate-400 bg-slate-100">
+                              Inactive
+                            </span>
+                          )}
+                        </div>
+                        <label className="relative inline-flex cursor-pointer items-center shrink-0">
+                          <input
+                            type="checkbox"
+                            checked={row.status === 'active'}
+                            onChange={async () => {
+                              const nextStatus = row.status === 'active' ? 'inactive' : 'active';
+                              await updateStudent(row._id, { status: nextStatus });
+                            }}
+                            className="peer sr-only"
+                          />
+                          <div className="peer h-[18px] w-[34px] rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-[14px] after:w-[14px] after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-[16px] peer-focus:outline-none" />
+                        </label>
                       </div>
                     </div>
-                    <div className="text-right pl-3 border-l border-slate-200/50 ml-3">
-                       <p className="text-xs font-bold text-slate-900 leading-none">{row.status === 'active' ? 'EN' : 'WD'}</p>
-                       <p className="text-[7px] font-bold text-slate-400 normal-case  mt-0.5">Type</p>
-                    </div>
-                  </div>
-
-                  {/* Bottom Row: Contact & Status Toggle */}
-                  <div className="mt-auto pt-2 flex flex-col gap-3">
-                    <div className="px-0.5">
-                       <p className="text-[8px] font-bold text-slate-400 normal-case  mb-1">Primary Contact</p>
-                       <p className="text-[10px] font-medium text-slate-500 line-clamp-1 leading-relaxed">
-                         {row.guardian?.name || "No guardian"} • {row.guardian?.phone || "No phone"}
-                       </p>
-                    </div>
-
-                    <div className="flex items-center justify-between bg-slate-50/30 rounded-lg p-1.5 border border-slate-100/30">
-                      <div className="flex items-center gap-1.5">
-                        {row.status === 'active' ? (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-bold normal-case  text-blue-600 bg-blue-50">
-                            <span className="h-1 w-1 rounded-full bg-blue-500 animate-pulse" />
-                            Active
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold normal-case  text-slate-400 bg-slate-100">
-                            Inactive
-                          </span>
-                        )}
-                      </div>
-                      <label className="relative inline-flex cursor-pointer items-center shrink-0">
-                        <input
-                          type="checkbox"
-                          checked={row.status === 'active'}
-                          onChange={async () => {
-                            const nextStatus = row.status === 'active' ? 'inactive' : 'active';
-                            await updateStudent(row._id, { status: nextStatus });
-                          }}
-                          className="peer sr-only"
-                        />
-                        <div className="peer h-[18px] w-[34px] rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-[14px] after:w-[14px] after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-[16px] peer-focus:outline-none" />
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  </EntityCard>
+                );
+              })}
+            </EntityGrid>
           ) : (
             <div className="premium-card overflow-hidden border-slate-200/60 shadow-sm bg-white rounded-2xl">
               <DataTable
@@ -349,7 +373,7 @@ export function StudentListPage() {
       {/* Pagination Footer - Premium ERP Style */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100">
         <p className="text-[10px] font-bold text-slate-400 normal-case ">
-          Showing <span className="text-blue-600">1</span> to <span className="text-slate-900">{filteredRows.length}</span> of <span className="text-slate-900">{state.data?.length}</span> Student Records
+          Showing <span className="text-blue-600">1</span> to <span className="text-slate-900">{filteredRows.length}</span> of <span className="text-slate-900">{students?.length}</span> records
         </p>
         <div className="flex items-center gap-2">
           <button className="h-9 px-4 rounded-xl border border-slate-200 text-[10px] font-bold normal-case  text-slate-400 cursor-not-allowed flex items-center gap-2">
@@ -367,22 +391,6 @@ export function StudentListPage() {
       </div>
 
 
-      <StudentEditSidebar
-        student={editingStudent}
-        isOpen={editingStudent !== null}
-        classOptions={classOptions}
-        subjectOptions={subjectOptions}
-        onClose={() => setEditingStudent(null)}
-        onSave={async (id, data) => {
-          setIsSaving(true);
-          try {
-            await updateStudent(id, data as StudentPatchInput);
-          } finally {
-            setIsSaving(false);
-          }
-        }}
-        isSaving={isSaving}
-      />
     </div>
   );
 }

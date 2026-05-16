@@ -1,184 +1,226 @@
-import { useTimetable } from "../hooks/useTimetable";
-import { TimetableGrid } from "../components/TimetableGrid";
-import { TimetableRecord, TimetableFormInput, getDayLabel } from "../types/timetable.types";
-import { useState, useMemo, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { DataState, TableSkeleton, Badge } from "@/components/ui";
+/**
+ * /admin/timetable — main dashboard page.
+ *
+ * Layout (top to bottom):
+ *   1. Toolbar (compact, searchable class selector, "New period" CTA)
+ *   2. 6-up summary stat tiles (today's periods, active now, conflicts…)
+ *   3. Live + next period strip
+ *   4. Either:
+ *        - The compact, status-aware weekly grid, OR
+ *        - The redesigned empty state with quick actions and the list
+ *          of unscheduled classes.
+ *
+ * Performance:
+ *   - State is per-class via the existing useTimetable filter, so we
+ *     only fetch + render the records relevant to the selected view.
+ *   - Summary counters come from a single /api/timetable/summary call
+ *     that the backend caches in Redis (60s).
+ *   - Grid uses memoized bucket maps; PeriodCard is memo'd.
+ */
+
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import {
+  DataState,
+  ConfirmModal,
+} from "@/components/ui";
 import { useClasses } from "../../classes/hooks/useClasses";
-import { useTeachers } from "../../teachers/hooks/useTeachers";
-import { useSubjects } from "../../subjects/hooks/useSubjects";
-import { TimetableForm } from "../components/TimetableForm";
-import { useSearchParams, useNavigate } from "react-router-dom";
-
+import { useTimetable, useTimetableSummary } from "../hooks/useTimetable";
 import { TimetableToolbar } from "../components/TimetableToolbar";
+import { TimetableGrid } from "../components/TimetableGrid";
+import { TimetableSummaryStats } from "../components/TimetableSummaryStats";
+import { TimetableLivePeriodCard } from "../components/TimetableLivePeriodCard";
+import { TimetableEmptyState } from "../components/TimetableEmptyState";
+import type { TimetableRecord } from "../types/timetable.types";
 import { findTimetableConflicts } from "../utils/conflicts";
-
-import { TimetableDrawer } from "../components/TimetableDrawer";
-import { X, Trash2, AlertCircle } from "lucide-react";
+import { showToast } from "@/utils/toast";
 
 export function TimetablePage() {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const urlClassId = searchParams.get("class_id") || "";
-  
-  const [classId, setClassId] = useState<string>(urlClassId);
-  const [isCompact, setIsCompact] = useState(false);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [editingRecord, setEditingRecord] = useState<TimetableRecord | undefined>();
 
-  const { state, addTimetable, updateTimetable, deleteTimetable, refresh } = useTimetable(classId ? { class_id: classId } : undefined);
-  const { state: classesState } = useClasses();
-  const { state: teachersState } = useTeachers();
-  const { data: subjectsData } = useSubjects();
+  const [classId, setClassId] = useState(urlClassId);
+  const [isCompact, setIsCompact] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<TimetableRecord | null>(null);
 
   useEffect(() => {
-    if (urlClassId) setClassId(urlClassId);
+    if (urlClassId !== classId) setClassId(urlClassId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlClassId]);
 
-  const classOptions = useMemo(() =>
-    ((classesState.data as any)?.data || (classesState.data as any) || []).map((c: any) => ({ id: c._id, label: c.name })),
-    [classesState.data]);
+  const { state: classesState } = useClasses();
+  const { state: summaryState } = useTimetableSummary();
+  const { state, deleteTimetable, refresh } = useTimetable(
+    classId ? { class_id: classId } : undefined
+  );
 
-  const teacherOptions = useMemo(() =>
-    (teachersState.data || []).map(t => ({ id: t._id, label: `${t.first_name} ${t.last_name || ""}`.trim() })),
-    [teachersState.data]);
-
-  const subjectOptions = useMemo(() =>
-    (subjectsData || []).map(s => ({ id: s._id, label: s.name })),
-    [subjectsData]);
-
-  const selectedClass = ((classesState.data as any)?.data || (classesState.data as any) || []).find((c: any) => c._id === classId);
-
-  const unscheduledSubjects = useMemo(() => {
-    if (!selectedClass || !selectedClass.subjects) return [];
-    return (selectedClass.subjects as any[]).filter(s => !s.starts_at || !s.ends_at);
-  }, [selectedClass]);
+  const classOptions = useMemo(() => {
+    const raw =
+      ((classesState.data as any)?.data ||
+        (classesState.data as any) ||
+        []) as Array<{ _id: string; name: string; section?: string }>;
+    return raw.map((c) => ({
+      id: c._id,
+      label: c.section ? `${c.name} (${c.section})` : c.name,
+      section: c.section,
+    }));
+  }, [classesState.data]);
 
   const conflictsCount = useMemo(() => {
-    if (!state.data) return 0;
-    return state.data.filter(r => findTimetableConflicts(state.data!, r).length > 0).length;
+    const data = state.data ?? [];
+    if (data.length === 0) return 0;
+    let count = 0;
+    const seen = new Set<string>();
+    for (const rec of data) {
+      if (seen.has(rec._id)) continue;
+      const c = findTimetableConflicts(data, rec);
+      if (c.length > 0) {
+        count += 1;
+        seen.add(rec._id);
+      }
+    }
+    return count;
   }, [state.data]);
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Permanently remove this session from the schedule?")) {
-      const result = await deleteTimetable(id);
-      if (result.ok) refresh();
-    }
-  };
+  const summary = summaryState.data;
 
-  const handleEdit = (record: TimetableRecord) => {
-    navigate(`/admin/timetable/edit/${record._id}`);
-  };
+  function handleClassChange(id: string) {
+    setClassId(id);
+    if (id) setSearchParams({ class_id: id });
+    else setSearchParams({});
+  }
 
-  const handleNewEntry = () => {
-    const url = classId ? `/admin/timetable/create?class_id=${classId}` : "/admin/timetable/create";
+  function handleNewEntry() {
+    const url = classId
+      ? `/admin/timetable/create?class_id=${encodeURIComponent(classId)}`
+      : `/admin/timetable/create`;
     navigate(url);
-  };
+  }
 
-  const handleClassChange = (newId: string) => {
-    setClassId(newId);
-    navigate(newId ? `/admin/timetable?class_id=${newId}` : "/admin/timetable");
-  };
+  function handleEdit(rec: TimetableRecord) {
+    navigate(`/admin/timetable/edit/${encodeURIComponent(rec._id)}`);
+  }
 
-  const handleFormSubmit = async (data: TimetableFormInput) => {
-    if (editingRecord) {
-      await updateTimetable(editingRecord._id, data);
-    } else {
-      await addTimetable(data);
-    }
-    refresh();
-    setIsDrawerOpen(false);
-  };
+  async function handleConfirmDelete() {
+    if (!pendingDelete) return;
+    const result = await deleteTimetable(pendingDelete._id);
+    setPendingDelete(null);
+    if (result.ok) refresh();
+  }
+
+  function handleDelete(id: string) {
+    const rec = (state.data ?? []).find((r) => r._id === id) || null;
+    setPendingDelete(rec);
+  }
+
+  function loadingError(): string | undefined {
+    if (state.status === "error") return state.error;
+    if (summaryState.status === "error") return summaryState.error;
+    return undefined;
+  }
+
+  const records = state.data ?? [];
+  const showEmpty =
+    state.status === "success" && records.length === 0 && !loadingError();
 
   return (
-    <div className="space-y-8 pb-20">
-      <TimetableToolbar 
+    <div className="space-y-6 pb-12">
+      <TimetableSummaryStats
+        summary={summary}
+        isLoading={summaryState.status === "loading" || summaryState.status === "idle"}
+      />
+
+      <TimetableToolbar
         classId={classId}
         onClassChange={handleClassChange}
         classOptions={classOptions}
         onNewEntry={handleNewEntry}
-        selectedClass={selectedClass}
         conflictsCount={conflictsCount}
         isCompact={isCompact}
-        onCompactToggle={() => setIsCompact(!isCompact)}
+        onCompactToggle={() => setIsCompact((v) => !v)}
       />
 
-      {unscheduledSubjects.length > 0 && (
-        <div className="mx-0 p-4 bg-amber-50/50 border border-amber-100 rounded-3xl flex items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
-          <div className="h-10 w-10 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-600">
-            <AlertCircle size={20} />
-          </div>
-          <div className="flex-1">
-            <h4 className="text-[11px] font-black text-amber-900 uppercase tracking-widest">Unscheduled Subjects Detected</h4>
-            <p className="text-[10px] font-bold text-amber-600/80 uppercase tracking-tighter mt-0.5">
-              {unscheduledSubjects.length} subjects in this class have no timing data set. 
-              <Link to={`/admin/classes/${classId}/edit`} className="ml-2 underline hover:text-amber-700">Configure Times in Class Settings</Link>
-            </p>
-          </div>
-          <div className="flex -space-x-2">
-            {unscheduledSubjects.slice(0, 3).map((s, i) => (
-              <div key={i} className="h-8 w-8 rounded-full bg-white border-2 border-amber-50 flex items-center justify-center text-[8px] font-black text-amber-600 shadow-sm">
-                {s.name.substring(0, 2).toUpperCase()}
-              </div>
-            ))}
-            {unscheduledSubjects.length > 3 && (
-              <div className="h-8 w-8 rounded-full bg-amber-100 border-2 border-white flex items-center justify-center text-[8px] font-black text-amber-600 shadow-sm">
-                +{unscheduledSubjects.length - 3}
-              </div>
-            )}
-          </div>
-        </div>
+      {summary && (summary.currentPeriod || summary.nextPeriod) && (
+        <TimetableLivePeriodCard summary={summary} />
       )}
 
-      {state.status === "loading" && <TableSkeleton />}
-      {state.status === "error" && <DataState variant="error" title="Sync Error" message={state.error} />}
-
-      {state.status === "success" && (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-          {(state.data || []).length > 0 ? (
-            <TimetableGrid
-              records={state.data || []}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              isCompact={isCompact}
-            />
-          ) : (
-            <div className="flex flex-col items-center justify-center py-32 bg-white rounded-[3rem] border border-slate-200/60 shadow-2xl shadow-slate-200/30">
-              <div className="h-24 w-24 rounded-[2.5rem] bg-blue-50 flex items-center justify-center text-blue-200 mb-8 border border-blue-100 shadow-inner">
-                <span className="material-symbols-outlined text-5xl">event_busy</span>
-              </div>
-              <h3 className="text-2xl font-black text-slate-900 mb-3 tracking-tight">Workspace Empty</h3>
-              <p className="text-sm font-bold text-slate-400 mb-10 max-w-sm text-center leading-relaxed uppercase tracking-widest">
-                No institutional sessions configured for this class yet.
-              </p>
-              <button 
-                onClick={handleNewEntry}
-                className="h-14 px-10 bg-blue-600 text-white rounded-[1.25rem] text-[11px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-[0_15px_30px_rgba(37,99,235,0.3)] active:scale-95"
-              >
-                + Initialize Schedule
-              </button>
-            </div>
-          )}
-        </div>
+      {(state.status === "loading" || state.status === "idle") && (
+        <GridSkeleton />
       )}
 
-      {/* Slide Drawer */}
-      <TimetableDrawer
-        isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        title={editingRecord ? "Edit Session" : "New Session"}
-        description={editingRecord ? `Modifying: ${editingRecord.subject_name}` : "Configure a new institutional lecture"}
-      >
-        <TimetableForm
-          onSubmit={handleFormSubmit}
-          onCancel={() => setIsDrawerOpen(false)}
-          initialValues={editingRecord}
-          initialClassId={classId}
-          classOptions={classOptions}
-          teacherOptions={teacherOptions}
-          subjectOptions={subjectOptions}
+      {state.status === "error" && (
+        <DataState
+          variant="error"
+          title="Couldn't load timetable"
+          message={state.error}
+          onRetry={() => {
+            void refresh();
+            showToast("Retrying…", "success");
+          }}
         />
-      </TimetableDrawer>
+      )}
+
+      {showEmpty && (
+        <TimetableEmptyState
+          classId={classId}
+          className={
+            classOptions.find((c) => c.id === classId)?.label ?? undefined
+          }
+          onCreate={handleNewEntry}
+          unscheduled={summary?.unscheduledClasses}
+          onSelectClass={handleClassChange}
+        />
+      )}
+
+      {state.status === "success" && records.length > 0 && (
+        <TimetableGrid
+          records={records}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          isCompact={isCompact}
+          canManage
+        />
+      )}
+
+      <ConfirmModal
+        isOpen={pendingDelete !== null}
+        title="Remove this period?"
+        message={
+          pendingDelete
+            ? `Removing "${pendingDelete.subject_name}" on ${
+                pendingDelete.start_time
+              }–${pendingDelete.end_time} for ${pendingDelete.class_name}. This cannot be undone.`
+            : ""
+        }
+        confirmLabel="Remove"
+        confirmVariant="danger"
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={handleConfirmDelete}
+      />
+    </div>
+  );
+}
+
+function GridSkeleton() {
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 shadow-[0_4px_18px_rgb(0,0,0,0.03)] overflow-hidden">
+      <div className="grid grid-cols-7 border-b border-slate-200">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <div key={i} className="px-3 py-2.5 bg-slate-50/80">
+            <div className="h-3 w-12 rounded-full bg-slate-100 animate-pulse" />
+          </div>
+        ))}
+      </div>
+      {Array.from({ length: 6 }).map((_, r) => (
+        <div key={r} className="grid grid-cols-7 border-b border-slate-100 last:border-b-0">
+          {Array.from({ length: 7 }).map((__, c) => (
+            <div key={c} className="px-3 py-3 min-h-[88px]">
+              <div className="h-full w-full rounded-md bg-slate-50 animate-pulse" />
+            </div>
+          ))}
+        </div>
+      ))}
     </div>
   );
 }

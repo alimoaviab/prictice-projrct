@@ -119,8 +119,26 @@ export function TeacherDashboardPage() {
     );
   }
 
-  const { teacher, school, alerts, operationalStats, classes, todaySchedule, announcements } = state.data;
-  const teacherName = `${teacher.first_name} ${teacher.last_name}`.trim();
+  // The API returns the teacher object directly from GET /api/teachers/session.
+  // Handle both shapes: direct teacher object OR nested portal response.
+  const raw = state.data as any;
+  const teacher = raw?.teacher || raw;
+  const school = raw?.school || { name: "", session: "" };
+  const alerts = raw?.alerts || [];
+  const operationalStats = raw?.operationalStats || raw?.stats || {};
+  const classes = raw?.classes || [];
+  const todaySchedule = raw?.todaySchedule || [];
+  const announcements = raw?.announcements || [];
+
+  if (!teacher?.first_name) {
+    return (
+      <SchoolShell eyebrow="Error" title="Teacher Workspace">
+        <DataState variant="error" title="Profile Incomplete" message="Your teacher profile could not be loaded. Please contact your administrator." />
+      </SchoolShell>
+    );
+  }
+
+  const teacherName = `${teacher.first_name} ${teacher.last_name || ""}`.trim();
   const todayDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
   return (
@@ -130,23 +148,23 @@ export function TeacherDashboardPage() {
         <section className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between bg-white border border-slate-200 p-5 rounded-xl shadow-sm">
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-lg">
-              {teacher.first_name[0]}{teacher.last_name[0]}
+              {teacher.first_name?.[0] || "T"}{teacher.last_name?.[0] || ""}
             </div>
             <div>
               <h1 className="text-xl font-bold text-slate-900 tracking-tight">{teacherName}</h1>
               <div className="flex items-center gap-3 mt-0.5">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">ID: {teacher.employee_no}</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">ID: {teacher.employee_no || "—"}</span>
                 <span className="h-1 w-1 rounded-full bg-slate-300" />
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{todayDate}</span>
                 <span className="h-1 w-1 rounded-full bg-slate-300" />
-                <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">AY: {school.session}</span>
+                <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">AY: {school?.session || "—"}</span>
               </div>
             </div>
           </div>
           <div className="flex flex-col items-end gap-1">
-            <p className="text-[11px] font-bold text-slate-900 uppercase tracking-tight">{school.name}</p>
+            <p className="text-[11px] font-bold text-slate-900 uppercase tracking-tight">{school?.name || ""}</p>
             <div className="flex items-center gap-2">
-              <Badge variant="success" className="text-[9px] font-black uppercase py-0.5 px-1.5 bg-blue-50 text-blue-700 border-blue-100">{teacher.status}</Badge>
+              <Badge variant="success" className="text-[9px] font-black uppercase py-0.5 px-1.5 bg-blue-50 text-blue-700 border-blue-100">{teacher?.status || "active"}</Badge>
               <span className="text-[10px] font-medium text-slate-400">Active Session</span>
             </div>
           </div>
@@ -155,7 +173,7 @@ export function TeacherDashboardPage() {
         {/* SMART ALERTS ROW */}
         {alerts.length > 0 && (
           <section className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {alerts.map((alert, idx) => (
+            {alerts.map((alert: any, idx: number) => (
               <AlertCard key={idx} {...alert} />
             ))}
           </section>
@@ -165,24 +183,24 @@ export function TeacherDashboardPage() {
         <section className="grid gap-3 grid-cols-2 md:grid-cols-4">
           <OpStatCard 
             label="Today Attendance" 
-            value={`${operationalStats.todayAttendance.marked}/${operationalStats.todayAttendance.total}`}
-            sublabel={operationalStats.todayAttendance.total === operationalStats.todayAttendance.marked ? "All Marked" : "Pending Action"}
+            value={`${operationalStats.todayAttendance?.marked ?? 0}/${operationalStats.todayAttendance?.total ?? 0}`}
+            sublabel={(operationalStats.todayAttendance?.total ?? 0) === (operationalStats.todayAttendance?.marked ?? 0) ? "All Marked" : "Pending Action"}
             icon={<CheckCircle className="h-4 w-4" />}
-            status={operationalStats.todayAttendance.total === operationalStats.todayAttendance.marked ? "success" : "warning"}
+            status={(operationalStats.todayAttendance?.total ?? 0) === (operationalStats.todayAttendance?.marked ?? 0) ? "success" : "warning"}
           />
           <OpStatCard 
             label="Pending Results" 
-            value={operationalStats.pendingGrading}
+            value={operationalStats.pendingGrading ?? 0}
             sublabel="Exams to Grade"
             icon={<FileText className="h-4 w-4" />}
-            status={operationalStats.pendingGrading > 0 ? "danger" : "success"}
+            status={(operationalStats.pendingGrading ?? 0) > 0 ? "danger" : "success"}
           />
           <OpStatCard 
             label="Homework" 
-            value={operationalStats.homeworkStatus.pending}
+            value={operationalStats.homeworkStatus?.pending ?? 0}
             sublabel="Reviews Pending"
             icon={<BookOpen className="h-4 w-4" />}
-            status={operationalStats.homeworkStatus.pending > 0 ? "warning" : "success"}
+            status={(operationalStats.homeworkStatus?.pending ?? 0) > 0 ? "warning" : "success"}
           />
           <OpStatCard 
             label="Live Sessions" 
@@ -203,16 +221,16 @@ export function TeacherDashboardPage() {
                 <Link to="/teacher/timetable" className="text-[10px] font-bold text-blue-600 hover:underline">View Full Schedule</Link>
               </div>
               <div className="divide-y divide-slate-100">
-                {todaySchedule.length > 0 ? todaySchedule.map((task) => (
+                {todaySchedule.length > 0 ? todaySchedule.map((task: any) => (
                   <div key={task.id} className="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
                     <div className="flex items-center gap-4">
                       <div className="h-9 w-9 rounded-lg bg-slate-100 flex flex-col items-center justify-center">
-                        <span className="text-[10px] font-black text-slate-600 uppercase leading-none">{task.start_time.split(':')[0]}</span>
-                        <span className="text-[8px] font-bold text-slate-400 uppercase">{task.start_time.split(':')[1]}</span>
+                        <span className="text-[10px] font-black text-slate-600 uppercase leading-none">{(task.start_time || "00:00").split(':')[0]}</span>
+                        <span className="text-[8px] font-bold text-slate-400 uppercase">{(task.start_time || "00:00").split(':')[1]}</span>
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-slate-900">{task.subject_name} — {task.class_name}</p>
-                        <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Room {task.room} • {task.start_time} - {task.end_time}</p>
+                        <p className="text-sm font-bold text-slate-900">{task.subject_name || "Unknown Subject"} — {task.class_name || "Unknown Class"}</p>
+                        <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Room {task.room || "—"} • {task.start_time || "—"} - {task.end_time || "—"}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -247,7 +265,7 @@ export function TeacherDashboardPage() {
                 <Link to="/teacher/classes" className="text-[10px] font-bold text-blue-600 hover:underline">Manage All</Link>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                {classes.map((cls) => (
+                {classes.map((cls: any) => (
                   <ClassCard key={cls.id} {...cls} />
                 ))}
               </div>
@@ -265,7 +283,7 @@ export function TeacherDashboardPage() {
                 </h3>
               </div>
               <div className="p-4 space-y-4">
-                {todaySchedule.slice(0, 3).map((item, i) => (
+                {todaySchedule.slice(0, 3).map((item: any, i: number) => (
                   <div key={i} className="relative pl-5 before:absolute before:left-0 before:top-2 before:bottom-0 before:w-px before:bg-slate-200 last:before:hidden">
                     <div className="absolute left-[-3px] top-1 h-1.5 w-1.5 rounded-full bg-blue-600 shadow-[0_0_0_2px_rgba(37,99,235,0.1)]" />
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">{item.start_time}</p>
@@ -288,7 +306,7 @@ export function TeacherDashboardPage() {
                 </h3>
               </div>
               <div className="divide-y divide-slate-100">
-                {announcements.length > 0 ? announcements.map((a) => (
+                {announcements.length > 0 ? announcements.map((a: any) => (
                   <div key={a.id} className="p-4 hover:bg-slate-50 transition-colors cursor-pointer group">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">{new Date(a.date).toLocaleDateString()}</span>

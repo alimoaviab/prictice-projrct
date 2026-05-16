@@ -44,8 +44,8 @@ export function TestCreatePage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="max-w-7xl mx-auto py-2 px-4 sm:px-6">
+      <div className="mb-3 flex items-center justify-between">
         <Link
           to="/admin/tests"
           className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-400 normal-case hover:text-slate-900 transition-all group"
@@ -59,7 +59,7 @@ export function TestCreatePage() {
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8 items-start mt-24">
+      <div className="flex flex-col lg:flex-row gap-8 items-start">
         {/* LEFT SIDE: Main Form Container (70%) */}
         <div className="w-full lg:w-[68%]">
           <div className="bg-white border border-slate-200 rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden ring-1 ring-slate-900/5 transition-all">

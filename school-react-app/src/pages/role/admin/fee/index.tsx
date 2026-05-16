@@ -196,7 +196,7 @@ export function StudentFeeDashboard() {
                 />
 
                 {/* FILTERS & SEARCH */}
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-slate-50/50 p-2 rounded-2xl border border-slate-100">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-slate-50/50 p-2 rounded-2xl border border-slate-100 no-print">
                     <div className="flex items-center gap-2 flex-1 w-full">
                         <form onSubmit={handleSearch} className="relative flex-1 max-w-sm group">
                             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px] transition-colors group-focus-within:text-blue-600">search</span>
@@ -227,6 +227,14 @@ export function StudentFeeDashboard() {
                     </div>
 
                     <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => window.print()}
+                            className="h-10 px-4 rounded-xl border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all flex items-center gap-2 no-print shadow-sm"
+                        >
+                            <span className="material-symbols-outlined text-base">print</span>
+                            Print Report
+                        </button>
+                        <div className="h-10 w-px bg-slate-200 mx-1 no-print" />
                         <select 
                             value={filters.month} 
                             onChange={(e) => setFilters({...filters, month: e.target.value, page: 1})} 
@@ -243,7 +251,7 @@ export function StudentFeeDashboard() {
                         >
                             <option value="">ALL CLASSES</option>
                             {classOptions.map((c: { id: string; label: string }) => (
-                              <option key={c.id} value={c.id}>{c.label.toUpperCase()}</option>
+                               <option key={c.id} value={c.id}>{c.label.toUpperCase()}</option>
                             ))}
                         </select>
                         {(filters.search || filters.status !== "all" || filters.class_id) && (
@@ -266,21 +274,20 @@ export function StudentFeeDashboard() {
                         {Array.from({ length: 9 }).map((_, i) => <Skeleton key={i} className="h-48 rounded-2xl" />)}
                     </div>
                 ) : !data?.students || data.students.length === 0 ? (
-                    <div className="py-16 flex flex-col items-center justify-center text-center bg-white rounded-3xl border border-dashed border-slate-200">
+                    <div className="py-16 flex flex-col items-center justify-center text-center bg-white rounded-3xl border border-dashed border-slate-200 no-print">
                         <div className="h-12 w-12 rounded-full bg-blue-50 flex items-center justify-center mb-4 text-blue-400">
                             <span className="material-symbols-outlined text-3xl">account_balance_wallet</span>
                         </div>
                         <h4 className="font-black text-slate-900 text-base">No fee records found for {filters.month.toUpperCase()} {filters.year}</h4>
                         <p className="text-[11px] text-slate-400 mt-2 max-w-sm mx-auto leading-relaxed">
-                            If you haven't generated this month's invoices yet, head over to the 
-                            <strong className="text-slate-600"> Class Fees</strong> configuration page to trigger the generation.
+                            Invoices are generated automatically when you view a month. If no records appear, ensure fee components are configured for the class.
                         </p>
                         <button 
                             onClick={() => navigate('/admin/classes')}
-                            className="mt-6 inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
+                            className="mt-6 inline-flex items-center gap-2 no-print px-6 py-2.5 rounded-xl bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
                         >
                             <span className="material-symbols-outlined text-base">settings</span>
-                            Configure & Generate Fees
+                            Configure Class Fees
                         </button>
                     </div>
                 ) : (
@@ -323,7 +330,7 @@ export function StudentFeeDashboard() {
                                 </div>
 
                                 {/* ACTIONS */}
-                                <div className="flex items-center gap-1.5 mt-auto relative z-10" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center gap-1.5 mt-auto relative z-10 no-print" onClick={(e) => e.stopPropagation()}>
                                     <button 
                                         disabled={entry.status === "paid" || saving}
                                         onClick={() => handleFullPayment(entry)}
@@ -349,7 +356,7 @@ export function StudentFeeDashboard() {
 
                 {/* PAGINATION */}
                 {data && data.pagination.pages > 1 && (
-                    <div className="flex items-center justify-center gap-2 mt-8">
+                    <div className="flex items-center justify-center gap-2 mt-8 no-print">
                         <button 
                             disabled={filters.page === 1}
                             onClick={() => setFilters({...filters, page: filters.page - 1})}
@@ -373,7 +380,7 @@ export function StudentFeeDashboard() {
 
             {/* PROFESSIONAL COLLECTION DRAWER */}
             {isPaying && (
-                <div className="fixed inset-0 z-[100] flex justify-end bg-slate-900/20 animate-in fade-in duration-300">
+                <div className="fixed inset-0 z-[100] flex justify-end bg-slate-900/20 animate-in fade-in duration-300 no-print">
                     <div className="h-full w-[340px] bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-500 border-l border-slate-100">
                         {/* HEADER */}
                         <div className="p-5 border-b border-slate-100 bg-white">

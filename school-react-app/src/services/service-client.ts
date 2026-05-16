@@ -80,7 +80,7 @@ export async function serviceRequest<T>(
         }
       }
 
-      if (response.status === 401 || response.status === 403) {
+      if (response.status === 401) {
         handleUnauthorized();
         const p = payload as Record<string, unknown> | null;
         const message =

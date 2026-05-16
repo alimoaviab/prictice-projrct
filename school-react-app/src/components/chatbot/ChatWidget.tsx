@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import ReactMarkdown from "react-markdown";
 import { serviceRequest } from "@/services/service-client";
 
 interface Message {
@@ -186,13 +187,11 @@ export function ChatWidget() {
                 : "bg-white text-slate-700 rounded-2xl rounded-tl-sm border border-slate-200 shadow-sm"
             }`}>
               {msg.role === "assistant" ? (
-                <div className="whitespace-pre-wrap" dangerouslySetInnerHTML={{
-                  __html: msg.content
-                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/\n/g, '<br/>')
-                }} />
+                <div className="prose prose-sm prose-slate max-h-64 overflow-y-auto break-words max-w-none">
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                </div>
               ) : (
-                <span>{msg.content}</span>
+                <span className="whitespace-pre-wrap break-words">{msg.content}</span>
               )}
             </div>
           </div>

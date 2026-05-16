@@ -1,23 +1,31 @@
-# Eduplexo — full stack docker-compose.
+# Eduplexo — full stack docker-compose (optimized).
 #
-# Brings up four services:
-#   * postgres        — Postgres 16, persisted to a named volume
-#   * migrate         — golang-migrate runner that applies migrations once
-#                       and then exits successfully
-#   * backend-go      — Go HTTP API on :8080
-#   * frontend        — Vite-built React SPA served by nginx on :3000
+# Services:
+#   * postgres        — Postgres 16, persisted to a named volume (2.5GB RAM limit)
+#   * redis           — Redis 7 cache layer (512MB limit, 256MB maxmemory)
+#   * migrate         — golang-migrate runner (runs once then exits)
+#   * backend-go      — Go HTTP API on :8080 (1GB RAM limit)
+#   * frontend        — School SPA (admin/teacher/student) on :3000
+#   * super-admin     — Super Admin SPA on :3001
+#   * landing         — Public marketing site on :3002
 #
 # After `docker compose up --build`:
+#   * Landing at   http://localhost:3002
 #   * Frontend at  http://localhost:3000
+#   * Super Admin  http://localhost:3001
 #   * Backend at   http://localhost:8080
 #   * Postgres on  127.0.0.1:5432  (user/pass: school_user/school_password)
+#   * Redis on     127.0.0.1:6379
 #
-# Bring everything down with `docker compose down -v` to also drop the
-# Postgres volume.
+# Stop services:  docker compose down  (preserves all data)
+# Full rebuild:   docker compose up --build -d  (preserves all data)
+#
+# ⚠️  DANGER: docker compose down -v  PERMANENTLY DELETES all database data!
+#     Always run ./scripts/backup_db.sh before using -v flag.
 
 services:
   postgres:
-    image: postgres:16-alpine
+    image: public.ecr.aws/docker/library/postgres:16-alpine
     container_name: school_postgres
     restart: unless-stopped
     environment:
@@ -28,11 +36,75 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    command: >
+      postgres
+      -c shared_buffers=512MB
+      -c effective_cache_size=1536MB
+      -c work_mem=16MB
+      -c maintenance_work_mem=256MB
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+      -c max_connections=100
+      -c wal_buffers=16MB
+      -c checkpoint_completion_target=0.9
+      -c max_wal_size=2GB
+      -c min_wal_size=1GB
+      -c log_min_duration_statement=200
+      -c "app.current_school_id="
+    deploy:
+      resources:
+        limits:
+          memory: 2560M
+          cpus: "2.0"
+        reservations:
+          memory: 1024M
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U school_user -d school_db"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  redis:
+    image: public.ecr.aws/docker/library/redis:7-alpine
+    container_name: school_redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --tcp-keepalive 300
+      --timeout 300
+      --save 900 1
+      --save 300 10
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+        reservations:
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
 
   migrate:
     image: migrate/migrate:v4.18.1
@@ -51,6 +123,11 @@ services:
         "up",
       ]
     restart: "no"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
 
   backend-go:
     build:
@@ -58,21 +135,39 @@ services:
       dockerfile: Dockerfile
     container_name: school_backend
     restart: unless-stopped
+    env_file:
+      - .env.local
     depends_on:
       migrate:
         condition: service_completed_successfully
+      redis:
+        condition: service_healthy
     environment:
       PORT: "8080"
       APP_NAME: school
-      ALLOWED_ORIGINS: "http://localhost:3000,http://localhost:3001,http://frontend:80,http://super-admin:80"
+      ALLOWED_ORIGINS: "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://frontend:80,http://super-admin:80,http://landing:80"
       COOKIE_SECURE: "false"
       JWT_SECRET: ${JWT_SECRET:-dev-only-jwt-secret-change-me}
       DATABASE_URL: postgres://school_user:school_password@postgres:5432/school_db?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-AIzaSyD5wU_vDzOsOcpKdRMducehJb1DzqTqOfw}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.0-flash}
+      GOMAXPROCS: "4"
+      GOMEMLIMIT: "900MiB"
     ports:
       - "8080:8080"
-    # Distroless image has no shell or curl, so we rely on depends_on
-    # ordering instead of a Docker healthcheck. The frontend container
-    # waits via depends_on; the host reaches /health on :8080 directly.
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+          cpus: "2.0"
+        reservations:
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
 
   frontend:
     build:
@@ -81,9 +176,26 @@ services:
     container_name: school_frontend
     restart: unless-stopped
     depends_on:
-      - backend-go
+      backend-go:
+        condition: service_started
     ports:
       - "3000:80"
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.5"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
 
   super-admin:
     build:
@@ -92,10 +204,56 @@ services:
     container_name: school_super_admin
     restart: unless-stopped
     depends_on:
-      - backend-go
+      backend-go:
+        condition: service_started
     ports:
       - "3001:80"
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.5"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  landing:
+    build:
+      context: ./landing-app
+      dockerfile: Dockerfile
+      args:
+        APP_URL: http://localhost:3000
+    container_name: school_landing
+    restart: unless-stopped
+    ports:
+      - "3002:80"
+    deploy:
+      resources:
+        limits:
+          memory: 96M
+          cpus: "0.3"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
 
 volumes:
   postgres_data:
     name: eduplexo_postgres_data
+  redis_data:
+    name: eduplexo_redis_data

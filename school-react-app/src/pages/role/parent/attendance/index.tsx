@@ -26,37 +26,45 @@ export function ParentAttendancePage() {
 
   useEffect(() => {
     if (!selectedChild) return;
-
+    let cancelled = false;
     async function fetchData() {
       setLoading(true);
       try {
         if (!selectedChild) return;
         const res = await serviceRequest<any>(
-          `/api/parent/student-attendance?student_id=${selectedChild.student_id}`
+          `/api/parent/student-attendance?student_id=${encodeURIComponent(
+            selectedChild.student_id
+          )}`
         );
+        if (cancelled) return;
         if (res.ok && res.data) {
-          const summary = res.data.attendance_summary;
+          const summary = res.data.attendance_summary || {};
           setData({
             student_id: selectedChild.student_id,
-            student_name: res.data.student,
-            class_name: res.data.class,
-            total_present: summary.present_days,
-            total_absent: summary.absent_days,
-            percentage: summary.attendance_percentage,
-            recent_records: res.data.recent_records.map((r: any) => ({
-                date: r.date,
-                status: r.status
-            }))
+            student_name: res.data.student || selectedChild.student_name,
+            class_name: res.data.class || selectedChild.class_name,
+            total_present: Number(summary.present_days || 0),
+            total_absent: Number(summary.absent_days || 0),
+            percentage: Number(summary.attendance_percentage || 0),
+            recent_records: Array.isArray(res.data.recent_records)
+              ? res.data.recent_records.map((r: any) => ({
+                  date: r.date,
+                  status: r.status,
+                }))
+              : [],
           });
         }
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error("Failed to fetch attendance:", error);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
-
-    fetchData();
+    void fetchData();
+    return () => {
+      cancelled = true;
+    };
   }, [selectedChild]);
 
   if (childLoading || (loading && !data)) {
@@ -70,17 +78,30 @@ export function ParentAttendancePage() {
     );
   }
 
-  if (!selectedChild || !data) {
+  if (!selectedChild) {
     return (
       <SchoolShell eyebrow="Guardian Portal" title="Attendance Tracking">
         <DataState
           variant="empty"
-          title="No records found"
-          message="We couldn't find any attendance logs for the selected student."
+          title="No child selected"
+          message="Pick a child from the header to view their attendance."
         />
       </SchoolShell>
     );
   }
+
+  // Once a child is selected we always render the dashboard, even with
+  // zero records — empty state for "no logs" lives inside the activity
+  // section below so the parent still sees the summary cards.
+  const view = data ?? {
+    student_id: selectedChild.student_id,
+    student_name: selectedChild.student_name,
+    class_name: selectedChild.class_name,
+    total_present: 0,
+    total_absent: 0,
+    percentage: 0,
+    recent_records: [] as AttendanceRecord[],
+  };
 
   return (
     <SchoolShell eyebrow="Guardian Portal" title="Attendance Tracking">
@@ -94,14 +115,14 @@ export function ParentAttendancePage() {
             </div>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100">
                <span className="h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
-               <span className="text-[11px] font-black text-blue-600">{data.percentage}% Net Participation</span>
+               <span className="text-[11px] font-black text-blue-600">{view.percentage}% Net Participation</span>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
-              { label: "Days Present", value: data.total_present, icon: "check_circle", color: "text-blue-600", bg: "bg-blue-50" },
-              { label: "Days Absent", value: data.total_absent, icon: "cancel", color: "text-rose-600", bg: "bg-rose-50" },
+              { label: "Days Present", value: view.total_present, icon: "check_circle", color: "text-blue-600", bg: "bg-blue-50" },
+              { label: "Days Absent", value: view.total_absent, icon: "cancel", color: "text-rose-600", bg: "bg-rose-50" },
             ].map(m => (
               <div key={m.label} className="p-4 rounded-xl border border-slate-50 bg-slate-50/30">
                 <div className="flex items-center gap-3">
@@ -125,10 +146,10 @@ export function ParentAttendancePage() {
               <span className="material-symbols-outlined text-slate-300">history</span>
            </div>
            <div className="divide-y divide-slate-50">
-              {data.recent_records.length === 0 ? (
+              {view.recent_records.length === 0 ? (
                 <div className="p-8 text-center text-slate-400 text-xs">No recent logs recorded.</div>
               ) : (
-                data.recent_records.map((record) => (
+                view.recent_records.map((record) => (
                   <div key={record.date} className="px-6 py-3 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
                      <div className="flex items-center gap-4">
                         <div className="h-8 w-8 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400">
