@@ -85,7 +85,7 @@ func (g *GeminiClient) GenerateResponse(ctx context.Context, systemPrompt string
 	})
 	contents = append(contents, map[string]any{
 		"role":  "model",
-		"parts": []map[string]string{{"text": "Understood. I am EduBot, the AI school assistant. I will respond naturally, provide insights, and ask follow-up questions. Ready to help."}},
+		"parts": []map[string]string{{"text": "Understood. I am Plexa, the AI school assistant. I will respond naturally, provide insights, and ask follow-up questions. Ready to help."}},
 	})
 
 	// Add conversation history (last 10 messages)

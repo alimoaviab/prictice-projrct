@@ -1,0 +1,219 @@
+/* ─── Plexa Chat Widget Styles ──────────────────────────────────────── */
+
+/* Smooth typing-dots animation. Uses a continuous wave so it feels fluid
+   even when the response arrives quickly (no jarring stop). */
+.plexa-typing {
+  height: 14px;
+}
+
+.plexa-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 100%);
+  display: inline-block;
+  opacity: 0.55;
+  animation: plexa-bounce 1.1s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.plexa-dot:nth-child(2) {
+  animation-delay: 0.18s;
+}
+.plexa-dot:nth-child(3) {
+  animation-delay: 0.36s;
+}
+
+@keyframes plexa-bounce {
+  0%, 70%, 100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.45;
+  }
+  35% {
+    transform: translateY(-5px) scale(1.15);
+    opacity: 1;
+  }
+}
+
+/* ─── Markdown / prose styling for assistant replies ────────────────── */
+
+.plexa-prose {
+  font-size: 13px;
+  line-height: 1.55;
+  color: #334155;
+  max-height: 22rem;
+  overflow-y: auto;
+}
+
+.plexa-prose p {
+  margin: 0 0 0.5rem;
+}
+.plexa-prose p:last-child {
+  margin-bottom: 0;
+}
+
+.plexa-prose h1,
+.plexa-prose h2,
+.plexa-prose h3,
+.plexa-prose h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0.5rem 0 0.35rem;
+  letter-spacing: 0;
+}
+
+.plexa-prose strong {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.plexa-prose ul,
+.plexa-prose ol {
+  margin: 0.25rem 0 0.5rem;
+  padding-left: 1.1rem;
+}
+.plexa-prose li {
+  margin: 0.15rem 0;
+}
+.plexa-prose li::marker {
+  color: #64748b;
+}
+
+.plexa-prose a {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.plexa-prose code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  background: #f1f5f9;
+  color: #0f172a;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.plexa-prose pre {
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 12px;
+  margin: 0.4rem 0;
+}
+
+/* ─── Tables ────────────────────────────────────────────────────────── */
+
+.plexa-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+  font-size: 12px;
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  table-layout: auto;
+}
+
+.plexa-prose thead {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.plexa-prose th {
+  text-align: left;
+  font-weight: 600;
+  color: #0f172a;
+  padding: 7px 10px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 11.5px;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.plexa-prose td {
+  padding: 7px 10px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+  vertical-align: top;
+}
+
+.plexa-prose tr:last-child td {
+  border-bottom: none;
+}
+
+.plexa-prose tbody tr:nth-child(even) td {
+  background: #fafbfc;
+}
+
+.plexa-prose tbody tr:hover td {
+  background: #eff6ff;
+}
+
+/* Right-align numeric columns when the markdown specifies `---:` */
+.plexa-prose th[align="right"],
+.plexa-prose td[align="right"] {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.plexa-prose th[align="center"],
+.plexa-prose td[align="center"] {
+  text-align: center;
+}
+
+/* ─── RTL / Urdu support ────────────────────────────────────────────── */
+
+.plexa-rtl {
+  direction: rtl;
+}
+
+.plexa-widget[dir="rtl"] .plexa-prose {
+  font-family: "Noto Nastaliq Urdu", "Jameel Noori Nastaleeq",
+    "Iansui", -apple-system, system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.9;
+}
+
+.plexa-widget[dir="rtl"] .plexa-prose ul,
+.plexa-widget[dir="rtl"] .plexa-prose ol {
+  padding-left: 0;
+  padding-right: 1.1rem;
+}
+
+.plexa-widget[dir="rtl"] .plexa-prose th {
+  text-align: right;
+}
+
+.plexa-widget[dir="rtl"] .plexa-prose td {
+  text-align: right;
+}
+
+/* Scrollbar polish (webkit only) */
+.plexa-prose::-webkit-scrollbar {
+  width: 6px;
+}
+.plexa-prose::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+.plexa-prose::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+
+/* ─── Streaming caret (the blinking block at the end of an in-progress reply) */
+.plexa-caret {
+  display: inline-block;
+  margin-left: 1px;
+  color: #2563eb;
+  font-weight: 700;
+  animation: plexa-blink 1s steps(1) infinite;
+  transform: translateY(-1px);
+}
+
+@keyframes plexa-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}

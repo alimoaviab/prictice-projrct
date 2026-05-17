@@ -12,7 +12,7 @@
  */
 
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, MessageCircle } from 'lucide-react';
+import { Mail, MessageCircle } from '@/components/icons';
 
 import { makeAnchorClickHandler } from '@/lib/scroll-to';
 

@@ -13,8 +13,8 @@
 
 set -euo pipefail
 
-SCHOOL_ID="school_default"
-YEAR_ID="ay_9537b24d00235a8a"
+SCHOOL_ID="sch_ea34b51092ee0401"
+YEAR_ID="ay_bc71bcb881a8ecbb"
 DB_CMD="docker exec school_postgres psql -U school_user -d school_db"
 
 echo "═══════════════════════════════════════════════════════════════"

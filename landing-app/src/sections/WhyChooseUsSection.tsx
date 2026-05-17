@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Zap, ShieldCheck, Smartphone, CheckCircle2 } from "lucide-react";
+import { Zap, ShieldCheck, Smartphone, CheckCircle2 } from "@/components/icons";
 
 export const WhyChooseUsSection = () => {
   const points = [

@@ -43,7 +43,6 @@ const adminNavGroups: NavGroup[] = [
     label: "Reports",
     items: [
       { label: "Dashboard", href: "/admin/dashboard", icon: "dashboard" },
-      { label: "AI Copilot", href: "/admin/ai", icon: "smart_toy" },
     ],
   },
   {
@@ -86,10 +85,12 @@ const adminNavGroups: NavGroup[] = [
     label: "Subscription",
     items: [{ label: "Subscription", href: "/admin/subscription", icon: "card_membership" }],
   },
+  /*
   {
     label: "Domain",
     items: [{ label: "Connect Domain", href: "/admin/connect-domain", icon: "language" }],
   },
+  */
   {
     label: "Settings",
     items: [{ label: "Settings", href: "/admin/settings", icon: "settings" }],
@@ -466,16 +467,6 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
         </nav>
 
         <div className={`mt-auto border-t border-slate-50 p-1.5 space-y-1 ${isCollapsed ? "flex flex-col items-center" : ""}`}>
-          {(user.role === "admin" || user.role === "super_admin") && (
-            <Link
-              to="/admin/ai"
-              className={`w-full rounded border border-blue-100 bg-blue-50/70 px-2 py-1.5 transition-colors hover:bg-blue-100 hover:border-blue-200 ${isCollapsed ? "flex items-center justify-center" : "flex items-center gap-2"}`}
-              aria-label="Open AI copilot"
-            >
-              <span className="material-symbols-outlined text-[15px] text-blue-600">smart_toy</span>
-              {!isCollapsed && <span className="text-[10px] font-bold text-blue-700">AI Copilot</span>}
-            </Link>
-          )}
           <div className={`flex w-full items-center gap-2 rounded border border-slate-50 bg-slate-50/30 px-2 py-1 transition-colors group ${isCollapsed ? "justify-center" : ""}`}>
             <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded bg-blue-600 shadow-sm">
               <span className="text-[9px] font-bold text-white">

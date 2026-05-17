@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
-import { ArrowRight, Play, ShieldCheck, Zap, BarChart3, Users, CreditCard, Sparkles } from "lucide-react";
+import { ArrowRight, Play, ShieldCheck, Zap, BarChart3, Users, CreditCard, Sparkles } from "@/components/icons";
 import { LOGIN_URL } from "@/lib/config";
 import { whatsappUrl, WhatsappMessages } from "@/lib/whatsapp";
 

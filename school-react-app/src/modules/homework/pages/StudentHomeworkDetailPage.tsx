@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button, DataState, Skeleton, Badge } from "@/components/ui";
 import { useSafeAsync } from "@/hooks/useSafeAsync";
 import { serviceRequest } from "@/services/service-client";
-import { ChevronLeft, FileText, Calendar, User, BookOpen } from "lucide-react";
+import { ChevronLeft, FileText, Calendar, User, BookOpen } from "@/components/icons";
 import { Link } from "react-router-dom";
 
 interface Submission {

@@ -24,7 +24,7 @@ import {
   CalendarDays,
   LayoutDashboard,
   CheckCircle
-} from "lucide-react";
+} from "@/components/icons";
 
 type TeacherPortalResponse = {
   teacher: {

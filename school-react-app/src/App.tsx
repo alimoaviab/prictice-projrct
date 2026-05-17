@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import { ToastProvider } from "@/components/ui/ToastProvider";
 import { NetworkStatus } from "@/components/ui/NetworkStatus";
+import { ChatWidget } from "@/components/chatbot/ChatWidget";
+import { useAuth } from "@/hooks/useAuth";
 import { QueryProvider } from "@/providers/QueryProvider";
 
 /**
@@ -36,9 +38,21 @@ export function App() {
 
   return (
     <QueryProvider>
+      <AppContent />
+    </QueryProvider>
+  );
+}
+
+/** Inner component that can use hooks requiring QueryProvider context. */
+function AppContent() {
+  const { user } = useAuth();
+
+  return (
+    <>
       <Outlet />
       <ToastProvider />
       <NetworkStatus />
-    </QueryProvider>
+      {user && <ChatWidget />}
+    </>
   );
 }

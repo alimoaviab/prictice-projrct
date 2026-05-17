@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Clock, Video, Users, CheckCircle, Calendar, Play, User, ExternalLink, XCircle } from "lucide-react";
+import { Clock, Video, Users, CheckCircle, Calendar, Play, User, ExternalLink, XCircle } from "@/components/icons";
 
 interface LiveClassCardProps {
   id: string;

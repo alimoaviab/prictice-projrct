@@ -3,7 +3,7 @@
  * and gives visitors a real way to reach the team.
  */
 
-import { Mail, MessageCircle } from 'lucide-react';
+import { Mail, MessageCircle } from '@/components/icons';
 
 import { PageShell } from '@/components/PageShell';
 

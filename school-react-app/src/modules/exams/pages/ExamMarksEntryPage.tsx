@@ -19,7 +19,7 @@ import {
   FileText,
   Search,
   ArrowRight
-} from "lucide-react";
+} from "@/components/icons";
 import { Link } from "react-router-dom";
 
 interface Student {

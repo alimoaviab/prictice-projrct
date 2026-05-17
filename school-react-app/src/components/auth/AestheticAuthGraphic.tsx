@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Book, GraduationCap, PenTool, Atom, Sparkles } from "lucide-react";
+import { Book, GraduationCap, PenTool, Atom, Sparkles } from "@/components/icons";
 
 export default function AestheticAuthGraphic() {
   return (

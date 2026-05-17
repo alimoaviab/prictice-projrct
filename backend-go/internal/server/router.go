@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/eduplexo/backend-go/internal/api"
-	"github.com/eduplexo/backend-go/internal/ai"
+	// "github.com/eduplexo/backend-go/internal/ai"
 	"github.com/eduplexo/backend-go/internal/cache"
 	"github.com/eduplexo/backend-go/internal/config"
 	"github.com/eduplexo/backend-go/internal/domain/academicyear"
@@ -15,7 +15,6 @@ import (
 	"github.com/eduplexo/backend-go/internal/domain/attendance"
 	authdomain "github.com/eduplexo/backend-go/internal/domain/auth"
 	"github.com/eduplexo/backend-go/internal/domain/behavior"
-	"github.com/eduplexo/backend-go/internal/domain/chatbot"
 	"github.com/eduplexo/backend-go/internal/domain/classes"
 	"github.com/eduplexo/backend-go/internal/domain/dashboard"
 	"github.com/eduplexo/backend-go/internal/domain/events"
@@ -336,11 +335,6 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Get("/admin/payments/all", subH.AdminListPendingPayments)
 			r.Post("/admin/payments/{id}/verify", subH.AdminVerifyPayment)
 			r.Post("/admin/payments/{id}/reject", subH.AdminRejectPayment)
-
-			// Chatbot (AI School Assistant)
-			geminiClient := ai.NewGeminiClient(cfg.GeminiAPIKey, cfg.GeminiModel, cfg.GeminiTimeoutMs)
-			cbH := chatbot.NewWithAI(s, geminiClient, rdb)
-			r.Post("/chatbot/message", cbH.Message)
 
 			// ─── Background Jobs ──────────────────────────────────────────
 			r.Get("/jobs/{id}/status", rt.JobStatusHandler(jobQueue))

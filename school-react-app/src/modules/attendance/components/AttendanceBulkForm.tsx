@@ -26,7 +26,7 @@ import {
   History,
   FileText,
   ChevronRight
-} from "lucide-react";
+} from "@/components/icons";
 
 interface ClassOption {
     id: string;

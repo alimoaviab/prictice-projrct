@@ -53,16 +53,16 @@ type Config struct {
 // warns when a critical var is missing.
 func Load() Config {
 	cfg := Config{
-		Port:           getenv("PORT", "8080"),
-		JWTSecret:      os.Getenv("JWT_SECRET"),
-		AppName:        getenv("APP_NAME", "school"),
-		AllowedOrigins: splitCSV(getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001,http://localhost:5173")),
-		CookieSecure:   os.Getenv("COOKIE_SECURE") == "true",
-		DatabaseURL:    os.Getenv("DATABASE_URL"),
-		RedisURL:       os.Getenv("REDIS_URL"),
-		UseDirectPG:    os.Getenv("USE_DIRECT_PG") == "true",
-		GeminiAPIKey:   os.Getenv("GEMINI_API_KEY"),
-		GeminiModel:    getenv("GEMINI_MODEL", "gemini-2.0-flash"),
+		Port:            getenv("PORT", "8080"),
+		JWTSecret:       os.Getenv("JWT_SECRET"),
+		AppName:         getenv("APP_NAME", "school"),
+		AllowedOrigins:  splitCSV(getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:5173")),
+		CookieSecure:    os.Getenv("COOKIE_SECURE") == "true",
+		DatabaseURL:     os.Getenv("DATABASE_URL"),
+		RedisURL:        os.Getenv("REDIS_URL"),
+		UseDirectPG:     os.Getenv("USE_DIRECT_PG") == "true",
+		GeminiAPIKey:    os.Getenv("GEMINI_API_KEY"),
+		GeminiModel:     getenv("GEMINI_MODEL", "gemini-2.0-flash"),
 		GeminiTimeoutMs: 2500,
 	}
 

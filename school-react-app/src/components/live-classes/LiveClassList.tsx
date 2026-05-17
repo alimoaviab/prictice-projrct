@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { LiveClassCard } from "./LiveClassCard";
-import { Search, Filter, CalendarX2 } from "lucide-react";
+import { Search, Filter, CalendarX2 } from "@/components/icons";
 import { bindRefresh, publish } from "@/services/data-bus";
 import { serviceRequest } from "@/services/service-client";
 

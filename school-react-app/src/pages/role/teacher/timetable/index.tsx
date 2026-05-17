@@ -17,7 +17,7 @@ import {
   ClipboardCheck,
   CheckCircle2,
   AlertCircle
-} from "lucide-react";
+} from "@/components/icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { SchoolShell } from "@/layouts/SchoolShell";
 import { useAuth } from "@/hooks/useAuth";

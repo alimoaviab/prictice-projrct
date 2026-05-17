@@ -4,7 +4,7 @@ import { SchoolShell } from "@/layouts/SchoolShell";
 import { LiveClassList } from "@/components/live-classes/LiveClassList";
 import { useNavigate } from "react-router-dom";
 import { serviceRequest } from "@/services/service-client";
-import { Video, Calendar, Users, RefreshCw, PlusCircle, LayoutDashboard, Clock, Activity, Settings, UserCheck } from "lucide-react";
+import { Video, Calendar, Users, RefreshCw, PlusCircle, LayoutDashboard, Clock, Activity, Settings, UserCheck } from "@/components/icons";
 import { StatCardGrid } from "@/components/ui";
 
 export function LiveClassPage() {

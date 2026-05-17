@@ -122,11 +122,7 @@ export function LoginPage() {
             )}
           </button>
 
-          <div className="pt-3 border-t border-slate-100">
-            <p className="text-xs text-slate-400 text-center">
-              Default: <code className="font-mono text-slate-600">super@gmail.com</code> / <code className="font-mono text-slate-600">Test@123</code>
-            </p>
-          </div>
+          
         </form>
 
         <p className="text-center text-xs text-slate-400 mt-6">

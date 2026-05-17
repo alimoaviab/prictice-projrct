@@ -9,7 +9,7 @@ import {
   BarChart3,
   BellRing,
   GraduationCap
-} from "lucide-react";
+} from "@/components/icons";
 
 const features = [
   {

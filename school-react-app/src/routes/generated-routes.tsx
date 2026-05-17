@@ -48,8 +48,9 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/academic-years/create", element: lazyPage(() => import("@/pages/role/admin/academic-years/create"), "AdminAcademicYearCreatePage") },
   { path: "/admin/academic-years/:id/edit", element: lazyPage(() => import("@/pages/role/admin/academic-years/Param_id/edit"), "AdminAcademicYearEditPage") },
 
-  // AI
-  { path: "/admin/ai", element: lazyPage(() => import("@/pages/role/admin/ai"), "AdminAIPage") },
+  // AI Copilot
+  // (Removed — replaced by the floating Plexa chat widget which lives in
+  // src/components/chatbot/ChatWidget.tsx and is mounted globally.)
 
   // Announcements
   { path: "/admin/announcements", element: lazyPage(() => import("@/pages/role/admin/announcements"), "AdminAnnouncementsPage") },

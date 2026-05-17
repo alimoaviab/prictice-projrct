@@ -1,0 +1,36 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# EduPlexo Go Backend — VPS Production Build
+# ═══════════════════════════════════════════════════════════════════════════
+# Multi-stage build. Final image: ~12MB distroless, non-root, no shell.
+
+# Stage 1: Build
+FROM golang:alpine AS builder
+
+RUN apk add --no-cache ca-certificates tzdata
+
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download && go mod verify
+
+COPY . .
+
+ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
+
+RUN go build \
+    -trimpath \
+    -ldflags="-s -w -extldflags '-static'" \
+    -o /out/server \
+    ./cmd/server
+
+# Stage 2: Production (minimal distroless image)
+FROM gcr.io/distroless/static-debian12:nonroot
+
+COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=builder /out/server /app/server
+
+WORKDIR /app
+EXPOSE 8080
+USER nonroot:nonroot
+
+ENTRYPOINT ["/app/server"]

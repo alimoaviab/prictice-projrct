@@ -12,7 +12,7 @@ type Role = "admin" | "teacher" | "student";
 const ROLES: { key: Role; label: string; icon: string }[] = [
   { key: "admin", label: "Admin", icon: "admin_panel_settings" },
   { key: "teacher", label: "Teacher", icon: "local_library" },
-  { key: "student", label: "Parent Portal", icon: "family_restroom" },
+  { key: "student", label: "Student", icon: "school" },
 ];
 
 const ROLE_ROUTES: Record<string, string> = {
@@ -91,11 +91,23 @@ export function LoginPage() {
         body: JSON.stringify({ ...formData, role: selectedRole }),
       });
 
-      const result = await response.json();
+      const raw = await response.text();
+      let result: any = null;
+      if (raw) {
+        try {
+          result = JSON.parse(raw);
+        } catch {
+          result = null;
+        }
+      }
+
       const payload = result?.data && typeof result.data === "object" ? result.data : result;
 
       if (!response.ok) {
-        throw new Error(result?.message || "Sign in failed.");
+        const message =
+          result?.message ||
+          `Sign in failed (${response.status}). Please try again.`;
+        throw new Error(message);
       }
 
       setSuccess(true);
@@ -145,7 +157,7 @@ export function LoginPage() {
                   selectedRole === role.key ? "text-blue-600 bg-white shadow-sm ring-1 ring-white/50" : "text-gray-400 hover:text-gray-600"
                 }`}
               >
-                <span className="material-symbols-outlined text-[20px]">{role.icon}</span>
+                <span className="material-symbols-outlined text-[20px] w-5 h-5 flex items-center justify-center overflow-hidden flex-shrink-0 select-none">{role.icon}</span>
                 <span className="uppercase tracking-widest">{role.label}</span>
               </button>
             ))}

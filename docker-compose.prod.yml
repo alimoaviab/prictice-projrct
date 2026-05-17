@@ -325,6 +325,51 @@ services:
         max-size: "10m"
         max-file: "2"
 
+  # ─── EduBot AI Chatbot Service ─────────────────────────────────────────
+  edubot:
+    build:
+      context: ./edubot-service
+      dockerfile: Dockerfile
+    container_name: eduplexo_edubot
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY:?GEMINI_API_KEY is required}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      GO_BACKEND_URL: http://backend-go-1:8080
+      GO_BACKEND_TIMEOUT: "8"
+      REDIS_URL: redis://redis:6379/1
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      ENV: production
+      LOG_LEVEL: INFO
+      SESSION_TTL_SECONDS: "1800"
+      MAX_HISTORY_PAIRS: "10"
+      GEMINI_TIMEOUT_SECONDS: "10"
+      RATE_LIMIT_PER_MINUTE: "20"
+    expose:
+      - "8001"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+        reservations:
+          memory: 128M
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8001/chat/health')\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
 volumes:
   postgres_data:
     name: eduplexo_prod_postgres

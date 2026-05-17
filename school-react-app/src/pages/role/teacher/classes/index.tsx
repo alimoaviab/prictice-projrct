@@ -21,7 +21,7 @@ import {
   CheckCircle2,
   AlertCircle,
   FileText
-} from "lucide-react";
+} from "@/components/icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Badge, 

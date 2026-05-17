@@ -9,6 +9,8 @@
     "preview": "vite preview",
     "check": "tsc -b --noEmit",
     "lint": "tsc -b --noEmit",
+    "test": "vitest --run",
+    "test:watch": "vitest",
     "msw:init": "msw init public/ --save"
   },
   "dependencies": {
@@ -20,21 +22,26 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^9.1.0",
-    "react-router-dom": "^7.1.0"
+    "react-router-dom": "^7.1.0",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.4",
     "@tailwindcss/vite": "^4.2.4",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
     "@types/node": "^22.14.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.5.0",
+    "jsdom": "^25.0.1",
     "msw": "^2.7.0",
     "postcss": "^8.5.10",
     "tailwindcss": "^4.2.4",
     "typescript": "^5.9.3",
-    "vite": "^6.0.7"
+    "vite": "^6.0.7",
+    "vitest": "^2.1.8"
   },
   "msw": {
     "workerDirectory": [

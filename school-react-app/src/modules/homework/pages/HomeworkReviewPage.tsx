@@ -4,7 +4,7 @@ import { Button, DataState, Input, Skeleton, Badge, Select } from "@/components/
 import { useSafeAsync } from "@/hooks/useSafeAsync";
 import { showToast } from "@/utils/toast";
 import { serviceRequest } from "@/services/service-client";
-import { ChevronLeft, Save, Users, AlertCircle, FileText, Search } from "lucide-react";
+import { ChevronLeft, Save, Users, AlertCircle, FileText, Search } from "@/components/icons";
 import { Link } from "react-router-dom";
 
 interface Student {

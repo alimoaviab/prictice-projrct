@@ -21,15 +21,23 @@ export default defineConfig(({ mode }) => {
       // When VITE_API_PROXY_TARGET is set (e.g. http://localhost:8080), Vite
       // forwards every /api/* request to the future Go backend. When unset,
       // requests fall through to MSW which serves mock responses in-browser.
-      proxy: apiTarget
-        ? {
-            "/api": {
-              target: apiTarget,
-              changeOrigin: true,
-              secure: false,
-            },
-          }
-        : undefined,
+      proxy: {
+        ...(apiTarget
+          ? {
+              "/api": {
+                target: apiTarget,
+                changeOrigin: true,
+                secure: false,
+              },
+            }
+          : {}),
+        // Plexa chatbot service (always proxied to FastAPI on :8001)
+        "/chat": {
+          target: env.VITE_EDUBOT_URL || "http://localhost:8001",
+          changeOrigin: true,
+          secure: false,
+        },
+      },
     },
     build: {
       outDir: "dist",

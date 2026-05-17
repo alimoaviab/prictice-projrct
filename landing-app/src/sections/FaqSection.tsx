@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown } from "@/components/icons";
 
 export const FaqSection = () => {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);

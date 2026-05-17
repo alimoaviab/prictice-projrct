@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Smartphone, Bell, Clock, CalendarDays } from "lucide-react";
+import { Smartphone, Bell, Clock, CalendarDays } from "@/components/icons";
 
 export const MobileExperienceSection = () => {
   return (

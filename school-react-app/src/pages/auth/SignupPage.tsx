@@ -41,6 +41,7 @@ export function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [step, setStep] = useState(1);
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const selectedRole: Role = "admin";
 
   const [formData, setFormData] = useState({
@@ -92,6 +93,9 @@ export function SignupPage() {
       if (!formData.email.trim()) return "Email is required";
       if (!formData.password) return "Password is required";
       if (formData.password !== formData.confirmPassword) return "Passwords do not match";
+    }
+    if (currentStep === 3) {
+      if (!acceptTerms) return "You must accept the Terms & Conditions and Privacy Policy to continue";
     }
     // Step 2 & Step 3 are entirely optional now
     return null;
@@ -245,6 +249,24 @@ export function SignupPage() {
                     <Field label="Postal Code (Optional)" name="postalCode" value={formData.postalCode} onChange={handleChange} placeholder="74000" />
                   </div>
                   <SelectField label="Country (Optional)" name="country" value={formData.country} onChange={handleChange} options={COUNTRIES as unknown as string[]} />
+                  
+                  <div className="flex items-start gap-3 mt-4 ml-2">
+                    <input
+                      id="acceptTerms"
+                      name="acceptTerms"
+                      type="checkbox"
+                      required
+                      checked={acceptTerms}
+                      onChange={(e) => {
+                        setAcceptTerms(e.target.checked);
+                        setError("");
+                      }}
+                      className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 accent-blue-600 cursor-pointer mt-0.5"
+                    />
+                    <label htmlFor="acceptTerms" className="text-xs text-gray-500 font-bold select-none cursor-pointer">
+                      I accept the <span className="text-blue-600 hover:underline">Terms & Conditions</span> and <span className="text-blue-600 hover:underline">Privacy Policy</span>.
+                    </label>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -256,7 +278,7 @@ export function SignupPage() {
               {step < 3 ? (
                 <button type="button" onClick={nextStep} className="flex-[2] h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2">Next Step <span className="material-symbols-outlined text-[20px]">arrow_forward</span></button>
               ) : (
-                <button type="submit" disabled={loading} className="flex-[2] h-12 bg-green-600 hover:bg-green-700 text-white font-bold rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50">{loading ? "Processing..." : "Complete Setup"} {!loading && <span className="material-symbols-outlined text-[20px]">check_circle</span>}</button>
+                <button type="submit" disabled={loading || !acceptTerms} className="flex-[2] h-12 bg-green-600 hover:bg-green-700 text-white font-bold rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">{loading ? "Processing..." : "Complete Setup"} {!loading && <span className="material-symbols-outlined text-[20px]">check_circle</span>}</button>
               )}
             </div>
           </form>

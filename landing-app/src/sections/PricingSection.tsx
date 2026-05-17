@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, Building2 } from "lucide-react";
+import { CheckCircle2, Building2 } from "@/components/icons";
 
 import { whatsappUrl, WhatsappMessages } from "@/lib/whatsapp";
 
@@ -12,7 +12,7 @@ export const PricingSection = () => {
       name: "Starter School",
       students: "Up to 200 Students",
       priceMonthly: "4,000",
-      priceYearly: "40,000",
+      priceYearly: "38,400",
       description: "Perfect for small growing schools needing core management tools.",
       features: ["Student & Staff Directory", "Basic Attendance Tracking", "Fee Collection", "Parent Portal App", "Standard Support"],
       isPopular: false
@@ -20,8 +20,8 @@ export const PricingSection = () => {
     {
       name: "Growth School",
       students: "Up to 500 Students",
-      priceMonthly: "8,000",
-      priceYearly: "80,000",
+      priceMonthly: "9,000",
+      priceYearly: "86,400",
       description: "Advanced features for established schools scaling their operations.",
       features: ["Everything in Starter", "Advanced AI Analytics", "Automated Report Cards", "Payroll Management", "Priority 24/7 Support"],
       isPopular: true

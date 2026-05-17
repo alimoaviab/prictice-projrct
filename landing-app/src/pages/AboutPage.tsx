@@ -11,7 +11,7 @@ import {
   Rocket,
   Globe,
   HeartHandshake,
-} from 'lucide-react';
+} from '@/components/icons';
 
 import { PageShell } from '@/components/PageShell';
 

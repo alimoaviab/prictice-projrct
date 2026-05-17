@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, CheckCircle2, ShieldCheck } from "lucide-react";
+import { ArrowRight, CheckCircle2, ShieldCheck } from "@/components/icons";
 
 import { whatsappUrl, WhatsappMessages } from "@/lib/whatsapp";
 
