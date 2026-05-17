@@ -28,16 +28,22 @@ export const AISystemSection = () => {
   const [demoStep, setDemoStep] = useState(0);
   
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   const typingTimerRef = useRef<any>(null);
   const isInitialMount = useRef(true);
 
-  // Auto scroll to bottom of chat
+  // Auto scroll to bottom of chat container
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
       return;
     }
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior: "smooth"
+      });
+    }
   }, [messages, isTyping]);
 
   // Demo sequence definition
@@ -442,7 +448,7 @@ export const AISystemSection = () => {
               </div>
 
               {/* Chat Messages List */}
-              <div className="h-[360px] overflow-y-auto px-6 py-6 space-y-4 bg-slate-950/40 scrollbar-thin scrollbar-thumb-slate-800">
+              <div ref={chatContainerRef} className="h-[360px] overflow-y-auto px-6 py-6 space-y-4 bg-slate-950/40 scrollbar-thin scrollbar-thumb-slate-800">
                 <AnimatePresence initial={false}>
                   {messages.map((msg) => (
                     <motion.div
