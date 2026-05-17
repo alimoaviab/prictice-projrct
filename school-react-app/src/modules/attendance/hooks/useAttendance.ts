@@ -23,7 +23,7 @@ export function useAttendance(filters?: { class_id?: string; student_id?: string
     async (input: AttendanceFormInput) => {
       const result = await service.createAttendance(input);
       if (!result.ok) {
-        showToast(result.error.message || "Failed to record attendance", "error");
+        showToast(result.error.message || "Could not record attendance. Please check the student and date selection.", "error");
         return result;
       }
 
@@ -38,7 +38,7 @@ export function useAttendance(filters?: { class_id?: string; student_id?: string
     async (id: string, input: Partial<AttendanceFormInput>) => {
       const result = await service.updateAttendance(id, input);
       if (!result.ok) {
-        showToast(result.error.message || "Failed to update attendance", "error");
+        showToast(result.error.message || "Could not update attendance record. Please try again.", "error");
         return result;
       }
 
@@ -53,7 +53,7 @@ export function useAttendance(filters?: { class_id?: string; student_id?: string
     async (id: string) => {
       const result = await service.deleteAttendance(id);
       if (!result.ok) {
-        showToast(result.error.message || "Failed to delete attendance", "error");
+        showToast(result.error.message || "Could not delete attendance record. Please try again.", "error");
         return result;
       }
 

@@ -29,7 +29,7 @@ export function useEvents(filters?: import("../services/events.service").EventLi
     async (input: EventFormInput) => {
       const result = await service.createEvent(input);
       if (!result.success) {
-        showToast(result.message || "Failed to create event", "error");
+        showToast(result.message || "Could not create event. Please check the details and try again.", "error");
         return result;
       }
       showToast("Event created.", "success");
@@ -44,7 +44,7 @@ export function useEvents(filters?: import("../services/events.service").EventLi
     async (id: string, input: Partial<EventFormInput>) => {
       const result = await service.updateEvent(id, input);
       if (!result.success) {
-        showToast(result.message || "Failed to update", "error");
+        showToast(result.message || "Could not update event. Please check your changes and try again.", "error");
         return result;
       }
       showToast("Event updated.", "success");
@@ -59,7 +59,7 @@ export function useEvents(filters?: import("../services/events.service").EventLi
     async (id: string) => {
       const result = await service.deleteEvent(id);
       if (!result.success) {
-        showToast(result.message || "Failed to delete", "error");
+        showToast(result.message || "Could not delete event. It may be linked to other records.", "error");
         return result;
       }
       showToast("Event deleted.", "success");

@@ -68,7 +68,7 @@ export function HomeworkEditPage({ role, id }: HomeworkEditPageProps) {
       setHomework(hwRes.ok ? hwRes.data : null);
     } catch (error) {
       console.error("[HomeworkEditPage] Failed to load data:", error);
-      showToast("Failed to load required data", "error");
+      showToast(error instanceof Error ? error.message : "Could not load homework details. Please refresh the page.", "error");
     } finally {
       setLoading(false);
     }

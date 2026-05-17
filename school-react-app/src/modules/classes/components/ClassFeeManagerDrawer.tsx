@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Input, Select } from "@/components/ui";
+import { Drawer } from "@/components/ui/Drawer";
 import { serviceRequest } from "@/services/service-client";
 
 type ClassFeeRecord = {
@@ -208,9 +209,7 @@ export function ClassFeeManagerDrawer({ isOpen, classItem, onClose }: Props) {
   };
 
   return (
-    <>
-      <div className="fixed inset-0 z-[9998] bg-slate-950/45 backdrop-blur-[2px]" onClick={onClose} />
-      <aside className="fixed inset-y-0 right-0 z-[9999] flex w-full max-w-4xl flex-col bg-[#F8FAFF] shadow-[-28px_0_60px_-20px_rgba(15,23,42,0.35)]">
+    <Drawer isOpen={isOpen} onClose={onClose} width="max-w-4xl">
         <div className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-5">
           <div>
             <p className="text-[10px] font-black tracking-[0.28em] text-blue-600">Fee structure manager</p>
@@ -392,7 +391,6 @@ export function ClassFeeManagerDrawer({ isOpen, classItem, onClose }: Props) {
             </div>
           </div>
         </div>
-      </aside>
-    </>
+    </Drawer>
   );
 }

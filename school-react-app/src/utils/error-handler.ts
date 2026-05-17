@@ -9,7 +9,7 @@ export interface AppError {
 
 export function handleError(
   error: unknown,
-  fallbackMessage = "Something went wrong"
+  fallbackMessage = "Something went wrong. Please try again or contact support if the issue persists."
 ): AppError {
   console.error("[Global Error Handler]:", error);
 

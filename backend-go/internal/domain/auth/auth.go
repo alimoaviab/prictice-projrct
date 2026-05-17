@@ -303,7 +303,7 @@ func (h *Handler) Signup(w http.ResponseWriter, r *http.Request) {
 			SchoolID:  schoolID,
 			Name:      schoolName,
 			Code:      uniqueCode,
-			Status:    "pending",
+			Status:    "active", // Bypassing Super Admin approval for now: changed from "pending"
 			CreatedAt: now,
 			UpdatedAt: now,
 		})
@@ -336,14 +336,13 @@ func (h *Handler) Signup(w http.ResponseWriter, r *http.Request) {
 		})
 		h.Store.Unlock()
 
-		// Same response shape: status is "pending", token is intentionally
-		// omitted because admin must wait for approval.
+		// Bypassing Super Admin approval for now: status is "active", token is still omitted (user goes to /auth/login)
 		api.WriteJSON(w, http.StatusCreated, map[string]any{
 			"ok":      true,
 			"success": true,
-			"message": "Your school account is under review. Please wait for approval.",
+			"message": "Your school account is active. Please log in.",
 			"data": map[string]any{
-				"status":    "pending",
+				"status":    "active",
 				"school_id": schoolID,
 			},
 		})

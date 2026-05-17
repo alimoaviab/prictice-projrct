@@ -58,7 +58,7 @@ export function LiveClassCreatePage({ role }: LiveClassCreatePageProps) {
       });
     } catch (error) {
       console.error("Failed to load form data", error);
-      showToast("Failed to load required data", "error");
+      showToast(error instanceof Error ? error.message : "Could not load classes and teachers. Please refresh the page.", "error");
     } finally {
       setLoading(false);
     }
@@ -112,7 +112,7 @@ export function LiveClassCreatePage({ role }: LiveClassCreatePageProps) {
       }
     } catch (err) {
       console.error("Schedule error:", err);
-      showToast("An error occurred during scheduling", "error");
+      showToast(err instanceof Error ? err.message : "Could not schedule the live class. Please check your input and try again.", "error");
     } finally {
       setSubmitting(false);
     }

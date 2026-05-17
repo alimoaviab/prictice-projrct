@@ -73,7 +73,7 @@ export function useTimetable(filters?: service.TimetableListFilters) {
     async (id: string) => {
       const result = await service.deleteTimetable(id);
       if (!result.ok) {
-        showToast(result.error?.message || result.message || "Failed to delete entry", "error");
+        showToast(result.error?.message || result.message || "Could not delete timetable entry. Please try again.", "error");
         return result;
       }
       showToast("Period removed.", "success");

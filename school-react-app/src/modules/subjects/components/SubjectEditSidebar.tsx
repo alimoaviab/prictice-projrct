@@ -99,11 +99,11 @@ export function SubjectEditSidebar({ isOpen, subject, onClose, onSave, isSaving 
     return (
         <>
             <div
-                className="fixed inset-0 bg-white/10 backdrop-blur-sm z-40 transition-opacity"
+                className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-40 animate-in fade-in duration-300"
                 onClick={handleClose}
             />
 
-            <div className="fixed right-0 top-0 h-screen w-[400px] bg-white shadow-2xl z-50 flex flex-col overflow-hidden animate-in slide-in-from-right-full duration-300">
+            <div className="fixed right-0 top-0 h-screen w-[400px] bg-white shadow-2xl z-50 flex flex-col overflow-hidden animate-in slide-in-from-right duration-400">
                 <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white">
                     <div>
                         <h2 className="text-[16px] font-bold text-slate-900">{subject ? "Modify Subject" : "New Subject Entry"}</h2>

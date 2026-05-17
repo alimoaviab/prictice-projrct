@@ -89,7 +89,7 @@ export function ClassEditSidebar({
         <>
             {/* Overlay - Subtler backdrop for better context retention */}
             <div
-                className={`fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-[9998] transition-opacity duration-500 ${
+                className={`fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-[9998] transition-opacity duration-300 ease-out ${
                     isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
                 }`}
                 onClick={handleClose}
@@ -97,9 +97,10 @@ export function ClassEditSidebar({
 
             {/* Drawer - Linear/Stripe inspired high-density panel */}
             <aside
-                className={`fixed inset-y-0 right-0 z-[9999] flex w-full max-w-sm transform flex-col bg-white shadow-[-20px_0_50px_-12px_rgba(0,0,0,0.15)] transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${
+                className={`fixed inset-y-0 right-0 z-[9999] flex w-full max-w-sm transform flex-col bg-white shadow-[-20px_0_50px_-12px_rgba(0,0,0,0.15)] ${
                     isOpen ? "translate-x-0" : "translate-x-full"
                 }`}
+                style={{ transition: "transform 400ms cubic-bezier(0.32, 0.72, 0, 1)" }}
             >
                 {/* Sticky Header */}
                 <div className="shrink-0 flex items-center justify-between border-b border-slate-100 bg-white px-6 py-5">

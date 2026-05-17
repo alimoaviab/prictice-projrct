@@ -76,7 +76,7 @@ export function useTeachers(params: UseTeachersParams = {}) {
         async (input: TeacherFormInput) => {
             const result = await service.createTeacher(input);
             if (!result.success) {
-                showToast(result.message || "Failed to create teacher", "error");
+                showToast(result.message || "Could not create teacher. Please check the details and try again.", "error");
                 return result;
             }
             showToast("Teacher created.", "success");
@@ -91,7 +91,7 @@ export function useTeachers(params: UseTeachersParams = {}) {
         async (id: string, input: Partial<TeacherFormInput>) => {
             const result = await service.updateTeacher(id, input);
             if (!result.success) {
-                showToast(result.message || "Failed to update teacher", "error");
+                showToast(result.message || "Could not update teacher. Please check your changes and try again.", "error");
                 return result;
             }
             showToast("Teacher updated.", "success");
@@ -106,7 +106,7 @@ export function useTeachers(params: UseTeachersParams = {}) {
         async (id: string) => {
             const result = await service.deleteTeacher(id);
             if (!result.success) {
-                showToast(result.message || "Failed to delete teacher", "error");
+                showToast(result.message || "Could not delete teacher. The teacher may have assigned classes or records.", "error");
                 return result;
             }
             showToast("Teacher deleted.", "success");

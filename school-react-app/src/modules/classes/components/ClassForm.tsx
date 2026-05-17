@@ -420,12 +420,37 @@ export function ClassForm({
                     <div className="space-y-1.5">
                         {form.grade_thresholds?.map((grade, index) => (
                             <div key={index} className="flex items-center gap-2 p-1.5 bg-slate-50/50 rounded-xl border border-slate-100 group">
-                                <div className="w-10">
+                                <div className="w-16 flex items-center justify-center gap-0.5 border border-slate-200/60 rounded-lg bg-white px-1 py-0.5">
                                     <input
-                                        value={grade.grade}
-                                        onChange={(e) => updateGrade(index, "grade", e.target.value)}
-                                        className="w-full text-center bg-transparent border-none focus:ring-0 text-sm font-bold text-slate-900"
+                                        value={grade.grade.charAt(0) || ""}
+                                        onChange={(e) => {
+                                            const cleanLetter = e.target.value.replace(/[^a-zA-Z]/g, "").toUpperCase();
+                                            const currentSuffix = (grade.grade.charAt(1) === "+" || grade.grade.charAt(1) === "-") ? grade.grade.charAt(1) : "";
+                                            updateGrade(index, "grade", cleanLetter + currentSuffix);
+                                        }}
+                                        maxLength={1}
+                                        placeholder="G"
+                                        className="w-5 text-center bg-transparent border-none focus:ring-0 text-sm font-extrabold text-slate-900 p-0 outline-none"
                                     />
+                                    <div className="relative flex items-center justify-center w-5 h-5">
+                                        <select
+                                            value={(grade.grade.charAt(1) === "+" || grade.grade.charAt(1) === "-") ? grade.grade.charAt(1) : ""}
+                                            onChange={(e) => {
+                                                const letter = grade.grade.charAt(0) || "";
+                                                updateGrade(index, "grade", letter + e.target.value);
+                                            }}
+                                            className="absolute inset-0 bg-transparent border-none text-xs font-extrabold text-slate-500 focus:ring-0 cursor-pointer p-0 w-full h-full outline-none appearance-none text-center z-10"
+                                        >
+                                            <option value=""> </option>
+                                            <option value="+">+</option>
+                                            <option value="-">-</option>
+                                        </select>
+                                        {!(grade.grade.charAt(1) === "+" || grade.grade.charAt(1) === "-") && (
+                                            <span className="material-symbols-outlined text-[16px] text-slate-400 pointer-events-none select-none z-0">
+                                                arrow_drop_down
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                                 <div className="w-14">
                                     <input

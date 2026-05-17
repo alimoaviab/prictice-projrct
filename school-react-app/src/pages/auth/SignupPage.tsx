@@ -94,10 +94,12 @@ export function SignupPage() {
       if (!formData.password) return "Password is required";
       if (formData.password !== formData.confirmPassword) return "Passwords do not match";
     }
+    if (currentStep === 2) {
+      if (!formData.schoolName.trim()) return "School Name is required";
+    }
     if (currentStep === 3) {
       if (!acceptTerms) return "You must accept the Terms & Conditions and Privacy Policy to continue";
     }
-    // Step 2 & Step 3 are entirely optional now
     return null;
   }
 
@@ -226,7 +228,7 @@ export function SignupPage() {
                   exit={{ opacity: 0, x: -20 }}
                   className="space-y-6"
                 >
-                  <Field label="School Name (Optional)" name="schoolName" value={formData.schoolName} onChange={handleChange} placeholder="Eduplexo Academy" autoFocus />
+                  <Field label="School Name" name="schoolName" required value={formData.schoolName} onChange={handleChange} placeholder="Eduplexo Academy" autoFocus />
                   <div className="grid grid-cols-2 gap-4">
                     <Field label="Principal (Optional)" name="principalName" value={formData.principalName} onChange={handleChange} placeholder="Dr. Aisha" />
                     <Field label="Est. Year (Optional)" name="establishmentYear" type="number" value={formData.establishmentYear} onChange={handleChange} placeholder="2024" />
@@ -264,7 +266,27 @@ export function SignupPage() {
                       className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 accent-blue-600 cursor-pointer mt-0.5"
                     />
                     <label htmlFor="acceptTerms" className="text-xs text-gray-500 font-bold select-none cursor-pointer">
-                      I accept the <span className="text-blue-600 hover:underline">Terms & Conditions</span> and <span className="text-blue-600 hover:underline">Privacy Policy</span>.
+                      I accept the{" "}
+                      <a
+                        href="https://eduplexo.com/terms"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-blue-600 hover:underline"
+                      >
+                        Terms & Conditions
+                      </a>{" "}
+                      and{" "}
+                      <a
+                        href="https://eduplexo.com/privacy"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-blue-600 hover:underline"
+                      >
+                        Privacy Policy
+                      </a>
+                      .
                     </label>
                   </div>
                 </motion.div>
@@ -297,7 +319,7 @@ export function SignupPage() {
 function Field({ label, name, value, onChange, type = "text", placeholder, required, autoFocus }: any) {
   return (
     <div className="space-y-1.5">
-      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">{label}</label>
+      <label className="text-[11px] font-bold text-gray-500 tracking-wide ml-2">{label}</label>
       <input name={name} type={type} required={required} value={value} onChange={onChange} placeholder={placeholder} autoFocus={autoFocus} className="w-full h-12 px-6 bg-white/50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-blue-600 transition-all outline-none text-gray-900 font-bold placeholder:text-gray-300" />
     </div>
   );
@@ -306,7 +328,7 @@ function Field({ label, name, value, onChange, type = "text", placeholder, requi
 function SelectField({ label, name, value, onChange, options, required, placeholder }: any) {
   return (
     <div className="space-y-1.5">
-      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">{label}</label>
+      <label className="text-[11px] font-bold text-gray-500 tracking-wide ml-2">{label}</label>
       <select name={name} required={required} value={value} onChange={onChange} className="w-full h-12 px-5 bg-white/50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-blue-600 transition-all outline-none text-gray-900 font-bold appearance-none cursor-pointer">
         {placeholder && <option value="" disabled>{placeholder}</option>}
         {options.map((o: string) => <option key={o} value={o}>{o}</option>)}
@@ -318,7 +340,7 @@ function SelectField({ label, name, value, onChange, options, required, placehol
 function PasswordField({ label, name, value, onChange, show, onToggle }: any) {
   return (
     <div className="space-y-1.5">
-      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">{label}</label>
+      <label className="text-[11px] font-bold text-gray-500 tracking-wide ml-2">{label}</label>
       <div className="relative">
         <input name={name} type={show ? "text" : "password"} required value={value} onChange={onChange} placeholder="••••••••" className="w-full h-12 pl-6 pr-14 bg-white/50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-blue-600 transition-all outline-none text-gray-900 font-bold placeholder:text-gray-300" />
         <button type="button" onClick={onToggle} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors" tabIndex={-1}>

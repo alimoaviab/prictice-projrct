@@ -53,17 +53,17 @@ export const toast = {
     dispatchToast(message, "success", options);
   },
   error(message: string, options?: ToastOptions) {
-    dispatchToast(message, "error", options);
+    dispatchToast(message, "error", { title: options?.title ?? "Something went wrong", ...options });
   },
   warning(message: string, options?: ToastOptions) {
-    dispatchToast(message, "warning", options);
+    dispatchToast(message, "warning", { title: options?.title ?? "Attention", ...options });
   },
   info(message: string, options?: ToastOptions) {
     dispatchToast(message, "info", options);
   },
-  apiError(payload: unknown, fallback = "We couldn't complete that action.", options?: ToastOptions) {
+  apiError(payload: unknown, fallback = "Something went wrong. Please try again or contact support if the issue persists.", options?: ToastOptions) {
     const message = formatServiceError(payload, fallback);
-    dispatchToast(message, "error", options);
+    dispatchToast(message, "error", { title: options?.title ?? "Something went wrong", ...options });
   },
 };
 

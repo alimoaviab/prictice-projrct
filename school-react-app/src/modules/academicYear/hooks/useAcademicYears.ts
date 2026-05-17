@@ -108,7 +108,7 @@ export function useAcademicYears(initialPage = 1, limit = 6) {
     async (input: AcademicYearFormInput) => {
       const result = await addMutation.mutateAsync(input);
       if (!result.ok) {
-        showToast("Failed to create academic year", "error");
+        showToast(result.error?.message || result.message || "Could not create academic year. Please check your input and try again.", "error");
         return result;
       }
       showToast("Academic year created.", "success");
@@ -122,7 +122,7 @@ export function useAcademicYears(initialPage = 1, limit = 6) {
     async (id: string, input: Partial<AcademicYearFormInput>) => {
       const result = await updateMutation.mutateAsync({ id, input });
       if (!result.ok) {
-        showToast("Failed to update academic year", "error");
+        showToast(result.error?.message || result.message || "Could not update academic year. Please check your changes and try again.", "error");
         return result;
       }
       showToast("Academic year updated.", "success");
@@ -136,7 +136,7 @@ export function useAcademicYears(initialPage = 1, limit = 6) {
     async (id: string) => {
       const result = await deleteMutation.mutateAsync(id);
       if (!result.ok) {
-        showToast("Failed to delete academic year", "error");
+        showToast(result.error?.message || result.message || "Could not delete academic year. It may be in use by other records.", "error");
         return result;
       }
       showToast("Academic year deleted.", "success");

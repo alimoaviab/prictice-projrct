@@ -21,7 +21,7 @@ export function useBehavior(filters?: { student_id?: string; teacher_id?: string
 		async (input: BehaviorFormInput) => {
 			const result = await service.createBehavior(input);
 			if (!result.success) {
-				showToast(result.message || "Failed to create behavior record", "error");
+				showToast(result.message || "Could not create behavior record. Please check the details and try again.", "error");
 				return result;
 			}
 			showToast("Behavior record created.", "success");
@@ -35,7 +35,7 @@ export function useBehavior(filters?: { student_id?: string; teacher_id?: string
 		async (id: string, input: Partial<BehaviorFormInput>) => {
 			const result = await service.updateBehavior(id, input);
 			if (!result.success) {
-				showToast(result.message || "Failed to update behavior", "error");
+				showToast(result.message || "Could not update behavior record. Please try again.", "error");
 				return result;
 			}
 			showToast("Behavior record updated.", "success");
@@ -49,7 +49,7 @@ export function useBehavior(filters?: { student_id?: string; teacher_id?: string
 		async (id: string) => {
 			const result = await service.deleteBehavior(id);
 			if (!result.success) {
-				showToast(result.message || "Failed to delete behavior", "error");
+				showToast(result.message || "Could not delete behavior record. Please try again.", "error");
 				return result;
 			}
 			showToast("Behavior record deleted.", "success");

@@ -131,14 +131,18 @@ export async function serviceRequest<T>(
 
       const fallbackByStatus =
         response.status === 404
-          ? "We couldn't find what you were looking for."
+          ? "The requested resource was not found. It may have been deleted or moved."
           : response.status === 409
-            ? "This change conflicts with existing data."
-            : response.status === 429
-              ? "You're doing that too quickly. Please wait a moment."
-              : response.status >= 500
-                ? "The server ran into a problem. Please try again shortly."
-                : "The request couldn't be completed. Please try again.";
+            ? "This change conflicts with existing data. Someone else may have updated it. Please refresh and try again."
+            : response.status === 422
+              ? "The data you submitted is invalid. Please check your input and try again."
+              : response.status === 429
+                ? "Too many requests. Please wait a moment before trying again."
+                : response.status === 403
+                  ? "You don't have permission to perform this action. Contact your administrator if you need access."
+                  : response.status >= 500
+                    ? "The server encountered an unexpected error. Please try again in a few moments."
+                    : "The request could not be completed. Please check your input and try again.";
 
       const p = payload as Record<string, unknown> | null;
       const errorObj = p?.error as Record<string, unknown> | undefined;
@@ -171,11 +175,11 @@ export async function serviceRequest<T>(
     ok: false,
     success: false,
     message:
-      "Couldn't reach the server. Please check your internet connection and try again.",
+      "Unable to reach the server. Please check your internet connection and try again.",
     error: {
       code: "NETWORK_ERROR",
       message:
-        "Couldn't reach the server. Please check your internet connection and try again.",
+        "Unable to reach the server. Please check your internet connection and try again.",
       status: 503,
       details: lastError,
     },

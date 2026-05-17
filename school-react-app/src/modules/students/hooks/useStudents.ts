@@ -30,7 +30,7 @@ export function useStudents(filters?: { class_id?: string; status?: string }) {
 		async (input: StudentFormInput) => {
 			const result = await service.createStudent(input);
 			if (!result.success) {
-				showToast(result.message || "Failed to create student", "error");
+				showToast(result.message || "Could not create student. Please check the form details and try again.", "error");
 				return result;
 			}
 			showToast("Student created.", "success");
@@ -45,7 +45,7 @@ export function useStudents(filters?: { class_id?: string; status?: string }) {
 		async (id: string, input: Partial<StudentPatchInput> | Partial<StudentFormInput>) => {
 			const result = await service.updateStudent(id, input as any);
 			if (!result.success) {
-				showToast(result.message || "Failed to update student", "error");
+				showToast(result.message || "Could not update student. Please check your changes and try again.", "error");
 				return result;
 			}
 			showToast("Student updated.", "success");
@@ -60,7 +60,7 @@ export function useStudents(filters?: { class_id?: string; status?: string }) {
 		async (id: string) => {
 			const result = await service.deleteStudent(id);
 			if (!result.success) {
-				showToast(result.message || "Failed to delete student", "error");
+				showToast(result.message || "Could not delete student. The student may have linked records.", "error");
 				return result;
 			}
 			showToast("Student deleted.", "success");

@@ -22,7 +22,7 @@ export function useLeave() {
     async (input: LeaveFormInput) => {
       const result = await service.createLeave(input);
       if (!result.ok) {
-        showToast(result.error.message || "Failed to create leave request", "error");
+        showToast(result.error.message || "Could not submit leave request. Please check the dates and try again.", "error");
         return result;
       }
       showToast("Leave request created.", "success");
@@ -36,7 +36,7 @@ export function useLeave() {
     async (id: string, input: Partial<LeaveFormInput>) => {
       const result = await service.updateLeave(id, input);
       if (!result.ok) {
-        showToast(result.error.message || "Failed to update", "error");
+        showToast(result.error.message || "Could not update leave request. Please try again.", "error");
         return result;
       }
       showToast("Leave request updated.", "success");
@@ -50,7 +50,7 @@ export function useLeave() {
     async (id: string) => {
       const result = await service.deleteLeave(id);
       if (!result.ok) {
-        showToast(result.error.message || "Failed to delete", "error");
+        showToast(result.error.message || "Could not delete leave request. It may have already been processed.", "error");
         return result;
       }
       showToast("Leave request deleted.", "success");
@@ -64,7 +64,7 @@ export function useLeave() {
     async (id: string) => {
       const result = await service.approveLeave(id);
       if (!result.ok) {
-        showToast(result.error.message || "Failed to approve", "error");
+        showToast(result.error.message || "Could not approve leave request. Please try again.", "error");
         return result;
       }
       showToast("Leave request approved.", "success");
@@ -78,7 +78,7 @@ export function useLeave() {
     async (id: string, reason: string) => {
       const result = await service.rejectLeave(id, reason);
       if (!result.ok) {
-        showToast(result.error.message || "Failed to reject", "error");
+        showToast(result.error.message || "Could not reject leave request. Please try again.", "error");
         return result;
       }
       showToast("Leave request rejected.", "success");

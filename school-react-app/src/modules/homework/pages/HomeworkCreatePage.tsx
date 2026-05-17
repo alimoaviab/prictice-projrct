@@ -76,7 +76,7 @@ export function HomeworkCreatePage({ role }: HomeworkCreatePageProps) {
       });
     } catch (error) {
       console.error("[HomeworkCreatePage] Failed to load data:", error);
-      showToast("Failed to load required data", "error");
+      showToast(error instanceof Error ? error.message : "Could not load classes, subjects, or teachers. Please refresh the page.", "error");
     } finally {
       setLoading(false);
     }

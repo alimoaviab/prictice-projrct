@@ -258,8 +258,8 @@ export function LeaveDetailPage() {
       </div>
 
       {showReject && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[100]">
-          <div className="bg-white p-6 rounded-2xl shadow-2xl max-w-md w-full border border-slate-100">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[100] animate-in fade-in duration-200">
+          <div className="bg-white p-6 rounded-2xl shadow-2xl max-w-md w-full border border-slate-100 animate-in zoom-in-95 slide-in-from-bottom-2 duration-300">
             <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">
               Reject leave request
             </h3>

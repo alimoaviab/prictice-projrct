@@ -25,7 +25,7 @@ export function useTests(filters?: { class_id?: string; subject?: string }) {
     async (input: TestFormInput) => {
       const result = await service.createTest(input);
       if (!result.ok) {
-        showToast(result.error.message || "Failed to create test", "error");
+        showToast(result.error.message || "Could not create test. Please check the details and try again.", "error");
         return result;
       }
 
@@ -41,7 +41,7 @@ export function useTests(filters?: { class_id?: string; subject?: string }) {
     async (id: string, input: Partial<TestFormInput>) => {
       const result = await service.updateTest(id, input);
       if (!result.ok) {
-        showToast(result.error.message || "Failed to update test", "error");
+        showToast(result.error.message || "Could not update test. Please check your changes and try again.", "error");
         return result;
       }
 
@@ -57,7 +57,7 @@ export function useTests(filters?: { class_id?: string; subject?: string }) {
     async (id: string) => {
       const result = await service.deleteTest(id);
       if (!result.ok) {
-        showToast(result.error.message || "Failed to delete test", "error");
+        showToast(result.error.message || "Could not delete test. It may have results linked to it.", "error");
         return result;
       }
 

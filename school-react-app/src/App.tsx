@@ -52,7 +52,7 @@ function AppContent() {
       <Outlet />
       <ToastProvider />
       <NetworkStatus />
-      {user && <ChatWidget />}
+      {user && user.role === "admin" && <ChatWidget />}
     </>
   );
 }

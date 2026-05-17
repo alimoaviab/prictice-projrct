@@ -144,7 +144,7 @@ export function LoginPage() {
               <img src="/logo.jpeg" alt="Eduplexo" className="h-full w-full object-cover" />
             </div>
             <h2 className="text-4xl font-black text-gray-900 mb-1 tracking-tight">Welcome Back</h2>
-            <p className="text-gray-500 font-bold text-xs uppercase tracking-widest">Sign in to continue</p>
+            <p className="text-gray-500 font-bold text-xs tracking-wide">Sign in to continue</p>
           </div>
 
           <div className="mb-8 p-1.5 bg-white/30 backdrop-blur-md rounded-2xl flex border border-white/40">
@@ -158,19 +158,19 @@ export function LoginPage() {
                 }`}
               >
                 <span className="material-symbols-outlined text-[20px] w-5 h-5 flex items-center justify-center overflow-hidden flex-shrink-0 select-none">{role.icon}</span>
-                <span className="uppercase tracking-widest">{role.label}</span>
+                <span className="tracking-wide">{role.label}</span>
               </button>
             ))}
           </div>
 
           <form className="space-y-6" onSubmit={handleSubmit} onKeyDown={handleKeyDown}>
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Email Address</label>
+              <label className="text-[11px] font-bold text-gray-500 tracking-wide ml-2">Email Address</label>
               <input name="email" type="email" required value={formData.email} onChange={handleChange} placeholder="name@school.com" autoFocus className="w-full h-12 px-6 bg-white/50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-blue-600 transition-all outline-none text-gray-900 font-bold placeholder:text-gray-300" />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Password</label>
+              <label className="text-[11px] font-bold text-gray-500 tracking-wide ml-2">Password</label>
               <div className="relative">
                 <input name="password" type={showPassword ? "text" : "password"} required value={formData.password} onChange={handleChange} placeholder="••••••••" className="w-full h-12 pl-6 pr-14 bg-white/50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-blue-600 transition-all outline-none text-gray-900 font-bold placeholder:text-gray-300" />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors" tabIndex={-1}>
@@ -189,7 +189,7 @@ export function LoginPage() {
           </form>
 
           <div className="mt-10 text-center">
-            <p className="text-gray-500 font-bold text-xs uppercase tracking-widest">
+            <p className="text-gray-500 font-bold text-xs tracking-wide">
               New member? <Link to="/auth/signup" className="text-blue-600 hover:underline underline-offset-4 decoration-2">Create Account</Link>
             </p>
           </div>

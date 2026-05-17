@@ -29,7 +29,7 @@ export function useResults(filters?: { exam_id?: string; student_id?: string }) 
     async (input: ResultFormInput) => {
       const result = await service.saveResult(input);
       if (!result.ok) {
-        showToast(result.error.message || "Failed to save result", "error");
+        showToast(result.error.message || "Could not save result. Please check the marks and try again.", "error");
         return result;
       }
 
@@ -44,7 +44,7 @@ export function useResults(filters?: { exam_id?: string; student_id?: string }) 
     async (id: string, input: Partial<ResultFormInput>) => {
       const result = await service.updateResult(id, input);
       if (!result.ok) {
-        showToast(result.error.message || "Failed to update result", "error");
+        showToast(result.error.message || "Could not update result. Please check your changes and try again.", "error");
         return result;
       }
 
@@ -59,7 +59,7 @@ export function useResults(filters?: { exam_id?: string; student_id?: string }) 
     async (id: string) => {
       const result = await service.deleteResult(id);
       if (!result.ok) {
-        showToast(result.error.message || "Failed to delete result", "error");
+        showToast(result.error.message || "Could not delete result. Please try again.", "error");
         return result;
       }
 

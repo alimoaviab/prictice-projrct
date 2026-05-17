@@ -22,7 +22,7 @@ export function useSettings() {
         async (input: SettingsFormInput) => {
             const result = await service.updateSettings(input);
             if (!result.success) {
-                showToast(result.message || "Failed to save settings", "error");
+                showToast(result.message || "Could not save settings. Please check your changes and try again.", "error");
                 return result;
             }
 

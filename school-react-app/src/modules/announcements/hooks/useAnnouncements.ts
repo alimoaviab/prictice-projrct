@@ -21,7 +21,7 @@ export function useAnnouncements() {
     async (input: AnnouncementFormInput) => {
       const result = await service.createAnnouncement(input);
       if (!result.success) {
-        showToast(result.message || "Failed to create announcement", "error");
+        showToast(result.message || "Could not create announcement. Please check the details and try again.", "error");
         return result;
       }
 
@@ -36,7 +36,7 @@ export function useAnnouncements() {
     async (id: string, input: Partial<AnnouncementFormInput>) => {
       const result = await service.updateAnnouncement(id, input);
       if (!result.success) {
-        showToast(result.message || "Failed to update announcement", "error");
+        showToast(result.message || "Could not update announcement. Please check your changes and try again.", "error");
         return result;
       }
 
@@ -51,7 +51,7 @@ export function useAnnouncements() {
     async (id: string) => {
       const result = await service.deleteAnnouncement(id);
       if (!result.success) {
-        showToast(result.message || "Failed to delete announcement", "error");
+        showToast(result.message || "Could not delete announcement. Please try again.", "error");
         return result;
       }
 

@@ -29,9 +29,14 @@ export const AISystemSection = () => {
   
   const chatEndRef = useRef<HTMLDivElement>(null);
   const typingTimerRef = useRef<any>(null);
+  const isInitialMount = useRef(true);
 
   // Auto scroll to bottom of chat
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
@@ -361,7 +366,7 @@ export const AISystemSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.6 }}
-              className="relative w-full max-w-[620px] mx-auto rounded-3xl border border-slate-800/80 bg-slate-900/80 backdrop-blur-2xl shadow-2xl overflow-hidden"
+              className="relative w-full max-w-[720px] mx-auto rounded-3xl border border-slate-800/80 bg-slate-900/80 backdrop-blur-2xl shadow-2xl overflow-hidden"
             >
               {/* Window Header */}
               <div className="flex items-center justify-between px-6 py-4 bg-slate-950/60 border-b border-slate-800/80">

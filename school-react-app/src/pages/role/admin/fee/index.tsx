@@ -92,10 +92,10 @@ export function StudentFeeDashboard() {
             if (res.success) {
                 setData(res.data);
             } else {
-                showToast(res.message || "Failed to load dashboard", "error");
+                showToast(res.message || "Could not load fee dashboard. Please try refreshing the page.", "error");
             }
         } catch (error) {
-            showToast("Network error occurred", "error");
+            showToast(error instanceof Error ? error.message : "Could not connect to the server. Please check your internet connection and try again.", "error");
         } finally {
             setLoading(false);
         }
@@ -126,10 +126,10 @@ export function StudentFeeDashboard() {
                 showToast("Payment recorded successfully", "success");
                 loadDashboard();
             } else {
-                showToast(res.message, "error");
+                showToast(res.message || "Payment could not be processed. Please verify the amount and try again.", "error");
             }
         } catch (error) {
-            showToast("Failed to process payment", "error");
+            showToast(error instanceof Error ? error.message : "Could not connect to the server. Please check your internet and try again.", "error");
         } finally {
             setSaving(false);
         }
@@ -154,10 +154,10 @@ export function StudentFeeDashboard() {
                 setPaymentForm({ amount: '', method: 'Cash', reference: '' });
                 loadDashboard();
             } else {
-                showToast(res.message, "error");
+                showToast(res.message || "Payment could not be processed. Please verify the amount and try again.", "error");
             }
         } catch (error) {
-            showToast("Failed to process payment", "error");
+            showToast(error instanceof Error ? error.message : "Could not connect to the server. Please check your internet and try again.", "error");
         } finally {
             setSaving(false);
         }

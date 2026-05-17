@@ -42,7 +42,7 @@ export function useClasses(params?: { page?: number; limit?: number }) {
         async (input: ClassFormInput) => {
             const result = await service.createClass(input);
             if (!result.success) {
-                showToast(result.message || "Failed to create class", "error");
+                showToast(result.message || "Could not create class. Please check the details and try again.", "error");
                 return result;
             }
 
@@ -64,7 +64,7 @@ export function useClasses(params?: { page?: number; limit?: number }) {
         async (id: string, input: Partial<ClassFormInput>) => {
             const result = await service.updateClass(id, input);
             if (!result.success) {
-                showToast(result.message || "Failed to update class", "error");
+                showToast(result.message || "Could not update class. Please check your changes and try again.", "error");
                 return result;
             }
 
@@ -80,7 +80,7 @@ export function useClasses(params?: { page?: number; limit?: number }) {
         async (id: string) => {
             const result = await service.deleteClass(id);
             if (!result.success) {
-                showToast(result.message || "Failed to delete class", "error");
+                showToast(result.message || "Could not delete class. It may have students or records linked to it.", "error");
                 return result;
             }
 

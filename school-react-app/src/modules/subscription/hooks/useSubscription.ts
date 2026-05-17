@@ -42,7 +42,7 @@ export function useSubscription() {
         showToast("Your 14-day free trial has started! Enjoy all Growth Plan features.", "success");
         queryClient.invalidateQueries({ queryKey: ["subscription"] });
       } else {
-        showToast(res.error?.message || "Failed to start trial", "error");
+        showToast(res.error?.message || "Could not start trial. You may have already used your trial period.", "error");
       }
     },
   });
@@ -55,7 +55,7 @@ export function useSubscription() {
         showToast("Subscription upgraded successfully!", "success");
         queryClient.invalidateQueries({ queryKey: ["subscription"] });
       } else {
-        showToast(res.error?.message || "Failed to upgrade", "error");
+        showToast(res.error?.message || "Could not upgrade subscription. Please try again or contact support.", "error");
       }
     },
   });

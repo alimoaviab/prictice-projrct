@@ -25,7 +25,7 @@ export function useExams(filters?: { class_id?: string; subject?: string }) {
     async (input: ExamFormInput) => {
       const result = await service.createExam(input);
       if (!result.ok) {
-        showToast(result.error.message || "Failed to create exam", "error");
+        showToast(result.error.message || "Could not create exam. Please check the details and try again.", "error");
         return result;
       }
 
@@ -41,7 +41,7 @@ export function useExams(filters?: { class_id?: string; subject?: string }) {
     async (id: string, input: Partial<ExamFormInput>) => {
       const result = await service.updateExam(id, input);
       if (!result.ok) {
-        showToast(result.error.message || "Failed to update exam", "error");
+        showToast(result.error.message || "Could not update exam. Please check your changes and try again.", "error");
         return result;
       }
 
@@ -57,7 +57,7 @@ export function useExams(filters?: { class_id?: string; subject?: string }) {
     async (id: string) => {
       const result = await service.deleteExam(id);
       if (!result.ok) {
-        showToast(result.error.message || "Failed to delete exam", "error");
+        showToast(result.error.message || "Could not delete exam. It may have results linked to it.", "error");
         return result;
       }
 

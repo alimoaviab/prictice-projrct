@@ -74,6 +74,101 @@
   animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* ─── Drawer & Modal Animation Utilities ─────────────────────────────── */
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes backdropFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Animate-in system: compose these classes for smooth entry animations */
+.animate-in {
+  animation-fill-mode: both;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+  animation-duration: 300ms;
+}
+
+.fade-in {
+  animation-name: backdropFadeIn;
+}
+
+.slide-in-from-right {
+  animation-name: slideInFromRight;
+}
+
+.slide-in-from-left {
+  animation-name: slideInFromLeft;
+}
+
+.slide-in-from-bottom-2 {
+  animation-name: slideInFromBottom;
+}
+
+.zoom-in-95 {
+  animation-name: zoomIn;
+}
+
+/* Override animation duration when combined with Tailwind duration utilities */
+.animate-in.duration-200 {
+  animation-duration: 200ms;
+}
+
+.animate-in.duration-300 {
+  animation-duration: 300ms;
+}
+
+.animate-in.duration-400 {
+  animation-duration: 400ms;
+}
+
+.animate-in.duration-500 {
+  animation-duration: 500ms;
+}
+
 :focus-visible {
   outline: 2px solid #3b82f6;
   outline-offset: 1px;
@@ -372,4 +467,9 @@
   @page {
     margin: 1cm;
   }
+}
+
+/* Global override to transform forced uppercase text back to elegant Title/Sentence Case */
+.uppercase {
+  text-transform: none !important;
 }

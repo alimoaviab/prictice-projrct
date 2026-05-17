@@ -5,6 +5,7 @@ export { Button } from "./Button";
 export { Card } from "./Card";
 export { ConfirmModal } from "./ConfirmModal";
 export type { ConfirmVariant } from "./ConfirmModal";
+export { Drawer } from "./Drawer";
 export { DataState } from "./DataState";
 export { DataTable } from "./DataTable";
 export type { DataTableColumn, RowAction } from "./DataTable";
