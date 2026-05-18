@@ -26,11 +26,15 @@ import {
   DataState,
   TableSkeleton,
   StatCardGrid,
+  Button,
+  PageHeader,
 } from "@/components/ui";
 import { useLeave } from "../hooks/useLeave";
-import { LeaveRecordRow } from "../types/leave.types";
+import { LeaveRecordRow, LeaveFormInput } from "../types/leave.types";
 import { showToast } from "@/utils/toast";
 import { useQueryParams } from "@/hooks/useQueryParams";
+import { motion, AnimatePresence } from "framer-motion";
+import { StudentLeaveSubmitForm } from "./StudentLeaveSubmitForm";
 
 type StatusFilter = "all" | "pending" | "approved" | "rejected" | "cancelled";
 type TypeFilter = "all" | "student" | "teacher";
@@ -39,10 +43,11 @@ export default function LeaveListPage() {
   const pathname = useLocation().pathname;
   const navigate = useNavigate();
   const { currentParams, updateQuery } = useQueryParams();
-  const { state, deleteLeave, approveLeave, rejectLeave } = useLeave();
+  const { state, deleteLeave, approveLeave, rejectLeave, addLeave } = useLeave();
 
   const [rejectReason, setRejectReason] = useState("");
   const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState(currentParams.get("search") || "");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(
     (currentParams.get("status") as StatusFilter) || "all"
@@ -55,6 +60,8 @@ export default function LeaveListPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">(
     (currentParams.get("view") as any) || "list"
   );
+
+  const isTeacher = pathname.startsWith("/teacher");
 
   useEffect(() => {
     setSearchQuery(currentParams.get("search") || "");
@@ -227,6 +234,13 @@ export default function LeaveListPage() {
     });
   }
 
+  async function handleSubmitLeave(data: LeaveFormInput) {
+    const res = await addLeave(data);
+    if ((res as any).ok) {
+      setIsSubmitModalOpen(false);
+    }
+  }
+
   const hasActiveFilters =
     searchQuery || statusFilter !== "all" || typeFilter !== "all" || startDate || endDate;
 
@@ -242,6 +256,18 @@ export default function LeaveListPage() {
 
   return (
     <div className="space-y-6 relative min-h-[80vh] pb-10">
+      {isTeacher && (
+        <PageHeader
+          title="Leave Requests"
+          description="Manage your leave requests and student leave requests for your assigned classes."
+          actions={
+            <Button onClick={() => setIsSubmitModalOpen(true)}>
+              <span className="material-symbols-outlined text-lg mr-2">add</span>
+              Submit leave
+            </Button>
+          }
+        />
+      )}
       <StatCardGrid
         items={[
           {
@@ -531,6 +557,42 @@ export default function LeaveListPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {isTeacher && isSubmitModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsSubmitModalOpen(false)}
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden"
+          >
+            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100">
+              <h3 className="text-[15px] font-bold text-slate-900">Apply for leave</h3>
+              <button
+                type="button"
+                onClick={() => setIsSubmitModalOpen(false)}
+                className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 transition-colors"
+                aria-label="Close"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="p-5">
+              <StudentLeaveSubmitForm
+                onSubmit={handleSubmitLeave}
+                onCancel={() => setIsSubmitModalOpen(false)}
+              />
+            </div>
+          </motion.div>
         </div>
       )}
     </div>

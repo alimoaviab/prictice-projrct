@@ -27,6 +27,7 @@ import { serviceRequest } from "@/services/service-client";
 import { showToast } from "@/utils/toast";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useTenantContext } from "@/hooks/useTenantContext";
+import { isValidAttendanceTransition } from "../utils/attendance-validation";
 
 // ─── Types ───────────────────────────────────────────────────────────────
 
@@ -152,8 +153,17 @@ export function useAttendanceMutation(opts: UseAttendanceMutationOptions) {
       // (e.g., another teacher marked the same class simultaneously).
       queryClient.invalidateQueries({ queryKey });
 
-      // Also invalidate the dashboard (attendance stats changed)
+      // Invalidate ALL attendance queries (other dates, classes, etc.)
+      // to ensure cross-portal consistency
+      queryClient.invalidateQueries({ queryKey: ["attendance"] });
+
+      // Invalidate parent attendance queries
+      queryClient.invalidateQueries({ queryKey: ["parent-attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["parent-student-attendance"] });
+
+      // Invalidate dashboard and summary stats
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance-summary"] });
     },
 
     onSuccess: (data) => {
@@ -192,6 +202,25 @@ export function useAttendanceMutation(opts: UseAttendanceMutationOptions) {
    */
   const markAttendance = useCallback(
     (input: MarkInput) => {
+      // Get current cached records to validate state transition
+      const cachedData = queryClient.getQueryData<any>(queryKey);
+      const records: AttendanceRecord[] = Array.isArray(cachedData)
+        ? cachedData
+        : cachedData?.data ?? cachedData?.items ?? [];
+
+      // Find current status for this student
+      const currentRecord = records.find((r) => r.student_id === input.studentId);
+      const currentStatus = (currentRecord?.status || "unmarked") as any;
+
+      // Validate state transition (prevent PRESENT/ABSENT → UNMARKED)
+      if (!isValidAttendanceTransition(currentStatus, input.status as any)) {
+        showToast(
+          `Cannot change from ${currentStatus} to ${input.status}. Once marked, attendance cannot be reverted to unmarked.`,
+          "warning"
+        );
+        return;
+      }
+
       // Add to batch
       batchRef.current[input.studentId] = input.status;
 

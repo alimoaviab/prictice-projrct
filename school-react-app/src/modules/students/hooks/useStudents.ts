@@ -1,8 +1,9 @@
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { usePaginatedList } from "@/hooks/usePaginatedList";
 import { showToast } from "@/utils/toast";
 import { StudentFormInput, StudentRow, StudentPatchInput } from "../types/student.types";
-import { publish } from "@/services/data-bus";
+import { publish, bindRefresh } from "@/services/data-bus";
 import * as service from "../services/student.service";
 
 /**
@@ -18,6 +19,7 @@ import * as service from "../services/student.service";
  * @param filters - Optional filters (class_id, status)
  */
 export function useStudents(filters?: { class_id?: string; status?: string }) {
+	const queryClient = useQueryClient();
 	const list = usePaginatedList<StudentRow>({
 		url: "/api/students",
 		resource: "students",
@@ -25,6 +27,13 @@ export function useStudents(filters?: { class_id?: string; status?: string }) {
 		initialFilters: filters,
 		staleTime: 10 * 60 * 1000, // 10 minutes — student data is relatively stable
 	});
+
+	useEffect(() => {
+		return bindRefresh("students", () => {
+			void queryClient.invalidateQueries({ queryKey: ["students"] });
+			void list.refetch();
+		});
+	}, [list.refetch, queryClient]);
 
 	const addStudent = useCallback(
 		async (input: StudentFormInput) => {
@@ -34,11 +43,12 @@ export function useStudents(filters?: { class_id?: string; status?: string }) {
 				return result;
 			}
 			showToast("Student created.", "success");
+			await queryClient.invalidateQueries({ queryKey: ["students"] });
 			list.refetch();
 			publish("students");
 			return result;
 		},
-		[list]
+		[list, queryClient]
 	);
 
 	const updateStudent = useCallback(
@@ -49,11 +59,12 @@ export function useStudents(filters?: { class_id?: string; status?: string }) {
 				return result;
 			}
 			showToast("Student updated.", "success");
+			await queryClient.invalidateQueries({ queryKey: ["students"] });
 			list.refetch();
 			publish("students");
 			return result;
 		},
-		[list]
+		[list, queryClient]
 	);
 
 	const deleteStudent = useCallback(
@@ -64,11 +75,12 @@ export function useStudents(filters?: { class_id?: string; status?: string }) {
 				return result;
 			}
 			showToast("Student deleted.", "success");
+			await queryClient.invalidateQueries({ queryKey: ["students"] });
 			list.refetch();
 			publish("students");
 			return result;
 		},
-		[list]
+		[list, queryClient]
 	);
 
 	return {

@@ -391,13 +391,13 @@ export function HomeworkPage({ role, studentId }: HomeworkPageProps) {
                       {(hw.teacher_name || "T").charAt(0).toUpperCase()}
                     </div>
                   ),
-                  to: `${basePath}/${id}/review`,
+                  to: `${basePath}/${id}`,
                 }}
                 actions={[
                   {
                     label: "Open",
                     icon: "visibility",
-                    to: `${basePath}/${id}/review`,
+                    to: `${basePath}/${id}`,
                     accent: "blue",
                     primary: true,
                   },

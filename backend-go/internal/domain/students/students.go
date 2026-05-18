@@ -41,12 +41,13 @@ const studentsListCacheTTL = 60 * time.Second
 
 // Handler serves the /api/students/* routes.
 type Handler struct {
-	Store        *store.MemStore
-	Persist      func(table string, doc any)
-	Pool         *pgxpool.Pool
-	Cache        *cache.Client
-	repo         *repo.StudentRepo
-	LimitChecker func(ctx context.Context, schoolID string) error // Subscription limit check
+	Store            *store.MemStore
+	Persist          func(table string, doc any)
+	Pool             *pgxpool.Pool
+	Cache            *cache.Client
+	repo             *repo.StudentRepo
+	LimitChecker     func(ctx context.Context, schoolID string) error // Subscription limit check
+	OnStudentCreated func(ctx *api.RequestContext, s *store.Student) // Callback hook when student is created
 }
 
 func New(s *store.MemStore, save func(string, any)) *Handler {
@@ -418,6 +419,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		// write lock so the linked-children list is consistent with the
 		// student row we just inserted.
 		var parentUserID string
+		var newParent *store.Parent
 		if linkedParentUser != nil {
 			// Case (1)/(2) — link to existing parent user.
 			parentUserID = linkedParentUser.ID
@@ -435,6 +437,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 				Email:        body.Email,
 				PasswordHash: hash,
 				Role:         "parent",
+				Permissions:  []string{},
 				Status:       "active",
 				Profile: store.UserProfile{
 					FirstName: firstNameOf(body.Guardian.Name),
@@ -446,6 +449,19 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 			}
 			h.Store.Users = append(h.Store.Users, parentUser)
 			h.Persist("users", parentUser)
+
+			parentID := store.NewID("par")
+			newParent = &store.Parent{
+				ID:        parentID,
+				SchoolID:  ctx.SchoolID,
+				UserID:    parentUserID,
+				Name:      body.Guardian.Name,
+				Phone:     body.Guardian.Phone,
+				Email:     body.Email,
+				CreatedAt: now,
+				UpdatedAt: now,
+			}
+			h.Store.Parents = append(h.Store.Parents, newParent)
 		}
 
 		var parentLink *store.StudentParent
@@ -464,6 +480,9 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		h.Store.Unlock()
 
 		h.Persist("students", newStudent)
+		if newParent != nil {
+			h.Persist("parents", newParent)
+		}
 		if parentLink != nil {
 			h.Persist("student_parents", parentLink)
 		}
@@ -476,6 +495,11 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		audit.Write(h.Store, ctx, audit.Input{
 			Action: "create", EntityType: "student", EntityID: newStudent.ID, After: newStudent,
 		})
+
+		if h.OnStudentCreated != nil {
+			h.OnStudentCreated(ctx, newStudent)
+		}
+
 		return newStudent, nil
 	}))
 }

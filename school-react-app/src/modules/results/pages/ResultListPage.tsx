@@ -273,7 +273,11 @@ export function ResultListPage({
         label: "View",
         variant: "ghost",
         onClick: (row) => {
-          const base = pathname.includes("/teacher") ? "/teacher" : "/admin";
+          const base = isParent
+            ? "/parent"
+            : pathname.includes("/teacher")
+            ? "/teacher"
+            : "/admin";
           navigate(`${base}/results/${row._id}`);
         },
       },

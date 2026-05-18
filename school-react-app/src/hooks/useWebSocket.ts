@@ -78,8 +78,11 @@ export function useWebSocket(opts: UseWebSocketOptions = {}) {
               break;
 
             case "attendance":
-              // Invalidate attendance and dashboard caches
+              // Invalidate all attendance caches across all portals
               queryClient.invalidateQueries({ queryKey: ["attendance"] });
+              queryClient.invalidateQueries({ queryKey: ["parent-attendance"] });
+              queryClient.invalidateQueries({ queryKey: ["parent-student-attendance"] });
+              queryClient.invalidateQueries({ queryKey: ["attendance-summary"] });
               queryClient.invalidateQueries({ queryKey: ["dashboard"] });
               break;
 

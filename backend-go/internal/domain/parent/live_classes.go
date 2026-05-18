@@ -10,7 +10,12 @@ import (
 )
 
 // LiveClasses implements GET /api/parent/live-classes.
-// Returns live class sessions filtered by the selected student's class.
+// Returns live class sessions filtered by the selected student's class and audience.
+//
+// Audience filtering:
+//   - audience_type "CLASS": visible to all students in the class
+//   - audience_type "STUDENT": visible only to the target_student_id
+//
 // Supports ?student_id query param for child switching.
 func (h *Handler) LiveClasses(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
@@ -45,6 +50,15 @@ func (h *Handler) LiveClasses(w http.ResponseWriter, r *http.Request) {
 			if lc.Status == "cancelled" {
 				continue
 			}
+
+			// AUDIENCE FILTERING: Check if session is visible to this student
+			if lc.AudienceType == "STUDENT" {
+				// Specific student session - only show to that student
+				if lc.TargetStudentID != student.ID {
+					continue
+				}
+			}
+			// If AudienceType is "CLASS" or empty (legacy), show to all students in class
 
 			// Calculate real-time status
 			status := "upcoming"

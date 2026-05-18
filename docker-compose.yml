@@ -263,7 +263,7 @@ services:
     env_file:
       - .env.local
     environment:
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-AIzaSyBCUjoPxUsCNhjthHgwjtEL1Y0vNL8dh6s}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-AIzaSyAyy8Iqs8--IHN1SexG7XIqYcR7cvLKz5A}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-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}
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-google/gemini-2.0-flash-lite-001}
@@ -276,7 +276,7 @@ services:
       LOG_LEVEL: INFO
       SESSION_TTL_SECONDS: "1800"
       MAX_HISTORY_PAIRS: "10"
-      GEMINI_TIMEOUT_SECONDS: "10"
+      GEMINI_TIMEOUT_SECONDS: "60"
       RATE_LIMIT_PER_MINUTE: "20"
     ports:
       - "8001:8001"

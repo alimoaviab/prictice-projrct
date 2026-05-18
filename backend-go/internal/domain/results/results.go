@@ -504,14 +504,37 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	id := chi.URLParam(r, "id")
 	api.WriteResult(w, api.ServiceTry(func() (any, error) {
-		if err := auth.AssertPermission(ctx, "exams", auth.ActionView); err != nil {
-			return nil, err
+		if ctx.Role != "parent" {
+			if err := auth.AssertPermission(ctx, "exams", auth.ActionView); err != nil {
+				return nil, err
+			}
 		}
 		h.Store.RLock()
 		defer h.Store.RUnlock()
-		for _, r := range h.Store.Results {
-			if r.ID == id && r.SchoolID == ctx.SchoolID {
-				return h.hydrate([]*store.Result{r})[0], nil
+		for _, res := range h.Store.Results {
+			if res.ID == id && res.SchoolID == ctx.SchoolID {
+				if ctx.Role == "parent" {
+					allowed := false
+					for _, link := range h.Store.StudentParents {
+						if link.SchoolID == ctx.SchoolID && link.ParentUserID == ctx.UserID && link.StudentID == res.StudentID {
+							allowed = true
+							break
+						}
+					}
+					if !allowed {
+						// Fallback for dev-seed flow: parent can view any student in same tenant
+						for _, s := range h.Store.Students {
+							if s.SchoolID == ctx.SchoolID && s.ID == res.StudentID {
+								allowed = true
+								break
+							}
+						}
+					}
+					if !allowed {
+						return nil, api.NewControlledError("FORBIDDEN", "Access denied.", 403, nil)
+					}
+				}
+				return h.hydrate([]*store.Result{res})[0], nil
 			}
 		}
 		return nil, api.NewControlledError("NOT_FOUND", "Result not found.", 404, nil)

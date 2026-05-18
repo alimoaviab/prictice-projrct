@@ -85,6 +85,8 @@ export function LiveClassCreatePage({ role }: LiveClassCreatePageProps) {
         starts_at: data.startTime,
         ends_at: data.endTime,
         host_teacher_id: data.teacherId,
+        audience_type: data.audienceType || "CLASS",      // Add audience type (CLASS or STUDENT)
+        target_student_id: data.targetStudentId || "",    // Add target student for specific student mode
       };
 
       const result = await serviceRequest<any>("/api/live/classes/schedule", {
@@ -96,10 +98,11 @@ export function LiveClassCreatePage({ role }: LiveClassCreatePageProps) {
         const resData = result.data;
         const meetingLink = resData?.join_url || resData?.meetingLink;
         
+        const audienceText = data.audienceType === "STUDENT" ? "specific student" : "class students";
         if (meetingLink) {
-          showToast(`Live class scheduled. Meeting link: ${meetingLink}`, "success");
+          showToast(`Live class scheduled for ${audienceText}. Meeting link: ${meetingLink}`, "success");
         } else {
-          showToast("Live class scheduled successfully", "success");
+          showToast(`Live class scheduled for ${audienceText}`, "success");
         }
         
         publish("live-classes");

@@ -1,10 +1,10 @@
 import { SchoolShell } from "@/layouts/SchoolShell";
-import { TeacherLeavePage } from "@/modules/leave/pages/TeacherLeavePage";
+import LeaveListPage from "@/modules/leave/components/LeaveListPage";
 
 export default function TeacherLeaveRoute() {
   return (
     <SchoolShell>
-      <TeacherLeavePage />
+      <LeaveListPage />
     </SchoolShell>
   );
 }

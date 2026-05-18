@@ -161,7 +161,7 @@ export function TestForm({
 
                     <div className="lg:col-span-12">
                         <label className="block text-[11px] font-bold text-slate-700 normal-case mb-3">
-                            Class Subjects (Select all that apply)
+                            Class Subject (Select the subject for this test)
                         </label>
                         {loadingSubjects ? (
                             <div className="flex items-center gap-2 text-slate-400 py-2">
@@ -187,18 +187,18 @@ export function TestForm({
                                                 onChange={() => {
                                                     const current = form.subjects || [];
                                                     if (current.includes(s.value)) {
-                                                        setForm({ ...form, subjects: current.filter(id => id !== s.value) });
+                                                        setForm({ ...form, subjects: [] });
                                                     } else {
-                                                        setForm({ ...form, subjects: [...current, s.value] });
+                                                        setForm({ ...form, subjects: [s.value] });
                                                     }
                                                 }}
                                             />
-                                            <div className={`h-4 w-4 rounded-md border flex items-center justify-center transition-all ${
+                                            <div className={`h-4 w-4 rounded-full border flex items-center justify-center transition-all ${
                                                 (form.subjects || []).includes(s.value) 
                                                     ? "bg-white border-white text-slate-900" 
                                                     : "bg-slate-50 border-slate-200 text-transparent"
                                             }`}>
-                                                <span className="material-symbols-outlined text-[12px] font-bold">check</span>
+                                                <div className="h-1.5 w-1.5 rounded-full bg-slate-900" />
                                             </div>
                                         </div>
                                         <span className="text-[11px] font-bold truncate">{s.label}</span>

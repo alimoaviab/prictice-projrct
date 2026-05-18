@@ -10,6 +10,13 @@ import (
 	"github.com/eduplexo/backend-go/internal/store"
 )
 
+// SyncInvoicesForClass is the exported wrapper to sync invoices for a class.
+func (h *Handler) SyncInvoicesForClass(ctx *api.RequestContext, classID string) {
+	h.Store.Lock()
+	defer h.Store.Unlock()
+	h.syncInvoicesForClassLocked(ctx, classID)
+}
+
 // syncInvoicesForClass ensures all active students in a class have up-to-date
 // invoices for the current month based on the class's fee configuration.
 func (h *Handler) syncInvoicesForClass(ctx *api.RequestContext, classID string) {
@@ -65,6 +72,14 @@ func (h *Handler) syncInvoicesForClassLocked(ctx *api.RequestContext, classID st
 				existing = f
 				break
 			}
+		}
+
+		// SAFETY: never recalculate paid or partially-paid invoices.
+		// Recalc would silently corrupt finance history (receipts,
+		// audit logs, parent statements). Component changes only
+		// affect future/unpaid invoices.
+		if existing != nil && existing.PaidAmount > 0 {
+			continue
 		}
 
 		total := 0.0

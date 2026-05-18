@@ -562,7 +562,11 @@ func (h *Handler) UpdateClassFee(w http.ResponseWriter, r *http.Request) {
 				}
 				cf.UpdatedAt = time.Now()
 				h.Save("class_fees", cf)
-				h.syncInvoicesForClass(ctx, cf.ClassID)
+				// CRITICAL: use the *Locked variant — h.Store is already
+				// locked above. Calling syncInvoicesForClass (which itself
+				// re-locks) here would self-deadlock the global store
+				// mutex and freeze every portal until process restart.
+				h.syncInvoicesForClassLocked(ctx, cf.ClassID)
 				audit.Write(h.Store, ctx, audit.Input{Action: "update", EntityType: "fee", EntityID: cf.ID, Before: before, After: *cf, Metadata: map[string]any{"scope": "class_fee"}})
 				h.invalidateAll(r, ctx.SchoolID)
 				return cf, nil
@@ -586,7 +590,11 @@ func (h *Handler) DeleteClassFee(w http.ResponseWriter, r *http.Request) {
 				before := *cf
 				h.Store.ClassFees = append(h.Store.ClassFees[:i], h.Store.ClassFees[i+1:]...)
 				h.Save("class_fees:delete", before.ID)
-				h.syncInvoicesForClass(ctx, cf.ClassID)
+				// CRITICAL: use the *Locked variant — h.Store is already
+				// locked above. The non-locked syncInvoicesForClass
+				// re-acquires the same non-reentrant mutex and would
+				// deadlock the entire backend (every portal freezes).
+				h.syncInvoicesForClassLocked(ctx, cf.ClassID)
 				audit.Write(h.Store, ctx, audit.Input{Action: "delete", EntityType: "fee", EntityID: feeID, Before: before, Metadata: map[string]any{"scope": "class_fee"}})
 				h.invalidateAll(r, ctx.SchoolID)
 				return map[string]any{"success": true, "id": feeID}, nil
@@ -615,7 +623,8 @@ func (h *Handler) ToggleClassFee(w http.ResponseWriter, r *http.Request) {
 				}
 				cf.UpdatedAt = time.Now()
 				h.Save("class_fees", cf)
-				h.syncInvoicesForClass(ctx, cf.ClassID)
+				// CRITICAL: locked variant — see DeleteClassFee for rationale.
+				h.syncInvoicesForClassLocked(ctx, cf.ClassID)
 				audit.Write(h.Store, ctx, audit.Input{Action: "update", EntityType: "fee", EntityID: feeID, Before: before, After: *cf, Metadata: map[string]any{"scope": "class_fee_toggle"}})
 				h.invalidateAll(r, ctx.SchoolID)
 				return cf, nil
@@ -653,7 +662,8 @@ func (h *Handler) DuplicateClassFee(w http.ResponseWriter, r *http.Request) {
 		dup.UpdatedAt = now
 		h.Store.ClassFees = append(h.Store.ClassFees, &dup)
 		h.Save("class_fees", &dup)
-		h.syncInvoicesForClass(ctx, classID)
+		// CRITICAL: locked variant — see DeleteClassFee for rationale.
+		h.syncInvoicesForClassLocked(ctx, classID)
 		return &dup, nil
 	}))
 }
@@ -1567,6 +1577,16 @@ func (h *Handler) LedgerDashboard(w http.ResponseWriter, r *http.Request) {
 					if startMonth == 0 {
 						startMonth = 4 // default April
 						startYear = yearNum
+					}
+
+					// Adjust start to not be before student's enrollment date
+					if !student.EnrolledAt.IsZero() {
+						enrollM := int(student.EnrolledAt.Month())
+						enrollY := student.EnrolledAt.Year()
+						if enrollY > startYear || (enrollY == startYear && enrollM > startMonth) {
+							startMonth = enrollM
+							startYear = enrollY
+						}
 					}
 
 					// Walk each month from academic year start to selected month.

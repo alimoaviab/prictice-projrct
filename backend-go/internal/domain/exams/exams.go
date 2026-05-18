@@ -291,8 +291,10 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	id := chi.URLParam(r, "id")
 	api.WriteResult(w, api.ServiceTry(func() (any, error) {
-		if err := auth.AssertPermission(ctx, "exams", auth.ActionView); err != nil {
-			return nil, err
+		if ctx.Role != "parent" {
+			if err := auth.AssertPermission(ctx, "exams", auth.ActionView); err != nil {
+				return nil, err
+			}
 		}
 		h.Store.RLock()
 		defer h.Store.RUnlock()

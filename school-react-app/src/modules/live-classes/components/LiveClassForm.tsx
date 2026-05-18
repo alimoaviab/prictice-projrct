@@ -27,10 +27,25 @@ export function LiveClassForm({
     subjectId: "",
     startTime: "",
     endTime: "",
+    audienceType: "CLASS",           // Entire Class (default) or Specific Student
+    targetStudentId: "",             // For specific student mode
   });
   const [subjectOptions, setSubjectOptions] = useState<Array<{ label: string; value: string }>>([]);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
+  const [classStudents, setClassStudents] = useState<any[]>([]);
+  const [loadingStudents, setLoadingStudents] = useState(false);
+  const [studentSearchQuery, setStudentSearchQuery] = useState("");
+  
   const selectedClass = classes.find(c => c.id === formData.classId || c._id === formData.classId);
+  
+  // Filter students by search query
+  const filteredStudents = classStudents.filter(s => {
+    const query = studentSearchQuery.toLowerCase();
+    const name = `${s.first_name || ""} ${s.last_name || ""}`.toLowerCase();
+    const email = (s.email || "").toLowerCase();
+    const admissionNo = (s.admission_no || "").toLowerCase();
+    return name.includes(query) || email.includes(query) || admissionNo.includes(query);
+  });
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -46,10 +61,17 @@ export function LiveClassForm({
       return;
     }
     
+    // Validate audience targeting
+    if (formData.audienceType === "STUDENT" && !formData.targetStudentId) {
+      showToast("Please select a student", "error");
+      return;
+    }
+    
     console.log("Submitting live class form with data:", formData);
     await onSubmit(formData);
   };
 
+  // Load subjects for the selected class
   useEffect(() => {
     let cancelled = false;
 
@@ -113,6 +135,50 @@ export function LiveClassForm({
     };
   }, [formData.classId, selectedClass?.subjects]);
 
+  // Load students for the selected class
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadClassStudents(classId: string) {
+      if (!classId) {
+        setClassStudents([]);
+        return;
+      }
+
+      setLoadingStudents(true);
+      try {
+        const result = await serviceRequest<any>(`/api/classes/${classId}/students`);
+        if (!result.ok) {
+          throw new Error(result.error.message || "Failed to load class students");
+        }
+        
+        const data = result.data;
+        const studentsArray = Array.isArray(data) ? data : (data as any)?.students ?? [];
+
+        if (!cancelled) {
+          setClassStudents(studentsArray);
+          // Reset student selection when class changes
+          setFormData(prev => ({ ...prev, targetStudentId: "" }));
+          setStudentSearchQuery("");
+        }
+      } catch {
+        if (!cancelled) {
+          setClassStudents([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingStudents(false);
+        }
+      }
+    }
+
+    void loadClassStudents(formData.classId);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [formData.classId]);
+
   const classOptions = [
     { label: "Select Class", value: "" },
     ...classes.map(c => ({ label: c.name || c.label, value: c.id || c._id }))
@@ -172,6 +238,106 @@ export function LiveClassForm({
               className="h-14 text-base rounded-2xl"
             />
           )}
+
+          {/* Session Audience Section */}
+          <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 space-y-4">
+            <div>
+              <label className="text-xs font-bold text-slate-900 uppercase tracking-wider">Session Audience</label>
+              <p className="text-xs text-slate-500 mt-1">Who can see this session?</p>
+            </div>
+
+            <div className="space-y-3">
+              {/* Entire Class Option */}
+              <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-white transition-colors">
+                <input
+                  type="radio"
+                  name="audience"
+                  value="CLASS"
+                  checked={formData.audienceType === "CLASS"}
+                  onChange={(e) => {
+                    setFormData({ ...formData, audienceType: e.target.value, targetStudentId: "" });
+                    setStudentSearchQuery("");
+                  }}
+                  className="w-4 h-4 accent-indigo-600"
+                />
+                <div className="flex-1">
+                  <div className="text-xs font-bold text-slate-900">Entire Class</div>
+                  <div className="text-[11px] text-slate-500">All students in {selectedClass?.name || "selected class"}</div>
+                </div>
+              </label>
+
+              {/* Specific Student Option */}
+              <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-white transition-colors">
+                <input
+                  type="radio"
+                  name="audience"
+                  value="STUDENT"
+                  checked={formData.audienceType === "STUDENT"}
+                  onChange={(e) => setFormData({ ...formData, audienceType: e.target.value })}
+                  className="w-4 h-4 accent-indigo-600"
+                />
+                <div className="flex-1">
+                  <div className="text-xs font-bold text-slate-900">Specific Student</div>
+                  <div className="text-[11px] text-slate-500">Only one student from the class</div>
+                </div>
+              </label>
+            </div>
+
+            {/* Specific Student Dropdown (appears when STUDENT mode selected) */}
+            {formData.audienceType === "STUDENT" && (
+              <div className="space-y-3 pt-2 border-t border-slate-200">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search student..."
+                    value={studentSearchQuery}
+                    onChange={(e) => setStudentSearchQuery(e.target.value)}
+                    className="w-full h-10 px-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+
+                {loadingStudents ? (
+                  <div className="text-center py-3 text-sm text-slate-500">Loading students...</div>
+                ) : classStudents.length === 0 ? (
+                  <div className="text-center py-3 text-sm text-slate-500">No students in this class</div>
+                ) : (
+                  <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-lg">
+                    {filteredStudents.length === 0 ? (
+                      <div className="p-3 text-center text-sm text-slate-500">No matching students</div>
+                    ) : (
+                      filteredStudents.map((student) => (
+                        <button
+                          key={student.id || student._id}
+                          type="button"
+                          onClick={() => {
+                            setFormData({ ...formData, targetStudentId: student.id || student._id });
+                            setStudentSearchQuery("");
+                          }}
+                          className={`w-full text-left px-4 py-2 text-sm border-b border-slate-100 last:border-b-0 hover:bg-indigo-50 transition-colors ${
+                            formData.targetStudentId === (student.id || student._id) ? "bg-indigo-50 font-medium" : ""
+                          }`}
+                        >
+                          <div className="font-medium text-slate-900">
+                            {student.first_name} {student.last_name}
+                          </div>
+                          <div className="text-xs text-slate-500">{student.admission_no || student.email || "N/A"}</div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+
+                {formData.targetStudentId && (
+                  <div className="p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+                    <div className="text-xs font-bold text-indigo-900">
+                      Selected: {classStudents.find(s => (s.id || s._id) === formData.targetStudentId)?.first_name}{" "}
+                      {classStudents.find(s => (s.id || s._id) === formData.targetStudentId)?.last_name}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="space-y-6">
@@ -201,7 +367,7 @@ export function LiveClassForm({
             <div>
                <h4 className="text-sm font-bold text-blue-900 normal-case tracking-tight">Live Class Session</h4>
                <p className="mt-2 text-xs text-blue-700/70 leading-relaxed font-medium">
-                  A unique meeting link will be automatically generated and shared with students of the selected class once you save this session.
+                  A unique meeting link will be automatically generated. {formData.audienceType === "CLASS" ? "All students in the selected class" : "Only the selected student"} will see this session in their portal.
                </p>
             </div>
           </div>

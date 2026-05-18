@@ -273,6 +273,9 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 
 			// ─── Fees domain (full implementation) ────────────────────────
 			fH := fees.NewWithCache(s, saveFn, rdb)
+			stH.OnStudentCreated = func(ctx *api.RequestContext, stu *store.Student) {
+				fH.SyncInvoicesForClass(ctx, stu.ClassID)
+			}
 			r.Get("/school/fees/types", fH.ListFeeTypes)
 			r.Get("/fees/types", fH.ListFeeTypes)
 			r.Post("/fees/types", fH.CreateFeeType)

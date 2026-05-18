@@ -124,22 +124,24 @@ func (h *Handler) hydrate(rows []*store.LiveClass) []map[string]any {
 			className = cls.Name
 		}
 		out = append(out, map[string]any{
-			"_id":              l.ID,
-			"school_id":        l.SchoolID,
-			"academic_year_id": l.AcademicYearID,
-			"class_id":         l.ClassID,
-			"class_name":       className,
-			"subject":          l.Subject,
-			"title":            l.Title,
-			"description":      l.Description,
-			"starts_at":        l.StartsAt,
-			"ends_at":          l.EndsAt,
-			"host_teacher_id":  l.HostTeacherID,
-			"join_url":         l.JoinURL,
-			"provider":         l.Provider,
-			"status":           l.Status,
-			"created_at":       l.CreatedAt,
-			"updated_at":       l.UpdatedAt,
+			"_id":               l.ID,
+			"school_id":         l.SchoolID,
+			"academic_year_id":  l.AcademicYearID,
+			"class_id":          l.ClassID,
+			"class_name":        className,
+			"subject":           l.Subject,
+			"title":             l.Title,
+			"description":       l.Description,
+			"starts_at":         l.StartsAt,
+			"ends_at":           l.EndsAt,
+			"host_teacher_id":   l.HostTeacherID,
+			"join_url":          l.JoinURL,
+			"provider":          l.Provider,
+			"status":            l.Status,
+			"audience_type":     l.AudienceType,    // CLASS or STUDENT
+			"target_student_id": l.TargetStudentID, // optional, for specific student
+			"created_at":        l.CreatedAt,
+			"updated_at":        l.UpdatedAt,
 		})
 	}
 	return out
@@ -257,17 +259,23 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 // ─── Schedule (Create) ───────────────────────────────────────────────────
 
 type scheduleInput struct {
-	ClassID       string `json:"class_id"`
-	Subject       string `json:"subject"`
-	Title         string `json:"title"`
-	Description   string `json:"description"`
-	StartsAt      string `json:"starts_at"`
-	EndsAt        string `json:"ends_at"`
-	HostTeacherID string `json:"host_teacher_id"`
+	ClassID         string `json:"class_id"`
+	Subject         string `json:"subject"`
+	Title           string `json:"title"`
+	Description     string `json:"description"`
+	StartsAt        string `json:"starts_at"`
+	EndsAt          string `json:"ends_at"`
+	HostTeacherID   string `json:"host_teacher_id"`
+	AudienceType    string `json:"audience_type"`     // CLASS or STUDENT (default: CLASS)
+	TargetStudentID string `json:"target_student_id"` // optional, required when audience_type is STUDENT
 }
 
 // Schedule implements POST /api/live/classes/schedule.
 // Generates a unique Jitsi room URL and saves the live class record.
+//
+// Permission:
+//   - Teachers can only create sessions for classes assigned to them
+//   - Admins can create sessions for any class
 func (h *Handler) Schedule(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	var body scheduleInput
@@ -288,28 +296,102 @@ func (h *Handler) Schedule(w http.ResponseWriter, r *http.Request) {
 			return nil, api.NewControlledError("VALIDATION_ERROR", "ends_at must be after starts_at.", 400, nil)
 		}
 
+		// TEACHER PERMISSION CHECK: Teachers can only create sessions for assigned classes
+		if ctx.Role == "teacher" {
+			h.Store.RLock()
+			defer h.Store.RUnlock()
+
+			var teacher *store.Teacher
+			for _, t := range h.Store.Teachers {
+				if t.UserID == ctx.UserID && t.SchoolID == ctx.SchoolID {
+					teacher = t
+					break
+				}
+			}
+
+			found := false
+			if teacher != nil {
+				for _, c := range h.Store.Classes {
+					if c.ID == body.ClassID && c.SchoolID == ctx.SchoolID {
+						if c.ClassTeacherID == teacher.ID {
+							found = true
+							break
+						}
+						for _, tID := range c.TeacherIDs {
+							if tID == teacher.ID {
+								found = true
+								break
+							}
+						}
+						for _, tcID := range teacher.ClassIDs {
+							if tcID == body.ClassID {
+								found = true
+								break
+							}
+						}
+					}
+				}
+			}
+
+			if !found {
+				return nil, api.NewControlledError("FORBIDDEN", "You are not assigned to this class. Only assigned teachers can create sessions.", 403, nil)
+			}
+		}
+
+		// AUDIENCE TYPE VALIDATION
+		audienceType := body.AudienceType
+		if audienceType == "" {
+			audienceType = "CLASS" // Default to entire class
+		}
+		if audienceType != "CLASS" && audienceType != "STUDENT" {
+			return nil, api.NewControlledError("VALIDATION_ERROR", "audience_type must be CLASS or STUDENT.", 400, nil)
+		}
+
+		// SPECIFIC STUDENT VALIDATION
+		targetStudentID := body.TargetStudentID
+		if audienceType == "STUDENT" {
+			if targetStudentID == "" {
+				return nil, api.NewControlledError("VALIDATION_ERROR", "target_student_id is required when audience_type is STUDENT.", 400, nil)
+			}
+			// Verify the student exists and is in the selected class
+			h.Store.RLock()
+			studentFound := false
+			for _, s := range h.Store.Students {
+				if s.ID == targetStudentID && s.ClassID == body.ClassID {
+					studentFound = true
+					break
+				}
+			}
+			h.Store.RUnlock()
+			if !studentFound {
+				return nil, api.NewControlledError("VALIDATION_ERROR", "Student not found in selected class.", 400, nil)
+			}
+		}
+
 		// Generate a real, working Jitsi meeting link
 		joinURL := generateJitsiURL(ctx.SchoolID)
 
-		log.Printf("[liveclass] scheduled: school=%s title=%q join_url=%s", ctx.SchoolID, body.Title, joinURL)
+		log.Printf("[liveclass] scheduled: school=%s title=%q audience=%s join_url=%s", ctx.SchoolID, body.Title, audienceType, joinURL)
 
 		now := time.Now()
 		row := &store.LiveClass{
-			ID:             store.NewID("liv"),
-			SchoolID:       ctx.SchoolID,
-			AcademicYearID: ctx.ActiveAcademicYearID,
-			ClassID:        body.ClassID,
-			Subject:        body.Subject,
-			Title:          body.Title,
-			Description:    body.Description,
-			StartsAt:       startsAt,
-			EndsAt:         endsAt,
-			HostTeacherID:  body.HostTeacherID,
-			JoinURL:        joinURL,
-			Provider:       "jitsi",
-			Status:         "scheduled",
-			CreatedAt:      now,
-			UpdatedAt:      now,
+			ID:              store.NewID("liv"),
+			SchoolID:        ctx.SchoolID,
+			AcademicYearID:  ctx.ActiveAcademicYearID,
+			ClassID:         body.ClassID,
+			Subject:         body.Subject,
+			Title:           body.Title,
+			Description:     body.Description,
+			StartsAt:        startsAt,
+			EndsAt:          endsAt,
+			HostTeacherID:   body.HostTeacherID,
+			JoinURL:         joinURL,
+			Provider:        "jitsi",
+			Status:          "scheduled",
+			AudienceType:    audienceType,
+			TargetStudentID: targetStudentID,
+			CreatedAt:       now,
+			UpdatedAt:       now,
 		}
 
 		h.Store.Lock()

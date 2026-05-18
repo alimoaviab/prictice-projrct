@@ -552,6 +552,7 @@ func (h *Handler) StudentResults(w http.ResponseWriter, r *http.Request) {
 					"max_marks":      max,
 					"graded_at":      r.GradedAt,
 					"remarks":        r.Remarks,
+					"grade":          calculateGrade(r.ObtainedMarks, float64(max)),
 				})
 			}
 			return out, nil
@@ -851,4 +852,25 @@ func (h *Handler) PerformanceChart(w http.ResponseWriter, r *http.Request) {
 			return map[string]any{"labels": labels, "data": data}, nil
 		})
 	})
+}
+
+func calculateGrade(obtained, max float64) string {
+	if max == 0 {
+		return "F"
+	}
+	p := (obtained / max) * 100
+	switch {
+	case p >= 90:
+		return "A+"
+	case p >= 80:
+		return "A"
+	case p >= 70:
+		return "B"
+	case p >= 60:
+		return "C"
+	case p >= 50:
+		return "D"
+	default:
+		return "F"
+	}
 }

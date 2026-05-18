@@ -5,6 +5,7 @@ import { NetworkStatus } from "@/components/ui/NetworkStatus";
 import { ChatWidget } from "@/components/chatbot/ChatWidget";
 import { useAuth } from "@/hooks/useAuth";
 import { QueryProvider } from "@/providers/QueryProvider";
+import { useRealtimeAttendanceSync } from "@/hooks/useRealtimeAttendanceSync";
 
 /**
  * Top-level app shell. Identical responsibility to old-app/school-app/app/layout.tsx:
@@ -46,6 +47,10 @@ export function App() {
 /** Inner component that can use hooks requiring QueryProvider context. */
 function AppContent() {
   const { user } = useAuth();
+  
+  // Initialize real-time attendance sync across all portals
+  // Combines websocket (primary) + polling (fallback) for guaranteed updates
+  useRealtimeAttendanceSync();
 
   return (
     <>

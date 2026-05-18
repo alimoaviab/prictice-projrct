@@ -92,8 +92,9 @@ export const adminRoutes: RouteObject[] = [
   // Homework
   { path: "/admin/homework", element: lazyPage(() => import("@/pages/role/admin/homework"), "AdminHomeworkPage") },
   { path: "/admin/homework/create", element: lazyPage(() => import("@/pages/role/admin/homework/create"), "AdminHomeworkCreatePage") },
-  { path: "/admin/homework/edit/:id", element: lazyPage(() => import("@/pages/role/admin/homework/edit/Param_id"), "AdminHomeworkEditPage") },
   { path: "/admin/homework/:id/review", element: lazyPage(() => import("@/pages/role/admin/homework/Param_id/review"), "AdminHomeworkReviewPage") },
+  { path: "/admin/homework/edit/:id", element: lazyPage(() => import("@/pages/role/admin/homework/edit/Param_id"), "AdminHomeworkEditPage") },
+  { path: "/admin/homework/:id", element: lazyPage(() => import("@/pages/role/admin/homework/Param_id"), "AdminHomeworkDetailPage") },
 
   // Leave — admin only reviews. Submission happens from student/teacher
   // portals; the /admin/leave/create route was removed accordingly.
@@ -162,8 +163,9 @@ export const teacherRoutes: RouteObject[] = [
   { path: "/teacher/exams/marks", element: lazyPage(() => import("@/pages/role/teacher/exams/marks"), "TeacherExamMarksPage") },
   { path: "/teacher/homework", element: lazyPage(() => import("@/pages/role/teacher/homework"), "TeacherHomeworkPage") },
   { path: "/teacher/homework/create", element: lazyPage(() => import("@/pages/role/teacher/homework/create"), "TeacherHomeworkCreatePage") },
-  { path: "/teacher/homework/edit/:id", element: lazyPage(() => import("@/pages/role/teacher/homework/edit/Param_id"), "TeacherHomeworkEditPage") },
   { path: "/teacher/homework/:id/review", element: lazyPage(() => import("@/pages/role/teacher/homework/Param_id/review"), "TeacherHomeworkReviewPage") },
+  { path: "/teacher/homework/edit/:id", element: lazyPage(() => import("@/pages/role/teacher/homework/edit/Param_id"), "TeacherHomeworkEditPage") },
+  { path: "/teacher/homework/:id", element: lazyPage(() => import("@/pages/role/teacher/homework/Param_id"), "TeacherHomeworkDetailPage") },
   { path: "/teacher/live-class", element: lazyPage(() => import("@/pages/role/teacher/live-class"), "TeacherLiveClassPage") },
   { path: "/teacher/live-class/create", element: lazyPage(() => import("@/pages/role/teacher/live-class/create"), "TeacherLiveClassCreatePage") },
   { path: "/teacher/live-exam", element: lazyPage(() => import("@/pages/role/teacher/live-exam"), "TeacherLiveExamPage") },
@@ -174,6 +176,7 @@ export const teacherRoutes: RouteObject[] = [
   { path: "/teacher/results/:id", element: lazyPage(() => import("@/pages/role/teacher/results/Param_id"), "TeacherResultDetailPage") },
   { path: "/teacher/timetable", element: lazyPage(() => import("@/pages/role/teacher/timetable"), "TeacherTimetablePage") },
   { path: "/teacher/leave", element: lazyPage(() => import("@/pages/role/teacher/leave")) },
+  { path: "/teacher/leave/:id", element: lazyPage(() => import("@/pages/role/teacher/leave/Param_id"), "TeacherLeaveDetailPage") },
 ];
 
 // ─── Parent Routes (lazy-loaded) ─────────────────────────────────────────
@@ -191,6 +194,7 @@ export const parentRoutes: RouteObject[] = [
   { path: "/parent/live-classes", element: lazyPage(() => import("@/pages/role/parent/live-classes"), "ParentLiveClassesPage") },
   { path: "/parent/profile", element: lazyPage(() => import("@/pages/role/parent/profile"), "ParentStudentProfilePage") },
   { path: "/parent/results", element: lazyPage(() => import("@/pages/role/parent/results"), "ParentResultsPage") },
+  { path: "/parent/results/:id", element: lazyPage(() => import("@/pages/role/parent/results/Param_id"), "ParentResultDetailPage") },
   { path: "/parent/student-attendance", element: lazyPage(() => import("@/pages/role/parent/student-attendance"), "ParentStudentAttendancePage") },
   { path: "/parent/timetable", element: lazyPage(() => import("@/pages/role/parent/timetable"), "ParentTimetablePage") },
   { path: "/parent/leave", element: lazyPage(() => import("@/pages/role/parent/leave"), "ParentLeaveRoute") },

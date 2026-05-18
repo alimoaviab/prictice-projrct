@@ -168,18 +168,26 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 			requesterType = "student"
 		}
 
-		// If teacher, force filter to their own requests as well, so the
-		// teacher portal only ever sees the teacher's own submissions.
+		// If teacher, show both their own teacher leave requests AND student
+		// leave requests for classes they're assigned to (head teacher review).
+		// Build a set of allowed leave records:
+		//   1. Their own teacher leaves (requesterType=teacher, requesterID=teacher_id)
+		//   2. Student leaves for their assigned classes (requesterType=student, classID in teacher.classIDs)
+		var teacherOwnID string
+		var teacherClassIDs map[string]bool
 		if ctx.Role == "teacher" {
 			h.Store.RLock()
 			for _, t := range h.Store.Teachers {
 				if t.UserID == ctx.UserID {
-					requesterID = t.ID
+					teacherOwnID = t.ID
+					teacherClassIDs = make(map[string]bool)
+					for _, cid := range t.ClassIDs {
+						teacherClassIDs[cid] = true
+					}
 					break
 				}
 			}
 			h.Store.RUnlock()
-			requesterType = "teacher"
 		}
 
 		// If parent, scope to the linked children's leave records.
@@ -213,15 +221,43 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 			if statusQ != "" && l.Status != statusQ {
 				continue
 			}
-			if requesterType != "" && l.RequesterType != requesterType {
-				continue
+
+			// Filter by requester type and ID based on role
+			switch ctx.Role {
+			case "student":
+				// Students see only their own leaves
+				if l.RequesterType != requesterType || l.RequesterID != requesterID {
+					continue
+				}
+			case "teacher":
+				// Teachers see their own teacher leaves AND student leaves for their classes
+				ownTeacherLeave := l.RequesterType == "teacher" && l.RequesterID == teacherOwnID
+				studentLeaveForTheirClass := l.RequesterType == "student" && teacherClassIDs[l.ClassID]
+				if !ownTeacherLeave && !studentLeaveForTheirClass {
+					continue
+				}
+				// If requester_type or requester_id query params are set, apply them
+				if requesterType != "" && l.RequesterType != requesterType {
+					continue
+				}
+				if requesterID != "" && l.RequesterID != requesterID {
+					continue
+				}
+			case "parent":
+				// Parents see their linked children's leaves
+				if !parentAllowed[l.RequesterID] {
+					continue
+				}
+			default:
+				// Admin or other roles with no restriction
+				if requesterType != "" && l.RequesterType != requesterType {
+					continue
+				}
+				if requesterID != "" && l.RequesterID != requesterID {
+					continue
+				}
 			}
-			if requesterID != "" && l.RequesterID != requesterID {
-				continue
-			}
-			if parentAllowed != nil && !parentAllowed[l.RequesterID] {
-				continue
-			}
+
 			if hasStart && l.StartDate.Before(startDate) {
 				continue
 			}
@@ -495,10 +531,44 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		if err := auth.AssertPermission(ctx, "leave", auth.ActionUpdate); err != nil {
 			return nil, err
 		}
+
+		// For teachers, validate they can only update student leaves for their assigned classes
+		var teacherClassIDs map[string]bool
+		if ctx.Role == "teacher" {
+			h.Store.RLock()
+			for _, t := range h.Store.Teachers {
+				if t.UserID == ctx.UserID && t.SchoolID == ctx.SchoolID {
+					teacherClassIDs = make(map[string]bool)
+					for _, cid := range t.ClassIDs {
+						teacherClassIDs[cid] = true
+					}
+					break
+				}
+			}
+			h.Store.RUnlock()
+		}
+
 		h.Store.Lock()
 		defer h.Store.Unlock()
 		for _, l := range h.Store.Leaves {
 			if l.ID == id && l.SchoolID == ctx.SchoolID {
+				// Teacher permission check: can only update student leaves for their assigned classes
+				if ctx.Role == "teacher" {
+					// Teachers can update their own teacher leaves OR student leaves for their classes
+					isOwnTeacherLeave := l.RequesterType == "teacher" && l.RequesterID != "" && func() bool {
+						for _, t := range h.Store.Teachers {
+							if t.UserID == ctx.UserID {
+								return t.ID == l.RequesterID
+							}
+						}
+						return false
+					}()
+					isStudentLeaveForTheirClass := l.RequesterType == "student" && teacherClassIDs[l.ClassID]
+					if !isOwnTeacherLeave && !isStudentLeaveForTheirClass {
+						return nil, api.NewControlledError("FORBIDDEN", "You can only update leaves for your assigned classes.", 403, nil)
+					}
+				}
+
 				// Only pending requests editable, except cancellation.
 				newStatus := l.Status
 				if v, ok := body["status"]; ok {

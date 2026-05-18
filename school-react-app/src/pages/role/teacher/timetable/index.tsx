@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { 
   Calendar, 
   Clock, 
@@ -22,6 +22,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { SchoolShell } from "@/layouts/SchoolShell";
 import { useAuth } from "@/hooks/useAuth";
 import { useTimetable } from "@/modules/timetable/hooks/useTimetable";
+import { useSafeAsync } from "@/hooks/useSafeAsync";
 import { 
   Card, 
   Badge, 
@@ -36,6 +37,13 @@ import { serviceRequest } from "@/services/service-client";
 
 type ViewMode = "weekly" | "agenda" | "today";
 
+interface TeacherClass {
+  id: string;
+  name: string;
+  section: string;
+  studentCount: number;
+}
+
 export function TeacherTimetablePage() {
   const { user } = useAuth();
   
@@ -43,20 +51,61 @@ export function TeacherTimetablePage() {
   const [viewMode, setViewMode] = useState<ViewMode>("weekly");
   const [searchQuery, setSearchQuery] = useState("");
   const [academicYears, setAcademicYears] = useState<Array<{label: string, value: string}>>([]);
+  const [selectedClassId, setSelectedClassId] = useState<string>("all");
   const [filters, setFilters] = useState({
     academicYear: "",
-    classId: "all",
-    subjectId: "all",
     day: "all"
   });
 
-  // Data Fetching
-  const timetableQuery = useMemo(() => ({
-    teacher_id: user?.profileId,
-    academic_year_id: filters.academicYear || undefined
-  }), [user?.profileId, filters.academicYear]);
+  // Fetch teacher's assigned classes
+  const { state: classesState, run: runClasses } = useSafeAsync<TeacherClass[]>();
 
-  const { state, refresh } = useTimetable(user?.profileId ? timetableQuery : undefined);
+  useEffect(() => {
+    if (!user?.profileId) return;
+    void runClasses(async () => {
+      const result = await serviceRequest<any>(`/api/teachers/${user.profileId}`);
+      if (!result.ok) throw new Error(result.error?.message || "Failed to load classes");
+      const data = result.data as any;
+      const classes = data?.classes || [];
+      return classes;
+    });
+  }, [user?.profileId, runClasses]);
+
+  // Build timetable query - fetch for all assigned classes or selected class
+  const timetableQuery = useMemo(() => {
+    if (!classesState.data || classesState.data.length === 0) return undefined;
+    
+    // If a specific class is selected, fetch only that class's timetable
+    if (selectedClassId !== "all") {
+      return { class_id: selectedClassId };
+    }
+    
+    // Otherwise, we'll fetch all classes' timetables
+    return undefined;
+  }, [classesState.data, selectedClassId]);
+
+  const { state: timetableState, refresh } = useTimetable(timetableQuery);
+
+  // Fetch all class timetables if no specific class selected
+  const { state: allTimetablesState, run: runAllTimetables } = useSafeAsync<TimetableRecord[]>();
+
+  const fetchAllTimetables = useCallback(async () => {
+    if (!classesState.data) return [];
+    const allRecords: TimetableRecord[] = [];
+    for (const cls of classesState.data) {
+      const result = await serviceRequest<TimetableRecord[]>(`/api/timetable?class_id=${cls.id}`);
+      if (result.ok && result.data) {
+        allRecords.push(...(Array.isArray(result.data) ? result.data : []));
+      }
+    }
+    return allRecords;
+  }, [classesState.data]);
+
+  useEffect(() => {
+    if (selectedClassId !== "all" || !classesState.data || classesState.data.length === 0) return;
+    
+    void runAllTimetables(fetchAllTimetables);
+  }, [selectedClassId, classesState.data, runAllTimetables, fetchAllTimetables]);
 
   // Fetch Academic Years
   useEffect(() => {
@@ -86,20 +135,22 @@ export function TeacherTimetablePage() {
     fetchYears();
   }, []);
 
+  // Determine which timetable data to use
+  const timetableData = selectedClassId !== "all" ? timetableState.data : allTimetablesState.data;
+  const isLoading = selectedClassId !== "all" ? timetableState.status === "loading" : allTimetablesState.status === "loading";
+
   // Timetable Calculations
   const processedData = useMemo(() => {
-    if (!state.data) return [];
-    return state.data.filter(item => {
+    if (!timetableData) return [];
+    return timetableData.filter(item => {
       const matchesSearch = item.class_name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                            item.subject_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                            item.room?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesClass = filters.classId === "all" || item.class_id === filters.classId;
-      const matchesSubject = filters.subjectId === "all" || item.subject_id === filters.subjectId;
       const matchesDay = filters.day === "all" || String(item.day_of_week) === filters.day;
       
-      return matchesSearch && matchesClass && matchesSubject && matchesDay;
+      return matchesSearch && matchesDay;
     });
-  }, [state.data, searchQuery, filters]);
+  }, [timetableData, searchQuery, filters]);
 
   // Derived Stats
   const stats = useMemo(() => {
@@ -117,12 +168,12 @@ export function TeacherTimetablePage() {
 
   // Current/Next Class Logic
   const liveSchedule = useMemo(() => {
-    if (!state.data) return null;
+    if (!timetableData) return null;
     const now = new Date();
     const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
     const today = now.getDay() === 0 ? 7 : now.getDay();
 
-    const todaySchedule = state.data
+    const todaySchedule = timetableData
       .filter(item => item.day_of_week === today)
       .sort((a, b) => a.start_time.localeCompare(b.start_time));
 
@@ -130,9 +181,9 @@ export function TeacherTimetablePage() {
     const next = todaySchedule.find(item => item.start_time > currentTime);
 
     return { current, next };
-  }, [state.data]);
+  }, [timetableData]);
 
-  if (state.status === "loading" || state.status === "idle") {
+  if (isLoading || classesState.status === "loading") {
     return (
       <SchoolShell eyebrow="TEACHER HUB" title="Timetable Matrix">
         <div className="space-y-6">
@@ -145,6 +196,20 @@ export function TeacherTimetablePage() {
       </SchoolShell>
     );
   }
+
+  if (classesState.status === "error") {
+    return (
+      <SchoolShell eyebrow="TEACHER HUB" title="Timetable Matrix">
+        <DataState variant="error" title="Failed to Load Classes" message={classesState.error} />
+      </SchoolShell>
+    );
+  }
+
+  const assignedClasses = classesState.data || [];
+  const classOptions = [
+    { label: "All Classes", value: "all" },
+    ...assignedClasses.map(c => ({ label: `${c.name} ${c.section}`, value: c.id }))
+  ];
 
   return (
     <SchoolShell eyebrow="TEACHER ANALYTICS" title="Academic Schedule">
@@ -159,7 +224,7 @@ export function TeacherTimetablePage() {
             <StatSmallCard label="Today" value={stats.todayCount} sub="Classes" icon="calendar_today" color="text-blue-600" bg="bg-blue-600/5" />
             <StatSmallCard label="Weekly" value={stats.weeklyCount} sub="Periods" icon="schedule" color="text-indigo-600" bg="bg-indigo-600/5" />
             <StatSmallCard label="Subjects" value={stats.uniqueSubjects} sub="Assigned" icon="menu_book" color="text-emerald-600" bg="bg-emerald-600/5" />
-            <StatSmallCard label="Sections" value={stats.uniqueClasses} sub="Classes" icon="groups" color="text-purple-600" bg="bg-purple-600/5" />
+            <StatSmallCard label="Classes" value={assignedClasses.length} sub="Assigned" icon="groups" color="text-purple-600" bg="bg-purple-600/5" />
           </div>
         </section>
 
@@ -178,10 +243,10 @@ export function TeacherTimetablePage() {
               </div>
               <div className="h-4 w-px bg-slate-200" />
               <Select 
-                options={academicYears} 
-                value={filters.academicYear} 
-                onChange={(event) => setFilters(prev => ({ ...prev, academicYear: event.target.value }))}
-                className="border-0 bg-transparent h-8 text-[9px] font-black text-slate-900 uppercase tracking-widest min-w-[110px]"
+                options={classOptions} 
+                value={selectedClassId} 
+                onChange={(event) => setSelectedClassId(event.target.value)}
+                className="border-0 bg-transparent h-8 text-[9px] font-black text-slate-900 uppercase tracking-widest min-w-[140px]"
               />
             </div>
 
@@ -215,7 +280,13 @@ export function TeacherTimetablePage() {
               {viewMode === "today" && <TodayView data={processedData} />}
             </motion.div>
           ) : (
-            <EmptyScheduleState onRefresh={refresh} />
+            <EmptyScheduleState onRefresh={() => {
+              if (selectedClassId !== "all") {
+                refresh();
+              } else {
+                void runAllTimetables(fetchAllTimetables);
+              }
+            }} />
           )}
         </AnimatePresence>
       </div>

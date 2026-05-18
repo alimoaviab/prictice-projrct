@@ -36,11 +36,11 @@ type ExamSubject struct {
 
 // Exam mirrors old-app/shared/models/exam.model.ts.
 type Exam struct {
-	ID             string    `json:"_id"`
-	SchoolID       string    `json:"school_id"`
-	AcademicYearID string    `json:"academic_year_id,omitempty"`
-	ClassID        string    `json:"class_id"`
-	TeacherID      string    `json:"teacher_id,omitempty"`
+	ID             string `json:"_id"`
+	SchoolID       string `json:"school_id"`
+	AcademicYearID string `json:"academic_year_id,omitempty"`
+	ClassID        string `json:"class_id"`
+	TeacherID      string `json:"teacher_id,omitempty"`
 	// Subject and MaxMarks are kept for backward compatibility with
 	// pre-multi-subject exams that were persisted before the schema
 	// extension. New exams populate Subjects[] and leave Subject as the
@@ -68,12 +68,12 @@ type ResultSubject struct {
 
 // Result mirrors old-app/shared/models/result.model.ts.
 type Result struct {
-	ID             string    `json:"_id"`
-	SchoolID       string    `json:"school_id"`
-	AcademicYearID string    `json:"academic_year_id,omitempty"`
-	ExamID         string    `json:"exam_id"`
-	ClassID        string    `json:"class_id"`
-	StudentID      string    `json:"student_id"`
+	ID             string `json:"_id"`
+	SchoolID       string `json:"school_id"`
+	AcademicYearID string `json:"academic_year_id,omitempty"`
+	ExamID         string `json:"exam_id"`
+	ClassID        string `json:"class_id"`
+	StudentID      string `json:"student_id"`
 	// ObtainedMarks is the aggregate (sum of subject marks) for new
 	// rows, or the single mark for legacy single-subject results.
 	ObtainedMarks float64         `json:"obtained_marks"`
@@ -121,16 +121,16 @@ type Homework struct {
 
 // Announcement mirrors old-app/shared/models/announcement.model.ts.
 type Announcement struct {
-	ID         string    `json:"_id"`
-	SchoolID   string    `json:"school_id"`
-	Title      string    `json:"title"`
-	Body       string    `json:"body,omitempty"`
-	Audience   string    `json:"audience,omitempty"` // all | teachers | parents | students
-	Priority   string    `json:"priority,omitempty"` // low | normal | high
+	ID         string     `json:"_id"`
+	SchoolID   string     `json:"school_id"`
+	Title      string     `json:"title"`
+	Body       string     `json:"body,omitempty"`
+	Audience   string     `json:"audience,omitempty"` // all | teachers | parents | students
+	Priority   string     `json:"priority,omitempty"` // low | normal | high
 	PinnedTill *time.Time `json:"pinned_till,omitempty"`
-	CreatedBy  string    `json:"created_by,omitempty"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+	CreatedBy  string     `json:"created_by,omitempty"`
+	CreatedAt  time.Time  `json:"created_at"`
+	UpdatedAt  time.Time  `json:"updated_at"`
 }
 
 // Behavior mirrors old-app/shared/models/behavior.model.ts.
@@ -199,10 +199,10 @@ type Leave struct {
 
 // TimetableSession mirrors a single embedded period entry on a timetable.
 type TimetableSession struct {
-	Day       int    `json:"day"`        // 0..6 (Sunday-first)
-	Period    int    `json:"period"`     // 1..N
-	StartsAt  string `json:"starts_at"`  // "08:00"
-	EndsAt    string `json:"ends_at"`    // "08:45"
+	Day       int    `json:"day"`       // 0..6 (Sunday-first)
+	Period    int    `json:"period"`    // 1..N
+	StartsAt  string `json:"starts_at"` // "08:00"
+	EndsAt    string `json:"ends_at"`   // "08:45"
 	SubjectID string `json:"subject_id,omitempty"`
 	Subject   string `json:"subject,omitempty"`
 	TeacherID string `json:"teacher_id,omitempty"`
@@ -235,34 +235,40 @@ type SchoolSettings struct {
 //
 // Live classes use public Jitsi Meet rooms. The backend generates a unique
 // room URL per session. No external API keys or accounts required.
+//
+// Audience targeting:
+//   - audience_type: "CLASS" (visible to all students in class) or "STUDENT" (visible to specific student only)
+//   - target_student_id: optional, required when audience_type is "STUDENT"
 type LiveClass struct {
-	ID             string    `json:"_id"`
-	SchoolID       string    `json:"school_id"`
-	AcademicYearID string    `json:"academic_year_id,omitempty"`
-	ClassID        string    `json:"class_id"`
-	Subject        string    `json:"subject,omitempty"`
-	Title          string    `json:"title"`
-	Description    string    `json:"description,omitempty"`
-	StartsAt       time.Time `json:"starts_at"`
-	EndsAt         time.Time `json:"ends_at"`
-	HostTeacherID  string    `json:"host_teacher_id,omitempty"`
-	JoinURL        string    `json:"join_url,omitempty"`
-	Provider       string    `json:"provider,omitempty"` // jitsi
-	Status         string    `json:"status"`             // scheduled | live | ended | cancelled
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	ID              string    `json:"_id"`
+	SchoolID        string    `json:"school_id"`
+	AcademicYearID  string    `json:"academic_year_id,omitempty"`
+	ClassID         string    `json:"class_id"`
+	Subject         string    `json:"subject,omitempty"`
+	Title           string    `json:"title"`
+	Description     string    `json:"description,omitempty"`
+	StartsAt        time.Time `json:"starts_at"`
+	EndsAt          time.Time `json:"ends_at"`
+	HostTeacherID   string    `json:"host_teacher_id,omitempty"`
+	JoinURL         string    `json:"join_url,omitempty"`
+	Provider        string    `json:"provider,omitempty"`      // jitsi
+	Status          string    `json:"status"`                  // scheduled | live | ended | cancelled
+	AudienceType    string    `json:"audience_type,omitempty"` // CLASS | STUDENT
+	TargetStudentID string    `json:"target_student_id,omitempty"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
 }
 
 // Notification mirrors old-app/shared/models/notification.model.ts.
 type Notification struct {
-	ID         string    `json:"_id"`
-	SchoolID   string    `json:"school_id"`
-	UserID     string    `json:"user_id"`
-	Title      string    `json:"title"`
-	Body       string    `json:"body,omitempty"`
-	Category   string    `json:"category,omitempty"`
-	Read       bool      `json:"read"`
-	CreatedAt  time.Time `json:"created_at"`
+	ID        string    `json:"_id"`
+	SchoolID  string    `json:"school_id"`
+	UserID    string    `json:"user_id"`
+	Title     string    `json:"title"`
+	Body      string    `json:"body,omitempty"`
+	Category  string    `json:"category,omitempty"`
+	Read      bool      `json:"read"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // FeeType is defined in types_fees.go (Phase 3).

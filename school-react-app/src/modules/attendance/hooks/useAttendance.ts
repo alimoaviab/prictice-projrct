@@ -15,7 +15,9 @@ export function useAttendance(filters?: { class_id?: string; student_id?: string
       if (!result.ok) {
         throw new Error(result.error.message || "Failed to load attendance");
       }
-      return result.data;
+      // CRITICAL: Ensure we always return an array, never null/undefined
+      // This prevents "unmarked" regression on page reload
+      return Array.isArray(result.data) ? result.data : [];
     });
   }, [run, filterKey]);
 
@@ -28,6 +30,7 @@ export function useAttendance(filters?: { class_id?: string; student_id?: string
       }
 
       showToast("Attendance recorded.", "success");
+      // Reload to persist properly across page reloads and portals
       await loadAttendance();
       return result;
     },
@@ -43,6 +46,7 @@ export function useAttendance(filters?: { class_id?: string; student_id?: string
       }
 
       showToast("Attendance updated.", "success");
+      // Reload to sync across portals
       await loadAttendance();
       return result;
     },

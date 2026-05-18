@@ -1,73 +1,15 @@
-import { useEffect, useState } from "react";
 import { SchoolShell } from "@/layouts/SchoolShell";
 import { DataState, Skeleton } from "@/components/ui";
 import { useSelectedChild } from "@/contexts/SelectedChildContext";
-import { serviceRequest } from "@/services/service-client";
-
-type AttendanceRecord = {
-  date: string;
-  status: "present" | "absent";
-};
-
-type AttendanceSummary = {
-  student_id: string;
-  student_name: string;
-  class_name: string;
-  total_present: number;
-  total_absent: number;
-  percentage: number;
-  recent_records: AttendanceRecord[];
-};
+import { useParentAttendance } from "@/modules/attendance/hooks/useParentAttendance";
 
 export function ParentAttendancePage() {
   const { selectedChild, loading: childLoading } = useSelectedChild();
-  const [data, setData] = useState<AttendanceSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  
+  // React Query hook with automatic cache invalidation from websocket
+  const { data, isLoading, error } = useParentAttendance(selectedChild?.student_id);
 
-  useEffect(() => {
-    if (!selectedChild) return;
-    let cancelled = false;
-    async function fetchData() {
-      setLoading(true);
-      try {
-        if (!selectedChild) return;
-        const res = await serviceRequest<any>(
-          `/api/parent/student-attendance?student_id=${encodeURIComponent(
-            selectedChild.student_id
-          )}`
-        );
-        if (cancelled) return;
-        if (res.ok && res.data) {
-          const summary = res.data.attendance_summary || {};
-          setData({
-            student_id: selectedChild.student_id,
-            student_name: res.data.student || selectedChild.student_name,
-            class_name: res.data.class || selectedChild.class_name,
-            total_present: Number(summary.present_days || 0),
-            total_absent: Number(summary.absent_days || 0),
-            percentage: Number(summary.attendance_percentage || 0),
-            recent_records: Array.isArray(res.data.recent_records)
-              ? res.data.recent_records.map((r: any) => ({
-                  date: r.date,
-                  status: r.status,
-                }))
-              : [],
-          });
-        }
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error("Failed to fetch attendance:", error);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    void fetchData();
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedChild]);
-
-  if (childLoading || (loading && !data)) {
+  if (childLoading || (isLoading && !data)) {
     return (
       <SchoolShell eyebrow="Guardian Portal" title="Attendance Tracking">
         <div className="space-y-4">
@@ -90,17 +32,29 @@ export function ParentAttendancePage() {
     );
   }
 
+  if (error) {
+    return (
+      <SchoolShell eyebrow="Guardian Portal" title="Attendance Tracking">
+        <DataState
+          variant="error"
+          title="Failed to load attendance"
+          message={(error as Error)?.message || "Please try again later."}
+        />
+      </SchoolShell>
+    );
+  }
+
   // Once a child is selected we always render the dashboard, even with
   // zero records — empty state for "no logs" lives inside the activity
   // section below so the parent still sees the summary cards.
-  const view = data ?? {
+  const view = data || {
     student_id: selectedChild.student_id,
     student_name: selectedChild.student_name,
     class_name: selectedChild.class_name,
     total_present: 0,
     total_absent: 0,
     percentage: 0,
-    recent_records: [] as AttendanceRecord[],
+    recent_records: [],
   };
 
   return (
