@@ -27,7 +27,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math/rand"
+	"crypto/rand"
+	"encoding/binary"
 	"net/http"
 	"sort"
 	"strconv"
@@ -182,7 +183,10 @@ func titleCase(s string) string {
 }
 
 func makeInvoiceNo(studentID, month string, year int) string {
-	src := fmt.Sprintf("%s:%s:%d:%d:%d", studentID, month, year, time.Now().UnixNano(), rand.Int())
+	b := make([]byte, 8)
+	rand.Read(b)
+	randInt := binary.BigEndian.Uint64(b)
+	src := fmt.Sprintf("%s:%s:%d:%d:%d", studentID, month, year, time.Now().UnixNano(), randInt)
 	h := sha1.Sum([]byte(src))
 	hash := strings.ToUpper(hex.EncodeToString(h[:])[:10])
 	mn, _ := monthToNum(month)
@@ -193,7 +197,10 @@ func makeInvoiceNo(studentID, month string, year int) string {
 }
 
 func makeReceiptNo() string {
-	suffix := fmt.Sprintf("%X", rand.Uint32()&0xFFFFFF)
+	b2 := make([]byte, 4)
+	rand.Read(b2)
+	randUint := binary.BigEndian.Uint32(b2)
+	suffix := fmt.Sprintf("%X", randUint&0xFFFFFF)
 	return fmt.Sprintf("RCP-%s-%s", strings.ToUpper(fmt.Sprintf("%X", time.Now().Unix())), suffix)
 }
 

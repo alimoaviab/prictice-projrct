@@ -16,7 +16,9 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math/rand"
+	"crypto/rand"
+	"encoding/binary"
+	"math/big"
 	"net/http"
 	"os"
 	"strings"
@@ -321,8 +323,8 @@ func createTeachers(subjects []Subject) ([]Teacher, error) {
 		last := lastNames[(i-1)%len(lastNames)]
 		// Assign 2-3 subjects per teacher
 		subjAssignments := []string{}
-		for j := 0; j < 2+rand.Intn(2); j++ {
-			subjAssignments = append(subjAssignments, subjects[rand.Intn(len(subjects))].Name)
+		for j := 0; j < 2+int(randIntn(2)); j++ {
+			subjAssignments = append(subjAssignments, subjects[int(randIntn(len(subjects)))].Name)
 		}
 
 		body := map[string]any{
@@ -400,13 +402,13 @@ func createClasses(yearID string, teachers []Teacher, subjects []Subject) ([]Cla
 		// Assign 2-3 teachers per class
 		teacherIDs := []string{}
 		for j := 0; j < 3 && len(teachers) > 0; j++ {
-			teacherIDs = append(teacherIDs, teachers[rand.Intn(len(teachers))].ID)
+			teacherIDs = append(teacherIDs, teachers[int(randIntn(len(teachers)))].ID)
 		}
 		// Assign 4-6 subjects per class
 		subjectIDs := []string{}
 		used := map[string]bool{}
 		for j := 0; j < 5 && len(subjects) > 0; j++ {
-			s := subjects[rand.Intn(len(subjects))]
+			s := subjects[int(randIntn(len(subjects)))]
 			if !used[s.ID] {
 				subjectIDs = append(subjectIDs, s.ID)
 				used[s.ID] = true
@@ -563,14 +565,14 @@ func createAttendance(students []Student) {
 		// Mark attendance for ~30% of students each day (to avoid hammering)
 		sampled := 0
 		for _, s := range students {
-			if rand.Float64() > 0.3 {
+			if randFloat64() > 0.3 {
 				continue
 			}
 			body := map[string]any{
 				"student_id": s.ID,
 				"class_id":   s.ClassID,
 				"date":       dateStr,
-				"status":     statuses[rand.Intn(len(statuses))],
+				"status":     statuses[int(randIntn(len(statuses)))],
 			}
 			if _, err := apiCall("POST", "/api/attendance", body); err == nil {
 				count++
@@ -602,7 +604,7 @@ func createExams(classes []Class, subjects []Subject) []Exam {
 
 	for _, cls := range classes {
 		for examIdx, examType := range []string{"Mid-Term", "Final"} {
-			subj := subjects[rand.Intn(len(subjects))]
+			subj := subjects[int(randIntn(len(subjects)))]
 			daysOffset := -10 + examIdx*15 // Mid-term 10 days ago, Final 5 days from now
 			body := map[string]any{
 				"class_id":    cls.ID,
@@ -652,7 +654,7 @@ func createResults(exams []Exam, students []Student) {
 		}
 		for i := 0; i < limit; i++ {
 			s := classStudents[i]
-			marks := 40 + rand.Intn(55)
+			marks := 40 + int(randIntn(55))
 			body := map[string]any{
 				"exam_id":        exam.ID,
 				"student_id":     s.ID,
@@ -680,11 +682,11 @@ func createHomework(classes []Class, teachers []Teacher, subjects []Subject) {
 
 	for _, cls := range classes {
 		// 3-5 homework per class
-		num := 3 + rand.Intn(3)
+		num := 3 + int(randIntn(3))
 		for i := 0; i < num; i++ {
-			daysAhead := -7 + rand.Intn(14) // mix of past and future due dates
-			subj := subjects[rand.Intn(len(subjects))]
-			teacher := teachers[rand.Intn(len(teachers))]
+			daysAhead := -7 + int(randIntn(14)) // mix of past and future due dates
+			subj := subjects[int(randIntn(len(subjects)))]
+			teacher := teachers[int(randIntn(len(teachers)))]
 
 			body := map[string]any{
 				"class_id":     cls.ID,
@@ -713,9 +715,9 @@ func createBehavior(students []Student, teachers []Teacher) {
 
 	// 50 behavior records randomly
 	for i := 0; i < 50; i++ {
-		s := students[rand.Intn(len(students))]
-		teacher := teachers[rand.Intn(len(teachers))]
-		bt := behaviorTypes[rand.Intn(len(behaviorTypes))]
+		s := students[int(randIntn(len(students)))]
+		teacher := teachers[int(randIntn(len(teachers)))]
+		bt := behaviorTypes[int(randIntn(len(behaviorTypes)))]
 
 		body := map[string]any{
 			"student_id":      s.ID,
@@ -794,17 +796,17 @@ func createLeave(teachers []Teacher, students []Student) {
 
 	// Teacher leaves
 	for i := 0; i < 8; i++ {
-		t := teachers[rand.Intn(len(teachers))]
-		startOffset := -7 + rand.Intn(14)
+		t := teachers[int(randIntn(len(teachers)))]
+		startOffset := -7 + int(randIntn(14))
 		body := map[string]any{
 			"requester_type": "teacher",
 			"requester_id":   t.ID,
 			"requester_name": t.FirstName + " " + t.LastName,
-			"leave_type":     leaveTypes[rand.Intn(len(leaveTypes))],
+			"leave_type":     leaveTypes[int(randIntn(len(leaveTypes)))],
 			"start_date":     now.AddDate(0, 0, startOffset).Format("2006-01-02"),
 			"end_date":       now.AddDate(0, 0, startOffset+1).Format("2006-01-02"),
 			"reason":         "Personal reasons",
-			"status":         []string{"pending", "approved", "rejected"}[rand.Intn(3)],
+			"status":         []string{"pending", "approved", "rejected"}[int(randIntn(3))],
 		}
 		if _, err := apiCall("POST", "/api/leave", body); err == nil {
 			count++
@@ -818,18 +820,18 @@ func createLeave(teachers []Teacher, students []Student) {
 
 	// Student leaves
 	for i := 0; i < 12; i++ {
-		s := students[rand.Intn(len(students))]
-		startOffset := -7 + rand.Intn(14)
+		s := students[int(randIntn(len(students)))]
+		startOffset := -7 + int(randIntn(14))
 		body := map[string]any{
 			"requester_type": "student",
 			"requester_id":   s.ID,
 			"requester_name": s.FirstName + " " + s.LastName,
 			"class_id":       s.ClassID,
-			"leave_type":     leaveTypes[rand.Intn(len(leaveTypes))],
+			"leave_type":     leaveTypes[int(randIntn(len(leaveTypes)))],
 			"start_date":     now.AddDate(0, 0, startOffset).Format("2006-01-02"),
 			"end_date":       now.AddDate(0, 0, startOffset+1).Format("2006-01-02"),
 			"reason":         "Family event",
-			"status":         []string{"pending", "approved"}[rand.Intn(2)],
+			"status":         []string{"pending", "approved"}[int(randIntn(2))],
 		}
 		if _, err := apiCall("POST", "/api/leave", body); err == nil {
 			count++
@@ -853,7 +855,7 @@ func createLiveClasses(classes []Class, teachers []Teacher, subjects []Subject) 
 		cls := classes[i%len(classes)]
 		teacher := teachers[i%len(teachers)]
 		subj := subjects[i%len(subjects)]
-		startTime := now.AddDate(0, 0, rand.Intn(7)).Add(time.Duration(9+rand.Intn(4)) * time.Hour)
+		startTime := now.AddDate(0, 0, int(randIntn(7))).Add(time.Duration(9+int(randIntn(4))) * time.Hour)
 		body := map[string]any{
 			"class_id":        cls.ID,
 			"subject":         subj.Name,
@@ -897,8 +899,8 @@ func createTimetables(classes []Class, teachers []Teacher, subjects []Subject) {
 				if len(teachers) == 0 || len(subjects) == 0 {
 					continue
 				}
-				t := teachers[rand.Intn(len(teachers))]
-				s := subjects[rand.Intn(len(subjects))]
+				t := teachers[int(randIntn(len(teachers)))]
+				s := subjects[int(randIntn(len(subjects)))]
 				body := map[string]any{
 					"class_id":      cls.ID,
 					"day_of_week":   day,
@@ -908,7 +910,7 @@ func createTimetables(classes []Class, teachers []Teacher, subjects []Subject) {
 					"teacher_id":    t.ID,
 					"start_time":    periodTimes[period-1].Start,
 					"end_time":      periodTimes[period-1].End,
-					"room":          rooms[rand.Intn(len(rooms))],
+					"room":          rooms[int(randIntn(len(rooms)))],
 				}
 				if _, err := apiCall("POST", "/api/timetable", body); err == nil {
 					count++
@@ -938,7 +940,7 @@ func createFees(classes []Class) {
 
 	// Add class fees
 	for _, cls := range classes {
-		amount := 2000 + rand.Intn(3000)
+		amount := 2000 + int(randIntn(3000))
 		body := map[string]any{
 			"name":   "Monthly Tuition",
 			"amount": amount,
@@ -993,8 +995,24 @@ func createAnnouncements() {
 
 // ─── Main ────────────────────────────────────────────────────────────────
 
+
+func randIntn(max int) int64 {
+	if max <= 0 {
+		return 0
+	}
+	n, _ := rand.Int(rand.Reader, big.NewInt(int64(max)))
+	return n.Int64()
+}
+
+func randFloat64() float64 {
+	b := make([]byte, 8)
+	rand.Read(b)
+	return float64(binary.BigEndian.Uint64(b)) / float64(1<<64)
+}
+
+
 func main() {
-	rand.Seed(time.Now().UnixNano())
+
 	log.SetFlags(log.Ltime)
 
 	log.Println("═══════════════════════════════════════════════════════════")
