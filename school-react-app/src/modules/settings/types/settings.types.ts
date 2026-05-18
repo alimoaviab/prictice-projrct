@@ -8,4 +8,5 @@ export interface SettingsFormInput {
     principal_email: string;
     principal_phone: string;
     established_year: string;
+    institutional_level?: string;
 }

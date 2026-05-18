@@ -52,7 +52,8 @@ export function SettingsForm({
                                 <label className="text-[11px] font-bold normal-case  text-slate-400">Institutional Level</label>
                                 <select 
                                     className="h-11 px-4 rounded-xl border border-slate-200 bg-white text-sm font-medium outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-600/5 transition-all"
-                                    defaultValue="K-12"
+                                    value={(form as any).institutional_level || "K-12"}
+                                    onChange={(e) => setForm({ ...form, institutional_level: e.target.value } as any)}
                                 >
                                     <option value="primary">Primary (K-5)</option>
                                     <option value="secondary">Secondary (6-10)</option>

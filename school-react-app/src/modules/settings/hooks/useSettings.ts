@@ -14,7 +14,22 @@ export function useSettings() {
                 throw new Error(result.message || "Failed to load settings");
             }
 
-            return result.data;
+            // Transform nested backend structure to flat form structure
+            const data = result.data as any;
+            const transformed: SettingsFormInput = {
+                academy_name: data.profile?.schoolName || "",
+                academy_email: data.profile?.email || "",
+                academy_phone: data.profile?.phone || "",
+                academy_address: data.profile?.address || "",
+                principal_name: data.profile?.principalName || "",
+                principal_email: data.profile?.principalEmail || "",
+                principal_phone: data.profile?.principalPhone || "",
+                established_year: data.profile?.establishedYear || "",
+                institutional_level: data.academic?.institutionalLevel || "K-12",
+                logo_url: data.branding?.logoUrl || "",
+            };
+
+            return transformed;
         });
     }, [run]);
 
