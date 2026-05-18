@@ -5,6 +5,8 @@ import { Badge, Skeleton, DataState, StatCardGrid } from "@/components/ui";
 import { serviceRequest } from "@/services/service-client";
 import { showToast } from "@/utils/toast";
 import { useClasses } from "@/modules/classes/hooks/useClasses";
+import { useSettings } from "@/modules/settings/hooks/useSettings";
+import { exportFeeBulkReport, type FeeBulkEntry } from "@/utils/fee-receipt";
 
 interface Student {
     id: string;
@@ -75,6 +77,17 @@ export function StudentFeeDashboard() {
         reference: ''
     });
 
+    // Selection state for the bulk PDF export. The admin can tick rows on
+    // the current page (or use the bulk-select shortcuts in the export
+    // drawer to grab Unpaid / All-on-page).
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+    const [exporting, setExporting] = useState(false);
+    const [showExportDrawer, setShowExportDrawer] = useState(false);
+
+    // School identity for the report letterhead.
+    const { state: settingsState } = useSettings();
+    const settings = settingsState.data;
+
     // Real classes for the filter dropdown — picks up new classes via the
     // data bus, no manual refresh needed.
     const { state: classState } = useClasses({ page: 1, limit: 200 });
@@ -83,6 +96,92 @@ export function StudentFeeDashboard() {
         const rows = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
         return rows.map((c: any) => ({ id: c._id || c.id, label: c.name }));
     }, [classState.data]);
+
+    // Reset selection when the underlying ledger changes (filter / page change).
+    useEffect(() => {
+        setSelectedIds(new Set());
+    }, [filters.status, filters.class_id, filters.month, filters.year, filters.page]);
+
+    function toggleSelect(id: string) {
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    }
+
+    function selectAllOnPage() {
+        if (!data?.students) return;
+        setSelectedIds(new Set(data.students.map((e) => e.student.id)));
+    }
+
+    function selectByStatus(status: 'paid' | 'partial' | 'unpaid') {
+        if (!data?.students) return;
+        const next = new Set<string>();
+        for (const e of data.students) {
+            if (e.status === status) next.add(e.student.id);
+        }
+        setSelectedIds(next);
+    }
+
+    function clearSelection() {
+        setSelectedIds(new Set());
+    }
+
+    function buildBulkEntries(): FeeBulkEntry[] {
+        if (!data?.students) return [];
+        const periodLabel = `${filters.month.charAt(0).toUpperCase()}${filters.month.slice(1)} ${filters.year}`;
+        return data.students
+            .filter((e) => selectedIds.has(e.student.id))
+            .map((e) => ({
+                student: {
+                    id: e.student.id,
+                    name: e.student.name,
+                    admission_no: e.student.admission_no,
+                    class_name: e.student.class_name,
+                },
+                period: periodLabel,
+                monthly_fee: e.current_fee?.amount ?? 0,
+                carry_forward: e.carry_forward,
+                total_payable: e.total_payable,
+                paid_total: e.paid_total,
+                remaining: e.remaining,
+                status: e.status,
+                components: Array.isArray(e.current_fee?.components)
+                    ? e.current_fee!.components.map((c: any) => ({
+                        fee_type: c.fee_type_name || c.name || c.fee_type || "Fee",
+                        amount: Number(c.amount) || 0,
+                        is_optional: !!c.is_optional,
+                        note: c.note,
+                    }))
+                    : undefined,
+            }));
+    }
+
+    async function handleGenerateReport() {
+        const entries = buildBulkEntries();
+        if (entries.length === 0) {
+            showToast("Select at least one student to generate a report.", "error");
+            return;
+        }
+        setExporting(true);
+        try {
+            exportFeeBulkReport(entries, {
+                schoolName: settings?.academy_name || "School",
+                schoolAddress: [settings?.academy_address, settings?.academy_phone, settings?.academy_email]
+                    .filter(Boolean)
+                    .join(" · ") || undefined,
+                principal: settings?.principal_name,
+                period: `${filters.month.charAt(0).toUpperCase()}${filters.month.slice(1)} ${filters.year}`,
+                currency: "Rs.",
+            });
+            setShowExportDrawer(false);
+        } finally {
+            // Allow the print iframe to spawn before clearing the loading state.
+            setTimeout(() => setExporting(false), 600);
+        }
+    }
 
     const loadDashboard = async () => {
         setLoading(true);
@@ -228,11 +327,16 @@ export function StudentFeeDashboard() {
 
                     <div className="flex items-center gap-2">
                         <button
-                            onClick={() => window.print()}
-                            className="h-10 px-4 rounded-xl border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all flex items-center gap-2 no-print shadow-sm"
+                            onClick={() => setShowExportDrawer(true)}
+                            className="h-10 px-4 rounded-xl border border-blue-200 bg-blue-50 text-[10px] font-black uppercase tracking-widest text-blue-700 hover:bg-blue-100 transition-all flex items-center gap-2 no-print shadow-sm"
                         >
-                            <span className="material-symbols-outlined text-base">print</span>
-                            Print Report
+                            <span className="material-symbols-outlined text-base">picture_as_pdf</span>
+                            Generate PDF
+                            {selectedIds.size > 0 ? (
+                                <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-blue-600 text-white text-[9px]">
+                                    {selectedIds.size}
+                                </span>
+                            ) : null}
                         </button>
                         <div className="h-10 w-px bg-slate-200 mx-1 no-print" />
                         <select 
@@ -292,11 +396,26 @@ export function StudentFeeDashboard() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {data.students.map((entry) => (
+                        {data.students.map((entry) => {
+                            const isSelected = selectedIds.has(entry.student.id);
+                            return (
                             <div 
                                 key={entry.student.id} 
-                                className="premium-card bg-white p-3 border-slate-200/60 shadow-sm flex flex-col group hover:border-blue-300 transition-all relative" 
+                                className={`premium-card bg-white p-3 border-slate-200/60 shadow-sm flex flex-col group hover:border-blue-300 transition-all relative ${isSelected ? 'ring-2 ring-blue-500 border-blue-300' : ''}`}
                             >
+                                {/* SELECT */}
+                                <button
+                                    type="button"
+                                    aria-label={isSelected ? "Deselect for export" : "Select for export"}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleSelect(entry.student.id);
+                                    }}
+                                    className={`absolute top-2 right-2 z-20 h-5 w-5 rounded-md border-2 flex items-center justify-center transition-all no-print ${isSelected ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-slate-300 text-transparent hover:border-blue-400'}`}
+                                >
+                                    <span className="material-symbols-outlined text-[14px] font-black">check</span>
+                                </button>
+
                                 {/* HEADER */}
                                 <div className="flex items-center justify-between mb-3 relative z-10">
                                     <div className="flex items-center gap-2 min-w-0">
@@ -311,7 +430,7 @@ export function StudentFeeDashboard() {
                                             </div>
                                         </div>
                                     </div>
-                                    <div onClick={(e) => e.stopPropagation()} className="scale-90 origin-right">
+                                    <div onClick={(e) => e.stopPropagation()} className="scale-90 origin-right mr-7">
                                         {getStatusBadge(entry.status)}
                                     </div>
                                 </div>
@@ -350,7 +469,8 @@ export function StudentFeeDashboard() {
                                     </button>
                                 </div>
                             </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
 
@@ -467,6 +587,126 @@ export function StudentFeeDashboard() {
                                     <>
                                         <span className="material-symbols-outlined text-[16px]">verified</span>
                                         Confirm Collection
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* PDF EXPORT DRAWER */}
+            {showExportDrawer && (
+                <div className="fixed inset-0 z-[100] flex justify-end bg-slate-900/20 animate-in fade-in duration-300 no-print">
+                    <div className="h-full w-[380px] bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-500 border-l border-slate-100">
+                        <div className="p-5 border-b border-slate-100 bg-white">
+                            <div className="flex items-center justify-between mb-0.5">
+                                <h3 className="text-base font-black text-slate-900 tracking-tight">Generate Fee PDF</h3>
+                                <button 
+                                    onClick={() => setShowExportDrawer(false)}
+                                    className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-colors"
+                                >
+                                    <span className="material-symbols-outlined text-[16px]">close</span>
+                                </button>
+                            </div>
+                            <p className="text-[9px] font-bold text-blue-600 uppercase tracking-widest">
+                                One student per page · A4 portrait
+                            </p>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-5 space-y-5">
+                            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Selected</p>
+                                <p className="text-2xl font-black text-slate-900 tracking-tight">
+                                    {selectedIds.size} <span className="text-[10px] font-bold text-slate-400 uppercase">of {data?.students?.length ?? 0}</span>
+                                </p>
+                                <p className="text-[10px] text-slate-500 mt-1">
+                                    Pages: {selectedIds.size}
+                                </p>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest ml-1">Quick Select</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={selectAllOnPage}
+                                        className="h-10 rounded-xl border-2 border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:border-blue-200 hover:text-blue-600 transition-all"
+                                    >
+                                        All on page
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={clearSelection}
+                                        className="h-10 rounded-xl border-2 border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:border-slate-300 transition-all"
+                                    >
+                                        Clear
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => selectByStatus('unpaid')}
+                                        className="h-10 rounded-xl border-2 border-rose-100 bg-rose-50/50 text-[10px] font-black uppercase tracking-widest text-rose-600 hover:bg-rose-100 transition-all"
+                                    >
+                                        Unpaid only
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => selectByStatus('partial')}
+                                        className="h-10 rounded-xl border-2 border-amber-100 bg-amber-50/50 text-[10px] font-black uppercase tracking-widest text-amber-600 hover:bg-amber-100 transition-all"
+                                    >
+                                        Partial only
+                                    </button>
+                                </div>
+                                <p className="text-[10px] text-slate-400 leading-relaxed mt-2">
+                                    Tip — quick-select acts on the students currently on this page.
+                                    Apply a class filter or change the page to scope further.
+                                </p>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest ml-1">Selected Students</label>
+                                <div className="rounded-2xl border border-slate-100 max-h-[220px] overflow-y-auto divide-y divide-slate-100">
+                                    {selectedIds.size === 0 ? (
+                                        <p className="text-[11px] text-slate-400 text-center py-6">
+                                            No students selected. Tick checkboxes on the cards or use a quick-select above.
+                                        </p>
+                                    ) : (
+                                        (data?.students ?? [])
+                                            .filter((e) => selectedIds.has(e.student.id))
+                                            .map((e) => (
+                                                <div key={e.student.id} className="px-3 py-2 flex items-center justify-between gap-2">
+                                                    <div className="min-w-0">
+                                                        <p className="text-[11px] font-black text-slate-900 truncate">{e.student.name}</p>
+                                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                                                            {e.student.class_name} · #{e.student.admission_no}
+                                                        </p>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => toggleSelect(e.student.id)}
+                                                        className="h-6 w-6 rounded-md text-slate-400 hover:text-rose-500 hover:bg-rose-50 flex items-center justify-center transition-colors"
+                                                    >
+                                                        <span className="material-symbols-outlined text-[16px]">close</span>
+                                                    </button>
+                                                </div>
+                                            ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-5 border-t border-slate-100 bg-white">
+                            <button 
+                                disabled={exporting || selectedIds.size === 0}
+                                onClick={handleGenerateReport}
+                                className="w-full h-11 rounded-xl bg-blue-600 text-white font-black uppercase tracking-widest text-[9px] shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {exporting ? (
+                                    <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                ) : (
+                                    <>
+                                        <span className="material-symbols-outlined text-[16px]">picture_as_pdf</span>
+                                        Generate PDF · {selectedIds.size} page{selectedIds.size === 1 ? '' : 's'}
                                     </>
                                 )}
                             </button>

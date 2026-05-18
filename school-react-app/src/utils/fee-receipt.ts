@@ -612,3 +612,276 @@ export function exportFeeStatement(
 
   printHtmlDocument(html, `Fee Statement ${student.name}`);
 }
+
+
+// ────────────────────────────────────────────────────────────────────────
+// Bulk fee report — one student per A4 page
+// ────────────────────────────────────────────────────────────────────────
+
+/**
+ * A single ledger entry as rendered on a per-student page in the bulk
+ * report. Mirrors the shape used by `LedgerEntry` on the admin fee
+ * dashboard so the page can pass rows through with minimal mapping.
+ */
+export interface FeeBulkEntry {
+  student: {
+    id: string;
+    name: string;
+    admission_no?: string;
+    class_name?: string;
+    section?: string;
+    roll_no?: string;
+    parent_name?: string;
+    parent_phone?: string;
+  };
+  /** Period of this ledger snapshot, e.g. "October 2026". */
+  period?: string;
+  monthly_fee: number;
+  carry_forward: number;
+  total_payable: number;
+  paid_total: number;
+  remaining: number;
+  status: string;
+  /**
+   * Optional breakdown of what makes up the monthly fee — Tuition / Bus /
+   * Lab / etc. When provided the page renders a line-item table; when
+   * omitted the page just shows the totals block.
+   */
+  components?: Array<{
+    fee_type: string;
+    amount: number;
+    is_optional?: boolean;
+    note?: string;
+  }>;
+  /** Optional per-student payment history for this period. */
+  payments?: FeeReceiptPayment[];
+}
+
+export interface FeeBulkReportOptions extends FeeReceiptOptions {
+  /** Defaults to "Fee Report — <period>" if omitted. */
+  title?: string;
+  /** Period label. */
+  period?: string;
+  /** Academic year. */
+  academicYear?: string;
+}
+
+/**
+ * Render a multi-page fee report with one student per page. The browser
+ * print dialog opens with paper preset to A4 / Portrait so admins can save
+ * a single PDF that contains every selected student's invoice.
+ */
+export function exportFeeBulkReport(
+  entries: FeeBulkEntry[],
+  opts: FeeBulkReportOptions = {},
+): void {
+  if (!entries.length) return;
+  const currency = opts.currency || "Rs.";
+  const period = opts.period || entries[0]?.period || fmtToday();
+  const title =
+    opts.title || `Fee Report — ${period}${entries.length > 1 ? ` (${entries.length} students)` : ""}`;
+
+  const pages = entries
+    .map((entry, idx) => renderBulkEntryPage(entry, currency, opts, idx + 1, entries.length))
+    .join("");
+
+  const html = `<!DOCTYPE html><html lang="en"><head>
+    <meta charset="utf-8" />
+    <title>${htmlEscape(title)}</title>
+    ${baseStyles}
+    <style>
+      /* Bulk report: one student per printed page. */
+      .page {
+        page-break-after: always;
+        break-after: page;
+      }
+      .page:last-child {
+        page-break-after: auto;
+        break-after: auto;
+      }
+      @page {
+        size: A4 portrait;
+        margin: 12mm;
+      }
+      .page-meta {
+        text-align: right;
+        font-size: 9px;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 1.4px;
+        font-weight: 700;
+        margin-bottom: 12px;
+      }
+      .balance-card {
+        margin-top: 24px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 14px 18px;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 18px;
+      }
+      .balance-card .b-cell .lbl {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        color: #64748b;
+      }
+      .balance-card .b-cell .val {
+        font-size: 16px;
+        font-weight: 800;
+        margin-top: 4px;
+        color: #0f172a;
+      }
+      .balance-card .b-cell.total .val { color: #2563eb; }
+      .balance-card .b-cell.paid .val { color: #15803d; }
+      .balance-card .b-cell.due .val { color: #b91c1c; }
+    </style>
+  </head><body>
+    ${pages}
+  </body></html>`;
+
+  printHtmlDocument(html, title);
+}
+
+function renderBulkEntryPage(
+  entry: FeeBulkEntry,
+  currency: string,
+  opts: FeeBulkReportOptions,
+  pageNum: number,
+  pageTotal: number,
+): string {
+  const tone = statusTone(entry.status);
+  const rightExtra = `
+    <div class="receipt-meta">
+      <div><strong>Period</strong> ${htmlEscape(entry.period || opts.period || fmtToday())}</div>
+      ${opts.academicYear
+        ? `<div><strong>Academic Year</strong> ${htmlEscape(opts.academicYear)}</div>`
+        : ""}
+      <div><strong>Generated</strong> ${htmlEscape(fmtToday())}</div>
+    </div>
+  `;
+
+  const studentMeta: FeeReceiptStudent = {
+    name: entry.student.name,
+    className: [entry.student.class_name, entry.student.section]
+      .filter(Boolean)
+      .join(" - ") || "—",
+    rollNo: entry.student.admission_no || entry.student.roll_no,
+    academicYear: opts.academicYear,
+  };
+
+  const componentRows = (entry.components ?? [])
+    .map(
+      (c) => `
+      <tr>
+        <td>${htmlEscape(c.fee_type)}${c.is_optional ? ' <span class="pill" style="background:#e0e7ff;color:#4338ca;margin-left:6px;">Optional</span>' : ""}</td>
+        <td>${htmlEscape(c.note || "—")}</td>
+        <td class="amount">${fmtMoney(c.amount, currency)}</td>
+      </tr>`,
+    )
+    .join("");
+
+  const paymentRows = (entry.payments ?? [])
+    .map(
+      (p) => `
+      <tr>
+        <td>${htmlEscape(p.receipt_no || "—")}</td>
+        <td>${htmlEscape(p.date)}</td>
+        <td>${htmlEscape(p.method || "—")}</td>
+        <td class="amount">${fmtMoney(p.amount, currency)}</td>
+      </tr>`,
+    )
+    .join("");
+
+  return `
+    <div class="page">
+      <div class="sheet">
+        <div class="page-meta">Page ${pageNum} of ${pageTotal}</div>
+        ${renderHeader(opts, "Fee Invoice", rightExtra)}
+        ${renderStudentBlock(studentMeta)}
+
+        ${entry.student.parent_name || entry.student.parent_phone
+          ? `<div class="summary-grid" style="margin-top:-12px;">
+              ${entry.student.parent_name ? `<div><div class="label">Guardian</div><div class="value">${htmlEscape(entry.student.parent_name)}</div></div>` : ""}
+              ${entry.student.parent_phone ? `<div><div class="label">Guardian Phone</div><div class="value">${htmlEscape(entry.student.parent_phone)}</div></div>` : ""}
+            </div>`
+          : ""}
+
+        <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+          <span class="pill" style="background:${tone.bg};color:${tone.fg};">
+            ${htmlEscape(entry.status || "Unpaid")}
+          </span>
+        </div>
+
+        ${componentRows
+          ? `
+          <h3 style="margin-top:0;font-size:12px;letter-spacing:1.2px;text-transform:uppercase;color:#475569;">Fee Components</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Fee Type</th>
+                <th>Note</th>
+                <th class="amount">Amount</th>
+              </tr>
+            </thead>
+            <tbody>${componentRows}</tbody>
+          </table>`
+          : `
+          <h3 style="margin-top:0;font-size:12px;letter-spacing:1.2px;text-transform:uppercase;color:#475569;">Monthly Charges</h3>
+          <table>
+            <tbody>
+              <tr>
+                <td>Monthly Fee (${htmlEscape(entry.period || opts.period || "")})</td>
+                <td class="amount">${fmtMoney(entry.monthly_fee, currency)}</td>
+              </tr>
+              <tr>
+                <td>Previous Carry-Forward</td>
+                <td class="amount">${fmtMoney(entry.carry_forward, currency)}</td>
+              </tr>
+            </tbody>
+          </table>`}
+
+        <div class="balance-card">
+          <div class="b-cell"><div class="lbl">Monthly Fee</div><div class="val">${fmtMoney(entry.monthly_fee, currency)}</div></div>
+          <div class="b-cell"><div class="lbl">Previous Due</div><div class="val">${fmtMoney(entry.carry_forward, currency)}</div></div>
+          <div class="b-cell paid"><div class="lbl">Paid</div><div class="val">${fmtMoney(entry.paid_total, currency)}</div></div>
+          <div class="b-cell ${entry.remaining > 0 ? "due" : "total"}"><div class="lbl">Outstanding</div><div class="val">${fmtMoney(entry.remaining, currency)}</div></div>
+        </div>
+
+        ${paymentRows
+          ? `
+          <h3 style="margin-top:24px;font-size:12px;letter-spacing:1.2px;text-transform:uppercase;color:#475569;">Payment History</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Receipt No.</th>
+                <th>Date</th>
+                <th>Method</th>
+                <th class="amount">Amount</th>
+              </tr>
+            </thead>
+            <tbody>${paymentRows}</tbody>
+          </table>`
+          : ""}
+
+        <div class="total-row">
+          <div class="grand">
+            <div class="lbl">Total Payable</div>
+            <div class="val">${fmtMoney(entry.remaining, currency)}</div>
+          </div>
+        </div>
+
+        <div class="note">
+          Please remit the outstanding amount before the due date. Bring this
+          invoice to the accounts office or pay via the school portal. For
+          queries contact the accounts desk and quote the admission number
+          ${htmlEscape(entry.student.admission_no || "")}.
+        </div>
+
+        ${renderFooter(opts)}
+      </div>
+    </div>
+  `;
+}
