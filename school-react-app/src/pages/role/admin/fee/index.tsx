@@ -83,12 +83,17 @@ export function StudentFeeDashboard() {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
     const [exporting, setExporting] = useState(false);
     const [showExportDrawer, setShowExportDrawer] = useState(false);
+    // Plain-language export config. We never expose paper size,
+    // orientation, compact density, or per-row notes — the engine
+    // auto-derives all of those from the per-page count so admins
+    // only think about how many vouchers they want and how they sit
+    // on the page.
     const [exportConfig, setExportConfig] = useState({
-        studentsPerPage: 1 as 1 | 2 | 3 | 4,
-        paperSize: 'A4' as 'A4' | 'Letter' | 'Legal',
-        orientation: 'portrait' as 'portrait' | 'landscape',
-        compactMode: false,
-        includeNotes: true,
+        // Duplicate copies per student (one for parent, one for office, etc).
+        copiesPerStudent: 1 as 1 | 2 | 3,
+        // How many voucher slots per page. The engine picks the right
+        // orientation + density automatically.
+        copiesPerPage: 1 as 1 | 2 | 3 | 4,
     });
 
     // School identity for the report letterhead.
@@ -167,11 +172,22 @@ export function StudentFeeDashboard() {
     }
 
     async function handleGenerateReport() {
-        const entries = buildBulkEntries();
-        if (entries.length === 0) {
+        const baseEntries = buildBulkEntries();
+        if (baseEntries.length === 0) {
             showToast("Select at least one student to generate a report.", "error");
             return;
         }
+
+        // Duplicate each entry copiesPerStudent times. The PDF engine
+        // doesn't know the concept of copies — at this layer we just
+        // hand it a longer list.
+        const entries: FeeBulkEntry[] = [];
+        for (const e of baseEntries) {
+            for (let i = 0; i < exportConfig.copiesPerStudent; i++) {
+                entries.push(e);
+            }
+        }
+
         setExporting(true);
         try {
             exportFeeBulkReport(entries, {
@@ -183,11 +199,10 @@ export function StudentFeeDashboard() {
                 principal: settings?.principal_name,
                 period: `${filters.month.charAt(0).toUpperCase()}${filters.month.slice(1)} ${filters.year}`,
                 currency: "Rs.",
-                studentsPerPage: exportConfig.studentsPerPage,
-                paperSize: exportConfig.paperSize,
-                orientation: exportConfig.orientation,
-                compactMode: exportConfig.compactMode,
-                includeNotes: exportConfig.includeNotes,
+                // The engine auto-picks orientation and density from
+                // the count, so admins never see paper / orientation /
+                // compact / notes knobs.
+                studentsPerPage: exportConfig.copiesPerPage,
             });
             setShowExportDrawer(false);
         } finally {
@@ -623,95 +638,89 @@ export function StudentFeeDashboard() {
                                 </button>
                             </div>
                             <p className="text-[9px] font-bold text-blue-600 uppercase tracking-widest">
-                                {exportConfig.studentsPerPage} student{exportConfig.studentsPerPage === 1 ? '' : 's'} per page · {exportConfig.paperSize} {exportConfig.orientation}
+                                {selectedIds.size * exportConfig.copiesPerStudent} voucher{selectedIds.size * exportConfig.copiesPerStudent === 1 ? '' : 's'} · {Math.max(0, Math.ceil((selectedIds.size * exportConfig.copiesPerStudent) / exportConfig.copiesPerPage))} page{Math.max(0, Math.ceil((selectedIds.size * exportConfig.copiesPerStudent) / exportConfig.copiesPerPage)) === 1 ? '' : 's'}
                             </p>
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-5 space-y-5">
-                            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Selected</p>
-                                <p className="text-2xl font-black text-slate-900 tracking-tight">
-                                    {selectedIds.size} <span className="text-[10px] font-bold text-slate-400 uppercase">of {data?.students?.length ?? 0}</span>
-                                </p>
-                                <p className="text-[10px] text-slate-500 mt-1">
-                                    Pages: {Math.ceil(selectedIds.size / exportConfig.studentsPerPage)}
-                                </p>
+                            {/* Premium summary card */}
+                            <div className="rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 p-5 text-white shadow-lg shadow-blue-600/20 relative overflow-hidden">
+                                <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+                                <div className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+                                <div className="relative grid grid-cols-2 gap-y-4 gap-x-3">
+                                    <div>
+                                        <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-blue-100/80">Selected Students</p>
+                                        <p className="text-[26px] font-bold tracking-tight leading-none mt-1.5">{selectedIds.size}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-blue-100/80">Copies Per Student</p>
+                                        <p className="text-[26px] font-bold tracking-tight leading-none mt-1.5">{exportConfig.copiesPerStudent}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-blue-100/80">Total Vouchers</p>
+                                        <p className="text-[26px] font-bold tracking-tight leading-none mt-1.5">{selectedIds.size * exportConfig.copiesPerStudent}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-blue-100/80">Estimated Pages</p>
+                                        <p className="text-[26px] font-bold tracking-tight leading-none mt-1.5">{Math.max(0, Math.ceil((selectedIds.size * exportConfig.copiesPerStudent) / exportConfig.copiesPerPage))}</p>
+                                    </div>
+                                </div>
                             </div>
 
+                            {/* Copies Per Student */}
                             <div className="space-y-2">
-                                <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest ml-1">Configuration</label>
-                                <div className="rounded-2xl border border-slate-100 p-3 bg-white space-y-3">
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <div>
-                                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-1">Students / Page</p>
-                                            <select
-                                                value={exportConfig.studentsPerPage}
-                                                onChange={(e) => {
-                                                    const spp = Number(e.target.value) as 1 | 2 | 3 | 4;
-                                                    setExportConfig((prev) => ({
-                                                        ...prev,
-                                                        studentsPerPage: spp,
-                                                        orientation: spp >= 3 ? 'landscape' : prev.orientation,
-                                                        compactMode: spp >= 3 ? true : prev.compactMode,
-                                                    }));
-                                                }}
-                                                className="w-full h-9 rounded-lg border border-slate-200 px-2 text-[11px] font-bold text-slate-700"
+                                <div className="flex items-baseline justify-between">
+                                    <h4 className="text-[13px] font-bold text-slate-900">Copies Per Student</h4>
+                                    <span className="text-[10px] font-bold text-blue-600">{exportConfig.copiesPerStudent} ×</span>
+                                </div>
+                                <p className="text-[11px] text-slate-500 leading-relaxed">
+                                    How many fee voucher copies should be printed for each student?
+                                </p>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {([1, 2, 3] as const).map((n) => {
+                                        const active = exportConfig.copiesPerStudent === n;
+                                        return (
+                                            <button
+                                                key={n}
+                                                type="button"
+                                                onClick={() => setExportConfig((prev) => ({ ...prev, copiesPerStudent: n }))}
+                                                className={`h-14 rounded-xl border text-left px-3 transition-all ${active ? "border-blue-600 bg-blue-50/60 shadow-sm" : "border-slate-200 hover:border-slate-300"}`}
                                             >
-                                                <option value={1}>1</option>
-                                                <option value={2}>2</option>
-                                                <option value={3}>3</option>
-                                                <option value={4}>4</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-1">Paper</p>
-                                            <select
-                                                value={exportConfig.paperSize}
-                                                onChange={(e) => setExportConfig((prev) => ({ ...prev, paperSize: e.target.value as 'A4' | 'Letter' | 'Legal' }))}
-                                                className="w-full h-9 rounded-lg border border-slate-200 px-2 text-[11px] font-bold text-slate-700"
+                                                <p className={`text-[18px] font-bold leading-none ${active ? "text-blue-700" : "text-slate-900"}`}>{n}</p>
+                                                <p className="text-[10px] font-bold text-slate-500 mt-1">{n === 1 ? "One copy" : `${n} copies`}</p>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Student Copies Per Page */}
+                            <div className="space-y-2">
+                                <div className="flex items-baseline justify-between">
+                                    <h4 className="text-[13px] font-bold text-slate-900">Student Copies Per Page</h4>
+                                    <span className="text-[10px] font-bold text-blue-600">
+                                        {exportConfig.copiesPerPage === 1 ? "Large" : exportConfig.copiesPerPage === 2 ? "Medium" : exportConfig.copiesPerPage === 3 ? "Tight" : "Compact"}
+                                    </span>
+                                </div>
+                                <p className="text-[11px] text-slate-500 leading-relaxed">
+                                    How many voucher copies appear on a single page? We auto-adjust the size for the cleanest result.
+                                </p>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {([1, 2, 3, 4] as const).map((n) => {
+                                        const active = exportConfig.copiesPerPage === n;
+                                        const label = n === 1 ? "Large" : n === 2 ? "Medium" : n === 3 ? "Tight" : "Compact";
+                                        return (
+                                            <button
+                                                key={n}
+                                                type="button"
+                                                onClick={() => setExportConfig((prev) => ({ ...prev, copiesPerPage: n }))}
+                                                className={`h-14 rounded-xl border flex flex-col items-center justify-center transition-all ${active ? "border-blue-600 bg-blue-50/60 shadow-sm" : "border-slate-200 hover:border-slate-300"}`}
                                             >
-                                                <option value="A4">A4</option>
-                                                <option value="Letter">Letter</option>
-                                                <option value="Legal">Legal</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => setExportConfig((prev) => ({ ...prev, orientation: 'portrait' }))}
-                                            className={`h-9 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${exportConfig.orientation === 'portrait' ? 'border-blue-300 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
-                                        >
-                                            Portrait
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setExportConfig((prev) => ({ ...prev, orientation: 'landscape' }))}
-                                            className={`h-9 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${exportConfig.orientation === 'landscape' ? 'border-blue-300 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
-                                        >
-                                            Landscape
-                                        </button>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <label className="h-9 rounded-lg border border-slate-200 px-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-600">
-                                            <input
-                                                type="checkbox"
-                                                checked={exportConfig.compactMode}
-                                                onChange={(e) => setExportConfig((prev) => ({ ...prev, compactMode: e.target.checked }))}
-                                            />
-                                            Compact
-                                        </label>
-                                        <label className="h-9 rounded-lg border border-slate-200 px-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-600">
-                                            <input
-                                                type="checkbox"
-                                                checked={exportConfig.includeNotes}
-                                                onChange={(e) => setExportConfig((prev) => ({ ...prev, includeNotes: e.target.checked }))}
-                                            />
-                                            Notes
-                                        </label>
-                                    </div>
+                                                <p className={`text-[15px] font-bold leading-none ${active ? "text-blue-700" : "text-slate-900"}`}>{n}</p>
+                                                <p className="text-[9px] font-bold text-slate-500 mt-1.5">{label}</p>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </div>
 
@@ -786,17 +795,22 @@ export function StudentFeeDashboard() {
                         </div>
 
                         <div className="p-5 border-t border-slate-100 bg-white">
-                            <button 
+                            <button
                                 disabled={exporting || selectedIds.size === 0}
                                 onClick={handleGenerateReport}
-                                className="w-full h-11 rounded-xl bg-blue-600 text-white font-black uppercase tracking-widest text-[9px] shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                className="w-full h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center gap-0.5 active:scale-[0.99]"
                             >
                                 {exporting ? (
-                                    <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    <div className="h-5 w-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                                 ) : (
                                     <>
-                                        <span className="material-symbols-outlined text-[16px]">picture_as_pdf</span>
-                                        Generate PDF · {Math.ceil(selectedIds.size / exportConfig.studentsPerPage)} page{Math.ceil(selectedIds.size / exportConfig.studentsPerPage) === 1 ? '' : 's'}
+                                        <span className="text-[14px] font-bold tracking-tight inline-flex items-center gap-2">
+                                            <span className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+                                            Generate Fee Vouchers
+                                        </span>
+                                        <span className="text-[11px] font-medium text-blue-100/90">
+                                            {selectedIds.size * exportConfig.copiesPerStudent} voucher{selectedIds.size * exportConfig.copiesPerStudent === 1 ? '' : 's'} · {Math.max(0, Math.ceil((selectedIds.size * exportConfig.copiesPerStudent) / exportConfig.copiesPerPage))} page{Math.max(0, Math.ceil((selectedIds.size * exportConfig.copiesPerStudent) / exportConfig.copiesPerPage)) === 1 ? '' : 's'}
+                                        </span>
                                     </>
                                 )}
                             </button>

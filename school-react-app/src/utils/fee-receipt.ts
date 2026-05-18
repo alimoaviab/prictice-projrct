@@ -313,17 +313,17 @@ function renderHeader(
   badge: string,
   rightExtra?: string,
 ): string {
+  const logoSrc = opts.logoUrl || "/logo.jpeg";
   return `
     <div class="header">
       <div class="brand">
-        ${opts.logoUrl || "/logo.jpeg"
-          ? `<img class="school-logo" src="${htmlEscape(opts.logoUrl || "/logo.jpeg")}" alt="${htmlEscape(opts.schoolName || "School")} logo" />`
-          : ""}
-        <div>
+        <img class="school-logo" src="${htmlEscape(logoSrc)}" alt="${htmlEscape(opts.schoolName || "School")} logo" />
+        <div class="brand-text">
           <h1>${htmlEscape(opts.schoolName || "School")}</h1>
-        <div class="school-meta">${htmlEscape(opts.schoolAddress || "Official Fee Document")}</div>
+          <div class="school-meta">${htmlEscape(opts.schoolAddress || "Official Fee Document")}</div>
+        </div>
       </div>
-      <div>
+      <div class="header-right">
         <div class="badge">${htmlEscape(badge)}</div>
         ${rightExtra || ""}
       </div>
@@ -699,193 +699,571 @@ export interface FeeBulkReportOptions extends FeeReceiptOptions {
 }
 
 /**
- * Render a multi-page fee report with one student per page. The browser
- * print dialog opens with paper preset to A4 / Portrait so admins can save
- * a single PDF that contains every selected student's invoice.
+ * Render a multi-page fee voucher report. The layout engine works like
+ * a slot-based grid:
+ *
+ *   - 1 voucher / page → single full-page voucher (portrait).
+ *   - 2 vouchers / page → 2 equal rows stacked (portrait).
+ *   - 3 vouchers / page → 3 equal rows stacked (portrait).
+ *   - 4 vouchers / page → 2 × 2 grid (landscape).
+ *
+ * Each page is a CSS-grid container with `grid-template-rows: repeat(N, 1fr)`
+ * (or 2 × 2 in the four-up case). Vouchers fill their slot exactly so we
+ * never get whitespace at the bottom or vouchers spilling onto the next
+ * page. Page breaks are explicit at the page-container level only.
  */
 export function exportFeeBulkReport(
   entries: FeeBulkEntry[],
   opts: FeeBulkReportOptions = {},
 ): void {
   if (!entries.length) return;
+
   const currency = opts.currency || "Rs.";
   const period = opts.period || entries[0]?.period || fmtToday();
-  const studentsPerPage = Math.min(4, Math.max(1, Number(opts.studentsPerPage || 1))) as 1 | 2 | 3 | 4;
-  const orientation: "portrait" | "landscape" =
-    studentsPerPage >= 3 ? "landscape" : (opts.orientation || "portrait");
+  const perPage = Math.min(4, Math.max(1, Number(opts.studentsPerPage || 1))) as 1 | 2 | 3 | 4;
+  // Auto-derive orientation: only 4-up benefits from landscape (2×2).
+  // Stacked layouts (1/2/3) stay portrait so the voucher reads naturally.
+  const orientation: "portrait" | "landscape" = perPage === 4 ? "landscape" : "portrait";
   const paperSize = opts.paperSize || "A4";
-  const compactMode = opts.compactMode ?? studentsPerPage >= 3;
-  const title =
-    opts.title || `Fee Report — ${period}${entries.length > 1 ? ` (${entries.length} students)` : ""}`;
 
+  const title =
+    opts.title ||
+    `Fee Vouchers — ${period}${entries.length > 1 ? ` (${entries.length} vouchers)` : ""}`;
+
+  // Slot the entries into pages. ceil(total / perPage) pages, last
+  // page may be partially filled (we render empty slots invisibly so
+  // the row heights stay equal).
   const pageGroups: FeeBulkEntry[][] = [];
-  for (let i = 0; i < entries.length; i += studentsPerPage) {
-    pageGroups.push(entries.slice(i, i + studentsPerPage));
+  for (let i = 0; i < entries.length; i += perPage) {
+    pageGroups.push(entries.slice(i, i + perPage));
   }
 
-  const pages =
-    studentsPerPage === 1
-      ? entries
-          .map((entry, idx) => renderBulkEntryPage(entry, currency, opts, idx + 1, entries.length))
-          .join("")
-      : pageGroups
-          .map((group, idx) =>
-            renderBulkGridPage(group, currency, opts, idx + 1, pageGroups.length, studentsPerPage, compactMode),
-          )
-          .join("");
+  const totalPages = pageGroups.length;
+  const pages = pageGroups
+    .map((group, idx) =>
+      renderVoucherPage(group, currency, opts, idx + 1, totalPages, perPage),
+    )
+    .join("");
 
   const html = `<!DOCTYPE html><html lang="en"><head>
     <meta charset="utf-8" />
     <title>${htmlEscape(title)}</title>
     ${baseStyles}
-    <style>
-      /* Bulk report: one student per printed page. */
-      .page {
-        page-break-after: always;
-        break-after: page;
-      }
-      .page:last-child {
-        page-break-after: auto;
-        break-after: auto;
-      }
-      @page {
-        size: ${paperSize} ${orientation};
-        margin: ${studentsPerPage >= 3 ? "8mm" : "12mm"};
-      }
-      .page-meta {
-        text-align: right;
-        font-size: 9px;
-        color: #94a3b8;
-        text-transform: uppercase;
-        letter-spacing: 1.4px;
-        font-weight: 700;
-        margin-bottom: 8px;
-      }
-      .balance-card {
-        margin-top: 16px;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 12px 14px;
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 12px;
-      }
-      .balance-card .b-cell .lbl {
-        font-size: 9px;
-        font-weight: 700;
-        letter-spacing: 1.2px;
-        text-transform: uppercase;
-        color: #64748b;
-      }
-      .balance-card .b-cell .val {
-        font-size: 16px;
-        font-weight: 800;
-        margin-top: 4px;
-        color: #0f172a;
-      }
-      .balance-card .b-cell.total .val { color: #2563eb; }
-      .balance-card .b-cell.paid .val { color: #15803d; }
-      .balance-card .b-cell.due .val { color: #b91c1c; }
-      .sheet {
-        max-width: 100% !important;
-        width: 100% !important;
-        margin: 0 auto !important;
-        padding: 0 !important;
-      }
-      .voucher-grid {
-        display: grid;
-        gap: ${studentsPerPage >= 3 ? "12px" : "16px"};
-      }
-      .voucher-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .voucher-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .voucher-grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-      .voucher-mini {
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        padding: ${studentsPerPage >= 3 ? "6px" : "8px"};
-      }
-      .voucher-mini .mini-brand {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 6px;
-      }
-      .voucher-mini .mini-logo {
-        width: 26px;
-        height: 26px;
-        border-radius: 7px;
-        object-fit: cover;
-        border: 1px solid #e2e8f0;
-        background: #f8fafc;
-        flex: none;
-      }
-      .voucher-mini .mini-school {
-        min-width: 0;
-      }
-      .voucher-mini .mini-school-name {
-        font-size: 11px;
-        font-weight: 800;
-        line-height: 1.15;
-      }
-      .voucher-mini .mini-school-meta {
-        font-size: 8px;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        font-weight: 700;
-        margin-top: 2px;
-      }
-      .voucher-mini .mini-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 5px;
-      }
-      .voucher-mini .mini-title {
-        font-size: 11px;
-        font-weight: 800;
-      }
-      .voucher-mini .mini-sub {
-        font-size: 8px;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        font-weight: 700;
-      }
-      .voucher-mini table thead th,
-      .voucher-mini table tbody td {
-        font-size: ${compactMode ? "8px" : "9px"};
-        padding: ${compactMode ? "4px 5px" : "5px 6px"};
-      }
-      .voucher-mini .mini-metrics {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 4px;
-        margin-top: 5px;
-      }
-      .voucher-mini .mini-metrics .cell {
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 4px;
-      }
-      .voucher-mini .mini-metrics .lbl {
-        font-size: 8px;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        font-weight: 700;
-      }
-      .voucher-mini .mini-metrics .val {
-        margin-top: 2px;
-        font-size: 10px;
-        font-weight: 800;
-      }
-    </style>
+    ${voucherStyles(perPage, paperSize, orientation)}
   </head><body>
     ${pages}
   </body></html>`;
 
   printHtmlDocument(html, title);
+}
+
+/**
+ * Per-print stylesheet that drives the slot grid + the voucher template.
+ * Generated dynamically because grid template depends on `perPage`.
+ */
+function voucherStyles(
+  perPage: 1 | 2 | 3 | 4,
+  paperSize: string,
+  orientation: "portrait" | "landscape",
+): string {
+  // Page margin + grid layout vary with density. We keep the math explicit
+  // so the generated HTML is easy to reason about when debugging print
+  // bugs in the future.
+  const margin = perPage === 4 ? "8mm" : perPage >= 2 ? "10mm" : "12mm";
+  const gridTemplate =
+    perPage === 1
+      ? "grid-template-rows: 1fr;"
+      : perPage === 2
+        ? "grid-template-rows: 1fr 1fr;"
+        : perPage === 3
+          ? "grid-template-rows: 1fr 1fr 1fr;"
+          : "grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;"; // 4 → 2×2
+  const slotGap = perPage === 1 ? "0" : perPage === 4 ? "8mm" : "6mm";
+
+  // Voucher inner-density tokens. Smaller slot → smaller text/padding.
+  const tokens = densityTokens(perPage);
+
+  return `
+    <style>
+      @page {
+        size: ${paperSize} ${orientation};
+        margin: ${margin};
+      }
+
+      /* Reset the parent printable to behave as a tile container. */
+      body { background: #fff; }
+
+      .voucher-page {
+        width: 100%;
+        height: 100vh;
+        display: grid;
+        ${gridTemplate}
+        gap: ${slotGap};
+        page-break-after: always;
+        break-after: page;
+      }
+      .voucher-page:last-child {
+        page-break-after: auto;
+        break-after: auto;
+      }
+
+      .voucher-slot {
+        min-width: 0;
+        min-height: 0;
+        display: flex;
+      }
+
+      /* ───────── Voucher card ───────── */
+      .voucher {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #cbd5e1;
+        border-radius: ${tokens.radius};
+        overflow: hidden;
+        background: #fff;
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+        color: #0f172a;
+      }
+
+      /* Header strip — school identity + voucher meta. */
+      .voucher .vh {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: ${tokens.headerPad};
+        background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+        color: #fff;
+        gap: ${tokens.gap};
+      }
+      .voucher .vh-brand {
+        display: flex;
+        align-items: center;
+        gap: ${tokens.gap};
+        min-width: 0;
+      }
+      .voucher .vh-logo {
+        width: ${tokens.logoSize};
+        height: ${tokens.logoSize};
+        border-radius: 8px;
+        object-fit: cover;
+        background: #fff;
+        border: 2px solid rgba(255,255,255,0.5);
+        flex: none;
+      }
+      .voucher .vh-text { min-width: 0; }
+      .voucher .vh-school {
+        font-size: ${tokens.schoolFs};
+        font-weight: 800;
+        letter-spacing: 0.2px;
+        line-height: 1.1;
+      }
+      .voucher .vh-tag {
+        font-size: ${tokens.tinyFs};
+        font-weight: 700;
+        letter-spacing: 1.4px;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.8);
+        margin-top: 2px;
+      }
+      .voucher .vh-right {
+        text-align: right;
+        font-size: ${tokens.metaFs};
+        line-height: 1.4;
+      }
+      .voucher .vh-right .pill {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: ${tokens.tinyFs};
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        background: rgba(255,255,255,0.95);
+        color: #1d4ed8;
+      }
+
+      /* Body — three columns: student | fee table | totals/notes. */
+      .voucher .vb {
+        flex: 1 1 auto;
+        display: grid;
+        grid-template-columns: ${tokens.bodyGrid};
+        gap: ${tokens.bodyGap};
+        padding: ${tokens.bodyPad};
+        min-height: 0;
+      }
+
+      .voucher .vb-col {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        min-width: 0;
+      }
+
+      .voucher .v-label {
+        font-size: ${tokens.labelFs};
+        font-weight: 700;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        color: #64748b;
+      }
+      .voucher .v-value {
+        font-size: ${tokens.valueFs};
+        font-weight: 700;
+        color: #0f172a;
+        margin-top: 2px;
+        line-height: 1.2;
+      }
+      .voucher .v-value.lg {
+        font-size: ${tokens.studentNameFs};
+        font-weight: 800;
+        letter-spacing: -0.2px;
+      }
+      .voucher .v-row { margin-bottom: ${tokens.rowGap}; }
+      .voucher .v-row:last-child { margin-bottom: 0; }
+
+      /* Fee breakdown table. */
+      .voucher table.fee-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: ${tokens.tableFs};
+      }
+      .voucher table.fee-table thead th {
+        background: #f1f5f9;
+        color: #0f172a;
+        font-size: ${tokens.tableHeadFs};
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: ${tokens.cellPad};
+        text-align: left;
+        border-bottom: 1px solid #cbd5e1;
+      }
+      .voucher table.fee-table tbody td {
+        padding: ${tokens.cellPad};
+        border-bottom: 1px solid #e2e8f0;
+      }
+      .voucher table.fee-table tbody tr:last-child td { border-bottom: none; }
+      .voucher table.fee-table .amt {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        font-weight: 700;
+      }
+
+      /* Right column — totals stack + outstanding hero + signature. */
+      .voucher .totals {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: ${tokens.totalGap};
+      }
+      .voucher .totals .t-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        font-size: ${tokens.tableFs};
+      }
+      .voucher .totals .t-row .lbl {
+        color: #64748b;
+        font-weight: 600;
+      }
+      .voucher .totals .t-row .val {
+        color: #0f172a;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+      .voucher .totals .t-row.paid .val { color: #15803d; }
+      .voucher .totals .t-row.due { padding-top: ${tokens.totalGap}; border-top: 1px dashed #cbd5e1; }
+      .voucher .totals .t-row.due .lbl {
+        font-size: ${tokens.labelFs};
+        font-weight: 700;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        color: #b91c1c;
+      }
+      .voucher .totals .t-row.due .val {
+        font-size: ${tokens.outstandingFs};
+        font-weight: 800;
+        color: #b91c1c;
+      }
+
+      .voucher .v-note {
+        margin-top: auto;
+        font-size: ${tokens.noteFs};
+        color: #475569;
+        line-height: 1.4;
+        padding-top: ${tokens.bodyGap};
+        border-top: 1px dashed #e2e8f0;
+      }
+      .voucher .v-sign {
+        margin-top: ${tokens.bodyGap};
+        border-top: 1px solid #94a3b8;
+        padding-top: 4px;
+        font-size: ${tokens.noteFs};
+        font-weight: 600;
+        color: #475569;
+        text-align: center;
+      }
+
+      @media print {
+        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      }
+    </style>
+  `;
+}
+
+/**
+ * Density tokens for each per-page count. Defined once so a future
+ * tweak to "compact 4-up" only needs to change one branch.
+ */
+function densityTokens(perPage: 1 | 2 | 3 | 4): Record<string, string> {
+  switch (perPage) {
+    case 1:
+      return {
+        radius: "14px",
+        headerPad: "16px 22px",
+        gap: "14px",
+        logoSize: "52px",
+        schoolFs: "20px",
+        tinyFs: "10px",
+        metaFs: "12px",
+        bodyGrid: "1.1fr 2fr 1.2fr",
+        bodyGap: "20px",
+        bodyPad: "20px 22px",
+        labelFs: "10px",
+        valueFs: "13px",
+        studentNameFs: "20px",
+        rowGap: "12px",
+        tableFs: "12px",
+        tableHeadFs: "10px",
+        cellPad: "9px 10px",
+        totalGap: "8px",
+        outstandingFs: "20px",
+        noteFs: "10px",
+      };
+    case 2:
+      return {
+        radius: "12px",
+        headerPad: "10px 16px",
+        gap: "10px",
+        logoSize: "38px",
+        schoolFs: "15px",
+        tinyFs: "8px",
+        metaFs: "10px",
+        bodyGrid: "1fr 1.8fr 1.1fr",
+        bodyGap: "14px",
+        bodyPad: "14px 16px",
+        labelFs: "8px",
+        valueFs: "11px",
+        studentNameFs: "15px",
+        rowGap: "8px",
+        tableFs: "10px",
+        tableHeadFs: "8px",
+        cellPad: "6px 8px",
+        totalGap: "6px",
+        outstandingFs: "15px",
+        noteFs: "9px",
+      };
+    case 3:
+      return {
+        radius: "10px",
+        headerPad: "8px 12px",
+        gap: "8px",
+        logoSize: "30px",
+        schoolFs: "12px",
+        tinyFs: "7px",
+        metaFs: "9px",
+        bodyGrid: "1fr 1.6fr 1fr",
+        bodyGap: "10px",
+        bodyPad: "10px 12px",
+        labelFs: "7px",
+        valueFs: "10px",
+        studentNameFs: "12px",
+        rowGap: "6px",
+        tableFs: "9px",
+        tableHeadFs: "7px",
+        cellPad: "4px 6px",
+        totalGap: "4px",
+        outstandingFs: "12px",
+        noteFs: "8px",
+      };
+    case 4:
+    default:
+      return {
+        radius: "10px",
+        headerPad: "8px 12px",
+        gap: "8px",
+        logoSize: "30px",
+        schoolFs: "12px",
+        tinyFs: "7px",
+        metaFs: "9px",
+        bodyGrid: "1fr 1.4fr 1fr",
+        bodyGap: "10px",
+        bodyPad: "10px 12px",
+        labelFs: "7px",
+        valueFs: "10px",
+        studentNameFs: "12px",
+        rowGap: "5px",
+        tableFs: "9px",
+        tableHeadFs: "7px",
+        cellPad: "4px 6px",
+        totalGap: "4px",
+        outstandingFs: "12px",
+        noteFs: "8px",
+      };
+  }
+}
+
+function renderVoucherPage(
+  entries: FeeBulkEntry[],
+  currency: string,
+  opts: FeeBulkReportOptions,
+  pageNum: number,
+  pageTotal: number,
+  perPage: 1 | 2 | 3 | 4,
+): string {
+  // Always render exactly perPage slots so the grid heights stay equal.
+  // Empty slots on the last page render as invisible placeholders.
+  const slots: string[] = [];
+  for (let i = 0; i < perPage; i++) {
+    const entry = entries[i];
+    if (entry) {
+      slots.push(
+        `<div class="voucher-slot">${renderBulkVoucher(entry, currency, opts, pageNum, pageTotal)}</div>`,
+      );
+    } else {
+      slots.push(`<div class="voucher-slot" aria-hidden="true"></div>`);
+    }
+  }
+  return `<div class="voucher-page">${slots.join("")}</div>`;
+}
+
+/**
+ * One voucher card. Three-column body:
+ *   LEFT   — school logo + name in header, student details below.
+ *   CENTER — fee components table (or a synthesized 2-row view when no
+ *            components are provided).
+ *   RIGHT  — totals stack with prominent outstanding amount and a
+ *            signature line at the bottom.
+ */
+function renderBulkVoucher(
+  entry: FeeBulkEntry,
+  currency: string,
+  opts: FeeBulkReportOptions,
+  pageNum: number,
+  pageTotal: number,
+): string {
+  const tone = statusTone(entry.status);
+  const logoSrc = opts.logoUrl || "/logo.jpeg";
+  const schoolName = htmlEscape(opts.schoolName || "School");
+  const period = htmlEscape(entry.period || opts.period || fmtToday());
+
+  const componentRows = (entry.components ?? []).length
+    ? (entry.components ?? [])
+        .map(
+          (c) => `
+          <tr>
+            <td>${htmlEscape(c.fee_type)}${c.is_optional ? ' <span style="font-size:8px;color:#64748b;">(optional)</span>' : ""}</td>
+            <td class="amt">${fmtMoney(c.amount, currency)}</td>
+          </tr>`,
+        )
+        .join("")
+    : `
+      <tr>
+        <td>Monthly Fee</td>
+        <td class="amt">${fmtMoney(entry.monthly_fee, currency)}</td>
+      </tr>
+      ${entry.carry_forward
+        ? `<tr>
+            <td>Previous Dues</td>
+            <td class="amt">${fmtMoney(entry.carry_forward, currency)}</td>
+          </tr>`
+        : ""}
+    `;
+
+  return `
+    <div class="voucher">
+      <div class="vh">
+        <div class="vh-brand">
+          <img class="vh-logo" src="${htmlEscape(logoSrc)}" alt="${schoolName} logo" />
+          <div class="vh-text">
+            <div class="vh-school">${schoolName}</div>
+            <div class="vh-tag">Official Fee Voucher</div>
+          </div>
+        </div>
+        <div class="vh-right">
+          <div><span class="pill">${htmlEscape(entry.status || "Unpaid")}</span></div>
+          <div style="margin-top:4px;opacity:0.9;">Period · ${period}</div>
+          <div style="opacity:0.75;">Page ${pageNum} of ${pageTotal}</div>
+        </div>
+      </div>
+
+      <div class="vb">
+        <!-- LEFT — student identity -->
+        <div class="vb-col">
+          <div class="v-row">
+            <div class="v-label">Student</div>
+            <div class="v-value lg">${htmlEscape(entry.student.name)}</div>
+          </div>
+          <div class="v-row">
+            <div class="v-label">Class</div>
+            <div class="v-value">${htmlEscape(entry.student.class_name || "—")}${entry.student.section ? ` · ${htmlEscape(entry.student.section)}` : ""}</div>
+          </div>
+          <div class="v-row">
+            <div class="v-label">Student ID</div>
+            <div class="v-value">${htmlEscape(entry.student.admission_no || entry.student.roll_no || "—")}</div>
+          </div>
+          <div class="v-row">
+            <div class="v-label">Generated</div>
+            <div class="v-value">${htmlEscape(fmtToday())}</div>
+          </div>
+        </div>
+
+        <!-- CENTER — fee components -->
+        <div class="vb-col">
+          <div class="v-label" style="margin-bottom:4px;">Fee Breakdown</div>
+          <table class="fee-table">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th class="amt">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${componentRows}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- RIGHT — totals + outstanding -->
+        <div class="vb-col">
+          <div class="totals">
+            <div class="t-row">
+              <span class="lbl">Monthly Fee</span>
+              <span class="val">${fmtMoney(entry.monthly_fee, currency)}</span>
+            </div>
+            <div class="t-row">
+              <span class="lbl">Previous Dues</span>
+              <span class="val">${fmtMoney(entry.carry_forward, currency)}</span>
+            </div>
+            <div class="t-row">
+              <span class="lbl">Total Payable</span>
+              <span class="val">${fmtMoney(entry.total_payable, currency)}</span>
+            </div>
+            <div class="t-row paid">
+              <span class="lbl">Paid</span>
+              <span class="val">${fmtMoney(entry.paid_total, currency)}</span>
+            </div>
+            <div class="t-row due">
+              <span class="lbl">Outstanding</span>
+              <span class="val">${fmtMoney(entry.remaining, currency)}</span>
+            </div>
+          </div>
+
+          <div class="v-sign">${htmlEscape(opts.principal || "Authorized Signatory")}</div>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 function renderBulkGridPage(
