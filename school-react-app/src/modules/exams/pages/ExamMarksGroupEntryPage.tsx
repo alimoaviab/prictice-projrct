@@ -19,7 +19,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Badge,
   Button,
@@ -84,6 +84,7 @@ export function ExamMarksGroupEntryPage({
   examId: string;
   role?: "ADMIN" | "TEACHER";
 }) {
+  const navigate = useNavigate();
   const { state: examState, run: runExam } = useSafeAsync<ExamRow>();
   const { state: studentState, run: runStudents } = useSafeAsync<Student[]>();
   const { state: resultsState, run: runResults } = useSafeAsync<ResultRow[]>();
@@ -310,6 +311,9 @@ export function ExamMarksGroupEntryPage({
       showToast(`Marks saved for ${payload.length} student${payload.length > 1 ? "s" : ""}.`, "success");
       initialMarksRef.current = JSON.parse(JSON.stringify(marks));
       setDirty(false);
+      setTimeout(() => {
+        navigate(role === "ADMIN" ? "/admin/exams" : "/teacher/exams");
+      }, 800);
     } finally {
       setSaving(false);
     }

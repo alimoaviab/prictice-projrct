@@ -1,4 +1,4 @@
-
+import { useState, useEffect, useMemo } from "react";
 import { useParams, Link, useLocation } from "react-router-dom";
 import { 
   Badge, 
@@ -15,6 +15,7 @@ import { useResult } from "../hooks/useResults";
 import { exportMarksheet } from "@/utils/marksheet";
 import { showToast } from "@/utils/toast";
 import { useAuth } from "@/hooks/useAuth";
+import { serviceRequest } from "@/services/service-client";
 
 export function ResultDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +26,48 @@ export function ResultDetailPage() {
   const { state } = useResult(id);
   const { user } = useAuth();
   const schoolName = (user as any)?.schoolName || (user as any)?.school_name || "School";
+
+  const [examData, setExamData] = useState<any>(null);
+  const [examLoading, setExamLoading] = useState(false);
+
+  const row = state.data;
+  const percentage = row ? (row.obtained_marks / row.max_marks) * 100 : 0;
+  const isPass = percentage >= 40;
+  const allSubjects = useMemo(() => {
+    if (!row) return [];
+    if (examData && Array.isArray(examData.subjects)) {
+      return examData.subjects.map((examSub: any) => {
+        const gradedSub = (row.subjects || []).find((s) => s.subject_id === examSub.subject_id);
+        return {
+          subject_id: examSub.subject_id,
+          subject_name: examSub.subject_name,
+          max_marks: examSub.max_marks,
+          obtained_marks: gradedSub ? gradedSub.obtained_marks : undefined,
+        };
+      });
+    }
+    return (row.subjects || []).map((s) => ({
+      subject_id: s.subject_id,
+      subject_name: s.subject_name,
+      max_marks: s.max_marks,
+      obtained_marks: s.obtained_marks,
+    }));
+  }, [examData, row]);
+
+  useEffect(() => {
+    if (state.status === "success" && state.data?.exam_id) {
+      setExamLoading(true);
+      serviceRequest<any>(`/api/exams/${state.data.exam_id}`)
+        .then((res) => {
+          if (res.ok) {
+            setExamData(res.data);
+          }
+        })
+        .finally(() => {
+          setExamLoading(false);
+        });
+    }
+  }, [state.status, state.data?.exam_id]);
 
   if (state.status === "loading" || state.status === "idle") {
     return (
@@ -42,11 +85,7 @@ export function ResultDetailPage() {
     return <DataState variant="error" title="Result not found" message={state.error} />;
   }
 
-  const row = state.data;
   if (!row) return <DataState variant="empty" title="No data" />;
-
-  const percentage = (row.obtained_marks / row.max_marks) * 100;
-  const isPass = percentage >= 40;
 
   return (
     <EntityCreateLayout
@@ -133,23 +172,49 @@ export function ResultDetailPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {(row.subjects || []).length > 0 ? (row.subjects || []).map((s) => {
-                  const pct = (s.obtained_marks / s.max_marks) * 100;
+                {allSubjects.length > 0 ? allSubjects.map((s: any) => {
+                  const isAbsent = s.obtained_marks === -1;
+                  const hasMarks = s.obtained_marks !== undefined;
+                  const pct = hasMarks && s.max_marks > 0 && !isAbsent
+                    ? (s.obtained_marks / s.max_marks) * 100
+                    : 0;
+
                   return (
                     <tr key={s.subject_id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-4">
                         <p className="text-sm font-bold text-slate-900">{s.subject_name}</p>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <p className="text-sm font-black text-slate-700">{s.obtained_marks} <span className="text-slate-300 font-medium">/ {s.max_marks}</span></p>
+                        {hasMarks ? (
+                          <p className="text-sm font-black text-slate-700">
+                            {isAbsent ? "Absent" : s.obtained_marks}{" "}
+                            <span className="text-slate-300 font-medium">/ {s.max_marks}</span>
+                          </p>
+                        ) : (
+                          <p className="text-sm font-medium text-slate-400">
+                            Not Graded <span className="text-slate-300 font-medium">/ {s.max_marks}</span>
+                          </p>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-3">
-                           <span className="text-[11px] font-bold text-slate-500">{pct.toFixed(0)}%</span>
+                           <span className="text-[11px] font-bold text-slate-500">
+                             {hasMarks ? (isAbsent ? "0%" : `${pct.toFixed(0)}%`) : "—"}
+                           </span>
                            <div className="h-1.5 w-24 bg-slate-100 rounded-full overflow-hidden">
                               <div 
-                                className={`h-full rounded-full ${pct >= 80 ? 'bg-emerald-500' : pct >= 40 ? 'bg-blue-500' : 'bg-rose-500'}`}
-                                style={{ width: `${pct}%` }}
+                                className={`h-full rounded-full ${
+                                  !hasMarks 
+                                    ? 'bg-slate-200' 
+                                    : isAbsent
+                                      ? 'bg-rose-500'
+                                      : pct >= 80 
+                                        ? 'bg-emerald-500' 
+                                        : pct >= 40 
+                                          ? 'bg-blue-500' 
+                                          : 'bg-rose-500'
+                                }`}
+                                style={{ width: `${hasMarks ? pct : 0}%` }}
                               />
                            </div>
                         </div>

@@ -8,6 +8,8 @@ Architecture:
 
 from __future__ import annotations
 
+import asyncio
+
 import structlog
 from openai import AsyncOpenAI
 from agents import Agent, Runner, function_tool, ModelSettings
@@ -123,14 +125,29 @@ async def run_with_fallback(agent_kwargs: dict, user_input: str) -> str:
 
     Returns the final output text.
     """
-    # Try primary (Gemini)
-    try:
-        agent = create_agent(**agent_kwargs, use_fallback=False)
-        result = await Runner.run(agent, user_input)
-        if result.final_output:
-            return result.final_output
-    except Exception as e:
-        logger.warning("primary_model_failed", error=str(e))
+    # Try primary (Gemini) with one retry for rate limits
+    for attempt in range(2):
+        try:
+            agent = create_agent(**agent_kwargs, use_fallback=False)
+            result = await Runner.run(agent, user_input)
+            if result.final_output:
+                return result.final_output
+            break  # Got a result (even if empty), don't retry
+        except Exception as e:
+            error_str = str(e).lower()
+            logger.warning("primary_model_failed", error=str(e), attempt=attempt)
+            is_rate_limit = "429" in str(e) or "quota" in error_str or "resource_exhausted" in error_str
+            # Retry once after a short delay for rate limits
+            if is_rate_limit and attempt == 0:
+                await asyncio.sleep(2)
+                continue
+            # If quota exhausted and no fallback, surface a clear message
+            if is_rate_limit and not _fallback_model:
+                return (
+                    "The AI service is temporarily at capacity. "
+                    "Please try again in a few moments."
+                )
+            break
 
     # Fallback to OpenRouter
     if _fallback_model:
@@ -147,7 +164,9 @@ async def run_with_fallback(agent_kwargs: dict, user_input: str) -> str:
 
 
 async def stream_with_fallback(agent_kwargs: dict, user_input: str):
-    """Bypass agents SDK and call Gemini directly to avoid compatibility issues.
+    """Stream the agent with automatic fallback. Yields text chunks.
+
+    If primary fails, retries with fallback model.
     """
     import os
     from openai import AsyncOpenAI
@@ -176,8 +195,36 @@ async def stream_with_fallback(agent_kwargs: dict, user_input: str):
         else:
             yield "Received empty response from Gemini."
     except Exception as e:
-        logger.error("direct_gemini_failed", error=str(e))
-        yield f"Error calling Gemini: {str(e)}"
+        error_str = str(e).lower()
+        logger.warning("primary_stream_failed", error=str(e))
+        # If quota exhausted and no fallback, yield a clear error message
+        if ("429" in str(e) or "quota" in error_str or "resource_exhausted" in error_str) and not _fallback_model:
+            yield (
+                "The AI service is temporarily at capacity. "
+                "Please try again in a few moments."
+            )
+            return
+
+    # Fallback
+    if _fallback_model:
+        try:
+            agent = create_agent(**agent_kwargs, use_fallback=True)
+            result = Runner.run_streamed(agent, user_input)
+            got_text = False
+            async for event in result.stream_events():
+                text = _extract_text(event)
+                if text:
+                    got_text = True
+                    yield text
+            if not got_text and result.final_output:
+                yield result.final_output
+            logger.info("fallback_stream_used")
+        except Exception as e:
+            logger.error("fallback_stream_failed", error=str(e))
+            yield (
+                "The AI service is currently unavailable. "
+                "Please try again in a few moments."
+            )
 
 
 def _extract_text(event) -> str:

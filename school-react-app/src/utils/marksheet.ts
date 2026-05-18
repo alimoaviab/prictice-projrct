@@ -304,15 +304,38 @@ export function exportMarksheet(row: ResultRow, opts: MarksheetOptions = {}): vo
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>${htmlEscape(row.exam_subject)}</td>
-            <td>${htmlEscape(row.exam_title)}</td>
-            <td>${htmlEscape(row.max_marks)}</td>
-            <td>${htmlEscape(row.obtained_marks)}</td>
-            <td>${percent}%</td>
-            <td>${htmlEscape(grade)}</td>
-            <td>${htmlEscape(row.remarks || "—")}</td>
-          </tr>
+          ${row.subjects && row.subjects.length > 0
+            ? row.subjects.map((s) => {
+                const isAbsent = s.obtained_marks === -1;
+                const hasMarks = s.obtained_marks !== undefined && s.obtained_marks !== null;
+                const pct = hasMarks && s.max_marks && s.max_marks > 0 && !isAbsent
+                  ? Math.round((s.obtained_marks / s.max_marks) * 100)
+                  : 0;
+                const subGrade = hasMarks && !isAbsent && s.max_marks && s.max_marks > 0 ? gradeForRatio(s.obtained_marks / s.max_marks).letter : "—";
+                return `
+                  <tr>
+                    <td>${htmlEscape(s.subject_name)}</td>
+                    <td>${htmlEscape(row.exam_title)}</td>
+                    <td>${htmlEscape(s.max_marks || 0)}</td>
+                    <td>${hasMarks ? (isAbsent ? "Absent" : htmlEscape(s.obtained_marks)) : "Not Graded"}</td>
+                    <td>${hasMarks ? (isAbsent ? "0%" : `${pct}%`) : "—"}</td>
+                    <td>${htmlEscape(subGrade)}</td>
+                    <td>—</td>
+                  </tr>
+                `;
+              }).join("")
+            : `
+              <tr>
+                <td>${htmlEscape(row.exam_subject)}</td>
+                <td>${htmlEscape(row.exam_title)}</td>
+                <td>${htmlEscape(row.max_marks)}</td>
+                <td>${htmlEscape(row.obtained_marks)}</td>
+                <td>${percent}%</td>
+                <td>${htmlEscape(grade)}</td>
+                <td>${htmlEscape(row.remarks || "—")}</td>
+              </tr>
+            `
+          }
         </tbody>
       </table>
 

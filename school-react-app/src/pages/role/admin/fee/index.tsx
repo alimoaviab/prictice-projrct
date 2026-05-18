@@ -83,6 +83,13 @@ export function StudentFeeDashboard() {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
     const [exporting, setExporting] = useState(false);
     const [showExportDrawer, setShowExportDrawer] = useState(false);
+    const [exportConfig, setExportConfig] = useState({
+        studentsPerPage: 1 as 1 | 2 | 3 | 4,
+        paperSize: 'A4' as 'A4' | 'Letter' | 'Legal',
+        orientation: 'portrait' as 'portrait' | 'landscape',
+        compactMode: false,
+        includeNotes: true,
+    });
 
     // School identity for the report letterhead.
     const { state: settingsState } = useSettings();
@@ -169,12 +176,18 @@ export function StudentFeeDashboard() {
         try {
             exportFeeBulkReport(entries, {
                 schoolName: settings?.academy_name || "School",
+                logoUrl: settings?.logo_url || "/logo.jpeg",
                 schoolAddress: [settings?.academy_address, settings?.academy_phone, settings?.academy_email]
                     .filter(Boolean)
                     .join(" · ") || undefined,
                 principal: settings?.principal_name,
                 period: `${filters.month.charAt(0).toUpperCase()}${filters.month.slice(1)} ${filters.year}`,
                 currency: "Rs.",
+                studentsPerPage: exportConfig.studentsPerPage,
+                paperSize: exportConfig.paperSize,
+                orientation: exportConfig.orientation,
+                compactMode: exportConfig.compactMode,
+                includeNotes: exportConfig.includeNotes,
             });
             setShowExportDrawer(false);
         } finally {
@@ -610,7 +623,7 @@ export function StudentFeeDashboard() {
                                 </button>
                             </div>
                             <p className="text-[9px] font-bold text-blue-600 uppercase tracking-widest">
-                                One student per page · A4 portrait
+                                {exportConfig.studentsPerPage} student{exportConfig.studentsPerPage === 1 ? '' : 's'} per page · {exportConfig.paperSize} {exportConfig.orientation}
                             </p>
                         </div>
 
@@ -621,8 +634,85 @@ export function StudentFeeDashboard() {
                                     {selectedIds.size} <span className="text-[10px] font-bold text-slate-400 uppercase">of {data?.students?.length ?? 0}</span>
                                 </p>
                                 <p className="text-[10px] text-slate-500 mt-1">
-                                    Pages: {selectedIds.size}
+                                    Pages: {Math.ceil(selectedIds.size / exportConfig.studentsPerPage)}
                                 </p>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest ml-1">Configuration</label>
+                                <div className="rounded-2xl border border-slate-100 p-3 bg-white space-y-3">
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-1">Students / Page</p>
+                                            <select
+                                                value={exportConfig.studentsPerPage}
+                                                onChange={(e) => {
+                                                    const spp = Number(e.target.value) as 1 | 2 | 3 | 4;
+                                                    setExportConfig((prev) => ({
+                                                        ...prev,
+                                                        studentsPerPage: spp,
+                                                        orientation: spp >= 3 ? 'landscape' : prev.orientation,
+                                                        compactMode: spp >= 3 ? true : prev.compactMode,
+                                                    }));
+                                                }}
+                                                className="w-full h-9 rounded-lg border border-slate-200 px-2 text-[11px] font-bold text-slate-700"
+                                            >
+                                                <option value={1}>1</option>
+                                                <option value={2}>2</option>
+                                                <option value={3}>3</option>
+                                                <option value={4}>4</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-1">Paper</p>
+                                            <select
+                                                value={exportConfig.paperSize}
+                                                onChange={(e) => setExportConfig((prev) => ({ ...prev, paperSize: e.target.value as 'A4' | 'Letter' | 'Legal' }))}
+                                                className="w-full h-9 rounded-lg border border-slate-200 px-2 text-[11px] font-bold text-slate-700"
+                                            >
+                                                <option value="A4">A4</option>
+                                                <option value="Letter">Letter</option>
+                                                <option value="Legal">Legal</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setExportConfig((prev) => ({ ...prev, orientation: 'portrait' }))}
+                                            className={`h-9 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${exportConfig.orientation === 'portrait' ? 'border-blue-300 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
+                                        >
+                                            Portrait
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setExportConfig((prev) => ({ ...prev, orientation: 'landscape' }))}
+                                            className={`h-9 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${exportConfig.orientation === 'landscape' ? 'border-blue-300 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
+                                        >
+                                            Landscape
+                                        </button>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <label className="h-9 rounded-lg border border-slate-200 px-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-600">
+                                            <input
+                                                type="checkbox"
+                                                checked={exportConfig.compactMode}
+                                                onChange={(e) => setExportConfig((prev) => ({ ...prev, compactMode: e.target.checked }))}
+                                            />
+                                            Compact
+                                        </label>
+                                        <label className="h-9 rounded-lg border border-slate-200 px-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-600">
+                                            <input
+                                                type="checkbox"
+                                                checked={exportConfig.includeNotes}
+                                                onChange={(e) => setExportConfig((prev) => ({ ...prev, includeNotes: e.target.checked }))}
+                                            />
+                                            Notes
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="space-y-2">
@@ -706,7 +796,7 @@ export function StudentFeeDashboard() {
                                 ) : (
                                     <>
                                         <span className="material-symbols-outlined text-[16px]">picture_as_pdf</span>
-                                        Generate PDF · {selectedIds.size} page{selectedIds.size === 1 ? '' : 's'}
+                                        Generate PDF · {Math.ceil(selectedIds.size / exportConfig.studentsPerPage)} page{Math.ceil(selectedIds.size / exportConfig.studentsPerPage) === 1 ? '' : 's'}
                                     </>
                                 )}
                             </button>

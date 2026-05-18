@@ -7,8 +7,8 @@ class Settings(BaseSettings):
     """Plexa service configuration."""
 
     # AI — Primary (Gemini via OpenAI-compatible endpoint)
-    GEMINI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-2.0-flash-lite"
+    GEMINI_API_KEY: str
+    GEMINI_MODEL: str = "gemini-2.5-flash"
     GEMINI_TIMEOUT_SECONDS: int = 30
 
     # AI — Fallback (OpenRouter)

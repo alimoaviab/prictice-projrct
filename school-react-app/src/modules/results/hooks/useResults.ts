@@ -4,6 +4,25 @@ import { showToast } from "@/utils/toast";
 import { ResultFormInput, ResultRow } from "../types/result.types";
 import * as service from "../services/result.service";
 
+function normalizeResultRows(payload: unknown): ResultRow[] {
+  if (Array.isArray(payload)) return payload as ResultRow[];
+  if (!payload || typeof payload !== "object") return [];
+
+  const data = payload as {
+    exam_results?: unknown;
+    results?: unknown;
+    data?: unknown;
+    rows?: unknown;
+  };
+
+  if (Array.isArray(data.exam_results)) return data.exam_results as ResultRow[];
+  if (Array.isArray(data.results)) return data.results as ResultRow[];
+  if (Array.isArray(data.data)) return data.data as ResultRow[];
+  if (Array.isArray(data.rows)) return data.rows as ResultRow[];
+
+  return [];
+}
+
 export function useResults(filters?: { exam_id?: string; student_id?: string }) {
   const { state, run } = useSafeAsync<ResultRow[]>();
 
@@ -16,12 +35,7 @@ export function useResults(filters?: { exam_id?: string; student_id?: string }) 
         throw new Error(result.error.message || "Failed to load results");
       }
 
-      // Handle parent portal nested structure
-      if (result.data && !Array.isArray(result.data) && (result.data as any).exam_results) {
-          return (result.data as any).exam_results;
-      }
-
-      return result.data;
+      return normalizeResultRows(result.data);
     });
   }, [run, filterKey]);
 

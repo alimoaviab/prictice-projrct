@@ -113,37 +113,55 @@ func examMaxMarks(e *store.Exam) int {
 
 // resolveResultSubjects joins the persisted result subjects to the
 // exam's subject definitions so the response carries names + max marks
-// for each cell. Missing entries (a student who hasn't been graded for
-// a particular subject yet) are not auto-filled — clients show "—".
+// for each cell. It ensures that ALL subjects scheduled for the exam
+// are returned in the correct order, even if they have not been graded yet.
 func resolveResultSubjects(r *store.Result, e *store.Exam) []map[string]any {
 	out := make([]map[string]any, 0)
 	if r == nil {
 		return out
 	}
-	if len(r.Subjects) > 0 {
-		// Join against exam.Subjects for names + max.
-		examByID := map[string]store.ExamSubject{}
-		if e != nil {
-			for _, s := range e.Subjects {
-				examByID[s.SubjectID] = s
-			}
-		}
+
+	if e != nil && len(e.Subjects) > 0 {
+		// Index student's graded subjects by subject_id.
+		gradedByID := map[string]store.ResultSubject{}
 		for _, rs := range r.Subjects {
-			meta := examByID[rs.SubjectID]
-			name := rs.SubjectName
-			if name == "" {
-				name = meta.SubjectName
+			gradedByID[rs.SubjectID] = rs
+		}
+
+		// Loop over all exam subjects to ensure they are all returned.
+		for _, es := range e.Subjects {
+			name := es.SubjectName
+			max := es.MaxMarks
+
+			entry := map[string]any{
+				"subject_id":   es.SubjectID,
+				"subject_name": name,
+				"max_marks":    max,
 			}
-			max := meta.MaxMarks
+
+			// If the student has a graded mark for this subject, include it.
+			if rs, exists := gradedByID[es.SubjectID]; exists {
+				entry["obtained_marks"] = rs.ObtainedMarks
+			}
+
+			out = append(out, entry)
+		}
+		return out
+	}
+
+	// Legacy fallback: if r has subjects but exam subjects is empty.
+	if len(r.Subjects) > 0 {
+		for _, rs := range r.Subjects {
 			out = append(out, map[string]any{
 				"subject_id":     rs.SubjectID,
-				"subject_name":   name,
+				"subject_name":   rs.SubjectName,
 				"obtained_marks": rs.ObtainedMarks,
-				"max_marks":      max,
+				"max_marks":      0,
 			})
 		}
 		return out
 	}
+
 	// Legacy single-subject result. Synthesize one row using the exam's
 	// legacy fields so the new clients still render correctly.
 	if e != nil {

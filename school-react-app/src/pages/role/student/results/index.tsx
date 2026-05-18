@@ -305,7 +305,12 @@ export function StudentResultsPage() {
                       {row.exam_title}
                     </p>
                     <p className="text-[10px] font-medium text-slate-400 mt-0.5 truncate">
-                      {row.exam_subject || "—"}
+                      {(() => {
+                        const count = row.subjects && row.subjects.length > 0
+                          ? row.subjects.length
+                          : (row.exam_subject ? row.exam_subject.split(",").filter(s => s.trim()).length : 0);
+                        return `${count} ${count === 1 ? "subject" : "subjects"}`;
+                      })()}
                     </p>
                     <p className="text-[10px] font-medium text-slate-400 mt-0.5">
                       {new Date(row.graded_at).toLocaleDateString()}

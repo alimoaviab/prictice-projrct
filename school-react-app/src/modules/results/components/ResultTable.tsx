@@ -16,12 +16,17 @@ export function ResultTable({ rows }: { rows: ResultRow[] }) {
         {
             key: "exam",
             label: "Exam / Subject",
-            render: (row: ResultRow) => (
-                <div className="flex flex-col">
-                    <span className="text-sm font-medium text-gray-700">{row.exam_title}</span>
-                    <span className="text-xs text-primary">{row.exam_subject}</span>
-                </div>
-            )
+            render: (row: ResultRow) => {
+                const count = row.subjects && row.subjects.length > 0
+                    ? row.subjects.length
+                    : (row.exam_subject ? row.exam_subject.split(",").filter(s => s.trim()).length : 0);
+                return (
+                    <div className="flex flex-col">
+                        <span className="text-sm font-medium text-gray-700">{row.exam_title}</span>
+                        <span className="text-xs text-primary">{count} {count === 1 ? "subject" : "subjects"}</span>
+                    </div>
+                );
+            }
         },
         {
             key: "marks",

@@ -1,15 +1,17 @@
 // Package subscription implements the subscription & billing module.
 //
 // Endpoints:
-//   GET  /api/subscription/current  — current active subscription
-//   GET  /api/subscription/plans    — available plans
-//   POST /api/subscription/upgrade  — upgrade to a new plan
-//   POST /api/subscription/start-trial — activate 14-day free trial
-//   GET  /api/subscription/history  — subscription change history
+//
+//	GET  /api/subscription/current  — current active subscription
+//	GET  /api/subscription/plans    — available plans
+//	POST /api/subscription/upgrade  — upgrade to a new plan
+//	POST /api/subscription/start-trial — activate 14-day free trial
+//	GET  /api/subscription/history  — subscription change history
 //
 // Student limit enforcement:
-//   CheckStudentLimit(schoolID) is called by the students handler before
-//   every student creation. It returns an error if the limit is exceeded.
+//
+//	CheckStudentLimit(schoolID) is called by the students handler before
+//	every student creation. It returns an error if the limit is exceeded.
 package subscription
 
 import (
@@ -62,7 +64,7 @@ var AvailablePlans = []Plan{
 		ID:           "plan_growth",
 		Name:         "growth",
 		DisplayName:  "Growth Plan",
-		Price:        8000,
+		Price:        9000,
 		Currency:     "PKR",
 		StudentLimit: 500,
 		Features: []string{
@@ -97,21 +99,21 @@ var AvailablePlans = []Plan{
 // ─── Subscription Model ──────────────────────────────────────────────────
 
 type Subscription struct {
-	ID             string    `json:"id"`
-	SchoolID       string    `json:"school_id"`
-	PlanName       string    `json:"plan_name"`
-	StudentLimit   int       `json:"student_limit"`
-	Price          int       `json:"price"`
-	Currency       string    `json:"currency"`
-	StartDate      time.Time `json:"start_date"`
-	EndDate        time.Time `json:"end_date"`
-	Status         string    `json:"status"`
-	IsTrial        bool      `json:"is_trial"`
-	TrialUsed      bool      `json:"trial_used"`
+	ID             string     `json:"id"`
+	SchoolID       string     `json:"school_id"`
+	PlanName       string     `json:"plan_name"`
+	StudentLimit   int        `json:"student_limit"`
+	Price          int        `json:"price"`
+	Currency       string     `json:"currency"`
+	StartDate      time.Time  `json:"start_date"`
+	EndDate        time.Time  `json:"end_date"`
+	Status         string     `json:"status"`
+	IsTrial        bool       `json:"is_trial"`
+	TrialUsed      bool       `json:"trial_used"`
 	TrialStartDate *time.Time `json:"trial_start_date,omitempty"`
 	TrialEndDate   *time.Time `json:"trial_end_date,omitempty"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	CreatedAt      time.Time  `json:"created_at"`
+	UpdatedAt      time.Time  `json:"updated_at"`
 }
 
 type HistoryEntry struct {

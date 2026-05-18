@@ -260,6 +260,8 @@ services:
       dockerfile: Dockerfile
     container_name: school_edubot
     restart: unless-stopped
+    env_file:
+      - .env.local
     environment:
       GEMINI_API_KEY: ${GEMINI_API_KEY:-AIzaSyBCUjoPxUsCNhjthHgwjtEL1Y0vNL8dh6s}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}

@@ -70,7 +70,7 @@ export function ResultListPage({
   // the same (exam_id, student_id) pair (legacy data with per-subject
   // exams). We keep the most recently graded row.
   const dedupedRows = useMemo(() => {
-    const rows = state.data || [];
+    const rows = Array.isArray(state.data) ? state.data : [];
     const map = new Map<string, ResultRow>();
     for (const row of rows) {
       const key = `${row.exam_id}::${row.student_id}`;
@@ -146,24 +146,21 @@ export function ResultListPage({
       {
         key: "exam",
         label: "Exam",
-        render: (row) => (
-          <div className="flex flex-col">
-            <span className="text-[12px] font-black text-slate-900 leading-none mb-1 tracking-tight">
-              {row.exam_title}
-            </span>
-            {row.subjects && row.subjects.length > 0 ? (
-              <span className="text-[10px] font-bold text-slate-500 truncate max-w-[260px]">
-                {row.subjects.length}{" "}
-                {row.subjects.length === 1 ? "subject" : "subjects"}:{" "}
-                {row.subjects.map((s) => s.subject_name).join(", ")}
+        render: (row) => {
+          const count = row.subjects && row.subjects.length > 0
+            ? row.subjects.length
+            : (row.exam_subject ? row.exam_subject.split(",").filter(s => s.trim()).length : 0);
+          return (
+            <div className="flex flex-col">
+              <span className="text-[12px] font-black text-slate-900 leading-none mb-1 tracking-tight">
+                {row.exam_title}
               </span>
-            ) : (
               <span className="text-[10px] font-bold text-blue-600">
-                {row.exam_subject}
+                {count} {count === 1 ? "subject" : "subjects"}
               </span>
-            )}
-          </div>
-        ),
+            </div>
+          );
+        },
         sortable: true,
       },
       {

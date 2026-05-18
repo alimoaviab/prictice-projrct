@@ -19,6 +19,8 @@
 export interface FeeReceiptOptions {
   /** School name printed on the header. Defaults to "School". */
   schoolName?: string;
+  /** Optional school logo shown in the header and voucher cards. */
+  logoUrl?: string;
   /** Optional school address line under the name. */
   schoolAddress?: string;
   /** Optional principal name printed in the signature row. */
@@ -123,21 +125,37 @@ const baseStyles = `
   .sheet {
     max-width: 800px;
     margin: 0 auto;
-    padding: 40px 48px;
+    padding: 24px 28px;
   }
   .header {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
-    border-bottom: 2px solid #0f172a;
-    padding-bottom: 16px;
-    margin-bottom: 24px;
-    gap: 24px;
+    border-bottom: 1px solid #0f172a;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+    gap: 16px;
+  }
+  .header .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
   }
   .header h1 {
     margin: 0;
-    font-size: 22px;
-    letter-spacing: 0.5px;
+    font-size: 20px;
+    letter-spacing: 0.4px;
+    line-height: 1.1;
+  }
+  .school-logo {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    object-fit: cover;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    flex: none;
   }
   .header .school-meta {
     font-size: 11px;
@@ -156,14 +174,14 @@ const baseStyles = `
     text-align: right;
     font-size: 10px;
     color: #475569;
-    margin-top: 6px;
+    margin-top: 4px;
     line-height: 1.5;
   }
   .summary-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 8px 24px;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
     font-size: 12px;
   }
   .summary-grid .label {
@@ -181,7 +199,7 @@ const baseStyles = `
   table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 8px;
+    margin-top: 6px;
   }
   thead th {
     background: #f1f5f9;
@@ -202,7 +220,7 @@ const baseStyles = `
   tbody tr:last-child td { border-bottom: none; }
   .amount { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
   .totals {
-    margin-top: 24px;
+    margin-top: 16px;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 16px;
@@ -228,7 +246,7 @@ const baseStyles = `
   .total-row {
     display: flex;
     justify-content: flex-end;
-    margin-top: 24px;
+    margin-top: 16px;
     gap: 24px;
     align-items: flex-end;
   }
@@ -274,7 +292,7 @@ const baseStyles = `
     font-weight: 600;
   }
   .note {
-    margin-top: 20px;
+    margin-top: 12px;
     padding: 10px 14px;
     border: 1px dashed #cbd5e1;
     border-radius: 8px;
@@ -284,7 +302,7 @@ const baseStyles = `
   }
   @media print {
     body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .sheet { padding: 20px; }
+    .sheet { padding: 12px; }
     .no-print { display: none; }
   }
 </style>
@@ -297,8 +315,12 @@ function renderHeader(
 ): string {
   return `
     <div class="header">
-      <div>
-        <h1>${htmlEscape(opts.schoolName || "School")}</h1>
+      <div class="brand">
+        ${opts.logoUrl || "/logo.jpeg"
+          ? `<img class="school-logo" src="${htmlEscape(opts.logoUrl || "/logo.jpeg")}" alt="${htmlEscape(opts.schoolName || "School")} logo" />`
+          : ""}
+        <div>
+          <h1>${htmlEscape(opts.schoolName || "School")}</h1>
         <div class="school-meta">${htmlEscape(opts.schoolAddress || "Official Fee Document")}</div>
       </div>
       <div>
@@ -664,6 +686,16 @@ export interface FeeBulkReportOptions extends FeeReceiptOptions {
   period?: string;
   /** Academic year. */
   academicYear?: string;
+  /** Number of student vouchers per printed page. */
+  studentsPerPage?: 1 | 2 | 3 | 4;
+  /** Paper size for browser print preset. */
+  paperSize?: "A4" | "Letter" | "Legal";
+  /** Print orientation. */
+  orientation?: "portrait" | "landscape";
+  /** Compact visual density for multi-voucher pages. */
+  compactMode?: boolean;
+  /** Toggle long note block in vouchers. */
+  includeNotes?: boolean;
 }
 
 /**
@@ -678,12 +710,29 @@ export function exportFeeBulkReport(
   if (!entries.length) return;
   const currency = opts.currency || "Rs.";
   const period = opts.period || entries[0]?.period || fmtToday();
+  const studentsPerPage = Math.min(4, Math.max(1, Number(opts.studentsPerPage || 1))) as 1 | 2 | 3 | 4;
+  const orientation: "portrait" | "landscape" =
+    studentsPerPage >= 3 ? "landscape" : (opts.orientation || "portrait");
+  const paperSize = opts.paperSize || "A4";
+  const compactMode = opts.compactMode ?? studentsPerPage >= 3;
   const title =
     opts.title || `Fee Report — ${period}${entries.length > 1 ? ` (${entries.length} students)` : ""}`;
 
-  const pages = entries
-    .map((entry, idx) => renderBulkEntryPage(entry, currency, opts, idx + 1, entries.length))
-    .join("");
+  const pageGroups: FeeBulkEntry[][] = [];
+  for (let i = 0; i < entries.length; i += studentsPerPage) {
+    pageGroups.push(entries.slice(i, i + studentsPerPage));
+  }
+
+  const pages =
+    studentsPerPage === 1
+      ? entries
+          .map((entry, idx) => renderBulkEntryPage(entry, currency, opts, idx + 1, entries.length))
+          .join("")
+      : pageGroups
+          .map((group, idx) =>
+            renderBulkGridPage(group, currency, opts, idx + 1, pageGroups.length, studentsPerPage, compactMode),
+          )
+          .join("");
 
   const html = `<!DOCTYPE html><html lang="en"><head>
     <meta charset="utf-8" />
@@ -700,8 +749,8 @@ export function exportFeeBulkReport(
         break-after: auto;
       }
       @page {
-        size: A4 portrait;
-        margin: 12mm;
+        size: ${paperSize} ${orientation};
+        margin: ${studentsPerPage >= 3 ? "8mm" : "12mm"};
       }
       .page-meta {
         text-align: right;
@@ -710,16 +759,16 @@ export function exportFeeBulkReport(
         text-transform: uppercase;
         letter-spacing: 1.4px;
         font-weight: 700;
-        margin-bottom: 12px;
+        margin-bottom: 8px;
       }
       .balance-card {
-        margin-top: 24px;
+        margin-top: 16px;
         border: 1px solid #e2e8f0;
         border-radius: 12px;
-        padding: 14px 18px;
+        padding: 12px 14px;
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        gap: 18px;
+        gap: 12px;
       }
       .balance-card .b-cell .lbl {
         font-size: 9px;
@@ -737,12 +786,193 @@ export function exportFeeBulkReport(
       .balance-card .b-cell.total .val { color: #2563eb; }
       .balance-card .b-cell.paid .val { color: #15803d; }
       .balance-card .b-cell.due .val { color: #b91c1c; }
+      .sheet {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+      }
+      .voucher-grid {
+        display: grid;
+        gap: ${studentsPerPage >= 3 ? "12px" : "16px"};
+      }
+      .voucher-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .voucher-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .voucher-grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .voucher-mini {
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: ${studentsPerPage >= 3 ? "6px" : "8px"};
+      }
+      .voucher-mini .mini-brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+      }
+      .voucher-mini .mini-logo {
+        width: 26px;
+        height: 26px;
+        border-radius: 7px;
+        object-fit: cover;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        flex: none;
+      }
+      .voucher-mini .mini-school {
+        min-width: 0;
+      }
+      .voucher-mini .mini-school-name {
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1.15;
+      }
+      .voucher-mini .mini-school-meta {
+        font-size: 8px;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 700;
+        margin-top: 2px;
+      }
+      .voucher-mini .mini-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 5px;
+      }
+      .voucher-mini .mini-title {
+        font-size: 11px;
+        font-weight: 800;
+      }
+      .voucher-mini .mini-sub {
+        font-size: 8px;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 700;
+      }
+      .voucher-mini table thead th,
+      .voucher-mini table tbody td {
+        font-size: ${compactMode ? "8px" : "9px"};
+        padding: ${compactMode ? "4px 5px" : "5px 6px"};
+      }
+      .voucher-mini .mini-metrics {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 4px;
+        margin-top: 5px;
+      }
+      .voucher-mini .mini-metrics .cell {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 4px;
+      }
+      .voucher-mini .mini-metrics .lbl {
+        font-size: 8px;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 700;
+      }
+      .voucher-mini .mini-metrics .val {
+        margin-top: 2px;
+        font-size: 10px;
+        font-weight: 800;
+      }
     </style>
   </head><body>
     ${pages}
   </body></html>`;
 
   printHtmlDocument(html, title);
+}
+
+function renderBulkGridPage(
+  entries: FeeBulkEntry[],
+  currency: string,
+  opts: FeeBulkReportOptions,
+  pageNum: number,
+  pageTotal: number,
+  studentsPerPage: 2 | 3 | 4,
+  compactMode: boolean,
+): string {
+  const gridClass = studentsPerPage === 2 ? "two" : studentsPerPage === 3 ? "three" : "four";
+  return `
+    <div class="page">
+      <div class="sheet">
+        <div class="page-meta">Page ${pageNum} of ${pageTotal}</div>
+        ${renderHeader(opts, "Fee Vouchers", `<div class="receipt-meta"><div><strong>Period</strong> ${htmlEscape(opts.period || fmtToday())}</div><div><strong>Generated</strong> ${htmlEscape(fmtToday())}</div></div>`)}
+        <div class="voucher-grid ${gridClass}">
+          ${entries.map((entry) => renderCompactVoucher(entry, currency, opts, compactMode)).join("")}
+        </div>
+        ${renderFooter(opts)}
+      </div>
+    </div>
+  `;
+}
+
+function renderCompactVoucher(
+  entry: FeeBulkEntry,
+  currency: string,
+  opts: FeeBulkReportOptions,
+  compactMode: boolean,
+): string {
+  const tone = statusTone(entry.status);
+  const componentRows = (entry.components ?? [])
+    .slice(0, compactMode ? 4 : 6)
+    .map(
+      (c) => `
+      <tr>
+        <td>${htmlEscape(c.fee_type)}</td>
+        <td class="amount">${fmtMoney(c.amount, currency)}</td>
+      </tr>`,
+    )
+    .join("");
+
+  return `
+    <div class="voucher-mini">
+      <div class="mini-brand">
+        <img class="mini-logo" src="${htmlEscape(opts.logoUrl || "/logo.jpeg")}" alt="${htmlEscape(opts.schoolName || "School")} logo" />
+        <div class="mini-school">
+          <div class="mini-school-name">${htmlEscape(opts.schoolName || "School")}</div>
+          <div class="mini-school-meta">${htmlEscape(opts.schoolAddress || "Official Fee Document")}</div>
+        </div>
+      </div>
+      <div class="mini-head">
+        <div>
+          <div class="mini-title">${htmlEscape(entry.student.name)}</div>
+          <div class="mini-sub">${htmlEscape(entry.student.class_name || "—")} · #${htmlEscape(entry.student.admission_no || "—")}</div>
+        </div>
+        ${renderStatusPill(entry.status)}
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Fee Type</th>
+            <th class="amount">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${componentRows || `
+            <tr><td>Monthly Fee</td><td class="amount">${fmtMoney(entry.monthly_fee, currency)}</td></tr>
+            <tr><td>Carry Forward</td><td class="amount">${fmtMoney(entry.carry_forward, currency)}</td></tr>
+          `}
+        </tbody>
+      </table>
+
+      <div class="mini-metrics">
+        <div class="cell"><div class="lbl">Total</div><div class="val">${fmtMoney(entry.total_payable, currency)}</div></div>
+        <div class="cell"><div class="lbl">Paid</div><div class="val">${fmtMoney(entry.paid_total, currency)}</div></div>
+        <div class="cell"><div class="lbl">Due</div><div class="val">${fmtMoney(entry.remaining, currency)}</div></div>
+        <div class="cell"><div class="lbl">Period</div><div class="val">${htmlEscape(entry.period || opts.period || "—")}</div></div>
+      </div>
+
+      ${opts.includeNotes === false
+        ? ""
+        : `<div class="note" style="margin-top:8px;padding:8px 10px;font-size:9px;">Please pay before due date to avoid late fee.</div>`}
+    </div>
+  `;
 }
 
 function renderBulkEntryPage(

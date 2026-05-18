@@ -61,7 +61,7 @@ def filter_reply(reply: str) -> tuple[str, dict]:
     }
 
     if not reply:
-        return "I don't have an answer for that right now.", audit
+        return "I'm having trouble connecting to the AI service right now. Please try again in a moment.", audit
 
     out = reply
 

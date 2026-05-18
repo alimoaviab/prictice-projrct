@@ -123,12 +123,19 @@ export function ResultPage() {
         {
             key: "exam",
             label: "Assessment",
-            render: (row) => (
-                <div>
-                    <p className="text-[11px] font-bold text-slate-700 leading-none mb-1">{row.exam_title}</p>
-                    <p className="text-[9px] font-bold text-blue-600 normal-case ">{row.exam_subject}</p>
-                </div>
-            ),
+            render: (row) => {
+                const count = row.subjects && row.subjects.length > 0
+                    ? row.subjects.length
+                    : (row.exam_subject ? row.exam_subject.split(",").filter(s => s.trim()).length : 0);
+                return (
+                    <div>
+                        <p className="text-[11px] font-bold text-slate-700 leading-none mb-1">{row.exam_title}</p>
+                        <p className="text-[9px] font-bold text-blue-600 normal-case ">
+                            {count} {count === 1 ? "subject" : "subjects"}
+                        </p>
+                    </div>
+                );
+            },
         },
         {
             key: "score",
@@ -404,7 +411,14 @@ export function ResultPage() {
                                                 <span className="material-symbols-outlined text-blue-600 text-sm">description</span>
                                                 <div className="flex-1 min-w-0">
                                                     <p className="text-[10px] font-bold text-slate-900 truncate normal-case ">{row.exam_title}</p>
-                                                    <p className="text-[9px] font-bold text-slate-400 normal-case ">{row.exam_subject}</p>
+                                                    <p className="text-[9px] font-bold text-slate-400 normal-case ">
+                                                        {(() => {
+                                                            const count = row.subjects && row.subjects.length > 0
+                                                                ? row.subjects.length
+                                                                : (row.exam_subject ? row.exam_subject.split(",").filter(s => s.trim()).length : 0);
+                                                            return `${count} ${count === 1 ? "subject" : "subjects"}`;
+                                                        })()}
+                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
