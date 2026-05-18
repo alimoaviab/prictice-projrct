@@ -82,6 +82,7 @@ async def send_message(
             "block_inject": REFUSAL_OUT_OF_SCOPE,
             "block_write": REFUSAL_WRITE_OPERATION,
             "block_bulk": REFUSAL_BULK_EXPORT,
+            "block_offtopic": REFUSAL_OUT_OF_SCOPE,
         }.get(verdict, REFUSAL_OUT_OF_SCOPE)
         return _make_response(body.session_id, refusal, body.language, clean, user)
 
@@ -154,6 +155,7 @@ async def stream_message(
             "block_inject": REFUSAL_OUT_OF_SCOPE,
             "block_write": REFUSAL_WRITE_OPERATION,
             "block_bulk": REFUSAL_BULK_EXPORT,
+            "block_offtopic": REFUSAL_OUT_OF_SCOPE,
         }.get(verdict, REFUSAL_OUT_OF_SCOPE)
 
     message_id = f"msg_{uuid.uuid4().hex[:12]}"
