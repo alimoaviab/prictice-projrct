@@ -12,7 +12,7 @@ export function AnnouncementCreatePage() {
   async function handleCreate(input: any) {
     const result = await addAnnouncement(input);
     if (result.success) {
-      showToast("Announcement published successfully", "success");
+      // Toast is already raised by useAnnouncements on success.
       const basePath = pathname.includes("/teacher") ? "/teacher/announcements" : "/admin/announcements";
       navigate(basePath);
     } else {

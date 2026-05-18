@@ -41,10 +41,9 @@ export function ResultCreatePage() {
   async function handleCreate(input: ResultFormInput) {
     const result = await addResult(input);
     if (result.ok) {
-      showToast("Result recorded successfully", "success");
+      // Toast is already raised by useResults on success.
       const basePath = pathname.includes("/teacher") ? "/teacher/results" : "/admin/results";
       navigate(basePath);
-
     } else {
       showToast(result.error.message || "Failed to record result", "error");
     }

@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -113,6 +114,54 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 			"message": "Invalid email or password",
 		})
 		return
+	}
+
+	// Role-tab enforcement: when the frontend sends a role hint (the tab the
+	// user clicked on the login page), reject sign-in if the account's
+	// actual role does not belong on that tab.
+	//
+	// Tab → allowed actual roles:
+	//   admin   → admin, super_admin
+	//   teacher → teacher
+	//   student → student, parent  (parents share the student tab — they
+	//                               sign in with the parent account they
+	//                               were issued, but the entry surface is
+	//                               the same since both view a child's
+	//                               data).
+	//
+	// We never silently re-route the user to a portal they didn't ask
+	// for; surface a clear error so the UI can prompt them to switch tabs.
+	requestedRole := strings.ToLower(strings.TrimSpace(body.Role))
+	if requestedRole != "" {
+		allowed := allowedRolesForTab(requestedRole)
+		if len(allowed) == 0 {
+			// Unknown tab value — ignore (defensive default; do not block).
+		} else {
+			match := false
+			for _, r := range allowed {
+				if user.Role == r {
+					match = true
+					break
+				}
+			}
+			if !match {
+				api.WriteJSON(w, http.StatusForbidden, map[string]any{
+					"ok": false,
+					"message": fmt.Sprintf(
+						"This account is registered as %s. Please select the %s tab to sign in.",
+						prettyRole(user.Role),
+						suggestedTabFor(user.Role),
+					),
+					"error": map[string]any{
+						"code":             "ROLE_MISMATCH",
+						"actual_role":      user.Role,
+						"requested_tab":    requestedRole,
+						"suggested_tab":    suggestedTabFor(user.Role),
+					},
+				})
+				return
+			}
+		}
 	}
 
 	// Check school status for non-super_admin users — same logic as the
@@ -677,4 +726,62 @@ func randomID() string {
 	b := make([]byte, 8)
 	_, _ = rand.Read(b)
 	return hex.EncodeToString(b)
+}
+
+// allowedRolesForTab returns the actual user roles permitted to sign in
+// from the given login-page tab. The login UI exposes three tabs
+// (admin, teacher, student) but the backend has five roles. We map them
+// here so a teacher cannot accidentally sign in via the Admin tab and
+// land on a portal that doesn't match their permissions.
+func allowedRolesForTab(tab string) []string {
+	switch strings.ToLower(strings.TrimSpace(tab)) {
+	case "admin":
+		return []string{"admin", "super_admin"}
+	case "teacher":
+		return []string{"teacher"}
+	case "student":
+		// Parents share the student tab — they sign in with the parent
+		// account they were issued and view their child's data through
+		// the parent portal.
+		return []string{"student", "parent"}
+	default:
+		return nil
+	}
+}
+
+// suggestedTabFor returns the login-page tab a user with the given
+// actual role should be using.
+func suggestedTabFor(role string) string {
+	switch strings.ToLower(role) {
+	case "admin", "super_admin":
+		return "Admin"
+	case "teacher":
+		return "Teacher"
+	case "student", "parent":
+		return "Student"
+	default:
+		return "Admin"
+	}
+}
+
+// prettyRole turns an internal role string into a label suitable for
+// display in error messages.
+func prettyRole(role string) string {
+	switch strings.ToLower(role) {
+	case "super_admin":
+		return "a Super Admin"
+	case "admin":
+		return "an Admin"
+	case "teacher":
+		return "a Teacher"
+	case "student":
+		return "a Student"
+	case "parent":
+		return "a Parent"
+	default:
+		if role == "" {
+			return "an unknown role"
+		}
+		return role
+	}
 }

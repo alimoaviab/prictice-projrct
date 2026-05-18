@@ -12,6 +12,12 @@ export default defineConfig({
   server: {
     port: 3002,
     host: true,
+    proxy: {
+      '/api/seo': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     sourcemap: false,

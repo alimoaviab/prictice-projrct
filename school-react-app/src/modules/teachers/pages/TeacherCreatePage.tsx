@@ -21,7 +21,6 @@ import { serviceRequest } from "@/services/service-client";
 import { TeacherForm } from "../components/TeacherForm";
 import { useTeachers } from "../hooks/useTeachers";
 import { TeacherFormInput } from "../types/teacher.types";
-import { showToast } from "@/utils/toast";
 import { bindRefresh } from "@/services/data-bus";
 
 export function TeacherCreatePage() {
@@ -56,7 +55,7 @@ export function TeacherCreatePage() {
   async function handleCreate(input: TeacherFormInput) {
     const result = await addTeacher(input);
     if (result && (result as { ok?: boolean }).ok !== false) {
-      showToast("Teacher added successfully", "success");
+      // Toast is already raised by useTeachers on success.
       navigate("/admin/teachers");
     }
     return result;

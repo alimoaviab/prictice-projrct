@@ -78,10 +78,9 @@ export function BehaviorCreatePage() {
   async function handleCreate(input: BehaviorFormInput) {
     const result = await addBehavior(input);
     if (result.ok) {
-      showToast("Behavior record added successfully", "success");
+      // Toast is already raised by useBehavior on success.
       const basePath = pathname.includes("/teacher") ? "/teacher/behavior" : "/admin/behavior";
       navigate(basePath);
-
     } else {
       showToast(result.error.message || "Failed to add record", "error");
     }

@@ -7,7 +7,6 @@ import { serviceRequest } from "@/services/service-client";
 import { StudentForm } from "../components/StudentForm";
 import { useStudents } from "../hooks/useStudents";
 import { StudentFormInput } from "../types/student.types";
-import { showToast } from "@/utils/toast";
 
 export function StudentCreatePage() {
   const navigate = useNavigate();
@@ -36,9 +35,8 @@ export function StudentCreatePage() {
   async function handleCreate(input: StudentFormInput) {
     const result = await addStudent(input);
     if (result && (result as { ok?: boolean }).ok !== false) {
-      showToast("Student enrolled successfully", "success");
+      // Toast is already raised by useStudents on success.
       navigate("/admin/students");
-
     }
     return result;
   }

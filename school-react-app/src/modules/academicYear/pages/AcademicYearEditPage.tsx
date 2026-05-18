@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { AcademicYearForm } from "../components/AcademicYearForm";
 import { useAcademicYears } from "../hooks/useAcademicYears";
 import { AcademicYearFormInput, AcademicYearRow } from "../types/academicYear.types";
-import { showToast } from "@/utils/toast";
 import { Skeleton } from "@/components/ui";
 
 export function AcademicYearEditPage() {
@@ -26,9 +25,8 @@ export function AcademicYearEditPage() {
   async function handleUpdate(input: AcademicYearFormInput) {
     const result = await updateAcademicYear(id, input);
     if (result && (result as { ok?: boolean }).ok !== false) {
-      showToast("Academic year updated successfully", "success");
+      // Toast is already raised by useAcademicYears on success.
       navigate("/admin/academic-years");
-
     }
     return result;
   }

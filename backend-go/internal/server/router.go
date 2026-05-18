@@ -27,6 +27,7 @@ import (
 	"github.com/eduplexo/backend-go/internal/domain/notifications"
 	"github.com/eduplexo/backend-go/internal/domain/parent"
 	"github.com/eduplexo/backend-go/internal/domain/results"
+	"github.com/eduplexo/backend-go/internal/domain/seo"
 	"github.com/eduplexo/backend-go/internal/domain/settings"
 	"github.com/eduplexo/backend-go/internal/domain/students"
 	"github.com/eduplexo/backend-go/internal/domain/subjects"
@@ -115,6 +116,10 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 		r.Get("/auth/google/callback", authH.GoogleStatus)
 		r.Post("/auth/google/calendar", stubs.NotImplemented("Google Calendar OAuth is not enabled in this environment."))
 		r.Post("/auth/google/disconnect", stubs.NotImplemented("Google Calendar OAuth is not enabled in this environment."))
+
+		// ─── Public SEO Engine (landing page tool, rate-limited) ─────────
+		seoH := seo.New(cfg.AnthropicAPIKey, rdb)
+		r.Post("/seo/generate", seoH.Generate)
 
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.Authenticator(cfg, s))

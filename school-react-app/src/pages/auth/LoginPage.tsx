@@ -35,6 +35,46 @@ function resolveRoleRoute(role?: string): string {
   return ROLE_ROUTES[normalizedRole] || "/admin/dashboard";
 }
 
+// Tab → roles allowed on that tab. Mirrors the backend mapping in
+// auth.go's allowedRolesForTab — keep them in sync.
+const TAB_TO_ROLES: Record<Role, string[]> = {
+  admin: ["admin", "super_admin"],
+  teacher: ["teacher"],
+  student: ["student", "parent"],
+};
+
+function roleBelongsOnTab(role: string, tab: Role): boolean {
+  return TAB_TO_ROLES[tab]?.includes(role) ?? false;
+}
+
+function suggestedTabForRole(role: string): Role {
+  const r = role.toLowerCase();
+  if (r === "teacher") return "teacher";
+  if (r === "student" || r === "parent") return "student";
+  return "admin";
+}
+
+function labelForTab(tab: Role): string {
+  return tab.charAt(0).toUpperCase() + tab.slice(1);
+}
+
+function prettyRoleLabel(role: string): string {
+  switch (role.toLowerCase()) {
+    case "super_admin":
+      return "a Super Admin";
+    case "admin":
+      return "an Admin";
+    case "teacher":
+      return "a Teacher";
+    case "student":
+      return "a Student";
+    case "parent":
+      return "a Parent";
+    default:
+      return role || "an unknown role";
+  }
+}
+
 export function LoginPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -111,15 +151,40 @@ export function LoginPage() {
       const payload = result?.data && typeof result.data === "object" ? result.data : result;
 
       if (!response.ok) {
+        // Role-mismatch: backend tells us the suggested tab. Switch to it
+        // automatically so the user can retry without re-typing.
+        const errCode = result?.error?.code as string | undefined;
+        const suggestedTab = (result?.error?.suggested_tab as string | undefined)?.toLowerCase();
+        if (
+          response.status === 403 &&
+          errCode === "ROLE_MISMATCH" &&
+          suggestedTab &&
+          (suggestedTab === "admin" || suggestedTab === "teacher" || suggestedTab === "student")
+        ) {
+          setSelectedRole(suggestedTab as Role);
+        }
+
         const message =
           result?.message ||
           `Sign in failed (${response.status}). Please try again.`;
         throw new Error(message);
       }
 
+      // Defensive front-end check: if the payload role still doesn't
+      // belong on the selected tab, surface a friendly error rather than
+      // landing the user on the wrong portal.
+      const actualRole = (payload?.role as string | undefined)?.toLowerCase() || "";
+      if (actualRole && !roleBelongsOnTab(actualRole, selectedRole)) {
+        const suggested = suggestedTabForRole(actualRole);
+        setSelectedRole(suggested);
+        throw new Error(
+          `This account is registered as ${prettyRoleLabel(actualRole)}. Please use the ${labelForTab(suggested)} tab to sign in.`
+        );
+      }
+
       setSuccess(true);
       if (payload?.token) localStorage.setItem("token", payload.token);
-      
+
       setTimeout(() => {
         const targetRole = payload?.role || selectedRole;
         navigate(resolveRoleRoute(targetRole));
@@ -159,7 +224,10 @@ export function LoginPage() {
               <button
                 key={role.key}
                 type="button"
-                onClick={() => setSelectedRole(role.key)}
+                onClick={() => {
+                  setSelectedRole(role.key);
+                  setError("");
+                }}
                 className={`flex-1 py-4 px-2 rounded-xl text-[10px] font-black transition-all duration-300 flex flex-col items-center justify-center gap-1 relative ${
                   selectedRole === role.key ? "text-blue-600 bg-white shadow-sm ring-1 ring-white/50" : "text-gray-400 hover:text-gray-600"
                 }`}

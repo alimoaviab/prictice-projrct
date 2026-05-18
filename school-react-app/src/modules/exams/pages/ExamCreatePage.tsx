@@ -7,7 +7,6 @@ import { serviceRequest } from "@/services/service-client";
 import { ExamForm } from "../components/ExamForm";
 import { useExams } from "../hooks/useExams";
 import { ExamFormInput } from "../types/exam.types";
-import { showToast } from "@/utils/toast";
 
 export function ExamCreatePage() {
   const navigate = useNavigate();
@@ -35,10 +34,9 @@ export function ExamCreatePage() {
   async function handleCreate(input: ExamFormInput) {
     const result = await addExam(input);
     if (result.ok) {
-      showToast("Exam scheduled successfully", "success");
+      // Toast is already raised by useExams on success.
       const basePath = pathname.includes("/teacher") ? "/teacher/exams" : "/admin/exams";
       navigate(basePath);
-
     }
     return result;
   }

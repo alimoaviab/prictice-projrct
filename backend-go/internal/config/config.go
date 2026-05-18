@@ -47,6 +47,9 @@ type Config struct {
 	GeminiAPIKey    string
 	GeminiModel     string
 	GeminiTimeoutMs int
+
+	// AnthropicAPIKey for the SEO Engine (Claude).
+	AnthropicAPIKey string
 }
 
 // Load reads env vars (with sensible defaults for local development) and
@@ -64,6 +67,7 @@ func Load() Config {
 		GeminiAPIKey:    os.Getenv("GEMINI_API_KEY"),
 		GeminiModel:     getenv("GEMINI_MODEL", "gemini-2.0-flash"),
 		GeminiTimeoutMs: 2500,
+		AnthropicAPIKey: os.Getenv("ANTHROPIC_API_KEY"),
 	}
 
 	if cfg.JWTSecret == "" {

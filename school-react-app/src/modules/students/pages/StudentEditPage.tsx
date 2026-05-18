@@ -14,7 +14,6 @@ import { serviceRequest } from "@/services/service-client";
 import { StudentForm } from "../components/StudentForm";
 import { useStudents } from "../hooks/useStudents";
 import { StudentFormInput, StudentRow } from "../types/student.types";
-import { showToast } from "@/utils/toast";
 import { getStudent } from "../services/student.service";
 
 // Module-scope stable refs — see TeacherEditPage for the rationale.
@@ -64,7 +63,7 @@ export function StudentEditPage() {
         if (!id) return;
         const result = await updateStudent(id, input);
         if (result && (result as any).success !== false) {
-            showToast("Student updated successfully", "success");
+            // Toast is already raised by useStudents on success.
             navigate("/admin/students");
         }
         return result;

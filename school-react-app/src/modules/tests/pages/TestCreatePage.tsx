@@ -7,7 +7,6 @@ import { serviceRequest } from "@/services/service-client";
 import { TestForm } from "../components/TestForm";
 import { useTests } from "../hooks/useTests";
 import { TestFormInput } from "../types/test.types";
-import { showToast } from "@/utils/toast";
 
 export function TestCreatePage() {
   const navigate = useNavigate();
@@ -35,10 +34,9 @@ export function TestCreatePage() {
   async function handleCreate(input: TestFormInput) {
     const result = await addTest(input);
     if (result.ok) {
-      showToast("Test scheduled successfully", "success");
+      // Toast is already raised by useTests on success.
       const basePath = pathname.includes("/teacher") ? "/teacher/tests" : "/admin/tests";
       navigate(basePath);
-
     }
     return result;
   }

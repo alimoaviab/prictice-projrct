@@ -31,7 +31,6 @@ import {
 } from "@/components/ui";
 import { useBehavior } from "../hooks/useBehavior";
 import { BehaviorRecordRow } from "../types/behavior.types";
-import { showToast } from "@/utils/toast";
 import { useQueryParams } from "@/hooks/useQueryParams";
 
 type StatusFilter =
@@ -111,10 +110,8 @@ export function BehaviorListPage({
   }, [state.data]);
 
   async function handleStatusUpdate(id: string, status: string) {
-    const res = await updateBehavior(id, { status } as any);
-    if (res.success || (res as any).ok) {
-      showToast(`Marked as ${status.replace("_", " ")}`, "success");
-    }
+    // Toast is already raised by useBehavior on success.
+    await updateBehavior(id, { status } as any);
   }
 
   const columns: DataTableColumn<BehaviorRecordRow>[] = useMemo(
