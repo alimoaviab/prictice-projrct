@@ -1,12 +1,21 @@
 // Super Admin API client
 
-// Base URL for the backend API. Set VITE_API_URL in production (Vercel) to
-// point at the deployed Go backend.
-const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8080').replace(/\/$/, '')
+// Base URL for the backend API.
+//
+// Development: Vite proxy handles /api/* → localhost:8080 (see vite.config.ts)
+// Production (Vercel): vercel.json rewrites /api/* → https://api.eduplexo.com/api/*
+//
+// In BOTH cases, we use relative paths ("/api/...") so the platform's
+// proxy/rewrite layer handles routing. Only set VITE_API_URL if you need
+// to bypass the proxy and hit the backend directly (e.g. mobile app).
+const API_BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
 function resolveUrl(url: string): string {
+  // Absolute URLs pass through untouched.
   if (/^https?:\/\//.test(url)) return url
+  // No base URL → use relative path (works with Vite proxy + Vercel rewrites).
   if (!API_BASE_URL) return url
+  // Base URL set → prefix it.
   if (url.startsWith('/')) return API_BASE_URL + url
   return `${API_BASE_URL}/${url}`
 }

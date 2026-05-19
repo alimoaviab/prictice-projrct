@@ -387,8 +387,6 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
     );
   }
 
-  const sidebarWidth = isCollapsed ? "w-16" : "w-64";
-
   const toggleGroup = (label: string) => {
     setExpandedGroups((prev) => ({
       ...prev,
@@ -408,8 +406,10 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
         />
       )}
       <aside
-        className={`${sidebarWidth} fixed md:sticky top-0 z-40 md:z-20 flex h-screen flex-shrink-0 flex-col border-r border-slate-200/80 bg-white shadow-[0_1px_5px_rgba(15,23,42,0.03)] transition-all duration-300 ease-in-out ${
-          isCollapsed ? "-translate-x-full md:translate-x-0 md:w-16" : "translate-x-0"
+        className={`fixed top-0 z-40 flex h-screen flex-shrink-0 flex-col border-r border-slate-200/80 bg-white shadow-[0_1px_5px_rgba(15,23,42,0.03)] transition-all duration-300 ease-in-out ${
+          isCollapsed
+            ? "-translate-x-full md:translate-x-0 md:sticky md:w-16 w-64"
+            : "translate-x-0 w-64 md:sticky md:w-64"
         }`}
       >
         <div className={`flex h-11 items-center gap-2 px-3 ${isCollapsed ? "justify-center" : "justify-between"}`}>
@@ -511,7 +511,7 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
 
       {/* Main Content */}
       <main className="flex-1 min-w-0 flex flex-col bg-background h-screen overflow-hidden relative z-0">
-        <header className="sticky top-0 z-50 flex h-10 items-center justify-between border-b border-slate-200/40 bg-white/70 px-4 backdrop-blur-md overflow-visible">
+        <header className="sticky top-0 z-50 flex h-12 md:h-10 items-center justify-between border-b border-slate-200/40 bg-white/70 px-3 md:px-4 backdrop-blur-md overflow-visible gap-2">
           <div className="flex items-center gap-3 flex-1 overflow-visible">
             <button
               onClick={() => setIsCollapsed(false)}
