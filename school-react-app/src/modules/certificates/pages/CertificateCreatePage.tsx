@@ -59,7 +59,12 @@ export function CertificateCreatePage() {
   }, [runSettings]);
 
   const schoolData = settingsState.data?.profile || {};
-  const resolvedSchoolName = schoolData.school_name || schoolName || "Your School Name";
+  const resolvedSchoolName =
+    schoolData.schoolName ||
+    schoolData.school_name ||
+    schoolData.name ||
+    schoolName ||
+    "Your School Name";
   const resolvedAddress = schoolData.address || schoolData.city || "";
   const resolvedPhone = schoolData.phone || schoolData.contact || "";
   const resolvedPrincipal = schoolData.principal_name || "Principal Name";
@@ -189,7 +194,7 @@ export function CertificateCreatePage() {
               value={form.body_text}
               onChange={(e) => updateField("body_text", e.target.value)}
               rows={10}
-              className="w-full rounded-xl border border-slate-200 p-4 text-sm text-slate-700 font-medium leading-relaxed focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none resize-y"
+              className="w-full rounded-xl border border-slate-200 p-4 text-sm text-slate-700 font-medium leading-relaxed focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none resize-y overflow-auto break-words"
               placeholder="Write certificate body text here..."
             />
           </Card>
@@ -246,7 +251,7 @@ export function CertificateCreatePage() {
 
                 {/* Body */}
                 <div className="flex-1 relative z-10 overflow-hidden">
-                  <p className="text-[10px] md:text-xs text-slate-700 leading-relaxed text-center max-w-md mx-auto">
+                  <p className="text-[10px] md:text-xs text-slate-700 leading-relaxed text-center mx-auto px-2 break-words whitespace-normal">
                     {previewText}
                   </p>
                 </div>
@@ -277,9 +282,15 @@ export function CertificateCreatePage() {
             </div>
 
             {/* Preview note */}
-            <p className="text-[9px] text-slate-400 mt-2 text-center">
-              Preview shows sample data. Actual values will be filled from student records when generating.
-            </p>
+            <div className="mt-4 space-y-2 text-center">
+              <p className="text-[9px] text-slate-400">
+                Preview shows sample data. Actual values will be filled from student records when generating.
+              </p>
+              <div className="flex flex-col items-center gap-1 text-[11px] font-bold text-slate-600">
+                <span>Powered by Eduplexo</span>
+                <span className="h-px w-24 bg-amber-400" />
+              </div>
+            </div>
           </div>
         </div>
       </form>

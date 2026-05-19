@@ -27,9 +27,15 @@ export function useSchoolBranding() {
                 throw new Error(result.message || "Failed to load branding");
             }
             const data = result.data as any;
+            const profile = data?.profile ?? data ?? {};
             return {
-                schoolName: data?.profile?.schoolName || "",
-                logoUrl: data?.branding?.logoUrl || "",
+                schoolName:
+                    profile?.schoolName ||
+                    profile?.school_name ||
+                    data?.schoolName ||
+                    data?.school_name ||
+                    "",
+                logoUrl: data?.branding?.logoUrl || data?.branding?.logo_url || "",
             };
         },
         // Branding is rarely changed; cache aggressively to keep the
