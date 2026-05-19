@@ -1579,13 +1579,21 @@ func (h *Handler) LedgerDashboard(w http.ResponseWriter, r *http.Request) {
 						startYear = yearNum
 					}
 
-					// Adjust start to not be before student's enrollment date
+					// Don't charge months before the student was enrolled.
+					// A student created in May shouldn't owe April fees.
 					if !student.EnrolledAt.IsZero() {
 						enrollM := int(student.EnrolledAt.Month())
 						enrollY := student.EnrolledAt.Year()
 						if enrollY > startYear || (enrollY == startYear && enrollM > startMonth) {
 							startMonth = enrollM
 							startYear = enrollY
+						}
+					} else if !student.CreatedAt.IsZero() {
+						createdM := int(student.CreatedAt.Month())
+						createdY := student.CreatedAt.Year()
+						if createdY > startYear || (createdY == startYear && createdM > startMonth) {
+							startMonth = createdM
+							startYear = createdY
 						}
 					}
 

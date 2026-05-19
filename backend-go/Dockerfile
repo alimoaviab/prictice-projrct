@@ -1,5 +1,5 @@
 # Multi-stage build for the Eduplexo Go backend.
-FROM public.ecr.aws/docker/library/golang:alpine AS builder
+FROM golang:alpine AS builder
 
 WORKDIR /src
 COPY go.mod go.sum ./

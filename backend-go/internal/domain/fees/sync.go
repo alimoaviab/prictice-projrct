@@ -229,21 +229,7 @@ func (h *Handler) autoGenerateForMonth(ctx *api.RequestContext, classFilter, mon
 				continue
 			}
 
-			// Skip if invoice already exists for this student × month × year.
-			exists := false
-			for _, f := range h.Store.Fees {
-				if f.SchoolID == ctx.SchoolID && f.StudentID == stu.ID &&
-					strings.EqualFold(f.Month, month) && f.Year == year &&
-					f.Status != "void" {
-					exists = true
-					break
-				}
-			}
-			if exists {
-				continue
-			}
-
-			// Build the invoice.
+			// Build the invoice components from the current class fee config.
 			total := 0.0
 			feeComps := make([]store.FeeComponent, 0, len(components))
 			for _, cf := range components {
@@ -253,6 +239,32 @@ func (h *Handler) autoGenerateForMonth(ctx *api.RequestContext, classFilter, mon
 					Amount:    cf.Amount,
 				})
 				total += cf.Amount
+			}
+
+			// Check if invoice already exists for this student × month × year.
+			var existing *store.Fee
+			for _, f := range h.Store.Fees {
+				if f.SchoolID == ctx.SchoolID && f.StudentID == stu.ID &&
+					strings.EqualFold(f.Month, month) && f.Year == year &&
+					f.Status != "void" {
+					existing = f
+					break
+				}
+			}
+
+			if existing != nil {
+				// Update existing invoice if the fee config changed (e.g.
+				// admin added a new component after the invoice was first
+				// generated). Without this, old students keep showing the
+				// stale amount from the original generation run.
+				if existing.Amount != total+existing.AdjustmentAmount-existing.AdjustmentAmount {
+					existing.Amount = total
+					existing.FeeComponents = feeComps
+					existing.UpdatedAt = now
+					existing.Status = feeStatus(total+existing.AdjustmentAmount, existing.PaidAmount)
+					generated = append(generated, existing)
+				}
+				continue
 			}
 
 			adjustment := h.adjustmentsForStudent(ctx.SchoolID, stu.ID, yearID, dueAt)

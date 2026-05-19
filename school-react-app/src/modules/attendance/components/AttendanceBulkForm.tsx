@@ -113,9 +113,10 @@ export function AttendanceBulkForm({ initialClassId, initialDate, viewMode = "li
             });
             showToast("All students marked as present", "success");
             onSaved?.();
-            // Don't refreshAttendanceSnapshot() here — the local state
-            // is already correct. Refreshing immediately would overwrite
-            // the optimistic update with stale server data.
+            // Refresh after a short delay so the server-side MemStore
+            // sync has time to complete. This ensures the buttons stay
+            // highlighted on subsequent page loads / reloads.
+            setTimeout(() => refreshAttendanceSnapshot(), 500);
         } catch (err: any) {
             showToast(err.message || "Failed to mark all present", "error");
             // On error, re-fetch to get the real server state
@@ -230,8 +231,8 @@ export function AttendanceBulkForm({ initialClassId, initialDate, viewMode = "li
                                     remarks: { [student._id]: remarksByStudent[student._id] || "" }
                                   });
                                   onSaved?.();
-                                  // Don't refresh — local state is already correct.
-                                  // Refreshing immediately overwrites with stale server data.
+                                  // Delayed refresh to confirm server state persisted.
+                                  setTimeout(() => refreshAttendanceSnapshot(), 500);
                                 } catch (err) {
                                   console.error("Auto-save failed", err);
                                   // Revert on error
@@ -297,7 +298,8 @@ export function AttendanceBulkForm({ initialClassId, initialDate, viewMode = "li
                                             remarks: { [student._id]: remarksByStudent[student._id] || "" }
                                           });
                                           onSaved?.();
-                                          // Don't refresh — local state is already correct.
+                                          // Delayed refresh to confirm server state persisted.
+                                          setTimeout(() => refreshAttendanceSnapshot(), 500);
                                         } catch (err) {
                                           console.error("Auto-save failed", err);
                                           refreshAttendanceSnapshot();

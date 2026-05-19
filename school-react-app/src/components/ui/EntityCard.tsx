@@ -156,7 +156,7 @@ export function EntityCard({
 
   return (
     <div
-      className={`group relative bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 shadow-[0_2px_8px_rgb(0,0,0,0.02)] hover:shadow-[0_4px_14px_rgb(0,0,0,0.05)] transition-shadow overflow-hidden ${className}`}
+      className={`group relative bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 shadow-[0_2px_8px_rgb(0,0,0,0.02)] hover:shadow-[0_4px_14px_rgb(0,0,0,0.05)] transition-shadow ${className}`}
     >
       {/* Left status accent bar — shared with timetable/homework cards. */}
       <div className={`absolute left-0 top-0 bottom-0 w-0.5 ${accentTone.bar}`} />
@@ -201,7 +201,7 @@ export function EntityCard({
 
           {/* Hover actions (edit/delete pills) */}
           {hoverActions && hoverActions.length > 0 && (
-            <div className="flex gap-1.5 shrink-0">
+            <div className="flex gap-3 shrink-0">
               {hoverActions.map((a, i) => (
                 <button
                   key={i}
@@ -212,7 +212,7 @@ export function EntityCard({
                   }}
                   title={a.label}
                   aria-label={a.label}
-                  className={`h-6 w-6 inline-flex items-center justify-center rounded-md bg-white border border-slate-200 shadow-sm ${
+                  className={`h-7 w-7 inline-flex items-center justify-center rounded-md bg-white border border-slate-200 shadow-sm ${
                     a.accent === "rose"
                       ? "text-slate-500 hover:text-rose-600"
                       : a.accent === "emerald"
@@ -224,7 +224,7 @@ export function EntityCard({
                             : "text-slate-500 hover:text-blue-600"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[13px]">{a.icon}</span>
+                  <span className="material-symbols-outlined text-[14px]">{a.icon}</span>
                 </button>
               ))}
             </div>

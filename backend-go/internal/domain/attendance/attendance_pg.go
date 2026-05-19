@@ -166,6 +166,9 @@ func (h *PGHandler) MarkBulkPG(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// ─── Invalidate Redis cache ────────────────────────────────────
+		// Kill every cache that reads attendance so marks are visible
+		// immediately on reload — admin list, parent dashboard, today
+		// summary tiles, composite dashboard.
 		if h.Cache != nil && h.Cache.Available() {
 			cacheKeys := []string{
 				fmt.Sprintf("att:today:%s:%s", reqCtx.SchoolID, dateStr),
@@ -174,6 +177,10 @@ func (h *PGHandler) MarkBulkPG(w http.ResponseWriter, r *http.Request) {
 			if _, err := h.Cache.Del(r.Context(), cacheKeys...); err != nil {
 				log.Printf("[attendance-pg] cache invalidation error: %v", err)
 			}
+			// Wide patterns for per-tenant list caches.
+			_, _ = h.Cache.DelPattern(r.Context(), fmt.Sprintf("attendance:list:%s:*", reqCtx.SchoolID))
+			_, _ = h.Cache.DelPattern(r.Context(), fmt.Sprintf("parent:attendance:%s:*", reqCtx.SchoolID))
+			_, _ = h.Cache.DelPattern(r.Context(), fmt.Sprintf("parent:dash:%s:*", reqCtx.SchoolID))
 		}
 
 		return markBulkResponse{

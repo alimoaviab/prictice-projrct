@@ -487,6 +487,26 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 			h.Persist("student_parents", parentLink)
 		}
 
+		// Direct PG write so the immediate frontend refetch (which
+		// hits the PG paginated path) sees the new row without waiting
+		// for the 1-second flush queue. The Persist call above is kept
+		// as a belt-and-suspenders backup — the upsert is idempotent.
+		if h.Pool != nil {
+			_, _ = h.Pool.Exec(r.Context(), `
+				INSERT INTO students (id, school_id, academic_year_id, user_id, class_id,
+					admission_no, first_name, last_name, section, roll_no, date_of_birth, gender,
+					guardian_name, guardian_phone, guardian_email, status, enrolled_at,
+					created_at, updated_at)
+				VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+				ON CONFLICT (id) DO NOTHING
+			`, newStudent.ID, newStudent.SchoolID, newStudent.AcademicYearID,
+				newStudent.UserID, newStudent.ClassID,
+				newStudent.AdmissionNo, newStudent.FirstName, newStudent.LastName,
+				newStudent.Section, newStudent.RollNo, newStudent.DateOfBirth, newStudent.Gender,
+				newStudent.Guardian.Name, newStudent.Guardian.Phone, newStudent.Guardian.Email,
+				newStudent.Status, newStudent.EnrolledAt, newStudent.CreatedAt, newStudent.UpdatedAt)
+		}
+
 		if h.Cache != nil && h.Cache.Available() {
 			_, _ = h.Cache.DelPattern(r.Context(), fmt.Sprintf("students:%s:%s:*", ctx.SchoolID, yearID))
 		}
