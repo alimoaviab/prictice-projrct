@@ -17,10 +17,17 @@ import (
 )
 
 type Handler struct {
-	Store *store.MemStore
+	Store   *store.MemStore
+	Persist func(table string, doc any)
 }
 
-func New(s *store.MemStore) *Handler { return &Handler{Store: s} }
+func New(s *store.MemStore) *Handler          { return &Handler{Store: s, Persist: func(string, any) {}} }
+func NewWithPersist(s *store.MemStore, save func(string, any)) *Handler {
+	if save == nil {
+		save = func(string, any) {}
+	}
+	return &Handler{Store: s, Persist: save}
+}
 
 // ─── Enterprise Dashboard Stats ──────────────────────────────────────────
 
@@ -573,18 +580,23 @@ func (h *Handler) UpdateSchoolStatus(w http.ResponseWriter, r *http.Request) {
 			for _, u := range h.Store.Users {
 				if u.SchoolID == targetSchoolID {
 					u.Status = newStatus
+					h.Persist("users", u)
 				}
 			}
 			for _, st := range h.Store.Students {
 				if st.SchoolID == targetSchoolID {
 					st.Status = newStatus
+					h.Persist("students", st)
 				}
 			}
 			for _, t := range h.Store.Teachers {
 				if t.SchoolID == targetSchoolID {
 					t.Status = newStatus
+					h.Persist("teachers", t)
 				}
 			}
+
+			h.Persist("schools", s)
 
 			api.WriteResult(w, api.Ok(map[string]any{
 				"success": true,
@@ -619,18 +631,23 @@ func (h *Handler) ApproveSchool(w http.ResponseWriter, r *http.Request) {
 			for _, u := range h.Store.Users {
 				if u.SchoolID == targetSchoolID {
 					u.Status = "active"
+					h.Persist("users", u)
 				}
 			}
 			for _, st := range h.Store.Students {
 				if st.SchoolID == targetSchoolID {
 					st.Status = "active"
+					h.Persist("students", st)
 				}
 			}
 			for _, t := range h.Store.Teachers {
 				if t.SchoolID == targetSchoolID {
 					t.Status = "active"
+					h.Persist("teachers", t)
 				}
 			}
+
+			h.Persist("schools", s)
 
 			api.WriteResult(w, api.Ok(map[string]any{
 				"success": true,
@@ -669,18 +686,23 @@ func (h *Handler) SuspendSchool(w http.ResponseWriter, r *http.Request) {
 			for _, u := range h.Store.Users {
 				if u.SchoolID == targetSchoolID {
 					u.Status = "suspended"
+					h.Persist("users", u)
 				}
 			}
 			for _, st := range h.Store.Students {
 				if st.SchoolID == targetSchoolID {
 					st.Status = "suspended"
+					h.Persist("students", st)
 				}
 			}
 			for _, t := range h.Store.Teachers {
 				if t.SchoolID == targetSchoolID {
 					t.Status = "suspended"
+					h.Persist("teachers", t)
 				}
 			}
+
+			h.Persist("schools", s)
 
 			api.WriteResult(w, api.Ok(map[string]any{
 				"success": true,
@@ -732,6 +754,8 @@ func (h *Handler) UpdateSchool(w http.ResponseWriter, r *http.Request) {
 			s.PrincipalName = body.PrincipalName
 			s.Website = body.Website
 			s.UpdatedAt = time.Now()
+
+			h.Persist("schools", s)
 
 			api.WriteResult(w, api.Ok(map[string]any{
 				"success": true,

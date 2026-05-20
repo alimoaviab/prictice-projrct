@@ -272,7 +272,7 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Get("/notifications", ntH.List)
 			r.Patch("/notifications/{id}/read", ntH.MarkRead)
 
-			seH := settings.NewWithCache(s, rdb)
+			seH := settings.NewWithCacheAndPersist(s, rdb, saveFn)
 			r.Get("/settings", seH.Get)
 			r.Patch("/settings", seH.Update)
 			r.Put("/settings", seH.Update)
@@ -364,7 +364,7 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Post("/fees/generate-async", rt.FeeGenerateAsyncHandler(jobQueue))
 
 			// Super Admin
-			saH := superadmin.New(s)
+			saH := superadmin.NewWithPersist(s, saveFn)
 			r.Get("/super-admin/dashboard", saH.DashboardStats)
 			r.Get("/super-admin/schools", saH.ListSchools)
 			r.Get("/super-admin/schools/{id}", saH.GetSchool)
