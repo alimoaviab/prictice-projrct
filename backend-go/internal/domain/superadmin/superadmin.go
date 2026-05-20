@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -211,7 +212,7 @@ func (h *Handler) DashboardStats(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		monthlyGrowth = append(monthlyGrowth, monthData{
-			Month:   monthNames[m-1] + " " + strings.TrimPrefix(strings.Itoa(y), "20"),
+			Month:   monthNames[m-1] + " " + strings.TrimPrefix(strconv.Itoa(y), "20"),
 			Schools: schoolCount,
 			Revenue: rev,
 		})
