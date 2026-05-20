@@ -533,9 +533,108 @@ func (h *Handler) GetSchool(w http.ResponseWriter, r *http.Request) {
 	h.Store.RLock()
 	defer h.Store.RUnlock()
 
+	type schoolDetailView struct {
+		ID            string    `json:"_id"`
+		SchoolID      string    `json:"school_id"`
+		Name          string    `json:"name"`
+		Code          string    `json:"code"`
+		Email         string    `json:"email"`
+		Phone         string    `json:"phone"`
+		Address       string    `json:"address"`
+		City          string    `json:"city"`
+		PrincipalName string    `json:"principal_name"`
+		Website       string    `json:"website"`
+		Status        string    `json:"status"`
+		OwnerEmail    string    `json:"owner_email"`
+		OwnerPassword string    `json:"owner_password"`
+		StudentCount  int       `json:"student_count"`
+		TeacherCount  int       `json:"teacher_count"`
+		ClassCount    int       `json:"class_count"`
+		ParentCount   int       `json:"parent_count"`
+		SubjectCount  int       `json:"subject_count"`
+		Plan          string    `json:"plan"`
+		Revenue       float64   `json:"revenue"`
+		Expiry        time.Time `json:"expiry"`
+		CreatedAt     time.Time `json:"created_at"`
+		UpdatedAt     time.Time `json:"updated_at"`
+	}
+
 	for _, s := range h.Store.Schools {
 		if s.ID == id || s.SchoolID == id {
-			api.WriteResult(w, api.Ok(s))
+			studentCount, teacherCount, classCount, parentCount, subjectCount := 0, 0, 0, 0, 0
+			for _, st := range h.Store.Students {
+				if st.SchoolID == s.SchoolID {
+					studentCount++
+				}
+			}
+			for _, t := range h.Store.Teachers {
+				if t.SchoolID == s.SchoolID {
+					teacherCount++
+				}
+			}
+			for _, c := range h.Store.Classes {
+				if c.SchoolID == s.SchoolID {
+					classCount++
+				}
+			}
+			for _, p := range h.Store.Parents {
+				if p.SchoolID == s.SchoolID {
+					parentCount++
+				}
+			}
+			for _, su := range h.Store.Subjects {
+				if su.SchoolID == s.SchoolID {
+					subjectCount++
+				}
+			}
+
+			ownerEmail := ""
+			ownerPassword := ""
+			for _, u := range h.Store.Users {
+				if u.SchoolID == s.SchoolID && u.Role == "admin" {
+					ownerEmail = u.Email
+					ownerPassword = u.Password
+					break
+				}
+			}
+
+			plan := "Free"
+			revenue := 0.0
+			expiry := time.Time{}
+			for _, pkg := range h.Store.SchoolPackages {
+				if pkg.SchoolID == s.SchoolID && pkg.IsActive {
+					plan = pkg.PackageName
+					revenue = pkg.Price
+					expiry = pkg.ExpiryDate
+					break
+				}
+			}
+
+			api.WriteResult(w, api.Ok(schoolDetailView{
+				ID:            s.ID,
+				SchoolID:      s.SchoolID,
+				Name:          s.Name,
+				Code:          s.Code,
+				Email:         s.Email,
+				Phone:         s.Phone,
+				Address:       s.Address,
+				City:          s.City,
+				PrincipalName: s.PrincipalName,
+				Website:       s.Website,
+				Status:        s.Status,
+				OwnerEmail:    ownerEmail,
+				OwnerPassword: ownerPassword,
+				StudentCount:  studentCount,
+				TeacherCount:  teacherCount,
+				ClassCount:    classCount,
+				ParentCount:   parentCount,
+				SubjectCount:  subjectCount,
+				Plan:          plan,
+				Revenue:       revenue,
+				Expiry:        expiry,
+				CreatedAt:     s.CreatedAt,
+				UpdatedAt:     s.UpdatedAt,
+			}))
 			return
 		}
 	}
