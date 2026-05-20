@@ -58,6 +58,9 @@ const adminNavGroups: NavGroup[] = [
       { label: "Results", href: "/admin/results", icon: "leaderboard" },
       { label: "Live classes", href: "/admin/live-class", icon: "videocam" },
       { label: "Homework", href: "/admin/homework", icon: "assignment" },
+      { label: "Question Papers", href: "/admin/question-papers", icon: "description" },
+      { label: "Question Bank", href: "/admin/question-bank", icon: "library_books" },
+      { label: "Chapters", href: "/admin/chapters", icon: "menu_book" },
     ],
   },
   {

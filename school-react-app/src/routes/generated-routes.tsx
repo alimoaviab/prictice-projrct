@@ -106,6 +106,18 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/certificates/create", element: lazyPage(() => import("@/pages/role/admin/certificates/create"), "AdminCertificateCreatePage") },
   { path: "/admin/certificates/generate/:id", element: lazyPage(() => import("@/pages/role/admin/certificates/generate/Param_id"), "AdminCertificateGeneratePage") },
 
+  // Question Papers
+  { path: "/admin/question-papers", element: lazyPage(() => import("@/pages/role/admin/question-papers"), "AdminQuestionPapersPage") },
+  { path: "/admin/question-papers/create", element: lazyPage(() => import("@/pages/role/admin/question-papers/create"), "AdminQuestionPaperCreatePage") },
+
+  // Question Bank
+  { path: "/admin/question-bank", element: lazyPage(() => import("@/pages/role/admin/question-bank"), "AdminQuestionBankPage") },
+  { path: "/admin/question-bank/starred", element: lazyPage(() => import("@/pages/role/admin/question-bank/starred"), "AdminStarredQuestionsPage") },
+  { path: "/admin/question-bank/archived", element: lazyPage(() => import("@/pages/role/admin/question-bank/archived"), "AdminArchivedQuestionsPage") },
+
+  // Chapters
+  { path: "/admin/chapters", element: lazyPage(() => import("@/pages/role/admin/chapters"), "AdminChaptersPage") },
+
   // Live Classes
   { path: "/admin/live-class", element: lazyPage(() => import("@/pages/role/admin/live-class"), "LiveClassPage") },
   { path: "/admin/live-class/create", element: lazyPage(() => import("@/pages/role/admin/live-class/create"), "AdminLiveClassCreatePage") },

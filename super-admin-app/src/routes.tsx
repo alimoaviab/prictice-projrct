@@ -10,6 +10,7 @@ import { PaymentsPage } from './pages/PaymentsPage'
 import { FinanceDashboardPage } from './pages/FinanceDashboardPage'
 import { PackagesPage } from './pages/PackagesPage'
 import { ExpensesPage } from './pages/ExpensesPage'
+import { ModerationPage } from './pages/ModerationPage'
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -26,6 +27,7 @@ export const router = createBrowserRouter([
       { path: '/finance', element: <FinanceDashboardPage /> },
       { path: '/packages', element: <PackagesPage /> },
       { path: '/expenses', element: <ExpensesPage /> },
+      { path: '/moderation', element: <ModerationPage /> },
     ],
   },
 ])

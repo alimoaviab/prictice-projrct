@@ -16,6 +16,7 @@ import (
 	authdomain "github.com/eduplexo/backend-go/internal/domain/auth"
 	"github.com/eduplexo/backend-go/internal/domain/behavior"
 	"github.com/eduplexo/backend-go/internal/domain/certificates"
+	"github.com/eduplexo/backend-go/internal/domain/chapters"
 	"github.com/eduplexo/backend-go/internal/domain/classes"
 	"github.com/eduplexo/backend-go/internal/domain/dashboard"
 	"github.com/eduplexo/backend-go/internal/domain/events"
@@ -27,6 +28,8 @@ import (
 	"github.com/eduplexo/backend-go/internal/domain/liveclass"
 	"github.com/eduplexo/backend-go/internal/domain/notifications"
 	"github.com/eduplexo/backend-go/internal/domain/parent"
+	"github.com/eduplexo/backend-go/internal/domain/questionpapers"
+	"github.com/eduplexo/backend-go/internal/domain/questionbank"
 	"github.com/eduplexo/backend-go/internal/domain/results"
 	"github.com/eduplexo/backend-go/internal/domain/seo"
 	"github.com/eduplexo/backend-go/internal/domain/settings"
@@ -289,6 +292,40 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Post("/certificates/generate", certH.Generate)
 			r.Post("/certificates/{id}/revoke", certH.Revoke)
 			r.Get("/certificates/verify/{code}", certH.Verify)
+
+			// ─── Question Papers ──────────────────────────────────────────
+			qpH := questionpapers.New(s, saveFn)
+			r.Get("/question-papers", qpH.List)
+			r.Post("/question-papers", qpH.Create)
+			r.Get("/question-papers/{id}", qpH.Get)
+			r.Delete("/question-papers/{id}", qpH.Delete)
+
+			// ─── Question Bank ────────────────────────────────────────────
+			qbH := questionbank.New(s, saveFn)
+			r.Get("/question-bank", qbH.List)
+			r.Post("/question-bank", qbH.Create)
+			r.Patch("/question-bank/{id}", qbH.Edit)
+			r.Post("/question-bank/{id}/archive", qbH.Archive)
+			r.Post("/question-bank/{id}/restore", qbH.Restore)
+			r.Post("/question-bank/{id}/star", qbH.Star)
+			r.Post("/question-bank/{id}/unstar", qbH.Unstar)
+			r.Get("/question-bank/starred", qbH.GetStarred)
+			// Moderation (super admin)
+			r.Get("/question-bank/moderation", qbH.ListPending)
+			r.Post("/question-bank/{id}/approve", qbH.Approve)
+			r.Post("/question-bank/{id}/reject", qbH.Reject)
+
+			// ─── Chapters ─────────────────────────────────────────────────
+			chH := chapters.New(s, saveFn)
+			r.Get("/chapters", chH.List)
+			r.Post("/chapters", chH.Create)
+			r.Post("/chapters/{id}/archive", chH.Archive)
+			r.Post("/chapters/reorder", chH.Reorder)
+
+			// ─── Paper Drafts (auto-save) ─────────────────────────────────
+			r.Post("/paper-drafts/save", chH.SaveDraft)
+			r.Get("/paper-drafts/load", chH.LoadDraft)
+			r.Delete("/paper-drafts", chH.DiscardDraft)
 
 			// ─── Fees domain (full implementation) ────────────────────────
 			fH := fees.NewWithCache(s, saveFn, rdb)

@@ -311,3 +311,76 @@ type GeneratedCertificate struct {
 	Status           string    `json:"status"` // issued | revoked | expired
 	CreatedAt        time.Time `json:"created_at"`
 }
+
+// ─── Question Papers ─────────────────────────────────────────────────────
+
+type QuestionPaper struct {
+	ID          string    `json:"_id"`
+	SchoolID    string    `json:"school_id"`
+	Title       string    `json:"title"`
+	ClassID     string    `json:"class_id"`
+	ClassName   string    `json:"class_name"`
+	TeacherID   string    `json:"teacher_id,omitempty"`
+	TeacherName string    `json:"teacher_name,omitempty"`
+	Date        string    `json:"date,omitempty"`
+	Questions   string    `json:"questions,omitempty"` // JSON array of questions
+	Status      string    `json:"status"`             // draft | published
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+// ─── Question Bank ───────────────────────────────────────────────────────
+
+type BankQuestion struct {
+	ID             string    `json:"_id"`
+	SchoolID       string    `json:"school_id"`
+	CreatedBy      string    `json:"created_by"`
+	CreatedByName  string    `json:"created_by_name,omitempty"`
+	SchoolName     string    `json:"school_name,omitempty"`
+	Board          string    `json:"board,omitempty"`
+	ClassID        string    `json:"class_id"`
+	ClassName      string    `json:"class_name"`
+	Subject        string    `json:"subject,omitempty"`
+	Chapter        string    `json:"chapter,omitempty"`
+	Type           string    `json:"type"`       // mcq | short | long
+	Difficulty     string    `json:"difficulty"` // easy | medium | hard
+	QuestionHTML   string    `json:"question_html"`
+	Options        string    `json:"options,omitempty"` // JSON array for MCQ
+	Status         string    `json:"status"`            // active | archived
+	Visibility     string    `json:"visibility"`        // private | global
+	ApprovalStatus string    `json:"approval_status"`   // pending | approved | rejected
+	ApprovedBy     string    `json:"approved_by,omitempty"`
+	ApprovedAt     *time.Time `json:"approved_at,omitempty"`
+	CreatedAt      time.Time `json:"created_at"`
+}
+
+type QuestionStar struct {
+	ID         string `json:"_id"`
+	QuestionID string `json:"question_id"`
+	TeacherID  string `json:"teacher_id"`
+}
+
+// ─── Chapters ────────────────────────────────────────────────────────────
+
+type Chapter struct {
+	ID            string    `json:"_id"`
+	SchoolID      string    `json:"school_id"`
+	ClassID       string    `json:"class_id"`
+	SubjectID     string    `json:"subject_id,omitempty"`
+	SubjectName   string    `json:"subject_name,omitempty"`
+	Title         string    `json:"title"`
+	ChapterNumber int       `json:"chapter_number"`
+	Status        string    `json:"status"` // active | archived
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+}
+
+// ─── Paper Drafts (auto-save) ────────────────────────────────────────────
+
+type PaperDraft struct {
+	ID            string    `json:"_id"`
+	TeacherID     string    `json:"teacher_id"`
+	SchoolID      string    `json:"school_id"`
+	PaperDataJSON string    `json:"paper_data_json"`
+	UpdatedAt     time.Time `json:"updated_at"`
+}
