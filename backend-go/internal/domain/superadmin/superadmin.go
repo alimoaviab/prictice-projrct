@@ -1031,3 +1031,168 @@ func (h *Handler) RecentActivity(w http.ResponseWriter, r *http.Request) {
 
 	api.WriteResult(w, api.Ok(logs))
 }
+
+// ─── Subscriptions ───────────────────────────────────────────────────────
+
+// ListSubscriptions returns all school subscriptions.
+// GET /api/super-admin/subscriptions
+func (h *Handler) ListSubscriptions(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	if ctx.Role != "super_admin" && ctx.Role != "admin" {
+		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin access required.", 403, nil))
+		return
+	}
+
+	h.Store.RLock()
+	defer h.Store.RUnlock()
+
+	type subView struct {
+		ID        string    `json:"_id"`
+		SchoolID  string    `json:"school_id"`
+		SchoolName string   `json:"school_name"`
+		PackageID string    `json:"package_id"`
+		PackageName string `json:"package_name"`
+		Status    string    `json:"status"`
+		AutoRenew bool      `json:"auto_renew"`
+		NextRenewal time.Time `json:"next_renewal"`
+		CreatedAt time.Time `json:"created_at"`
+	}
+
+	subs := make([]subView, 0)
+	for _, s := range h.Store.Subscriptions {
+		schoolName := ""
+		packageName := ""
+		for _, sch := range h.Store.Schools {
+			if sch.SchoolID == s.SchoolID {
+				schoolName = sch.Name
+				break
+			}
+		}
+		for _, p := range h.Store.Packages {
+			if p.ID == s.PackageID {
+				packageName = p.Name
+				break
+			}
+		}
+		subs = append(subs, subView{
+			ID: s.ID, SchoolID: s.SchoolID, SchoolName: schoolName,
+			PackageID: s.PackageID, PackageName: packageName,
+			Status: s.Status, AutoRenew: s.AutoRenew, NextRenewal: s.NextRenewal,
+			CreatedAt: s.CreatedAt,
+		})
+	}
+
+	sort.SliceStable(subs, func(i, j int) bool {
+		return subs[i].CreatedAt.After(subs[j].CreatedAt)
+	})
+
+	api.WriteResult(w, api.Ok(map[string]any{"items": subs, "total": len(subs)}))
+}
+
+// ─── AI Usage ────────────────────────────────────────────────────────────
+
+// AIUsage returns AI/chatbot usage per school.
+// GET /api/super-admin/ai-usage
+func (h *Handler) AIUsage(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	if ctx.Role != "super_admin" && ctx.Role != "admin" {
+		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin access required.", 403, nil))
+		return
+	}
+
+	h.Store.RLock()
+	defer h.Store.RUnlock()
+
+	type aiUsageView struct {
+		SchoolID           string  `json:"school_id"`
+		SchoolName         string  `json:"school_name"`
+		PackageName        string  `json:"package_name"`
+		ChatbotLimit       int     `json:"chatbot_limit"`
+		ChatbotUsed        int     `json:"chatbot_used"`
+		ChatbotRemaining   int     `json:"chatbot_remaining"`
+		UsagePercent       float64 `json:"usage_percent"`
+	}
+
+	usage := make([]aiUsageView, 0)
+	for _, sch := range h.Store.Schools {
+		pkgName := ""
+		chatbotLimit := 0
+		for _, pkg := range h.Store.Packages {
+			if pkg.Status == "active" {
+				pkgName = pkg.Name
+				chatbotLimit = pkg.ChatbotMonthlyLimit
+				break
+			}
+		}
+		// Count AI usage from audit logs
+		used := 0
+		for _, a := range h.Store.AuditLogs {
+			if a.SchoolID == sch.SchoolID && a.EntityType == "ai_chat" {
+				used++
+			}
+		}
+		remaining := chatbotLimit - used
+		if remaining < 0 {
+			remaining = 0
+		}
+		pct := 0.0
+		if chatbotLimit > 0 {
+			pct = float64(used) / float64(chatbotLimit) * 100
+		}
+		usage = append(usage, aiUsageView{
+			SchoolID: sch.SchoolID, SchoolName: sch.Name,
+			PackageName: pkgName, ChatbotLimit: chatbotLimit,
+			ChatbotUsed: used, ChatbotRemaining: remaining,
+			UsagePercent: pct,
+		})
+	}
+
+	api.WriteResult(w, api.Ok(map[string]any{"items": usage, "total": len(usage)}))
+}
+
+// ─── Platform Settings ───────────────────────────────────────────────────
+
+type PlatformSettings struct {
+	AutoApproveSchools bool `json:"auto_approve_schools"`
+	DefaultPackageID   string `json:"default_package_id"`
+	TrialDays          int    `json:"trial_days"`
+}
+
+var platformSettings = PlatformSettings{
+	AutoApproveSchools: false,
+	DefaultPackageID:   "",
+	TrialDays:          14,
+}
+
+// GetSettings returns platform-wide settings.
+// GET /api/super-admin/settings
+func (h *Handler) GetSettings(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	if ctx.Role != "super_admin" {
+		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin access required.", 403, nil))
+		return
+	}
+	api.WriteResult(w, api.Ok(platformSettings))
+}
+
+// UpdateSettings updates platform-wide settings.
+// PATCH /api/super-admin/settings
+func (h *Handler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	if ctx.Role != "super_admin" {
+		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin access required.", 403, nil))
+		return
+	}
+
+	var body PlatformSettings
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Invalid request body.", 400, nil))
+		return
+	}
+
+	platformSettings.AutoApproveSchools = body.AutoApproveSchools
+	platformSettings.DefaultPackageID = body.DefaultPackageID
+	platformSettings.TrialDays = body.TrialDays
+
+	api.WriteResult(w, api.Ok(map[string]any{"success": true, "settings": platformSettings}))
+}

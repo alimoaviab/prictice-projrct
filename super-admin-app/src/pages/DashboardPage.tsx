@@ -60,9 +60,15 @@ export function DashboardPage() {
   const navigate = useNavigate()
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [packagesCount, setPackagesCount] = useState(0)
+  const [activePackages, setActivePackages] = useState(0)
+  const [subsCount, setSubsCount] = useState(0)
+  const [pendingPayments, setPendingPayments] = useState(0)
+  const [aiUsage, setAiUsage] = useState(0)
 
   useEffect(() => {
     loadDashboard()
+    loadExtraMetrics()
   }, [])
 
   async function loadDashboard() {
@@ -72,6 +78,34 @@ export function DashboardPage() {
       setData(result.data)
     }
     setLoading(false)
+  }
+
+  async function loadExtraMetrics() {
+    const [pkgRes, subRes, payRes, aiRes] = await Promise.all([
+      apiRequest('/api/super-admin/packages'),
+      apiRequest('/api/super-admin/subscriptions'),
+      apiRequest('/api/admin/payments/pending'),
+      apiRequest('/api/super-admin/ai-usage'),
+    ])
+    if (pkgRes.ok && pkgRes.data) {
+      const d = pkgRes.data as any
+      const items = d.items || []
+      setPackagesCount(items.length)
+      setActivePackages(items.filter((p: any) => p.status === 'active').length)
+    }
+    if (subRes.ok && subRes.data) {
+      const d = subRes.data as any
+      setSubsCount((d.items || []).length)
+    }
+    if (payRes.ok && payRes.data) {
+      const d = payRes.data as any
+      setPendingPayments((d.items || d.data || []).length)
+    }
+    if (aiRes.ok && aiRes.data) {
+      const d = aiRes.data as any
+      const total = (d.items || []).reduce((a: number, u: any) => a + (u.chatbot_used || 0), 0)
+      setAiUsage(total)
+    }
   }
 
   if (loading) {
@@ -129,10 +163,11 @@ export function DashboardPage() {
 
   const quickActions = [
     { label: 'Add School', icon: 'add_business', href: '/schools' },
-    { label: 'Broadcast', icon: 'campaign', href: '/broadcast' },
-    { label: 'Reports', icon: 'assessment', href: '/reports' },
-    { label: 'Finance', icon: 'account_balance_wallet', href: '/finance' },
     { label: 'Packages', icon: 'inventory_2', href: '/packages' },
+    { label: 'Subscriptions', icon: 'card_membership', href: '/subscriptions' },
+    { label: 'Payments', icon: 'payments', href: '/payments' },
+    { label: 'AI Usage', icon: 'smart_toy', href: '/ai-usage' },
+    { label: 'Settings', icon: 'settings', href: '/settings' },
     { label: 'Users', icon: 'manage_accounts', href: '/users' },
   ]
 
@@ -191,6 +226,25 @@ export function DashboardPage() {
           <div key={kpi.label} className="bg-white rounded-lg border border-slate-200 p-3">
             <div className="flex items-center gap-2 mb-2">
               <span className={`material-symbols-outlined text-sm ${kpi.color || 'text-blue-600'}`}>{kpi.icon}</span>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{kpi.label}</span>
+            </div>
+            <span className="text-lg font-bold text-slate-900">{kpi.value}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* ── ROW 4: Business Metrics ─────────────────────────────────────── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {[
+          { label: 'Total Packages', value: packagesCount, icon: 'inventory_2', color: 'text-blue-600' },
+          { label: 'Active Packages', value: activePackages, icon: 'check_circle', color: 'text-blue-600' },
+          { label: 'Subscriptions', value: subsCount, icon: 'card_membership', color: 'text-blue-600' },
+          { label: 'Pending Payments', value: pendingPayments, icon: 'hourglass_empty', color: 'text-amber-600' },
+          { label: 'AI Messages Used', value: aiUsage.toLocaleString(), icon: 'smart_toy', color: 'text-blue-600' },
+        ].map((kpi) => (
+          <div key={kpi.label} className="bg-white rounded-lg border border-slate-200 p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <span className={`material-symbols-outlined text-sm ${kpi.color}`}>{kpi.icon}</span>
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{kpi.label}</span>
             </div>
             <span className="text-lg font-bold text-slate-900">{kpi.value}</span>

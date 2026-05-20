@@ -21,11 +21,11 @@ import (
 	"github.com/eduplexo/backend-go/internal/domain/events"
 	"github.com/eduplexo/backend-go/internal/domain/exams"
 	"github.com/eduplexo/backend-go/internal/domain/fees"
-	"github.com/eduplexo/backend-go/internal/domain/finance"
 	"github.com/eduplexo/backend-go/internal/domain/homework"
 	"github.com/eduplexo/backend-go/internal/domain/leave"
 	"github.com/eduplexo/backend-go/internal/domain/liveclass"
 	"github.com/eduplexo/backend-go/internal/domain/notifications"
+	"github.com/eduplexo/backend-go/internal/domain/packages"
 	"github.com/eduplexo/backend-go/internal/domain/parent"
 	"github.com/eduplexo/backend-go/internal/domain/results"
 	"github.com/eduplexo/backend-go/internal/domain/seo"
@@ -377,15 +377,26 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Get("/super-admin/users", saH.ListUsers)
 			r.Get("/super-admin/activity", saH.RecentActivity)
 
-			// Finance Management (Super Admin only)
-			finH := finance.New(s)
-			r.Post("/super-admin/packages", finH.CreatePackage)
-			r.Get("/super-admin/packages", finH.ListPackages)
-			r.Put("/super-admin/packages/{id}", finH.UpdatePackage)
-			r.Delete("/super-admin/packages/{id}", finH.DeletePackage)
-			r.Post("/super-admin/expenses", finH.CreateExpense)
-			r.Get("/super-admin/expenses", finH.ListExpenses)
-			r.Get("/super-admin/finance/dashboard", finH.GetFinanceDashboard)
+			// Packages Management (Super Admin only)
+			pkgH := packages.NewWithPersist(s, saveFn)
+			r.Post("/super-admin/packages", pkgH.Create)
+			r.Get("/super-admin/packages", pkgH.List)
+			r.Get("/super-admin/packages/{id}", pkgH.Get)
+			r.Put("/super-admin/packages/{id}", pkgH.Update)
+			r.Delete("/super-admin/packages/{id}", pkgH.Delete)
+			r.Post("/super-admin/packages/{id}/toggle", pkgH.Toggle)
+
+			// Subscriptions
+			r.Get("/super-admin/subscriptions", saH.ListSubscriptions)
+			r.Post("/super-admin/subscriptions/assign", subH.AdminAssignPlan)
+			r.Post("/super-admin/subscriptions/extend", subH.AdminExtendSubscription)
+
+			// AI Usage
+			r.Get("/super-admin/ai-usage", saH.AIUsage)
+
+			// Settings
+			r.Get("/super-admin/settings", saH.GetSettings)
+			r.Patch("/super-admin/settings", saH.UpdateSettings)
 
 			// Parents — admin/teacher use these to link students to
 			// existing parent accounts during student creation. The
