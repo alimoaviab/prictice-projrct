@@ -320,68 +320,57 @@ type QuestionPaper struct {
 	Title       string    `json:"title"`
 	ClassID     string    `json:"class_id"`
 	ClassName   string    `json:"class_name"`
+	SubjectID   string    `json:"subject_id,omitempty"`
+	SubjectName string    `json:"subject_name,omitempty"`
+	ChapterIDs  []string  `json:"chapter_ids,omitempty"`
 	TeacherID   string    `json:"teacher_id,omitempty"`
 	TeacherName string    `json:"teacher_name,omitempty"`
 	Date        string    `json:"date,omitempty"`
-	Questions   string    `json:"questions,omitempty"` // JSON array of questions
-	Status      string    `json:"status"`             // draft | published
+	Questions   string    `json:"questions,omitempty"`
+	Status      string    `json:"status"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
-// ─── Question Bank ───────────────────────────────────────────────────────
+// ─── Questions (Internal Repository) ────────────────────────────────────
 
-type BankQuestion struct {
-	ID             string    `json:"_id"`
-	SchoolID       string    `json:"school_id"`
-	CreatedBy      string    `json:"created_by"`
-	CreatedByName  string    `json:"created_by_name,omitempty"`
-	SchoolName     string    `json:"school_name,omitempty"`
-	Board          string    `json:"board,omitempty"`
-	ClassID        string    `json:"class_id"`
-	ClassName      string    `json:"class_name"`
-	Subject        string    `json:"subject,omitempty"`
-	Chapter        string    `json:"chapter,omitempty"`
-	Type           string    `json:"type"`       // mcq | short | long
-	Difficulty     string    `json:"difficulty"` // easy | medium | hard
-	QuestionHTML   string    `json:"question_html"`
-	Options        string    `json:"options,omitempty"` // JSON array for MCQ
-	Status         string    `json:"status"`            // active | archived
-	Visibility     string    `json:"visibility"`        // private | global
-	ApprovalStatus string    `json:"approval_status"`   // pending | approved | rejected
-	ApprovedBy     string    `json:"approved_by,omitempty"`
+type Question struct {
+	ID             string     `json:"_id"`
+	SchoolID       string     `json:"school_id"`
+	CreatedBy      string     `json:"created_by"`
+	CreatedByName  string     `json:"created_by_name,omitempty"`
+	ClassID        string     `json:"class_id"`
+	SubjectID      string     `json:"subject_id,omitempty"`
+	SubjectName    string     `json:"subject_name,omitempty"`
+	ChapterID      string     `json:"chapter_id,omitempty"`
+	Type           string     `json:"type"`
+	Difficulty     string     `json:"difficulty"`
+	QuestionHTML   string     `json:"question_html"`
+	Options        string     `json:"options,omitempty"`
+	Marks          int        `json:"marks,omitempty"`
+	Status         string     `json:"status"`
+	IsGlobal       bool       `json:"is_global"`
+	ApprovalStatus string     `json:"approval_status"`
+	ApprovedBy     string     `json:"approved_by,omitempty"`
 	ApprovedAt     *time.Time `json:"approved_at,omitempty"`
-	CreatedAt      time.Time `json:"created_at"`
+	CreatedAt      time.Time  `json:"created_at"`
+	UpdatedAt      time.Time  `json:"updated_at"`
 }
 
-type QuestionStar struct {
-	ID         string `json:"_id"`
-	QuestionID string `json:"question_id"`
-	TeacherID  string `json:"teacher_id"`
-}
-
-// ─── Chapters ────────────────────────────────────────────────────────────
+// ── Chapters ────────────────────────────────────────────────────────────
 
 type Chapter struct {
 	ID            string    `json:"_id"`
 	SchoolID      string    `json:"school_id"`
 	ClassID       string    `json:"class_id"`
+	ClassName     string    `json:"class_name,omitempty"`
 	SubjectID     string    `json:"subject_id,omitempty"`
 	SubjectName   string    `json:"subject_name,omitempty"`
 	Title         string    `json:"title"`
 	ChapterNumber int       `json:"chapter_number"`
-	Status        string    `json:"status"` // active | archived
+	IsDefault     bool      `json:"is_default"`
+	Status        string    `json:"status"`
 	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
-}
-
-// ─── Paper Drafts (auto-save) ────────────────────────────────────────────
-
-type PaperDraft struct {
-	ID            string    `json:"_id"`
-	TeacherID     string    `json:"teacher_id"`
-	SchoolID      string    `json:"school_id"`
-	PaperDataJSON string    `json:"paper_data_json"`
 	UpdatedAt     time.Time `json:"updated_at"`
 }
 

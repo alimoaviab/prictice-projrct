@@ -71,13 +71,11 @@ type MemStore struct {
 	// Question Papers.
 	QuestionPapers []*QuestionPaper
 
-	// Question Bank.
-	BankQuestions []*BankQuestion
-	QuestionStars []*QuestionStar
+	// Questions (Internal Repository).
+	Questions []*Question
 
-	// Chapters & Drafts.
-	Chapters    []*Chapter
-	PaperDrafts []*PaperDraft
+	// Chapters.
+	Chapters []*Chapter
 
 	// Star Collections.
 	StarCollections []*StarCollection

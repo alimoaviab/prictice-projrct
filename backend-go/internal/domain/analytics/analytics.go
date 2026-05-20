@@ -142,7 +142,7 @@ func (h *Handler) SchoolOverview(w http.ResponseWriter, r *http.Request) {
 			totalStudents++
 		}
 	}
-	for _, q := range h.Store.BankQuestions {
+	for _, q := range h.Store.Questions {
 		if q.SchoolID == ctx.SchoolID {
 			totalQuestions++
 		}
