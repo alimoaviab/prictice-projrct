@@ -375,6 +375,62 @@ func (h *Handler) Edit(w http.ResponseWriter, r *http.Request) {
 	api.WriteResult(w, api.Fail("NOT_FOUND", "Question not found.", 404, nil))
 }
 
+// ─── Collections ─────────────────────────────────────────────────────────
+
+func (h *Handler) ListCollections(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	h.Store.RLock()
+	defer h.Store.RUnlock()
+
+	out := make([]map[string]any, 0)
+	for _, c := range h.Store.StarCollections {
+		if c.UserID == ctx.UserID {
+			out = append(out, map[string]any{
+				"_id": c.ID, "name": c.Name, "color": c.Color, "created_at": c.CreatedAt,
+			})
+		}
+	}
+	api.WriteResult(w, api.Ok(out))
+}
+
+func (h *Handler) CreateCollection(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	var body struct {
+		Name  string `json:"name"`
+		Color string `json:"color"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Name == "" {
+		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Name is required.", 400, nil))
+		return
+	}
+	now := time.Now()
+	c := &store.StarCollection{
+		ID: store.NewID("col"), UserID: ctx.UserID, SchoolID: ctx.SchoolID,
+		Name: body.Name, Color: body.Color, CreatedAt: now,
+	}
+	h.Store.Lock()
+	h.Store.StarCollections = append(h.Store.StarCollections, c)
+	h.Store.Unlock()
+	h.Save("star_collections", c)
+	api.WriteResult(w, api.Ok(map[string]any{"_id": c.ID, "name": c.Name, "color": c.Color}))
+}
+
+func (h *Handler) DeleteCollection(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	id := chi.URLParam(r, "id")
+	h.Store.Lock()
+	defer h.Store.Unlock()
+	for i, c := range h.Store.StarCollections {
+		if c.ID == id && c.UserID == ctx.UserID {
+			h.Store.StarCollections = append(h.Store.StarCollections[:i], h.Store.StarCollections[i+1:]...)
+			h.Save("star_collections:delete", id)
+			api.WriteResult(w, api.Ok(map[string]any{"deleted": true}))
+			return
+		}
+	}
+	api.WriteResult(w, api.Fail("NOT_FOUND", "Collection not found.", 404, nil))
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────
 
 func (h *Handler) toMap(bq *store.BankQuestion) map[string]any {

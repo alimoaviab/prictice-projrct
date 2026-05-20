@@ -384,3 +384,64 @@ type PaperDraft struct {
 	PaperDataJSON string    `json:"paper_data_json"`
 	UpdatedAt     time.Time `json:"updated_at"`
 }
+
+// ─── Star Collections ────────────────────────────────────────────────────
+
+type StarCollection struct {
+	ID        string    `json:"_id"`
+	UserID    string    `json:"user_id"`
+	SchoolID  string    `json:"school_id"`
+	Name      string    `json:"name"`
+	Color     string    `json:"color"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// ─── Import Logs ─────────────────────────────────────────────────────────
+
+type ImportLog struct {
+	ID           string    `json:"_id"`
+	TeacherID    string    `json:"teacher_id"`
+	SchoolID     string    `json:"school_id"`
+	FileName     string    `json:"file_name"`
+	TotalRows    int       `json:"total_rows"`
+	SuccessCount int       `json:"success_count"`
+	ErrorCount   int       `json:"error_count"`
+	Status       string    `json:"status"` // processing | completed | failed
+	Errors       string    `json:"errors"` // JSON
+	CreatedAt    time.Time `json:"created_at"`
+}
+
+// ─── Exam Security ───────────────────────────────────────────────────────
+
+type ExamSecuritySettings struct {
+	ExamID             string `json:"exam_id"`
+	ShuffleQuestions   bool   `json:"shuffle_questions"`
+	ShuffleOptions     bool   `json:"shuffle_options"`
+	IPRestriction      bool   `json:"ip_restriction"`
+	MaxTabSwitches     int    `json:"max_tab_switches"`
+	RequireFullscreen  bool   `json:"require_fullscreen"`
+	WebcamEnabled      bool   `json:"webcam_enabled"`
+	PerQuestionTimeLimit int  `json:"per_question_time_limit"` // seconds, 0 = disabled
+}
+
+type ExamSecurityLog struct {
+	ID        string    `json:"_id"`
+	ExamID    string    `json:"exam_id"`
+	StudentID string    `json:"student_id"`
+	EventType string    `json:"event_type"` // tab_switch, copy_attempt, fullscreen_exit, ip_change
+	EventData string    `json:"event_data"` // JSON
+	Timestamp time.Time `json:"timestamp"`
+}
+
+// ─── AI Generation Logs ──────────────────────────────────────────────────
+
+type AIGenerationLog struct {
+	ID         string    `json:"_id"`
+	TeacherID  string    `json:"teacher_id"`
+	SchoolID   string    `json:"school_id"`
+	Prompt     string    `json:"prompt"`
+	Model      string    `json:"model"`
+	TokensUsed int       `json:"tokens_used"`
+	QuestionsGenerated int `json:"questions_generated"`
+	CreatedAt  time.Time `json:"created_at"`
+}

@@ -12,6 +12,7 @@ import (
 	"github.com/eduplexo/backend-go/internal/config"
 	"github.com/eduplexo/backend-go/internal/domain/academicyear"
 	"github.com/eduplexo/backend-go/internal/domain/announcements"
+	"github.com/eduplexo/backend-go/internal/domain/analytics"
 	"github.com/eduplexo/backend-go/internal/domain/attendance"
 	authdomain "github.com/eduplexo/backend-go/internal/domain/auth"
 	"github.com/eduplexo/backend-go/internal/domain/behavior"
@@ -21,6 +22,7 @@ import (
 	"github.com/eduplexo/backend-go/internal/domain/dashboard"
 	"github.com/eduplexo/backend-go/internal/domain/events"
 	"github.com/eduplexo/backend-go/internal/domain/exams"
+	"github.com/eduplexo/backend-go/internal/domain/examsecurity"
 	"github.com/eduplexo/backend-go/internal/domain/fees"
 	"github.com/eduplexo/backend-go/internal/domain/finance"
 	"github.com/eduplexo/backend-go/internal/domain/homework"
@@ -310,6 +312,9 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Post("/question-bank/{id}/star", qbH.Star)
 			r.Post("/question-bank/{id}/unstar", qbH.Unstar)
 			r.Get("/question-bank/starred", qbH.GetStarred)
+			r.Get("/question-bank/collections", qbH.ListCollections)
+			r.Post("/question-bank/collections", qbH.CreateCollection)
+			r.Delete("/question-bank/collections/{id}", qbH.DeleteCollection)
 			// Moderation (super admin)
 			r.Get("/question-bank/moderation", qbH.ListPending)
 			r.Post("/question-bank/{id}/approve", qbH.Approve)
@@ -326,6 +331,19 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Post("/paper-drafts/save", chH.SaveDraft)
 			r.Get("/paper-drafts/load", chH.LoadDraft)
 			r.Delete("/paper-drafts", chH.DiscardDraft)
+
+			// ─── Exam Security / Proctoring ───────────────────────────────
+			esH := examsecurity.New(s, saveFn)
+			r.Post("/exams/{id}/security-settings", esH.SaveSettings)
+			r.Get("/exams/{id}/security-settings", esH.GetSettings)
+			r.Get("/exams/{id}/security-log", esH.GetLogs)
+			r.Post("/security-events", esH.LogEvent)
+
+			// ─── Analytics ────────────────────────────────────────────────
+			anlH := analytics.New(s)
+			r.Get("/analytics/exam/{examId}/class-summary", anlH.ClassSummary)
+			r.Get("/analytics/chapter-performance", anlH.ChapterPerformance)
+			r.Get("/analytics/school-overview", anlH.SchoolOverview)
 
 			// ─── Fees domain (full implementation) ────────────────────────
 			fH := fees.NewWithCache(s, saveFn, rdb)

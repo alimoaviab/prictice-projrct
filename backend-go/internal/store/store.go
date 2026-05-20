@@ -78,6 +78,19 @@ type MemStore struct {
 	// Chapters & Drafts.
 	Chapters    []*Chapter
 	PaperDrafts []*PaperDraft
+
+	// Star Collections.
+	StarCollections []*StarCollection
+
+	// Import Logs.
+	ImportLogs []*ImportLog
+
+	// Exam Security.
+	ExamSecuritySettings []*ExamSecuritySettings
+	ExamSecurityLogs     []*ExamSecurityLog
+
+	// AI Generation.
+	AIGenerationLogs []*AIGenerationLog
 	Invoices       []*Invoice
 	Transactions   []*Transaction
 	Subscriptions  []*Subscription
