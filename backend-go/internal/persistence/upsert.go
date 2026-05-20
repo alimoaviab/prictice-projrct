@@ -69,6 +69,10 @@ func upsertRow(ctx context.Context, tx pgx.Tx, table string, doc any) error {
 		return upsertSchoolSettings(ctx, tx, v)
 	case *store.AuditLog:
 		return upsertAuditLog(ctx, tx, v)
+	case *store.CertificateTemplate:
+		return upsertCertificateTemplate(ctx, tx, v)
+	case *store.GeneratedCertificate:
+		return upsertGeneratedCertificate(ctx, tx, v)
 	}
 	return fmt.Errorf("upsert: unknown document type for table %s", table)
 }
@@ -736,5 +740,45 @@ func upsertAuditLog(ctx context.Context, tx pgx.Tx, v *store.AuditLog) error {
 	`, v.ID, v.SchoolID, v.ActorID, v.ActorRole, v.ActorEmail,
 		v.Action, v.EntityType, v.EntityID, before, after, meta,
 		"", "", v.CreatedAt)
+	return err
+}
+
+// ─── Certificate Templates ───────────────────────────────────────────────
+
+func upsertCertificateTemplate(ctx context.Context, tx pgx.Tx, v *store.CertificateTemplate) error {
+	_, err := tx.Exec(ctx, `
+		INSERT INTO certificate_templates (id, school_id, name, type, orientation,
+			background_url, watermark_url, border_style, body_text, elements,
+			is_default, status, created_at, updated_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+		ON CONFLICT (id) DO UPDATE SET
+			name=EXCLUDED.name, type=EXCLUDED.type, orientation=EXCLUDED.orientation,
+			background_url=EXCLUDED.background_url, watermark_url=EXCLUDED.watermark_url,
+			border_style=EXCLUDED.border_style, body_text=EXCLUDED.body_text,
+			elements=EXCLUDED.elements, is_default=EXCLUDED.is_default,
+			status=EXCLUDED.status, updated_at=EXCLUDED.updated_at
+	`, v.ID, v.SchoolID, v.Name, v.Type, v.Orientation,
+		v.BackgroundURL, v.WatermarkURL, v.BorderStyle, v.BodyText, v.Elements,
+		v.IsDefault, v.Status, v.CreatedAt, v.UpdatedAt)
+	return err
+}
+
+// ─── Generated Certificates ──────────────────────────────────────────────
+
+func upsertGeneratedCertificate(ctx context.Context, tx pgx.Tx, v *store.GeneratedCertificate) error {
+	_, err := tx.Exec(ctx, `
+		INSERT INTO generated_certificates (id, school_id, template_id, student_id,
+			student_name, class_name, certificate_type, certificate_no,
+			verification_code, qr_code_url, pdf_url, issue_date, expiry_date,
+			status, created_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+		ON CONFLICT (id) DO UPDATE SET
+			student_name=EXCLUDED.student_name, class_name=EXCLUDED.class_name,
+			status=EXCLUDED.status, qr_code_url=EXCLUDED.qr_code_url,
+			pdf_url=EXCLUDED.pdf_url
+	`, v.ID, v.SchoolID, v.TemplateID, v.StudentID,
+		v.StudentName, v.ClassName, v.CertificateType, v.CertificateNo,
+		v.VerificationCode, v.QRCodeURL, v.PDFURL, v.IssueDate, v.ExpiryDate,
+		v.Status, v.CreatedAt)
 	return err
 }

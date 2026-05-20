@@ -70,6 +70,15 @@ export function CertificateGeneratePage() {
   const students = studentState.data || [];
   const classes = classState.data || [];
 
+  // Load school settings for print
+  const { state: settingsState, run: runSettings } = useSafeAsync<any>();
+  useEffect(() => {
+    void runSettings(async () => {
+      const r = await serviceRequest<any>("/api/settings");
+      return r.ok ? r.data : null;
+    }).catch(() => {});
+  }, [runSettings]);
+
   const filteredStudents = useMemo(() => {
     let list = students;
     if (classFilter !== "all") {
@@ -234,7 +243,7 @@ export function CertificateGeneratePage() {
             </div>
           </Card>
 
-          {/* Generate Button */}
+          {/* Generate & Print Buttons */}
           <div className="flex items-center gap-3">
             <Button
               type="button"
@@ -249,10 +258,43 @@ export function CertificateGeneratePage() {
                 </>
               ) : (
                 <>
-                  <span className="material-symbols-outlined text-base mr-2">print</span>
+                  <span className="material-symbols-outlined text-base mr-2">verified</span>
                   Generate {selectedStudents.size} Certificate{selectedStudents.size !== 1 ? "s" : ""}
                 </>
               )}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                if (selectedStudents.size === 0 || !template) return;
+                const selectedList = students.filter(s => selectedStudents.has(s._id));
+                const schoolName = settingsState?.data?.profile?.school_name || "School";
+                const certType = template.type.replace("_", " ");
+                const printWin = window.open("", "_blank");
+                if (!printWin) return;
+                const certsHtml = selectedList.map((stu, idx) => `
+                  <div class="cert ${idx > 0 ? 'page-break' : ''}">
+                    <p class="school">${schoolName}</p>
+                    <div class="divider"></div>
+                    <h1 class="title">${certType}</h1>
+                    <div class="divider"></div>
+                    <p class="body">This is to certify that <strong>${stu.first_name} ${stu.last_name}</strong> of Class <strong>${stu.class_name || ""}</strong> has been a student of this institution.</p>
+                    <div class="footer">
+                      <div class="sig"><div class="sig-line"></div><span class="sig-label">Principal</span></div>
+                      <div class="sig"><div class="sig-line"></div><span class="sig-label">Class Teacher</span></div>
+                    </div>
+                  </div>
+                `).join("");
+                printWin.document.write(`<!DOCTYPE html><html><head><title>Certificates</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Georgia,serif}.cert{width:100%;padding:60px;text-align:center;position:relative;border:3px solid #d4a853;margin:20px auto;max-width:800px}.cert::before{content:'';position:absolute;inset:8px;border:1px solid #d4a85380;border-radius:4px}.school{font-size:26px;font-weight:bold}.title{font-size:20px;color:#1e40af;text-transform:uppercase;letter-spacing:3px;margin:20px 0;font-weight:bold}.divider{width:80px;height:2px;background:#d4a853;margin:10px auto}.body{font-size:14px;line-height:1.8;margin:30px auto;max-width:500px;color:#333}.footer{display:flex;justify-content:space-between;margin-top:40px;padding-top:20px;border-top:1px solid #eee}.sig{text-align:center}.sig-line{width:120px;height:1px;background:#666;margin-bottom:4px}.sig-label{font-size:10px;color:#666;text-transform:uppercase}.page-break{page-break-before:always}@media print{body{padding:0}.cert{border:3px solid #d4a853;margin:0;page-break-inside:avoid}}</style></head><body>${certsHtml}</body></html>`);
+                printWin.document.close();
+                setTimeout(() => printWin.print(), 300);
+              }}
+              disabled={selectedStudents.size === 0}
+              className="h-11 px-6"
+            >
+              <span className="material-symbols-outlined text-base mr-2">print</span>
+              Print {selectedStudents.size} Certificate{selectedStudents.size !== 1 ? "s" : ""}
             </Button>
           </div>
         </>

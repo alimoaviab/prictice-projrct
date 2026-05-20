@@ -64,6 +64,8 @@ func (p *Persister) Load(ctx context.Context, s *store.MemStore) error {
 		{"fee_payments", p.loadFeePayments},
 		{"school_settings", p.loadSchoolSettings},
 		{"audit_logs", p.loadAuditLogs},
+		{"certificate_templates", p.loadCertificateTemplates},
+		{"generated_certificates", p.loadGeneratedCertificates},
 	}
 
 	s.Lock()
@@ -880,3 +882,46 @@ func (p *Persister) loadAuditLogs(ctx context.Context, s *store.MemStore) error 
 
 // silence "imported and not used" if we ever drop a usage.
 var _ = pgx.ErrNoRows
+
+func (p *Persister) loadCertificateTemplates(ctx context.Context, s *store.MemStore) error {
+	rows, err := p.pool.Query(ctx, `
+		SELECT id, school_id, name, type, orientation, background_url, watermark_url,
+			border_style, body_text, elements, is_default, status, created_at, updated_at
+		FROM certificate_templates`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var v store.CertificateTemplate
+		if err := rows.Scan(&v.ID, &v.SchoolID, &v.Name, &v.Type, &v.Orientation,
+			&v.BackgroundURL, &v.WatermarkURL, &v.BorderStyle, &v.BodyText, &v.Elements,
+			&v.IsDefault, &v.Status, &v.CreatedAt, &v.UpdatedAt); err != nil {
+			return err
+		}
+		s.CertificateTemplates = append(s.CertificateTemplates, &v)
+	}
+	return rows.Err()
+}
+
+func (p *Persister) loadGeneratedCertificates(ctx context.Context, s *store.MemStore) error {
+	rows, err := p.pool.Query(ctx, `
+		SELECT id, school_id, template_id, student_id, student_name, class_name,
+			certificate_type, certificate_no, verification_code, qr_code_url, pdf_url,
+			issue_date, expiry_date, status, created_at
+		FROM generated_certificates`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var v store.GeneratedCertificate
+		if err := rows.Scan(&v.ID, &v.SchoolID, &v.TemplateID, &v.StudentID, &v.StudentName,
+			&v.ClassName, &v.CertificateType, &v.CertificateNo, &v.VerificationCode,
+			&v.QRCodeURL, &v.PDFURL, &v.IssueDate, &v.ExpiryDate, &v.Status, &v.CreatedAt); err != nil {
+			return err
+		}
+		s.GeneratedCertificates = append(s.GeneratedCertificates, &v)
+	}
+	return rows.Err()
+}
