@@ -9,34 +9,34 @@ import { apiRequest } from '@/lib/api'
 
 type ApprovalTab = 'pending' | 'approved' | 'rejected'
 
-interface BankQuestion {
+interface Question {
   _id: string
   school_id: string
   created_by: string
   created_by_name: string
-  school_name: string
-  board: string
-  class_name: string
-  subject: string
-  chapter: string
+  class_id: string
+  subject_id?: string
+  subject_name?: string
+  chapter_id?: string
   type: string
   difficulty: string
   question_html: string
   options?: { option_text: string; is_correct: boolean }[]
-  visibility: string
+  marks?: number
+  is_global: boolean
   approval_status: string
   created_at: string
 }
 
 export function ModerationPage() {
   const [tab, setTab] = useState<ApprovalTab>('pending')
-  const [questions, setQuestions] = useState<BankQuestion[]>([])
+  const [questions, setQuestions] = useState<Question[]>([])
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
 
   async function loadQuestions() {
     setLoading(true)
-    const result = await apiRequest<BankQuestion[]>(`/api/question-bank/moderation?approval_status=${tab}`)
+    const result = await apiRequest<Question[]>(`/api/questions?approval_status=${tab}`)
     if (result.ok && result.data) {
       const data = Array.isArray(result.data) ? result.data : (result.data as any)?.data || []
       setQuestions(data)
@@ -52,7 +52,7 @@ export function ModerationPage() {
 
   async function handleApprove(id: string) {
     setActionLoading(id)
-    const result = await apiRequest(`/api/question-bank/${id}/approve`, { method: 'POST' })
+    const result = await apiRequest(`/api/questions/${id}/approve`, { method: 'POST' })
     if (result.ok) {
       setQuestions((prev) => prev.filter((q) => q._id !== id))
     }
@@ -61,7 +61,7 @@ export function ModerationPage() {
 
   async function handleReject(id: string) {
     setActionLoading(id)
-    const result = await apiRequest(`/api/question-bank/${id}/reject`, { method: 'POST' })
+    const result = await apiRequest(`/api/questions/${id}/reject`, { method: 'POST' })
     if (result.ok) {
       setQuestions((prev) => prev.filter((q) => q._id !== id))
     }
@@ -74,7 +74,7 @@ export function ModerationPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Community Moderation</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Review and approve teacher-submitted questions for the global question bank.</p>
+          <p className="text-sm text-slate-500 mt-0.5">Review and approve teacher-submitted questions for the global question repository.</p>
         </div>
       </div>
 
@@ -112,7 +112,7 @@ export function ModerationPage() {
       {/* Empty */}
       {!loading && questions.length === 0 && (
         <div className="text-center py-16 bg-white rounded-xl border border-slate-200">
-          <p className="text-3xl mb-3">{tab === 'pending' ? '✅' : tab === 'approved' ? '📚' : '📭'}</p>
+          <p className="text-3xl mb-3">{tab === 'pending' ? '✅' : tab === 'approved' ? '' : '📭'}</p>
           <p className="text-sm font-medium text-slate-600">
             {tab === 'pending' ? 'No questions pending review' : tab === 'approved' ? 'No approved questions yet' : 'No rejected questions'}
           </p>
@@ -153,15 +153,12 @@ export function ModerationPage() {
                   <div className="flex flex-wrap items-center gap-2 mt-3">
                     <span className="text-[10px] font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded">{q.type.toUpperCase()}</span>
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${q.difficulty === 'easy' ? 'bg-emerald-50 text-emerald-600' : q.difficulty === 'hard' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'}`}>{q.difficulty}</span>
-                    {q.class_name && <span className="text-[10px] text-slate-500 bg-slate-50 px-2 py-0.5 rounded">{q.class_name}</span>}
-                    {q.subject && <span className="text-[10px] text-slate-500">· {q.subject}</span>}
-                    {q.chapter && <span className="text-[10px] text-slate-400">· {q.chapter}</span>}
+                    {q.subject_name && <span className="text-[10px] text-slate-500 bg-slate-50 px-2 py-0.5 rounded">{q.subject_name}</span>}
                   </div>
 
                   {/* Teacher info */}
                   <div className="flex items-center gap-2 mt-2 text-[10px] text-slate-400">
                     <span>By: {q.created_by_name || 'Teacher'}</span>
-                    {q.school_name && <span>· {q.school_name}</span>}
                     <span>· {new Date(q.created_at).toLocaleDateString()}</span>
                   </div>
                 </div>

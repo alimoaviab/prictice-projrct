@@ -11,6 +11,9 @@ export interface QuestionPaper {
   title: string;
   class_id: string;
   class_name: string;
+  subject_id?: string;
+  subject_name?: string;
+  chapter_ids?: string[];
   teacher_id?: string;
   teacher_name?: string;
   date?: string;
@@ -34,6 +37,8 @@ export interface PaperQuestion {
 export interface QuestionPaperFormInput {
   title: string;
   class_id: string;
+  subject_id?: string;
+  chapter_ids?: string[];
   teacher_id?: string;
   date?: string;
   questions?: PaperQuestion[];

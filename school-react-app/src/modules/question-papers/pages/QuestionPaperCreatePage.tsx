@@ -1,16 +1,16 @@
 /**
- * Create Question Paper — Full flow with Add Questions drawer.
+ * Create Question Paper — Full flow with integrated question creation.
  * 
  * CRITICAL: NO PAGE RELOAD on any action. Everything is React state + API calls.
- * - Adding questions: state update only
- * - Opening drawer: state toggle
- * - Saving: API call, no navigation
+ * - Class → Subject → Chapter → Question flow
+ * - Multi-chapter selection support
+ * - Questions stored in internal repository
  * - Preview: live from state
  */
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Card, Button, Input, Skeleton } from "@/components/ui";
+import { Card, Button, Skeleton } from "@/components/ui";
 import { Drawer } from "@/components/ui/Drawer";
 import { useSafeAsync } from "@/hooks/useSafeAsync";
 import { serviceRequest } from "@/services/service-client";
@@ -21,8 +21,9 @@ import { showToast } from "@/utils/toast";
 
 interface ClassRow { _id: string; id?: string; name: string; }
 interface TeacherRow { _id: string; id?: string; first_name: string; last_name: string; }
-
-// ─── Main Page Component ─────────────────────────────────────────────────
+interface SubjectRow { _id: string; id?: string; name: string; }
+interface ChapterRow { _id: string; id?: string; title: string; subject_id?: string; class_id?: string; is_default?: boolean; }
+interface QuestionRow { _id: string; id?: string; question_html: string; type: string; difficulty: string; subject_id?: string; chapter_id?: string; class_id?: string; options?: any; marks?: number; }
 
 export function QuestionPaperCreatePage() {
   const navigate = useNavigate();
@@ -34,6 +35,8 @@ export function QuestionPaperCreatePage() {
   // Form state
   const [title, setTitle] = useState("");
   const [classId, setClassId] = useState("");
+  const [subjectId, setSubjectId] = useState("");
+  const [selectedChapterIds, setSelectedChapterIds] = useState<string[]>([]);
   const [teacherId, setTeacherId] = useState("");
   const [date, setDate] = useState("");
   const [questions, setQuestions] = useState<PaperQuestion[]>([]);
@@ -44,7 +47,6 @@ export function QuestionPaperCreatePage() {
     void runClasses(async () => {
       const r = await serviceRequest<any>("/api/classes");
       if (!r.ok) throw new Error("Failed to load classes");
-      // Handle various response shapes
       const raw = r.data;
       if (Array.isArray(raw)) return raw;
       if (raw?.data && Array.isArray(raw.data)) return raw.data;
@@ -67,6 +69,78 @@ export function QuestionPaperCreatePage() {
     });
   }, [runTeachers]);
 
+  // Fetch subjects for selected class
+  const { state: subjectState, run: runSubjects } = useSafeAsync<SubjectRow[]>();
+  useEffect(() => {
+    if (!classId) {
+      setSubjectId("");
+      return;
+    }
+    void runSubjects(async () => {
+      const r = await serviceRequest<any>(`/api/classes/${classId}/subjects`);
+      if (!r.ok) throw new Error("Failed to load subjects");
+      const raw = r.data;
+      if (Array.isArray(raw)) return raw;
+      if (raw?.data && Array.isArray(raw.data)) return raw.data;
+      if (raw?.items && Array.isArray(raw.items)) return raw.items;
+      return [];
+    });
+  }, [runSubjects, classId]);
+
+  // Fetch chapters for selected class/subject
+  const { state: chapterState, run: runChapters } = useSafeAsync<ChapterRow[]>();
+  useEffect(() => {
+    if (!classId || !subjectId) {
+      setSelectedChapterIds([]);
+      return;
+    }
+    void runChapters(async () => {
+      const r = await serviceRequest<any>(`/api/chapters?class_id=${classId}&subject_id=${subjectId}`);
+      if (!r.ok) throw new Error("Failed to load chapters");
+      const raw = r.data;
+      if (Array.isArray(raw)) return raw;
+      if (raw?.data && Array.isArray(raw.data)) return raw.data;
+      if (raw?.items && Array.isArray(raw.items)) return raw.items;
+      return [];
+    });
+  }, [runChapters, classId, subjectId]);
+
+  // Seed default chapters when subject is selected
+  useEffect(() => {
+    if (!classId || !subjectId) return;
+    void (async () => {
+      await serviceRequest<any>("/api/chapters/seed-defaults", {
+        method: "POST",
+        body: JSON.stringify({ class_id: classId, subject_id: subjectId }),
+      });
+      // Reload chapters after seeding
+      const r = await serviceRequest<any>(`/api/chapters?class_id=${classId}&subject_id=${subjectId}`);
+      if (r.ok) {
+        const raw = r.data;
+        const chapters = Array.isArray(raw) ? raw : raw?.data || raw?.items || [];
+        chapterState.data = chapters;
+      }
+    })();
+  }, [classId, subjectId]);
+
+  // Fetch questions for selected filters
+  const { state: questionState, run: runQuestions } = useSafeAsync<QuestionRow[]>();
+  useEffect(() => {
+    if (!classId) return;
+    void runQuestions(async () => {
+      const params = new URLSearchParams({ class_id: classId });
+      if (subjectId) params.set("subject_id", subjectId);
+      if (selectedChapterIds.length === 1) params.set("chapter_id", selectedChapterIds[0]);
+      const r = await serviceRequest<any>(`/api/questions?${params.toString()}`);
+      if (!r.ok) throw new Error("Failed to load questions");
+      const raw = r.data;
+      if (Array.isArray(raw)) return raw;
+      if (raw?.data && Array.isArray(raw.data)) return raw.data;
+      if (raw?.items && Array.isArray(raw.items)) return raw.items;
+      return [];
+    });
+  }, [runQuestions, classId, subjectId, selectedChapterIds]);
+
   // School settings
   const { state: settingsState, run: runSettings } = useSafeAsync<any>();
   useEffect(() => {
@@ -78,6 +152,9 @@ export function QuestionPaperCreatePage() {
 
   const classes = classState.data || [];
   const teachers = teacherState.data || [];
+  const subjects = subjectState.data || [];
+  const chapters = chapterState.data || [];
+  const bankQuestions = questionState.data || [];
   const resolvedSchoolName = settingsState.data?.profile?.school_name || schoolName || "";
 
   const selectedClass = classes.find((c) => (c._id || c.id) === classId);
@@ -85,6 +162,23 @@ export function QuestionPaperCreatePage() {
   const teacherName = selectedTeacher ? `${selectedTeacher.first_name} ${selectedTeacher.last_name}` : "";
 
   const isLoading = classState.status === "loading" || classState.status === "idle";
+
+  // Toggle chapter selection
+  const toggleChapter = useCallback((chapterId: string) => {
+    setSelectedChapterIds((prev) =>
+      prev.includes(chapterId) ? prev.filter((id) => id !== chapterId) : [...prev, chapterId]
+    );
+  }, []);
+
+  // Select all chapters
+  const selectAllChapters = useCallback(() => {
+    setSelectedChapterIds(chapters.map((c) => c._id || c.id!));
+  }, [chapters]);
+
+  // Clear chapter selection
+  const clearChapters = useCallback(() => {
+    setSelectedChapterIds([]);
+  }, []);
 
   // Add question to paper (no reload)
   const addQuestion = useCallback((q: PaperQuestion) => {
@@ -120,6 +214,8 @@ export function QuestionPaperCreatePage() {
       const result = await create({
         title: title.trim(),
         class_id: classId,
+        subject_id: subjectId || undefined,
+        chapter_ids: selectedChapterIds.length > 0 ? selectedChapterIds : undefined,
         teacher_id: teacherId || undefined,
         date: date || undefined,
         questions,
@@ -182,7 +278,7 @@ export function QuestionPaperCreatePage() {
                     <label className="text-[11px] font-bold text-slate-500">Class *</label>
                     <select
                       value={classId}
-                      onChange={(e) => setClassId(e.target.value)}
+                      onChange={(e) => { setClassId(e.target.value); setSubjectId(""); setSelectedChapterIds([]); }}
                       className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm font-medium text-slate-900 focus:border-blue-500 outline-none bg-white"
                     >
                       <option value="">Select Class</option>
@@ -191,6 +287,55 @@ export function QuestionPaperCreatePage() {
                       ))}
                     </select>
                   </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-500">Subject</label>
+                    <select
+                      value={subjectId}
+                      onChange={(e) => { setSubjectId(e.target.value); setSelectedChapterIds([]); }}
+                      className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm font-medium text-slate-900 focus:border-blue-500 outline-none bg-white"
+                    >
+                      <option value="">Select Subject</option>
+                      {subjects.map((s) => (
+                        <option key={s._id || s.id} value={s._id || s.id}>{s.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Multi-Chapter Selection */}
+                {classId && subjectId && chapters.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-slate-500">Chapters</label>
+                      <div className="flex gap-2">
+                        <button type="button" onClick={selectAllChapters} className="text-[10px] font-bold text-indigo-600 hover:underline">All</button>
+                        <button type="button" onClick={clearChapters} className="text-[10px] font-bold text-slate-400 hover:text-slate-600">Clear</button>
+                      </div>
+                    </div>
+                    <div className="max-h-32 overflow-y-auto space-y-1 border border-slate-100 rounded-lg p-2">
+                      {chapters.map((ch) => {
+                        const checked = selectedChapterIds.includes(ch._id || ch.id!);
+                        return (
+                          <label key={ch._id || ch.id} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-slate-50 rounded px-1 py-0.5">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleChapter(ch._id || ch.id!)}
+                              className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            <span className="text-slate-700">{ch.title}</span>
+                            {ch.is_default && <span className="text-[9px] text-slate-400">(default)</span>}
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {selectedChapterIds.length > 0 && (
+                      <p className="text-[10px] text-slate-400">{selectedChapterIds.length} chapter(s) selected</p>
+                    )}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label className="text-[11px] font-bold text-slate-500">Teacher</label>
                     <select
@@ -204,16 +349,15 @@ export function QuestionPaperCreatePage() {
                       ))}
                     </select>
                   </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-500">Date</label>
-                  <input
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm font-medium text-slate-900 focus:border-blue-500 outline-none"
-                  />
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-500">Date</label>
+                    <input
+                      type="date"
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                      className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm font-medium text-slate-900 focus:border-blue-500 outline-none"
+                    />
+                  </div>
                 </div>
               </>
             )}
@@ -361,6 +505,10 @@ export function QuestionPaperCreatePage() {
         isOpen={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         onAdd={addQuestion}
+        classId={classId}
+        subjectId={subjectId}
+        selectedChapterIds={selectedChapterIds}
+        bankQuestions={bankQuestions}
       />
     </div>
   );
@@ -372,10 +520,18 @@ function AddQuestionDrawer({
   isOpen,
   onClose,
   onAdd,
+  classId,
+  subjectId,
+  selectedChapterIds,
+  bankQuestions,
 }: {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (q: PaperQuestion) => void;
+  classId: string;
+  subjectId: string;
+  selectedChapterIds: string[];
+  bankQuestions: QuestionRow[];
 }) {
   const [tab, setTab] = useState<"create" | "bank">("create");
 
@@ -386,36 +542,73 @@ function AddQuestionDrawer({
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
   const [options, setOptions] = useState(["", "", "", ""]);
   const [correctAnswer, setCorrectAnswer] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  function resetForm() {
-    setQuestionText("");
-    setMarks(5);
-    setDifficulty("medium");
-    setOptions(["", "", "", ""]);
-    setCorrectAnswer("");
-  }
-
-  function handleAdd() {
+  async function handleCreateAndAdd() {
     if (!questionText.trim()) {
       showToast("Please enter the question text.", "error");
       return;
     }
 
+    setSaving(true);
+    try {
+      // Save to internal repository
+      const result = await serviceRequest<any>("/api/questions", {
+        method: "POST",
+        body: JSON.stringify({
+          class_id: classId,
+          subject_id: subjectId || undefined,
+          chapter_id: selectedChapterIds.length === 1 ? selectedChapterIds[0] : undefined,
+          type,
+          difficulty,
+          question_html: questionText.trim(),
+          options: type === "mcq" ? JSON.stringify(options.filter((o) => o.trim()).map((o, i) => ({ option_text: o.trim(), is_correct: o.trim() === correctAnswer }))) : undefined,
+          marks,
+        }),
+      });
+
+      if (!result.ok) {
+        showToast(result.error?.message || "Failed to save question.", "error");
+        return;
+      }
+
+      // Add to paper
+      const newQuestion: PaperQuestion = {
+        id: `q_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        type,
+        question: questionText.trim(),
+        marks,
+        difficulty,
+        options: type === "mcq" ? options.filter((o) => o.trim()) : undefined,
+        correct_answer: type === "mcq" ? correctAnswer : undefined,
+        sort_order: 0,
+      };
+
+      onAdd(newQuestion);
+      setQuestionText("");
+      setMarks(5);
+      setDifficulty("medium");
+      setOptions(["", "", "", ""]);
+      setCorrectAnswer("");
+      showToast("Question created and added to paper.", "success");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleAddFromBank(q: QuestionRow) {
     const newQuestion: PaperQuestion = {
-      id: `q_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      type,
-      question: questionText.trim(),
-      marks,
-      difficulty,
-      options: type === "mcq" ? options.filter((o) => o.trim()) : undefined,
-      correct_answer: type === "mcq" ? correctAnswer : undefined,
+      id: `bank_${q._id || q.id}`,
+      type: q.type as QuestionType,
+      question: q.question_html,
+      marks: q.marks || 5,
+      difficulty: q.difficulty as Difficulty,
+      options: q.type === "mcq" && q.options ? q.options.map((o: any) => o.option_text) : undefined,
+      correct_answer: q.type === "mcq" && q.options ? q.options.find((o: any) => o.is_correct)?.option_text : undefined,
       sort_order: 0,
     };
-
     onAdd(newQuestion);
-    resetForm();
-    showToast("Question added to paper.", "success");
-    // Don't close drawer — teacher might want to add more
+    showToast("Question added from repository.", "success");
   }
 
   return (
@@ -441,7 +634,7 @@ function AddQuestionDrawer({
             onClick={() => setTab("bank")}
             className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-colors ${tab === "bank" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-400 hover:text-slate-600"}`}
           >
-            Question Bank
+            From Repository
           </button>
         </div>
 
@@ -546,19 +739,44 @@ function AddQuestionDrawer({
               </div>
 
               {/* Add Button */}
-              <Button onClick={handleAdd} disabled={!questionText.trim()} className="w-full h-10">
-                <span className="material-symbols-outlined text-sm mr-1.5">add</span>
-                Add to Paper
+              <Button onClick={handleCreateAndAdd} disabled={!questionText.trim() || saving} className="w-full h-10">
+                <span className="material-symbols-outlined text-sm mr-1.5">{saving ? "hourglass_empty" : "add"}</span>
+                {saving ? "Creating..." : "Create & Add to Paper"}
               </Button>
             </div>
           ) : (
-            /* Question Bank Tab — placeholder for future */
-            <div className="py-12 text-center">
-              <span className="material-symbols-outlined text-4xl text-slate-200 mb-3">library_books</span>
-              <p className="text-sm font-bold text-slate-500">Question Bank</p>
-              <p className="text-xs text-slate-400 mt-1">
-                Coming soon. You'll be able to search and select from previously created questions.
-              </p>
+            /* Repository Tab */
+            <div className="space-y-3">
+              {bankQuestions.length === 0 ? (
+                <div className="py-8 text-center">
+                  <span className="material-symbols-outlined text-3xl text-slate-200 mb-2">library_books</span>
+                  <p className="text-xs text-slate-400 font-medium">No questions in repository yet</p>
+                  <p className="text-[10px] text-slate-300 mt-1">Create questions to see them here</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                  {bankQuestions.map((q) => (
+                    <div key={q._id || q.id} className="flex items-start gap-2 p-3 rounded-lg border border-slate-100 bg-slate-50/50 hover:border-slate-200 transition-colors group">
+                      <div className="flex-1 min-w-0">
+                        <div
+                          className="text-xs font-medium text-slate-800 line-clamp-2"
+                          dangerouslySetInnerHTML={{ __html: q.question_html }}
+                        />
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">{q.type.toUpperCase()}</span>
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${q.difficulty === "easy" ? "bg-emerald-50 text-emerald-600" : q.difficulty === "hard" ? "bg-red-50 text-red-600" : "bg-amber-50 text-amber-600"}`}>{q.difficulty}</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleAddFromBank(q)}
+                        className="h-7 px-2.5 rounded-lg bg-indigo-600 text-white text-[10px] font-bold hover:bg-indigo-700 transition-colors shrink-0 opacity-0 group-hover:opacity-100"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

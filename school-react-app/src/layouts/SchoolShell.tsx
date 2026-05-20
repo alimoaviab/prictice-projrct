@@ -59,8 +59,6 @@ const adminNavGroups: NavGroup[] = [
       { label: "Live classes", href: "/admin/live-class", icon: "videocam" },
       { label: "Homework", href: "/admin/homework", icon: "assignment" },
       { label: "Question Papers", href: "/admin/question-papers", icon: "description" },
-      { label: "Question Bank", href: "/admin/question-bank", icon: "library_books" },
-      { label: "Chapters", href: "/admin/chapters", icon: "menu_book" },
     ],
   },
   {
@@ -440,42 +438,37 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
         </div>
 
         <nav className="flex-1 space-y-1.5 px-2 py-2.5 custom-scrollbar overflow-y-auto">
-          {navGroups.map((group) => {
-            const isExpanded = expandedGroups[group.label] !== false;
-            return (
-              <div key={group.label} className="space-y-0.5">
-                <div className="space-y-0.5">
-                  {group.items.map((item) => {
-                    const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-                    return isCollapsed ? (
-                      <Tooltip key={item.href} text={item.label}>
-                        <Link
-                          to={item.href}
-                          className={`flex h-7 w-7 items-center justify-center rounded transition-all duration-200 ${isActive ? "bg-blue-600 !text-white shadow-sm" : "text-slate-400 hover:bg-blue-50 hover:text-blue-600"}`}
-                        >
-                          <span className={`material-symbols-outlined text-[16px] ${isActive ? "font-bold" : ""}`}>
-                            {item.icon}
-                          </span>
-                        </Link>
-                      </Tooltip>
-                    ) : (
-                      <Link
-                        key={item.href}
-                        to={item.href}
-                        className={`group flex h-7 items-center gap-2.5 px-2.5 py-1 text-[11px] font-bold transition-all duration-200 rounded-lg ${isActive ? "bg-blue-600 !text-white shadow-md shadow-blue-600/20" : "text-slate-500 hover:bg-blue-50/50 hover:text-blue-600"}`}
-                      >
-                        <span className={`material-symbols-outlined text-[16px] transition-colors ${isActive ? "text-white" : "text-slate-400 group-hover:text-blue-600"}`}>
-                          {item.icon}
-                        </span>
-                        <span className="truncate tracking-tight">{item.label}</span>
-                        {isActive && !isCollapsed && <span className="ml-auto h-1 w-1 rounded-full bg-white/60" />}
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
+          {navGroups.map((group) => (
+            <div key={group.label} className="space-y-0.5">
+              {group.items.map((item) => {
+                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                return isCollapsed ? (
+                  <Tooltip key={item.href} text={item.label}>
+                    <Link
+                      to={item.href}
+                      className={`flex h-7 w-7 items-center justify-center rounded transition-all duration-200 ${isActive ? "bg-blue-600 !text-white shadow-sm" : "text-slate-400 hover:bg-blue-50 hover:text-blue-600"}`}
+                    >
+                      <span className={`material-symbols-outlined text-[16px] ${isActive ? "font-bold" : ""}`}>
+                        {item.icon}
+                      </span>
+                    </Link>
+                  </Tooltip>
+                ) : (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    className={`group flex h-7 items-center gap-2.5 px-2.5 py-1 text-[11px] font-bold transition-all duration-200 rounded-lg ${isActive ? "bg-blue-600 !text-white shadow-md shadow-blue-600/20" : "text-slate-500 hover:bg-blue-50/50 hover:text-blue-600"}`}
+                  >
+                    <span className={`material-symbols-outlined text-[16px] transition-colors ${isActive ? "text-white" : "text-slate-400 group-hover:text-blue-600"}`}>
+                      {item.icon}
+                    </span>
+                    <span className="truncate tracking-tight">{item.label}</span>
+                    {isActive && !isCollapsed && <span className="ml-auto h-1 w-1 rounded-full bg-white/60" />}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
         <div className={`mt-auto border-t border-slate-50 p-1.5 space-y-1 ${isCollapsed ? "flex flex-col items-center" : ""}`}>
