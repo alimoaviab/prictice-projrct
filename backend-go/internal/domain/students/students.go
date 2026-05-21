@@ -47,7 +47,7 @@ type Handler struct {
 	Cache            *cache.Client
 	repo             *repo.StudentRepo
 	LimitChecker     func(ctx context.Context, schoolID string) error // Subscription limit check
-	OnStudentCreated func(ctx *api.RequestContext, s *store.Student) // Callback hook when student is created
+	OnStudentCreated func(ctx *api.RequestContext, s *store.Student)  // Callback hook when student is created
 }
 
 func New(s *store.MemStore, save func(string, any)) *Handler {
@@ -263,24 +263,24 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 type createInput struct {
-	AdmissionNo string          `json:"admission_no"`
-	FirstName   string          `json:"first_name"`
-	LastName    string          `json:"last_name"`
-	ClassID     string          `json:"class_id"`
-	Section     string          `json:"section"`
-	Subjects    []string        `json:"subjects,omitempty"`
-	Guardian    store.Guardian  `json:"guardian"`
-	Email       string          `json:"email,omitempty"`
-	Password    string          `json:"password,omitempty"`
+	AdmissionNo string         `json:"admission_no"`
+	FirstName   string         `json:"first_name"`
+	LastName    string         `json:"last_name"`
+	ClassID     string         `json:"class_id"`
+	Section     string         `json:"section"`
+	Subjects    []string       `json:"subjects,omitempty"`
+	Guardian    store.Guardian `json:"guardian"`
+	Email       string         `json:"email,omitempty"`
+	Password    string         `json:"password,omitempty"`
 	// When the admin clicks "Link Student to this Parent" on the form,
 	// the frontend sends the existing parent's user_id here. We then
 	// skip the duplicate-email error and write a StudentParents link
 	// against the existing user instead of creating a new one.
 	LinkParentUserID string     `json:"link_parent_user_id,omitempty"`
-	Status      string          `json:"status,omitempty"`
-	RollNo      string          `json:"roll_no,omitempty"`
-	DateOfBirth *time.Time      `json:"date_of_birth,omitempty"`
-	Gender      string          `json:"gender,omitempty"`
+	Status           string     `json:"status,omitempty"`
+	RollNo           string     `json:"roll_no,omitempty"`
+	DateOfBirth      *time.Time `json:"date_of_birth,omitempty"`
+	Gender           string     `json:"gender,omitempty"`
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {

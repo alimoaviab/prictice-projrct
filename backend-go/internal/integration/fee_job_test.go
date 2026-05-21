@@ -38,11 +38,11 @@ func TestFeeGeneration_Async(t *testing.T) {
 	// Submit a fee generation job
 	jobID := store.NewID("job")
 	payload := map[string]any{
-		"school_id":       testSchoolID,
+		"school_id":        testSchoolID,
 		"academic_year_id": testYearID,
-		"class_ids":       []string{"cls_1", "cls_2"},
-		"month":           "May",
-		"year":            2025,
+		"class_ids":        []string{"cls_1", "cls_2"},
+		"month":            "May",
+		"year":             2025,
 	}
 
 	err := queue.Submit(ctx, "fee-generation", jobID, payload)
@@ -136,12 +136,12 @@ func TestFeeGeneration_WorkerProcesses(t *testing.T) {
 	// Submit job
 	jobID := store.NewID("job")
 	err = queue.Submit(ctx, "fee-generation", jobID, map[string]any{
-		"school_id":       testSchoolID,
+		"school_id":        testSchoolID,
 		"academic_year_id": testYearID,
-		"class_ids":       []string{"test_cls_integ"},
-		"month":           "June",
-		"year":            2025,
-		"generated_by":    "test_user",
+		"class_ids":        []string{"test_cls_integ"},
+		"month":            "June",
+		"year":             2025,
+		"generated_by":     "test_user",
 	})
 	require.NoError(t, err)
 

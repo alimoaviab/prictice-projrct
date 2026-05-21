@@ -29,7 +29,7 @@ func (h *Handler) syncInvoicesForClassLocked(ctx *api.RequestContext, classID st
 	now := time.Now()
 	month := strings.ToLower(now.Month().String())
 	year := now.Year()
-	
+
 	yearID := tenant.ResolveAcademicYearIDLocked(h.Store, ctx, "")
 	if yearID == "" {
 		return
@@ -62,7 +62,7 @@ func (h *Handler) syncInvoicesForClassLocked(ctx *api.RequestContext, classID st
 	}
 
 	dueAt := time.Date(year, now.Month(), 10, 23, 59, 59, 0, time.UTC)
-	
+
 	for _, stu := range students {
 		var existing *store.Fee
 		for _, f := range h.Store.Fees {

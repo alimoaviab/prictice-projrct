@@ -12,10 +12,10 @@ import (
 
 // Authenticator builds the auth middleware bound to the active config.
 // Mirrors `authenticateRequest` from old-app/shared/auth/middleware.ts:
-//   1. Look for the session cookie first.
-//   2. Fall back to the Authorization: Bearer header.
-//   3. Verify the JWT against the JWT_SECRET.
-//   4. Apply the optional x-academic-year-id header override.
+//  1. Look for the session cookie first.
+//  2. Fall back to the Authorization: Bearer header.
+//  3. Verify the JWT against the JWT_SECRET.
+//  4. Apply the optional x-academic-year-id header override.
 func Authenticator(cfg config.Config, s *store.MemStore) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -4,7 +4,8 @@
 // classes, fees, etc.
 //
 // Usage:
-//   go run ./cmd/seed
+//
+//	go run ./cmd/seed
 //
 // All data is sent via the running HTTP server's normal API. Make sure the
 // backend is running on :8080 before invoking this command.

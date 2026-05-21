@@ -1,10 +1,10 @@
 // Package repo provides direct PostgreSQL repositories that replace MemStore.
 //
 // Each repository:
-//   1. Checks Redis cache (where applicable)
-//   2. Queries PostgreSQL directly
-//   3. Caches the result in Redis
-//   4. Invalidates related caches on mutations
+//  1. Checks Redis cache (where applicable)
+//  2. Queries PostgreSQL directly
+//  3. Caches the result in Redis
+//  4. Invalidates related caches on mutations
 //
 // This eliminates O(n) in-memory scans and the single RWMutex bottleneck.
 package repo

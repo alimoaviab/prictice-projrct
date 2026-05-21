@@ -121,10 +121,10 @@ func (h *Handler) hydrate(rows []*store.Attendance) []map[string]any {
 // List implements GET /api/attendance.
 //
 // Supports two pagination modes:
-//   1. Offset pagination: ?page=1&limit=50 (legacy, for backward compat)
-//   2. Date-cursor pagination: ?before_date=2026-05-14&limit=50
-//      Returns records older than before_date, with next_before_date for
-//      fetching the next page of older records.
+//  1. Offset pagination: ?page=1&limit=50 (legacy, for backward compat)
+//  2. Date-cursor pagination: ?before_date=2026-05-14&limit=50
+//     Returns records older than before_date, with next_before_date for
+//     fetching the next page of older records.
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	q := r.URL.Query()
@@ -507,7 +507,7 @@ func (h *Handler) MarkBulk(w http.ResponseWriter, r *http.Request) {
 			saved++
 		}
 		audit.Write(h.Store, ctx, audit.Input{
-			Action:   "create",
+			Action:     "create",
 			EntityType: "attendance",
 			EntityID:   body.ClassID,
 			Metadata:   map[string]any{"saved": saved, "date": api.FormatDate(date), "period": period},

@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/alicebob/miniredis/v2"
 	"github.com/eduplexo/backend-go/internal/api"
 	"github.com/eduplexo/backend-go/internal/cache"
 	"github.com/eduplexo/backend-go/internal/domain/dashboard"
 	"github.com/eduplexo/backend-go/internal/store"
-	"github.com/alicebob/miniredis/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -20,11 +20,11 @@ import (
 // TestMemoryLeak verifies that repeated dashboard requests don't leak memory.
 //
 // Strategy:
-//   1. Record baseline memory + goroutine count
-//   2. Run 1000 dashboard requests
-//   3. Force GC
-//   4. Assert: memory is NOT 2x baseline (no unbounded growth)
-//   5. Assert: goroutine count is stable (no goroutine leaks)
+//  1. Record baseline memory + goroutine count
+//  2. Run 1000 dashboard requests
+//  3. Force GC
+//  4. Assert: memory is NOT 2x baseline (no unbounded growth)
+//  5. Assert: goroutine count is stable (no goroutine leaks)
 func TestMemoryLeak_DashboardRequests(t *testing.T) {
 	// Use miniredis for this test (no real Redis needed)
 	mr := miniredis.RunT(t)

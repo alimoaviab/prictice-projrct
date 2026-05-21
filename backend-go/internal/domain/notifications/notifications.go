@@ -1,10 +1,12 @@
 // Package notifications implements /api/notifications endpoints.
 //
 // Supports cursor-based pagination for infinite scroll:
-//   GET /api/notifications?limit=20&cursor=<base64_encoded_timestamp>
+//
+//	GET /api/notifications?limit=20&cursor=<base64_encoded_timestamp>
 //
 // Response format:
-//   {"data": [...], "next_cursor": "...", "has_more": true}
+//
+//	{"data": [...], "next_cursor": "...", "has_more": true}
 package notifications
 
 import (

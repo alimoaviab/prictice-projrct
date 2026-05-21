@@ -1,8 +1,8 @@
 // attendance_pg.go — Direct PostgreSQL attendance operations.
 //
 // Provides two optimized endpoints:
-//   1. POST /api/attendance/mark-pg — Batch INSERT...ON CONFLICT for bulk marking
-//   2. GET /api/attendance/sheet — Single JOIN query for teacher attendance view
+//  1. POST /api/attendance/mark-pg — Batch INSERT...ON CONFLICT for bulk marking
+//  2. GET /api/attendance/sheet — Single JOIN query for teacher attendance view
 //
 // These bypass the MemStore entirely and talk directly to PostgreSQL,
 // eliminating O(n) scans and N individual Save() calls.
@@ -27,9 +27,9 @@ import (
 
 // PGHandler provides direct PostgreSQL attendance operations.
 type PGHandler struct {
-	Pool    *pgxpool.Pool
-	Cache   *cache.Client
-	Store   *store.MemStore // For tenant resolution
+	Pool  *pgxpool.Pool
+	Cache *cache.Client
+	Store *store.MemStore // For tenant resolution
 }
 
 // NewPG creates an attendance handler that uses direct PG queries.
@@ -45,14 +45,15 @@ func NewPG(pool *pgxpool.Pool, c *cache.Client, s *store.MemStore) *PGHandler {
 // Accepts `records` as either:
 //   - An array of objects: [{"student_id":"...","status":"present"}]
 //   - A map of student_id → status: {"stu_001":"present","stu_002":"absent"}
+//
 // The frontend sends the map format; the array format is kept for
 // backwards compatibility with any external callers.
 type markBulkInput struct {
-	ClassID        string          `json:"class_id"`
-	Date           string          `json:"date"`
-	Period         int             `json:"period,omitempty"`
-	AcademicYearID string          `json:"academic_year_id,omitempty"`
-	Records        json.RawMessage `json:"records"`
+	ClassID        string            `json:"class_id"`
+	Date           string            `json:"date"`
+	Period         int               `json:"period,omitempty"`
+	AcademicYearID string            `json:"academic_year_id,omitempty"`
+	Records        json.RawMessage   `json:"records"`
 	RecordsMap     map[string]string `json:"records_map,omitempty"`
 	Remarks        map[string]string `json:"remarks,omitempty"`
 }
@@ -64,9 +65,9 @@ type markRecord struct {
 }
 
 type markBulkResponse struct {
-	Saved   int `json:"saved"`
-	Failed  int `json:"failed"`
-	Total   int `json:"total"`
+	Saved  int `json:"saved"`
+	Failed int `json:"failed"`
+	Total  int `json:"total"`
 }
 
 // MarkBulkPG implements POST /api/attendance/mark using a single batch
@@ -75,10 +76,11 @@ type markBulkResponse struct {
 // Performance: 50 students marked in ~20ms (vs 300-500ms with MemStore loop).
 //
 // SQL strategy:
-//   INSERT INTO attendance (id, school_id, academic_year_id, student_id, class_id, date, period, status, marked_by, source, note, created_at, updated_at)
-//   VALUES ($1, $2, ...), ($N, ...)
-//   ON CONFLICT (school_id, student_id, date, period)
-//   DO UPDATE SET status = EXCLUDED.status, note = EXCLUDED.note, marked_by = EXCLUDED.marked_by, updated_at = EXCLUDED.updated_at;
+//
+//	INSERT INTO attendance (id, school_id, academic_year_id, student_id, class_id, date, period, status, marked_by, source, note, created_at, updated_at)
+//	VALUES ($1, $2, ...), ($N, ...)
+//	ON CONFLICT (school_id, student_id, date, period)
+//	DO UPDATE SET status = EXCLUDED.status, note = EXCLUDED.note, marked_by = EXCLUDED.marked_by, updated_at = EXCLUDED.updated_at;
 func (h *PGHandler) MarkBulkPG(w http.ResponseWriter, r *http.Request) {
 	reqCtx := api.FromRequest(r)
 
@@ -317,8 +319,8 @@ type sheetRow struct {
 	StudentName string  `json:"student_name"`
 	AdmissionNo string  `json:"admission_no"`
 	RollNo      string  `json:"roll_no"`
-	Status      *string `json:"status"`      // nil if not yet marked
-	Note        *string `json:"note"`        // nil if not yet marked
+	Status      *string `json:"status"`        // nil if not yet marked
+	Note        *string `json:"note"`          // nil if not yet marked
 	AttID       *string `json:"attendance_id"` // nil if not yet marked
 }
 
@@ -344,14 +346,15 @@ type sheetResponse struct {
 // the given date. Uses a single LEFT JOIN query — no N+1.
 //
 // Query:
-//   SELECT s.id, s.first_name || ' ' || s.last_name, s.admission_no, s.roll_no,
-//          a.id AS att_id, a.status, a.note
-//   FROM students s
-//   LEFT JOIN attendance a ON a.student_id = s.id
-//       AND a.school_id = s.school_id
-//       AND a.date = $date AND a.period = $period
-//   WHERE s.school_id = $1 AND s.class_id = $2 AND s.status = 'active'
-//   ORDER BY s.first_name, s.last_name;
+//
+//	SELECT s.id, s.first_name || ' ' || s.last_name, s.admission_no, s.roll_no,
+//	       a.id AS att_id, a.status, a.note
+//	FROM students s
+//	LEFT JOIN attendance a ON a.student_id = s.id
+//	    AND a.school_id = s.school_id
+//	    AND a.date = $date AND a.period = $period
+//	WHERE s.school_id = $1 AND s.class_id = $2 AND s.status = 'active'
+//	ORDER BY s.first_name, s.last_name;
 func (h *PGHandler) Sheet(w http.ResponseWriter, r *http.Request) {
 	reqCtx := api.FromRequest(r)
 	q := r.URL.Query()

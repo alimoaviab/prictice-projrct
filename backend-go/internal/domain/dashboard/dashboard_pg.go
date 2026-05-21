@@ -4,12 +4,12 @@
 // errgroup. Falls back to the MemStore handler if PG is not available.
 //
 // Query strategy (all run in parallel via errgroup):
-//   1. mv_school_dashboard → student/teacher/class counts
-//   2. leaves WHERE status='pending' → pending leave count
-//   3. mv_fee_summary → fee collection stats
-//   4. audit_logs ORDER BY created_at DESC LIMIT 10 → recent activity
-//   5. attendance WHERE date=today → attendance summary
-//   6. exams WHERE status IN ('scheduled','active') → active exam count
+//  1. mv_school_dashboard → student/teacher/class counts
+//  2. leaves WHERE status='pending' → pending leave count
+//  3. mv_fee_summary → fee collection stats
+//  4. audit_logs ORDER BY created_at DESC LIMIT 10 → recent activity
+//  5. attendance WHERE date=today → attendance summary
+//  6. exams WHERE status IN ('scheduled','active') → active exam count
 //
 // Total latency: max(individual query times) ≈ 5-15ms (vs 40-200ms MemStore)
 package dashboard
@@ -320,8 +320,8 @@ func (h *PGHandler) queryDashboard(ctx context.Context, schoolID, yearID string)
 				"absent":  absent,
 				"total":   totalMarked,
 			},
-			ActiveExams:    activeExams,
-			PendingLeave:   pendingLeave,
+			ActiveExams:      activeExams,
+			PendingLeave:     pendingLeave,
 			UnmarkedStudents: activeStudents - totalMarked,
 			FeeCollection: map[string]int{
 				"total":         int(feeTotal),

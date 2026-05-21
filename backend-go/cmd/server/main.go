@@ -1,14 +1,14 @@
 // Command server is the entrypoint for the Eduplexo Go backend.
 //
 // Boot sequence:
-//   1. Load env config.
-//   2. Build the in-memory MemStore with seed data.
-//   3. Connect to PostgreSQL (if DATABASE_URL is set), then either:
-//        - Hydrate the MemStore from PG (existing data), OR
-//        - Push the in-memory seed to PG (fresh database).
-//   4. Start the background flush + heartbeat goroutine.
-//   5. Listen on $PORT.
-//   6. On SIGINT/SIGTERM, drain the write queue and snapshot the store.
+//  1. Load env config.
+//  2. Build the in-memory MemStore with seed data.
+//  3. Connect to PostgreSQL (if DATABASE_URL is set), then either:
+//     - Hydrate the MemStore from PG (existing data), OR
+//     - Push the in-memory seed to PG (fresh database).
+//  4. Start the background flush + heartbeat goroutine.
+//  5. Listen on $PORT.
+//  6. On SIGINT/SIGTERM, drain the write queue and snapshot the store.
 package main
 
 import (

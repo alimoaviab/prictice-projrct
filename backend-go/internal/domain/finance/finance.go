@@ -22,14 +22,14 @@ func New(s *store.MemStore) *Handler { return &Handler{Store: s} }
 // ─── PACKAGE MANAGEMENT ──────────────────────────────────────────────────
 
 type packageInput struct {
-	PackageName    string  `json:"package_name"`
-	AllowedStudents int    `json:"allowed_students"`
-	Price          float64 `json:"price"`
-	DurationType   string  `json:"duration_type"`
-	StartDate      string  `json:"start_date"`
-	ExpiryDate     string  `json:"expiry_date"`
-	Notes          string  `json:"notes"`
-	IsActive       bool    `json:"is_active"`
+	PackageName     string  `json:"package_name"`
+	AllowedStudents int     `json:"allowed_students"`
+	Price           float64 `json:"price"`
+	DurationType    string  `json:"duration_type"`
+	StartDate       string  `json:"start_date"`
+	ExpiryDate      string  `json:"expiry_date"`
+	Notes           string  `json:"notes"`
+	IsActive        bool    `json:"is_active"`
 }
 
 // CreatePackage creates a custom package for a school.
@@ -161,20 +161,20 @@ func (h *Handler) ListPackages(w http.ResponseWriter, r *http.Request) {
 		}
 
 		pkgs = append(pkgs, map[string]any{
-			"_id":               pkg.ID,
-			"school_id":         pkg.SchoolID,
-			"package_name":      pkg.PackageName,
-			"allowed_students":  pkg.AllowedStudents,
-			"current_students":  studentCount,
-			"price":             pkg.Price,
-			"duration_type":     pkg.DurationType,
-			"start_date":        pkg.StartDate.Format("2006-01-02"),
-			"expiry_date":       pkg.ExpiryDate.Format("2006-01-02"),
-			"payment_status":    pkg.PaymentStatus,
-			"is_active":         pkg.IsActive,
-			"is_expired":        time.Now().After(pkg.ExpiryDate),
-			"created_at":        pkg.CreatedAt,
-			"updated_at":        pkg.UpdatedAt,
+			"_id":              pkg.ID,
+			"school_id":        pkg.SchoolID,
+			"package_name":     pkg.PackageName,
+			"allowed_students": pkg.AllowedStudents,
+			"current_students": studentCount,
+			"price":            pkg.Price,
+			"duration_type":    pkg.DurationType,
+			"start_date":       pkg.StartDate.Format("2006-01-02"),
+			"expiry_date":      pkg.ExpiryDate.Format("2006-01-02"),
+			"payment_status":   pkg.PaymentStatus,
+			"is_active":        pkg.IsActive,
+			"is_expired":       time.Now().After(pkg.ExpiryDate),
+			"created_at":       pkg.CreatedAt,
+			"updated_at":       pkg.UpdatedAt,
 		})
 	}
 
@@ -391,17 +391,17 @@ func (h *Handler) GetFinanceDashboard(w http.ResponseWriter, r *http.Request) {
 	netProfit := totalRevenue - totalExpenses
 
 	api.WriteResult(w, api.Ok(map[string]any{
-		"total_revenue":    totalRevenue,
-		"monthly_revenue":  monthlyRevenue,
-		"total_expenses":   totalExpenses,
-		"net_profit":       netProfit,
+		"total_revenue":   totalRevenue,
+		"monthly_revenue": monthlyRevenue,
+		"total_expenses":  totalExpenses,
+		"net_profit":      netProfit,
 		"expense_breakdown": map[string]any{
 			"mutual":       mutualExp,
 			"ali":          aliExp,
 			"abdul_rehman": abdulExp,
 		},
-		"total_schools":    len(h.Store.Schools),
-		"active_packages":  len(h.Store.SchoolPackages),
+		"total_schools":   len(h.Store.Schools),
+		"active_packages": len(h.Store.SchoolPackages),
 	}))
 }
 
@@ -409,32 +409,32 @@ func (h *Handler) GetFinanceDashboard(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) hydratePackage(pkg *store.SchoolPackage) map[string]any {
 	return map[string]any{
-		"_id":               pkg.ID,
-		"school_id":         pkg.SchoolID,
-		"package_name":      pkg.PackageName,
-		"allowed_students":  pkg.AllowedStudents,
-		"price":             pkg.Price,
-		"duration_type":     pkg.DurationType,
-		"start_date":        pkg.StartDate.Format("2006-01-02"),
-		"expiry_date":       pkg.ExpiryDate.Format("2006-01-02"),
-		"payment_status":    pkg.PaymentStatus,
-		"is_active":         pkg.IsActive,
-		"is_expired":        time.Now().After(pkg.ExpiryDate),
-		"notes":             pkg.Notes,
-		"created_at":        pkg.CreatedAt,
-		"updated_at":        pkg.UpdatedAt,
+		"_id":              pkg.ID,
+		"school_id":        pkg.SchoolID,
+		"package_name":     pkg.PackageName,
+		"allowed_students": pkg.AllowedStudents,
+		"price":            pkg.Price,
+		"duration_type":    pkg.DurationType,
+		"start_date":       pkg.StartDate.Format("2006-01-02"),
+		"expiry_date":      pkg.ExpiryDate.Format("2006-01-02"),
+		"payment_status":   pkg.PaymentStatus,
+		"is_active":        pkg.IsActive,
+		"is_expired":       time.Now().After(pkg.ExpiryDate),
+		"notes":            pkg.Notes,
+		"created_at":       pkg.CreatedAt,
+		"updated_at":       pkg.UpdatedAt,
 	}
 }
 
 func (h *Handler) hydrateExpense(exp *store.Expense) map[string]any {
 	return map[string]any{
-		"_id":           exp.ID,
-		"title":         exp.Title,
-		"amount":        exp.Amount,
-		"expense_type":  exp.ExpenseType,
-		"note":          exp.Note,
-		"created_by":    exp.CreatedBy,
-		"created_at":    exp.CreatedAt,
-		"updated_at":    exp.UpdatedAt,
+		"_id":          exp.ID,
+		"title":        exp.Title,
+		"amount":       exp.Amount,
+		"expense_type": exp.ExpenseType,
+		"note":         exp.Note,
+		"created_by":   exp.CreatedBy,
+		"created_at":   exp.CreatedAt,
+		"updated_at":   exp.UpdatedAt,
 	}
 }

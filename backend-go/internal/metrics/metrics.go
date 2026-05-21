@@ -9,8 +9,9 @@
 //   - memstore_collection_size (gauge) — MemStore slice sizes (temporary)
 //
 // Usage:
-//   r.Use(metrics.Middleware)
-//   r.Handle("/metrics", metrics.Handler())
+//
+//	r.Use(metrics.Middleware)
+//	r.Handle("/metrics", metrics.Handler())
 package metrics
 
 import (

@@ -7,9 +7,9 @@
 //   - notification-dispatch: Fan-out notification to multiple users
 //
 // Job lifecycle:
-//   1. Handler creates job → LPUSH queue:{type} → returns job_id (202 Accepted)
-//   2. Worker BRPOP queue:{type} → processes → updates status in Redis
-//   3. Frontend polls GET /api/jobs/{id}/status → sees progress/completion
+//  1. Handler creates job → LPUSH queue:{type} → returns job_id (202 Accepted)
+//  2. Worker BRPOP queue:{type} → processes → updates status in Redis
+//  3. Frontend polls GET /api/jobs/{id}/status → sees progress/completion
 package realtime
 
 import (

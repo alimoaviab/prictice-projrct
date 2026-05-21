@@ -2,7 +2,8 @@
 // for Row-Level Security on every request.
 //
 // When RLS is enabled, every query is filtered by:
-//   WHERE school_id = current_setting('app.current_school_id')
+//
+//	WHERE school_id = current_setting('app.current_school_id')
 //
 // This middleware extracts the school_id from the JWT claims (already parsed
 // by the auth middleware) and stores it in the request context. Domain

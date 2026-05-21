@@ -1,26 +1,27 @@
 // admin.go — Super Admin subscription management + payment verification.
 //
 // Endpoints:
-//   GET    /api/admin/subscription/plans     — list all plans
-//   POST   /api/admin/subscription/plans     — create plan
-//   PUT    /api/admin/subscription/plans/:id — update plan
-//   DELETE /api/admin/subscription/plans/:id — delete plan
 //
-//   GET    /api/admin/payment-methods        — list payment methods
-//   POST   /api/admin/payment-methods        — create payment method
-//   PUT    /api/admin/payment-methods/:id    — update payment method
-//   DELETE /api/admin/payment-methods/:id    — delete payment method
+//	GET    /api/admin/subscription/plans     — list all plans
+//	POST   /api/admin/subscription/plans     — create plan
+//	PUT    /api/admin/subscription/plans/:id — update plan
+//	DELETE /api/admin/subscription/plans/:id — delete plan
 //
-//   GET    /api/admin/payments/pending       — pending payment requests
-//   GET    /api/admin/payments/all           — all payment requests
-//   POST   /api/admin/payments/:id/verify    — verify payment
-//   POST   /api/admin/payments/:id/reject    — reject payment
+//	GET    /api/admin/payment-methods        — list payment methods
+//	POST   /api/admin/payment-methods        — create payment method
+//	PUT    /api/admin/payment-methods/:id    — update payment method
+//	DELETE /api/admin/payment-methods/:id    — delete payment method
 //
-//   POST   /api/payment/upload               — school uploads payment proof
-//   GET    /api/payment/methods              — school sees payment methods
+//	GET    /api/admin/payments/pending       — pending payment requests
+//	GET    /api/admin/payments/all           — all payment requests
+//	POST   /api/admin/payments/:id/verify    — verify payment
+//	POST   /api/admin/payments/:id/reject    — reject payment
 //
-//   POST   /api/admin/subscription/assign    — assign plan to school
-//   POST   /api/admin/subscription/extend    — extend school subscription
+//	POST   /api/payment/upload               — school uploads payment proof
+//	GET    /api/payment/methods              — school sees payment methods
+//
+//	POST   /api/admin/subscription/assign    — assign plan to school
+//	POST   /api/admin/subscription/extend    — extend school subscription
 package subscription
 
 import (
@@ -39,16 +40,16 @@ import (
 // ═══════════════════════════════════════════════════════════════════════════
 
 type DBPlan struct {
-	ID           string   `json:"id"`
-	Name         string   `json:"name"`
-	StudentLimit int      `json:"student_limit"`
-	Price        int      `json:"price"`
-	Currency     string   `json:"currency"`
-	DurationDays int      `json:"duration_days"`
-	Features     []string `json:"features"`
-	IsCustom     bool     `json:"is_custom"`
-	IsActive     bool     `json:"is_active"`
-	DisplayOrder int      `json:"display_order"`
+	ID           string    `json:"id"`
+	Name         string    `json:"name"`
+	StudentLimit int       `json:"student_limit"`
+	Price        int       `json:"price"`
+	Currency     string    `json:"currency"`
+	DurationDays int       `json:"duration_days"`
+	Features     []string  `json:"features"`
+	IsCustom     bool      `json:"is_custom"`
+	IsActive     bool      `json:"is_active"`
+	DisplayOrder int       `json:"display_order"`
 	CreatedAt    time.Time `json:"created_at"`
 }
 

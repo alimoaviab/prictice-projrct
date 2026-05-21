@@ -3,10 +3,11 @@
 // Environment variable: USE_DIRECT_PG=true/false (default: false)
 //
 // Per-entity flags allow migrating one entity at a time:
-//   USE_DIRECT_PG_STUDENTS=true
-//   USE_DIRECT_PG_TEACHERS=true
-//   USE_DIRECT_PG_CLASSES=true
-//   USE_DIRECT_PG_FEES=true
+//
+//	USE_DIRECT_PG_STUDENTS=true
+//	USE_DIRECT_PG_TEACHERS=true
+//	USE_DIRECT_PG_CLASSES=true
+//	USE_DIRECT_PG_FEES=true
 //
 // When USE_DIRECT_PG=true, ALL entities use direct PG.
 // When USE_DIRECT_PG=false, individual flags control per-entity behavior.
@@ -43,10 +44,10 @@ func loadFlags() {
 	flagsOnce.Do(func() {
 		flags.globalDirectPG = envBool("USE_DIRECT_PG", false)
 		flags.entities = map[string]bool{
-			"students": envBool("USE_DIRECT_PG_STUDENTS", false),
-			"teachers": envBool("USE_DIRECT_PG_TEACHERS", false),
-			"classes":  envBool("USE_DIRECT_PG_CLASSES", false),
-			"fees":     envBool("USE_DIRECT_PG_FEES", false),
+			"students":   envBool("USE_DIRECT_PG_STUDENTS", false),
+			"teachers":   envBool("USE_DIRECT_PG_TEACHERS", false),
+			"classes":    envBool("USE_DIRECT_PG_CLASSES", false),
+			"fees":       envBool("USE_DIRECT_PG_FEES", false),
 			"attendance": envBool("USE_DIRECT_PG_ATTENDANCE", false),
 		}
 	})
@@ -56,9 +57,9 @@ func loadFlags() {
 // instead of MemStore.
 //
 // Priority:
-//   1. USE_DIRECT_PG=true → all entities use PG
-//   2. USE_DIRECT_PG_{ENTITY}=true → specific entity uses PG
-//   3. Default: false (use MemStore)
+//  1. USE_DIRECT_PG=true → all entities use PG
+//  2. USE_DIRECT_PG_{ENTITY}=true → specific entity uses PG
+//  3. Default: false (use MemStore)
 func UseDirectPG(entity string) bool {
 	loadFlags()
 	if flags.globalDirectPG {

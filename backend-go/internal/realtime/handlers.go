@@ -50,10 +50,10 @@ func FeeGenerateAsyncHandler(queue *JobQueue) http.HandlerFunc {
 
 		// Wrap payload with school context
 		payload := map[string]any{
-			"school_id":       ctx.SchoolID,
+			"school_id":        ctx.SchoolID,
 			"academic_year_id": ctx.ActiveAcademicYearID,
-			"user_id":         ctx.UserID,
-			"body":            body,
+			"user_id":          ctx.UserID,
+			"body":             body,
 		}
 
 		if err := queue.Submit(r.Context(), "fee-generation", jobID, payload); err != nil {

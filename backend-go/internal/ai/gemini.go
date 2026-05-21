@@ -28,7 +28,7 @@ type GeminiClient struct {
 
 // ChatMessage represents a single message in conversation history.
 type ChatMessage struct {
-	Role    string `json:"role"`    // "user" or "model"
+	Role    string `json:"role"` // "user" or "model"
 	Content string `json:"content"`
 }
 
@@ -114,8 +114,8 @@ func (g *GeminiClient) GenerateResponse(ctx context.Context, systemPrompt string
 	reqBody := map[string]any{
 		"contents": contents,
 		"generationConfig": map[string]any{
-				"temperature":     0.3,
-				"maxOutputTokens": 600,
+			"temperature":     0.3,
+			"maxOutputTokens": 600,
 			"topP":            0.9,
 		},
 	}

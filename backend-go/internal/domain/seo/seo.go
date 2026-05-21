@@ -30,14 +30,14 @@ import (
 // ─── Configuration ───────────────────────────────────────────────────────
 
 const (
-	anthropicAPI     = "https://api.anthropic.com/v1/messages"
-	defaultModel     = "claude-sonnet-4-20250514"
-	premiumModel     = "claude-sonnet-4-20250514"
-	maxTokens        = 4096
-	cacheTTL         = 24 * time.Hour
-	rateLimitWindow  = 1 * time.Hour
-	rateLimitMax     = 10
-	systemPrompt     = "You are a world-class enterprise SEO strategist with 15+ years specializing in SaaS and EdTech. You deliver complete, actionable, Eduplexo-specific SEO strategy. Never generic advice. Every recommendation must be implementable immediately. Format output with clear markdown headers, tables where appropriate, and code blocks for technical items."
+	anthropicAPI    = "https://api.anthropic.com/v1/messages"
+	defaultModel    = "claude-sonnet-4-20250514"
+	premiumModel    = "claude-sonnet-4-20250514"
+	maxTokens       = 4096
+	cacheTTL        = 24 * time.Hour
+	rateLimitWindow = 1 * time.Hour
+	rateLimitMax    = 10
+	systemPrompt    = "You are a world-class enterprise SEO strategist with 15+ years specializing in SaaS and EdTech. You deliver complete, actionable, Eduplexo-specific SEO strategy. Never generic advice. Every recommendation must be implementable immediately. Format output with clear markdown headers, tables where appropriate, and code blocks for technical items."
 )
 
 // validBlocks prevents arbitrary prompt injection via block_id.
@@ -59,8 +59,8 @@ type rateBucket struct {
 }
 
 var (
-	rateMu      sync.Mutex
-	rateStore   = make(map[string]*rateBucket)
+	rateMu    sync.Mutex
+	rateStore = make(map[string]*rateBucket)
 )
 
 func checkRateLimit(ip string) bool {

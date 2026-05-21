@@ -7,25 +7,25 @@ import "time"
 // the React frontend already consumes (see school-react-app/src/modules/*).
 
 type School struct {
-	ID               string    `json:"_id"`
-	SchoolID         string    `json:"school_id"`
-	Name             string    `json:"name"`
-	Code             string    `json:"code"`
-	Email            string    `json:"email,omitempty"`
-	Phone            string    `json:"phone,omitempty"`
-	Address          string    `json:"address,omitempty"`
-	City             string    `json:"city,omitempty"`
-	PrincipalName    string    `json:"principal_name,omitempty"`
-	Website          string    `json:"website,omitempty"`
-	LogoURL          string    `json:"logo_url,omitempty"`
-	Status           string    `json:"status"`
-	ApprovalStatus   string    `json:"approval_status"` // pending, approved, rejected
-	ApprovedAt       *time.Time `json:"approved_at,omitempty"`
-	ApprovedBy       string    `json:"approved_by,omitempty"`
-	RejectionReason  string    `json:"rejection_reason,omitempty"`
-	PackageID        string    `json:"package_id,omitempty"`
-	CreatedAt        time.Time `json:"created_at"`
-	UpdatedAt        time.Time `json:"updated_at"`
+	ID              string     `json:"_id"`
+	SchoolID        string     `json:"school_id"`
+	Name            string     `json:"name"`
+	Code            string     `json:"code"`
+	Email           string     `json:"email,omitempty"`
+	Phone           string     `json:"phone,omitempty"`
+	Address         string     `json:"address,omitempty"`
+	City            string     `json:"city,omitempty"`
+	PrincipalName   string     `json:"principal_name,omitempty"`
+	Website         string     `json:"website,omitempty"`
+	LogoURL         string     `json:"logo_url,omitempty"`
+	Status          string     `json:"status"`
+	ApprovalStatus  string     `json:"approval_status"` // pending, approved, rejected
+	ApprovedAt      *time.Time `json:"approved_at,omitempty"`
+	ApprovedBy      string     `json:"approved_by,omitempty"`
+	RejectionReason string     `json:"rejection_reason,omitempty"`
+	PackageID       string     `json:"package_id,omitempty"`
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
 }
 
 type UserProfile struct {
@@ -96,34 +96,34 @@ type GradeThreshold struct {
 }
 
 type Class struct {
-	ID                 string         `json:"_id"`
-	SchoolID           string         `json:"school_id"`
-	AcademicYearID     string         `json:"academic_year_id"`
-	Name               string         `json:"name"`
-	Code               string         `json:"code,omitempty"`
-	Grade              string         `json:"grade,omitempty"`
-	Section            string         `json:"section,omitempty"`
-	Capacity           int            `json:"capacity"`
-	DisplayOrder       int            `json:"display_order,omitempty"`
-	PassingPercentage  int            `json:"passing_percentage,omitempty"`
-	ClassTeacherID     string         `json:"class_teacher_id,omitempty"`
-	TeacherIDs         []string       `json:"teacher_ids,omitempty"`
-	SubjectIDs         []string         `json:"subject_ids,omitempty"`
-	Subjects           []ClassSubject   `json:"subjects,omitempty"`
-	GradeThresholds    []GradeThreshold `json:"grade_thresholds,omitempty"`
-	RoomNumber         string           `json:"room_number,omitempty"`
-	Description        string           `json:"description,omitempty"`
-	Status             string         `json:"status"`
-	CreatedAt          time.Time      `json:"created_at"`
-	UpdatedAt          time.Time      `json:"updated_at"`
+	ID                string           `json:"_id"`
+	SchoolID          string           `json:"school_id"`
+	AcademicYearID    string           `json:"academic_year_id"`
+	Name              string           `json:"name"`
+	Code              string           `json:"code,omitempty"`
+	Grade             string           `json:"grade,omitempty"`
+	Section           string           `json:"section,omitempty"`
+	Capacity          int              `json:"capacity"`
+	DisplayOrder      int              `json:"display_order,omitempty"`
+	PassingPercentage int              `json:"passing_percentage,omitempty"`
+	ClassTeacherID    string           `json:"class_teacher_id,omitempty"`
+	TeacherIDs        []string         `json:"teacher_ids,omitempty"`
+	SubjectIDs        []string         `json:"subject_ids,omitempty"`
+	Subjects          []ClassSubject   `json:"subjects,omitempty"`
+	GradeThresholds   []GradeThreshold `json:"grade_thresholds,omitempty"`
+	RoomNumber        string           `json:"room_number,omitempty"`
+	Description       string           `json:"description,omitempty"`
+	Status            string           `json:"status"`
+	CreatedAt         time.Time        `json:"created_at"`
+	UpdatedAt         time.Time        `json:"updated_at"`
 
 	// Enriched fields for frontend
-	StudentCount         int            `json:"student_count"`
-	AttendancePercentage float64        `json:"attendance_percentage"`
-	FeeStatus            float64        `json:"fee_status"`
+	StudentCount         int              `json:"student_count"`
+	AttendancePercentage float64          `json:"attendance_percentage"`
+	FeeStatus            float64          `json:"fee_status"`
 	ClassTeacher         *ClassTeacherRef `json:"class_teacher,omitempty"`
-	TeacherNames         []string       `json:"teacher_names,omitempty"`
-	EnrolledStudents     int            `json:"enrolled_students"`
+	TeacherNames         []string         `json:"teacher_names,omitempty"`
+	EnrolledStudents     int              `json:"enrolled_students"`
 }
 
 // ClassTeacherRef is the hydrated teacher reference sent to the frontend.
@@ -160,24 +160,24 @@ type Guardian struct {
 }
 
 type Student struct {
-	ID             string    `json:"_id"`
-	SchoolID       string    `json:"school_id"`
-	AcademicYearID string    `json:"academic_year_id"`
-	UserID         string    `json:"user_id,omitempty"`
-	AdmissionNo    string    `json:"admission_no"`
-	FirstName      string    `json:"first_name"`
-	LastName       string    `json:"last_name"`
-	ClassID        string    `json:"class_id"`
-	Section        string    `json:"section"`
-	Subjects       []string  `json:"subjects,omitempty"`
-	Guardian       Guardian  `json:"guardian"`
-	Status         string    `json:"status"`
-	RollNo         string    `json:"roll_no,omitempty"`
+	ID             string     `json:"_id"`
+	SchoolID       string     `json:"school_id"`
+	AcademicYearID string     `json:"academic_year_id"`
+	UserID         string     `json:"user_id,omitempty"`
+	AdmissionNo    string     `json:"admission_no"`
+	FirstName      string     `json:"first_name"`
+	LastName       string     `json:"last_name"`
+	ClassID        string     `json:"class_id"`
+	Section        string     `json:"section"`
+	Subjects       []string   `json:"subjects,omitempty"`
+	Guardian       Guardian   `json:"guardian"`
+	Status         string     `json:"status"`
+	RollNo         string     `json:"roll_no,omitempty"`
 	DateOfBirth    *time.Time `json:"date_of_birth,omitempty"`
-	Gender         string    `json:"gender,omitempty"`
-	EnrolledAt     time.Time `json:"enrolled_at,omitempty"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	Gender         string     `json:"gender,omitempty"`
+	EnrolledAt     time.Time  `json:"enrolled_at,omitempty"`
+	CreatedAt      time.Time  `json:"created_at"`
+	UpdatedAt      time.Time  `json:"updated_at"`
 }
 
 type Parent struct {
@@ -192,13 +192,13 @@ type Parent struct {
 }
 
 type StudentParent struct {
-	ID            string    `json:"_id"`
-	SchoolID      string    `json:"school_id"`
-	StudentID     string    `json:"student_id"`
-	ParentUserID  string    `json:"parent_user_id"`
-	Relationship  string    `json:"relationship"`
-	IsPrimary     bool      `json:"is_primary"`
-	CreatedAt     time.Time `json:"created_at"`
+	ID           string    `json:"_id"`
+	SchoolID     string    `json:"school_id"`
+	StudentID    string    `json:"student_id"`
+	ParentUserID string    `json:"parent_user_id"`
+	Relationship string    `json:"relationship"`
+	IsPrimary    bool      `json:"is_primary"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 type AuditLog struct {

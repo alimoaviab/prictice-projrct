@@ -21,7 +21,7 @@ type Handler struct {
 	Persist func(table string, doc any)
 }
 
-func New(s *store.MemStore) *Handler          { return &Handler{Store: s, Persist: func(string, any) {}} }
+func New(s *store.MemStore) *Handler { return &Handler{Store: s, Persist: func(string, any) {}} }
 func NewWithPersist(s *store.MemStore, save func(string, any)) *Handler {
 	if save == nil {
 		save = func(string, any) {}
@@ -192,8 +192,8 @@ func (h *Handler) DashboardStats(w http.ResponseWriter, r *http.Request) {
 
 	// ── Monthly Growth Data (last 6 months) ─────────────────────────────
 	type monthData struct {
-		Month   string `json:"month"`
-		Schools int    `json:"schools"`
+		Month   string  `json:"month"`
+		Schools int     `json:"schools"`
 		Revenue float64 `json:"revenue"`
 	}
 	monthlyGrowth := make([]monthData, 0, 6)
@@ -275,11 +275,11 @@ func (h *Handler) DashboardStats(w http.ResponseWriter, r *http.Request) {
 
 	// ── Recent Payments ──────────────────────────────────────────────────
 	type recentPayment struct {
-		School    string    `json:"school"`
-		Amount    float64   `json:"amount"`
-		Plan      string    `json:"plan"`
-		Status    string    `json:"status"`
-		Date      time.Time `json:"date"`
+		School string    `json:"school"`
+		Amount float64   `json:"amount"`
+		Plan   string    `json:"plan"`
+		Status string    `json:"status"`
+		Date   time.Time `json:"date"`
 	}
 	recentPayments := make([]recentPayment, 0)
 	for _, pkg := range h.Store.SchoolPackages {
@@ -351,44 +351,44 @@ func (h *Handler) DashboardStats(w http.ResponseWriter, r *http.Request) {
 
 	api.WriteJSON(w, http.StatusOK, api.Ok(map[string]any{
 		"schools": map[string]any{
-			"total":     totalSchools,
-			"active":    activeSchools,
-			"pending":   pendingSchools,
-			"suspended": suspendedSchools,
-			"expired":   expiredSchools,
-			"trial":     trialSchools,
-			"paid":      paidSchools,
-			"new_this_month":    thisMonthNew,
-			"new_last_month":    lastMonthNew,
-			"growth_rate":       growthRate,
+			"total":          totalSchools,
+			"active":         activeSchools,
+			"pending":        pendingSchools,
+			"suspended":      suspendedSchools,
+			"expired":        expiredSchools,
+			"trial":          trialSchools,
+			"paid":           paidSchools,
+			"new_this_month": thisMonthNew,
+			"new_last_month": lastMonthNew,
+			"growth_rate":    growthRate,
 		},
 		"revenue": map[string]any{
-			"total":            totalRevenue,
-			"monthly":          monthlyRevenue,
-			"mrr":              mrr,
-			"arr":              arr,
-			"collected":        collectedRevenue,
-			"pending":          pendingPayments,
-			"collection_rate":  collectionRate,
-			"renewals_due":     renewalsDue,
+			"total":           totalRevenue,
+			"monthly":         monthlyRevenue,
+			"mrr":             mrr,
+			"arr":             arr,
+			"collected":       collectedRevenue,
+			"pending":         pendingPayments,
+			"collection_rate": collectionRate,
+			"renewals_due":    renewalsDue,
 		},
 		"subscriptions": map[string]any{
-			"active":   activeSubscriptions,
-			"expired":  expiredSubscriptions,
+			"active":     activeSubscriptions,
+			"expired":    expiredSubscriptions,
 			"churn_rate": churnRate,
 		},
 		"platform": map[string]any{
-			"total_users":  totalPlatformUsers,
-			"admin_users":  adminUsers,
-			"total_expenses": totalExpenses,
-			"net_revenue":  netRevenue,
+			"total_users":       totalPlatformUsers,
+			"admin_users":       adminUsers,
+			"total_expenses":    totalExpenses,
+			"net_revenue":       netRevenue,
 			"expense_breakdown": expenseBreakdown,
 		},
-		"monthly_growth": monthlyGrowth,
+		"monthly_growth":    monthlyGrowth,
 		"plan_distribution": planDistribution,
-		"recent_schools": recentSchools,
-		"recent_payments": recentPayments,
-		"activities": activities,
+		"recent_schools":    recentSchools,
+		"recent_payments":   recentPayments,
+		"activities":        activities,
 	}))
 }
 
@@ -1047,15 +1047,15 @@ func (h *Handler) ListSubscriptions(w http.ResponseWriter, r *http.Request) {
 	defer h.Store.RUnlock()
 
 	type subView struct {
-		ID        string    `json:"_id"`
-		SchoolID  string    `json:"school_id"`
-		SchoolName string   `json:"school_name"`
-		PackageID string    `json:"package_id"`
-		PackageName string `json:"package_name"`
-		Status    string    `json:"status"`
-		AutoRenew bool      `json:"auto_renew"`
+		ID          string    `json:"_id"`
+		SchoolID    string    `json:"school_id"`
+		SchoolName  string    `json:"school_name"`
+		PackageID   string    `json:"package_id"`
+		PackageName string    `json:"package_name"`
+		Status      string    `json:"status"`
+		AutoRenew   bool      `json:"auto_renew"`
 		NextRenewal time.Time `json:"next_renewal"`
-		CreatedAt time.Time `json:"created_at"`
+		CreatedAt   time.Time `json:"created_at"`
 	}
 
 	subs := make([]subView, 0)
@@ -1104,13 +1104,13 @@ func (h *Handler) AIUsage(w http.ResponseWriter, r *http.Request) {
 	defer h.Store.RUnlock()
 
 	type aiUsageView struct {
-		SchoolID           string  `json:"school_id"`
-		SchoolName         string  `json:"school_name"`
-		PackageName        string  `json:"package_name"`
-		ChatbotLimit       int     `json:"chatbot_limit"`
-		ChatbotUsed        int     `json:"chatbot_used"`
-		ChatbotRemaining   int     `json:"chatbot_remaining"`
-		UsagePercent       float64 `json:"usage_percent"`
+		SchoolID         string  `json:"school_id"`
+		SchoolName       string  `json:"school_name"`
+		PackageName      string  `json:"package_name"`
+		ChatbotLimit     int     `json:"chatbot_limit"`
+		ChatbotUsed      int     `json:"chatbot_used"`
+		ChatbotRemaining int     `json:"chatbot_remaining"`
+		UsagePercent     float64 `json:"usage_percent"`
 	}
 
 	usage := make([]aiUsageView, 0)
@@ -1153,7 +1153,7 @@ func (h *Handler) AIUsage(w http.ResponseWriter, r *http.Request) {
 // ─── Platform Settings ───────────────────────────────────────────────────
 
 type PlatformSettings struct {
-	AutoApproveSchools bool `json:"auto_approve_schools"`
+	AutoApproveSchools bool   `json:"auto_approve_schools"`
 	DefaultPackageID   string `json:"default_package_id"`
 	TrialDays          int    `json:"trial_days"`
 }

@@ -303,14 +303,14 @@ func (h *Handler) GetSubjects(w http.ResponseWriter, r *http.Request) {
 }
 
 type createInput struct {
-	Name              string   `json:"name"`
-	Code              string   `json:"code"`
-	Grade             string   `json:"grade"`
-	Section           string   `json:"section"`
-	Capacity          int      `json:"capacity"`
-	PassingPercentage int      `json:"passing_percentage"`
-	ClassTeacherID    string   `json:"class_teacher_id,omitempty"`
-	TeacherIDs        []string `json:"teacher_ids,omitempty"`
+	Name              string                 `json:"name"`
+	Code              string                 `json:"code"`
+	Grade             string                 `json:"grade"`
+	Section           string                 `json:"section"`
+	Capacity          int                    `json:"capacity"`
+	PassingPercentage int                    `json:"passing_percentage"`
+	ClassTeacherID    string                 `json:"class_teacher_id,omitempty"`
+	TeacherIDs        []string               `json:"teacher_ids,omitempty"`
 	SubjectIDs        []string               `json:"subject_ids,omitempty"`
 	Subjects          []store.ClassSubject   `json:"subjects,omitempty"`
 	GradeThresholds   []store.GradeThreshold `json:"grade_thresholds,omitempty"`

@@ -56,7 +56,6 @@ func SafeSlice[T any](items []T, start, end int) []T {
 	return items[start:end]
 }
 
-
 // FormatInt is strconv.Itoa under another name. Avoids importing strconv in
 // every domain handler that already imports this package.
 func FormatInt(i int) string {

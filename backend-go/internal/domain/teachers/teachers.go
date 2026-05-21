@@ -430,10 +430,10 @@ func (h *Handler) getTeacherPortalData(ctx *api.RequestContext, teacher *store.T
 				"capacity":            c.Capacity,
 				"studentCount":        c.StudentCount,
 				"enrolled_students":   c.StudentCount,
-				"pendingHomework":    pendingHW,
+				"pendingHomework":     pendingHW,
 				"pending_assignments": pendingHW,
-				"upcomingExams":      examsInClass,
-				"upcoming_exams":     examsInClass,
+				"upcomingExams":       examsInClass,
+				"upcoming_exams":      examsInClass,
 				"lectures_today":      lecturesToday,
 				"attendance_pending":  !attendanceMarkedMap[c.ID],
 				"academicYear":        currentSession,
@@ -470,14 +470,14 @@ func (h *Handler) getTeacherPortalData(ctx *api.RequestContext, teacher *store.T
 			}
 		}
 	}
-	
+
 	pendingGrading := 0
 	for _, ex := range h.Store.Exams {
 		if ex.TeacherID == teacher.ID && ex.Status == "completed" {
 			pendingGrading++
 		}
 	}
-	
+
 	pendingHWReviews := 0
 	for _, hw := range h.Store.Homework {
 		if hw.TeacherID == teacher.ID && hw.Status == "assigned" {
@@ -537,7 +537,7 @@ func (h *Handler) getTeacherPortalData(ctx *api.RequestContext, teacher *store.T
 			"totalStudents":     totalStudents,
 			"pendingAttendance": len(portalClasses) - len(attendanceMarkedMap),
 			"todayLectures":     todayLectures,
-			"upcomingExams":    upcomingExamsCount,
+			"upcomingExams":     upcomingExamsCount,
 		},
 		"classes":       portalClasses,
 		"todaySchedule": todaySchedule,
@@ -574,11 +574,11 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 			hash, _ := auth.HashPassword(body.Password)
 			userID = store.NewID("usr")
 			h.Store.Users = append(h.Store.Users, &store.User{
-				ID: userID, SchoolID: ctx.SchoolID, Email: body.Email, PasswordHash: hash, Role: "teacher", 
+				ID: userID, SchoolID: ctx.SchoolID, Email: body.Email, PasswordHash: hash, Role: "teacher",
 				Permissions: []string{"teacher:basic"},
-				Status: "active",
-				Profile: store.UserProfile{FirstName: body.FirstName, LastName: body.LastName, Phone: body.Phone},
-				CreatedAt: now, UpdatedAt: now,
+				Status:      "active",
+				Profile:     store.UserProfile{FirstName: body.FirstName, LastName: body.LastName, Phone: body.Phone},
+				CreatedAt:   now, UpdatedAt: now,
 			})
 			h.Persist("users", h.Store.Users[len(h.Store.Users)-1])
 		}
@@ -619,9 +619,15 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		defer h.Store.Unlock()
 		for _, t := range h.Store.Teachers {
 			if t.ID == id && t.SchoolID == ctx.SchoolID {
-				if v, ok := body["first_name"]; ok { _ = json.Unmarshal(v, &t.FirstName) }
-				if v, ok := body["last_name"]; ok { _ = json.Unmarshal(v, &t.LastName) }
-				if v, ok := body["status"]; ok { _ = json.Unmarshal(v, &t.Status) }
+				if v, ok := body["first_name"]; ok {
+					_ = json.Unmarshal(v, &t.FirstName)
+				}
+				if v, ok := body["last_name"]; ok {
+					_ = json.Unmarshal(v, &t.LastName)
+				}
+				if v, ok := body["status"]; ok {
+					_ = json.Unmarshal(v, &t.Status)
+				}
 				t.UpdatedAt = time.Now()
 				h.Persist("teachers", t)
 				h.invalidateCaches(context.Background(), t.SchoolID, t.AcademicYearID)
@@ -674,12 +680,19 @@ func teacherMatchesSearch(t *store.Teacher, term string) bool {
 
 func padLeft(n, width int) string {
 	s := ""
-	for n > 0 { s = string(rune("0123456789"[n%10])) + s; n /= 10 }
-	for len(s) < width { s = "0" + s }
+	for n > 0 {
+		s = string(rune("0123456789"[n%10])) + s
+		n /= 10
+	}
+	for len(s) < width {
+		s = "0" + s
+	}
 	return s
 }
 
 func orEmpty(in []string) []string {
-	if in == nil { return []string{} }
+	if in == nil {
+		return []string{}
+	}
 	return in
 }

@@ -8,11 +8,12 @@
 package certificates
 
 import (
+	"crypto/rand"
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math/rand"
+	"math/big"
 	"net/http"
 	"sort"
 	"strings"
@@ -76,14 +77,14 @@ func (h *Handler) GetTemplate(w http.ResponseWriter, r *http.Request) {
 }
 
 type templateInput struct {
-	Name          string `json:"name"`
-	Type          string `json:"type"`
-	Orientation   string `json:"orientation"`
-	BackgroundURL string `json:"background_url"`
-	WatermarkURL  string `json:"watermark_url"`
-	BorderStyle   string `json:"border_style"`
-	BodyText      string `json:"body_text"`
-	IsDefault     bool   `json:"is_default"`
+	Name          string          `json:"name"`
+	Type          string          `json:"type"`
+	Orientation   string          `json:"orientation"`
+	BackgroundURL string          `json:"background_url"`
+	WatermarkURL  string          `json:"watermark_url"`
+	BorderStyle   string          `json:"border_style"`
+	BodyText      string          `json:"body_text"`
+	IsDefault     bool            `json:"is_default"`
 	Elements      json.RawMessage `json:"elements"`
 }
 
@@ -138,12 +139,24 @@ func (h *Handler) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
 	defer h.Store.Unlock()
 	for _, t := range h.Store.CertificateTemplates {
 		if t.ID == id && t.SchoolID == ctx.SchoolID {
-			if body.Name != "" { t.Name = body.Name }
-			if body.Type != "" { t.Type = body.Type }
-			if body.Orientation != "" { t.Orientation = body.Orientation }
-			if body.BodyText != "" { t.BodyText = body.BodyText }
-			if body.BackgroundURL != "" { t.BackgroundURL = body.BackgroundURL }
-			if len(body.Elements) > 0 { t.Elements = string(body.Elements) }
+			if body.Name != "" {
+				t.Name = body.Name
+			}
+			if body.Type != "" {
+				t.Type = body.Type
+			}
+			if body.Orientation != "" {
+				t.Orientation = body.Orientation
+			}
+			if body.BodyText != "" {
+				t.BodyText = body.BodyText
+			}
+			if body.BackgroundURL != "" {
+				t.BackgroundURL = body.BackgroundURL
+			}
+			if len(body.Elements) > 0 {
+				t.Elements = string(body.Elements)
+			}
 			t.UpdatedAt = time.Now()
 			h.Save("certificate_templates", t)
 			api.WriteResult(w, api.Ok(templateToMap(t)))
@@ -301,9 +314,15 @@ func (h *Handler) ListCertificates(w http.ResponseWriter, r *http.Request) {
 
 	out := make([]map[string]any, 0)
 	for _, c := range h.Store.GeneratedCertificates {
-		if c.SchoolID != ctx.SchoolID { continue }
-		if studentID != "" && c.StudentID != studentID { continue }
-		if certType != "" && c.CertificateType != certType { continue }
+		if c.SchoolID != ctx.SchoolID {
+			continue
+		}
+		if studentID != "" && c.StudentID != studentID {
+			continue
+		}
+		if certType != "" && c.CertificateType != certType {
+			continue
+		}
 		if classID != "" {
 			// Check student's class
 			for _, s := range h.Store.Students {
@@ -402,7 +421,14 @@ func certToMap(c *store.GeneratedCertificate) map[string]any {
 }
 
 func generateCertNo(schoolID, studentID string) string {
-	src := fmt.Sprintf("%s:%s:%d:%d", schoolID, studentID, time.Now().UnixNano(), rand.Int())
+	rNum, err := rand.Int(rand.Reader, big.NewInt(1<<62))
+	var rVal int64
+	if err != nil {
+		rVal = time.Now().UnixNano() // fallback
+	} else {
+		rVal = rNum.Int64()
+	}
+	src := fmt.Sprintf("%s:%s:%d:%d", schoolID, studentID, time.Now().UnixNano(), rVal)
 	h := sha1.Sum([]byte(src))
 	hash := strings.ToUpper(hex.EncodeToString(h[:])[:6])
 	return fmt.Sprintf("CERT-%d-%s", time.Now().Year(), hash)
@@ -410,11 +436,19 @@ func generateCertNo(schoolID, studentID string) string {
 
 func generateVerificationCode() string {
 	b := make([]byte, 12)
-	rand.Read(b)
+	_, err := rand.Read(b)
+	if err != nil {
+		// fallback using time to ensure we still generate something
+		fallbackStr := fmt.Sprintf("%d-%d", time.Now().UnixNano(), time.Now().Unix())
+		h := sha1.Sum([]byte(fallbackStr))
+		copy(b, h[:12])
+	}
 	return strings.ToUpper(hex.EncodeToString(b)[:16])
 }
 
 func orDefault(val, def string) string {
-	if val == "" { return def }
+	if val == "" {
+		return def
+	}
 	return val
 }

@@ -30,11 +30,11 @@ import (
 type CompositeResponse struct {
 	Overview        compositeOverview `json:"overview"`
 	Attendance      attendanceSummary `json:"attendance"`
-	Fees            feeSummary       `json:"fees"`
-	PendingLeaves   int              `json:"pendingLeaves"`
-	Activities      []map[string]any `json:"activities"`
-	UpcomingEvents  []map[string]any `json:"upcomingEvents"`
-	ClassAttendance []map[string]any `json:"classAttendance"`
+	Fees            feeSummary        `json:"fees"`
+	PendingLeaves   int               `json:"pendingLeaves"`
+	Activities      []map[string]any  `json:"activities"`
+	UpcomingEvents  []map[string]any  `json:"upcomingEvents"`
+	ClassAttendance []map[string]any  `json:"classAttendance"`
 }
 
 type compositeOverview struct {

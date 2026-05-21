@@ -5,23 +5,23 @@
 //
 // Usage (from terminal):
 //
-//   # Heap profile (memory allocations)
-//   curl -o heap.prof http://localhost:8080/debug/pprof/heap
-//   go tool pprof -http=:6060 heap.prof
+//	# Heap profile (memory allocations)
+//	curl -o heap.prof http://localhost:8080/debug/pprof/heap
+//	go tool pprof -http=:6060 heap.prof
 //
-//   # Goroutine profile (detect leaks)
-//   curl -o goroutine.prof http://localhost:8080/debug/pprof/goroutine
-//   go tool pprof -http=:6061 goroutine.prof
+//	# Goroutine profile (detect leaks)
+//	curl -o goroutine.prof http://localhost:8080/debug/pprof/goroutine
+//	go tool pprof -http=:6061 goroutine.prof
 //
-//   # CPU profile (30 seconds)
-//   curl -o cpu.prof "http://localhost:8080/debug/pprof/profile?seconds=30"
-//   go tool pprof -http=:6062 cpu.prof
+//	# CPU profile (30 seconds)
+//	curl -o cpu.prof "http://localhost:8080/debug/pprof/profile?seconds=30"
+//	go tool pprof -http=:6062 cpu.prof
 //
-//   # All goroutines (text, for quick debugging)
-//   curl http://localhost:8080/debug/pprof/goroutine?debug=1
+//	# All goroutines (text, for quick debugging)
+//	curl http://localhost:8080/debug/pprof/goroutine?debug=1
 //
-//   # Memory stats (text)
-//   curl http://localhost:8080/debug/pprof/heap?debug=1
+//	# Memory stats (text)
+//	curl http://localhost:8080/debug/pprof/heap?debug=1
 //
 // SECURITY: Never enable in production. These endpoints expose internal state.
 package server

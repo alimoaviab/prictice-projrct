@@ -365,7 +365,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		dueAt = time.Date(dueAt.Year(), dueAt.Month(), dueAt.Day(), 23, 59, 0, 0, time.UTC)
 
 		h.Store.Lock()
-		
+
 		var class *store.Class
 		for _, c := range h.Store.Classes {
 			if c.ID == body.ClassID && c.SchoolID == ctx.SchoolID {

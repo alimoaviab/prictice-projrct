@@ -202,4 +202,3 @@ func (r *TeacherRepo) invalidate(ctx context.Context, schoolID, yearID string) {
 	_, _ = r.cache.Del(ctx, fmt.Sprintf("dash:%s:%s", schoolID, yearID))
 	_, _ = r.cache.Del(ctx, fmt.Sprintf("composite:%s:%s", schoolID, yearID))
 }
-

@@ -4,13 +4,13 @@
 // entity has its own table with proper FKs, CHECK constraints, and unique
 // indexes — no JSONB-blob fallback. This package handles three things:
 //
-//   1. Load: on boot, hydrate the MemStore from PostgreSQL so every domain
-//      handler reads from a warm cache.
-//   2. Save: on every mutation, the active handler appends to the queue;
-//      a background goroutine commits batched UPSERTs in a single
-//      transaction.
-//   3. FullSnapshot: periodic write-through of the entire MemStore as a
-//      safety net. Idempotent — relies on UPSERT semantics.
+//  1. Load: on boot, hydrate the MemStore from PostgreSQL so every domain
+//     handler reads from a warm cache.
+//  2. Save: on every mutation, the active handler appends to the queue;
+//     a background goroutine commits batched UPSERTs in a single
+//     transaction.
+//  3. FullSnapshot: periodic write-through of the entire MemStore as a
+//     safety net. Idempotent — relies on UPSERT semantics.
 //
 // The map of "collection name → SQL table + UPSERT statement" lives in
 // upsert.go. There is one statement per entity, hand-written to match the

@@ -303,12 +303,12 @@ func (h *Handler) hydrate(rows []*store.Timetable) []map[string]any {
 				"teacher_id":       session.TeacherID,
 				"teacher_name":     teacherName,
 				"day_of_week":      storeToISO(session.Day),
-				"period_number":   session.Period,
-				"start_time":      session.StartsAt,
-				"end_time":        session.EndsAt,
-				"room":            session.Room,
-				"created_at":      t.CreatedAt,
-				"updated_at":      t.UpdatedAt,
+				"period_number":    session.Period,
+				"start_time":       session.StartsAt,
+				"end_time":         session.EndsAt,
+				"room":             session.Room,
+				"created_at":       t.CreatedAt,
+				"updated_at":       t.UpdatedAt,
 				"academic_year_id": t.AcademicYearID,
 			})
 		}
@@ -788,21 +788,21 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 
 // SummaryResponse is the lightweight DTO consumed by the admin dashboard.
 type SummaryResponse struct {
-	TotalClasses           int              `json:"totalClasses"`
-	ClassesScheduled       int              `json:"classesScheduled"`
-	ClassesUnscheduled     int              `json:"classesUnscheduled"`
-	TotalPeriodsToday      int              `json:"totalPeriodsToday"`
-	CompletedPeriodsToday  int              `json:"completedPeriodsToday"`
-	UpcomingPeriodsToday   int              `json:"upcomingPeriodsToday"`
-	ActivePeriodsNow       int              `json:"activePeriodsNow"`
-	TotalTeachers          int              `json:"totalTeachers"`
-	TeachersTeachingNow    int              `json:"teachersTeachingNow"`
-	FreeTeachersNow        int              `json:"freeTeachersNow"`
-	ConflictsCount         int              `json:"conflictsCount"`
-	CurrentPeriod          *map[string]any  `json:"currentPeriod,omitempty"`
-	NextPeriod             *map[string]any  `json:"nextPeriod,omitempty"`
-	UnscheduledClasses     []map[string]any `json:"unscheduledClasses"`
-	GeneratedAt            time.Time        `json:"generatedAt"`
+	TotalClasses          int              `json:"totalClasses"`
+	ClassesScheduled      int              `json:"classesScheduled"`
+	ClassesUnscheduled    int              `json:"classesUnscheduled"`
+	TotalPeriodsToday     int              `json:"totalPeriodsToday"`
+	CompletedPeriodsToday int              `json:"completedPeriodsToday"`
+	UpcomingPeriodsToday  int              `json:"upcomingPeriodsToday"`
+	ActivePeriodsNow      int              `json:"activePeriodsNow"`
+	TotalTeachers         int              `json:"totalTeachers"`
+	TeachersTeachingNow   int              `json:"teachersTeachingNow"`
+	FreeTeachersNow       int              `json:"freeTeachersNow"`
+	ConflictsCount        int              `json:"conflictsCount"`
+	CurrentPeriod         *map[string]any  `json:"currentPeriod,omitempty"`
+	NextPeriod            *map[string]any  `json:"nextPeriod,omitempty"`
+	UnscheduledClasses    []map[string]any `json:"unscheduledClasses"`
+	GeneratedAt           time.Time        `json:"generatedAt"`
 }
 
 func (h *Handler) Summary(w http.ResponseWriter, r *http.Request) {
@@ -1015,17 +1015,17 @@ func jsToISO(jsDay int) int {
 
 // Conflict is one detected scheduling collision.
 type Conflict struct {
-	Type           string `json:"type"` // "teacher" | "room" | "class"
-	Day            int    `json:"day_of_week"`
-	Period         int    `json:"period_number"`
-	StartTime      string `json:"start_time"`
-	EndTime        string `json:"end_time"`
-	ClassID        string `json:"class_id,omitempty"`
-	ClassName      string `json:"class_name,omitempty"`
-	TeacherID      string `json:"teacher_id,omitempty"`
-	Room           string `json:"room,omitempty"`
+	Type                string `json:"type"` // "teacher" | "room" | "class"
+	Day                 int    `json:"day_of_week"`
+	Period              int    `json:"period_number"`
+	StartTime           string `json:"start_time"`
+	EndTime             string `json:"end_time"`
+	ClassID             string `json:"class_id,omitempty"`
+	ClassName           string `json:"class_name,omitempty"`
+	TeacherID           string `json:"teacher_id,omitempty"`
+	Room                string `json:"room,omitempty"`
 	ExistingTimetableID string `json:"existing_timetable_id,omitempty"`
-	Message        string `json:"message"`
+	Message             string `json:"message"`
 }
 
 // detectConflicts checks each candidate session against the rest of the
@@ -1079,7 +1079,7 @@ func (h *Handler) detectConflicts(schoolID, yearID, classID string, candidates [
 							StartTime: c.StartsAt, EndTime: c.EndsAt,
 							ClassID: t.ClassID, ClassName: classByID[t.ClassID],
 							ExistingTimetableID: t.ID,
-							Message: fmt.Sprintf("This class already has a period at %s–%s.", s.StartsAt, s.EndsAt),
+							Message:             fmt.Sprintf("This class already has a period at %s–%s.", s.StartsAt, s.EndsAt),
 						})
 					}
 					if c.TeacherID != "" && c.TeacherID == s.TeacherID {
@@ -1108,7 +1108,10 @@ func (h *Handler) detectConflicts(schoolID, yearID, classID string, candidates [
 }
 
 func (h *Handler) countConflicts(schoolID, yearID string) int {
-	type cell struct{ tt *store.Timetable; s store.TimetableSession }
+	type cell struct {
+		tt *store.Timetable
+		s  store.TimetableSession
+	}
 	h.Store.RLock()
 	defer h.Store.RUnlock()
 	cells := make([]cell, 0)

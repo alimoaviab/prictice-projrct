@@ -87,16 +87,16 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 	})
 
 	saveFn := func(table string, doc any) {
-			switch {
-			case len(table) > 7 && table[len(table)-7:] == ":delete":
-				if s, ok := doc.(string); ok {
-					pg.Delete(table[:len(table)-7], s)
-				} else {
-					pg.DeleteWithDoc(table[:len(table)-7], doc)
-				}
-			default:
-				pg.Save(table, doc)
+		switch {
+		case len(table) > 7 && table[len(table)-7:] == ":delete":
+			if s, ok := doc.(string); ok {
+				pg.Delete(table[:len(table)-7], s)
+			} else {
+				pg.DeleteWithDoc(table[:len(table)-7], doc)
 			}
+		default:
+			pg.Save(table, doc)
+		}
 	}
 
 	authH := authdomain.NewWithPersist(cfg, s, saveFn)
@@ -185,7 +185,7 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Put("/attendance/{id}", atH.Update)
 			r.Delete("/attendance/{id}", atH.Delete)
 			r.Post("/attendance/mark", atPG.MarkBulkPG) // Direct PG batch insert
-			r.Get("/attendance/sheet", atPG.Sheet)       // Direct PG JOIN query
+			r.Get("/attendance/sheet", atPG.Sheet)      // Direct PG JOIN query
 
 			exH := exams.NewWithCache(s, saveFn, rdb)
 			r.Get("/exams", exH.List)
@@ -483,9 +483,9 @@ func buildHealthHandler(pg *persistence.Persister, rdb *cache.Client) http.Handl
 		}
 
 		api.WriteJSON(w, status, map[string]any{
-			"ok":       healthy,
-			"status":   statusText(healthy),
-			"checks":   checks,
+			"ok":        healthy,
+			"status":    statusText(healthy),
+			"checks":    checks,
 			"memory_mb": int(mem.Alloc / 1024 / 1024),
 		})
 	}

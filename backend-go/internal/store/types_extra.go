@@ -280,34 +280,34 @@ type CertificateTemplate struct {
 	ID            string    `json:"_id"`
 	SchoolID      string    `json:"school_id"`
 	Name          string    `json:"name"`
-	Type          string    `json:"type"`          // character, school_leaving, achievement, etc.
-	Orientation   string    `json:"orientation"`   // landscape | portrait
+	Type          string    `json:"type"`        // character, school_leaving, achievement, etc.
+	Orientation   string    `json:"orientation"` // landscape | portrait
 	BackgroundURL string    `json:"background_url"`
 	WatermarkURL  string    `json:"watermark_url"`
 	BorderStyle   string    `json:"border_style"`
 	BodyText      string    `json:"body_text"`
-	Elements      string    `json:"elements"`      // JSON string of positioned elements
+	Elements      string    `json:"elements"` // JSON string of positioned elements
 	IsDefault     bool      `json:"is_default"`
-	Status        string    `json:"status"`        // active | archived
+	Status        string    `json:"status"` // active | archived
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 }
 
 // GeneratedCertificate is a certificate issued to a specific student.
 type GeneratedCertificate struct {
-	ID               string    `json:"_id"`
-	SchoolID         string    `json:"school_id"`
-	TemplateID       string    `json:"template_id"`
-	StudentID        string    `json:"student_id"`
-	StudentName      string    `json:"student_name"`
-	ClassName        string    `json:"class_name"`
-	CertificateType  string    `json:"certificate_type"`
-	CertificateNo    string    `json:"certificate_no"`
-	VerificationCode string    `json:"verification_code"`
-	QRCodeURL        string    `json:"qr_code_url"`
-	PDFURL           string    `json:"pdf_url"`
-	IssueDate        time.Time `json:"issue_date"`
+	ID               string     `json:"_id"`
+	SchoolID         string     `json:"school_id"`
+	TemplateID       string     `json:"template_id"`
+	StudentID        string     `json:"student_id"`
+	StudentName      string     `json:"student_name"`
+	ClassName        string     `json:"class_name"`
+	CertificateType  string     `json:"certificate_type"`
+	CertificateNo    string     `json:"certificate_no"`
+	VerificationCode string     `json:"verification_code"`
+	QRCodeURL        string     `json:"qr_code_url"`
+	PDFURL           string     `json:"pdf_url"`
+	IssueDate        time.Time  `json:"issue_date"`
 	ExpiryDate       *time.Time `json:"expiry_date,omitempty"`
-	Status           string    `json:"status"` // issued | revoked | expired
-	CreatedAt        time.Time `json:"created_at"`
+	Status           string     `json:"status"` // issued | revoked | expired
+	CreatedAt        time.Time  `json:"created_at"`
 }

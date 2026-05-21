@@ -28,34 +28,34 @@ func NewWithPersist(s *store.MemStore, save func(string, any)) *Handler {
 }
 
 type PackageInput struct {
-	Name                  string    `json:"name"`
-	Price                 float64   `json:"price"`
-	BillingCycle          string    `json:"billing_cycle"`
-	ExpiryDate            time.Time `json:"expiry_date"`
-	StudentLimit          int       `json:"student_limit"`
-	TeacherLimit          int       `json:"teacher_limit"`
-	ParentLimit           int       `json:"parent_limit"`
-	ClassLimit            int       `json:"class_limit"`
-	StorageLimitMB        int       `json:"storage_limit_mb"`
-	ChatbotMonthlyLimit   int       `json:"chatbot_monthly_limit"`
-	AIUsageLimit          int       `json:"ai_usage_limit"`
-	QuestionGenLimit      int       `json:"question_gen_limit"`
-	ExamGenLimit          int       `json:"exam_gen_limit"`
-	LiveClassesLimit      int       `json:"live_classes_limit"`
-	BroadcastLimit        int       `json:"broadcast_limit"`
-	SupportType           string    `json:"support_type"`
-	CustomModules         []string  `json:"custom_modules"`
-	ModAttendance         bool      `json:"mod_attendance"`
-	ModHomework           bool      `json:"mod_homework"`
-	ModExams              bool      `json:"mod_exams"`
-	ModQuestionBank       bool      `json:"mod_question_bank"`
-	ModLiveClasses        bool      `json:"mod_live_classes"`
-	ModBroadcast          bool      `json:"mod_broadcast"`
-	ModFees               bool      `json:"mod_fees"`
-	ModBehavior           bool      `json:"mod_behavior"`
-	ModCertificates       bool      `json:"mod_certificates"`
-	ModAnalytics          bool      `json:"mod_analytics"`
-	Status                string    `json:"status"`
+	Name                string    `json:"name"`
+	Price               float64   `json:"price"`
+	BillingCycle        string    `json:"billing_cycle"`
+	ExpiryDate          time.Time `json:"expiry_date"`
+	StudentLimit        int       `json:"student_limit"`
+	TeacherLimit        int       `json:"teacher_limit"`
+	ParentLimit         int       `json:"parent_limit"`
+	ClassLimit          int       `json:"class_limit"`
+	StorageLimitMB      int       `json:"storage_limit_mb"`
+	ChatbotMonthlyLimit int       `json:"chatbot_monthly_limit"`
+	AIUsageLimit        int       `json:"ai_usage_limit"`
+	QuestionGenLimit    int       `json:"question_gen_limit"`
+	ExamGenLimit        int       `json:"exam_gen_limit"`
+	LiveClassesLimit    int       `json:"live_classes_limit"`
+	BroadcastLimit      int       `json:"broadcast_limit"`
+	SupportType         string    `json:"support_type"`
+	CustomModules       []string  `json:"custom_modules"`
+	ModAttendance       bool      `json:"mod_attendance"`
+	ModHomework         bool      `json:"mod_homework"`
+	ModExams            bool      `json:"mod_exams"`
+	ModQuestionBank     bool      `json:"mod_question_bank"`
+	ModLiveClasses      bool      `json:"mod_live_classes"`
+	ModBroadcast        bool      `json:"mod_broadcast"`
+	ModFees             bool      `json:"mod_fees"`
+	ModBehavior         bool      `json:"mod_behavior"`
+	ModCertificates     bool      `json:"mod_certificates"`
+	ModAnalytics        bool      `json:"mod_analytics"`
+	Status              string    `json:"status"`
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
@@ -78,38 +78,38 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
 	now := time.Now()
 	doc := &store.Package{
-		ID:                    store.NewID("pkg"),
-		Name:                  body.Name,
-		Price:                 body.Price,
-		BillingCycle:          body.BillingCycle,
-		StartDate:             now,
-		ExpiryDate:            body.ExpiryDate,
-		StudentLimit:          body.StudentLimit,
-		TeacherLimit:          body.TeacherLimit,
-		ParentLimit:           body.ParentLimit,
-		ClassLimit:            body.ClassLimit,
-		StorageLimitMB:        body.StorageLimitMB,
-		ChatbotMonthlyLimit:   body.ChatbotMonthlyLimit,
-		AIUsageLimit:          body.AIUsageLimit,
-		QuestionGenLimit:      body.QuestionGenLimit,
-		ExamGenLimit:          body.ExamGenLimit,
-		LiveClassesLimit:      body.LiveClassesLimit,
-		BroadcastLimit:        body.BroadcastLimit,
-		SupportType:           body.SupportType,
-		CustomModules:         body.CustomModules,
-		ModAttendance:         body.ModAttendance,
-		ModHomework:           body.ModHomework,
-		ModExams:              body.ModExams,
-		ModQuestionBank:       body.ModQuestionBank,
-		ModLiveClasses:        body.ModLiveClasses,
-		ModBroadcast:          body.ModBroadcast,
-		ModFees:               body.ModFees,
-		ModBehavior:           body.ModBehavior,
-		ModCertificates:       body.ModCertificates,
-		ModAnalytics:          body.ModAnalytics,
-		Status:                "active",
-		CreatedAt:             now,
-		UpdatedAt:             now,
+		ID:                  store.NewID("pkg"),
+		Name:                body.Name,
+		Price:               body.Price,
+		BillingCycle:        body.BillingCycle,
+		StartDate:           now,
+		ExpiryDate:          body.ExpiryDate,
+		StudentLimit:        body.StudentLimit,
+		TeacherLimit:        body.TeacherLimit,
+		ParentLimit:         body.ParentLimit,
+		ClassLimit:          body.ClassLimit,
+		StorageLimitMB:      body.StorageLimitMB,
+		ChatbotMonthlyLimit: body.ChatbotMonthlyLimit,
+		AIUsageLimit:        body.AIUsageLimit,
+		QuestionGenLimit:    body.QuestionGenLimit,
+		ExamGenLimit:        body.ExamGenLimit,
+		LiveClassesLimit:    body.LiveClassesLimit,
+		BroadcastLimit:      body.BroadcastLimit,
+		SupportType:         body.SupportType,
+		CustomModules:       body.CustomModules,
+		ModAttendance:       body.ModAttendance,
+		ModHomework:         body.ModHomework,
+		ModExams:            body.ModExams,
+		ModQuestionBank:     body.ModQuestionBank,
+		ModLiveClasses:      body.ModLiveClasses,
+		ModBroadcast:        body.ModBroadcast,
+		ModFees:             body.ModFees,
+		ModBehavior:         body.ModBehavior,
+		ModCertificates:     body.ModCertificates,
+		ModAnalytics:        body.ModAnalytics,
+		Status:              "active",
+		CreatedAt:           now,
+		UpdatedAt:           now,
 	}
 
 	h.Store.Lock()

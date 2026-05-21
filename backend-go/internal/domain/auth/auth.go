@@ -153,10 +153,10 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 						suggestedTabFor(user.Role),
 					),
 					"error": map[string]any{
-						"code":             "ROLE_MISMATCH",
-						"actual_role":      user.Role,
-						"requested_tab":    requestedRole,
-						"suggested_tab":    suggestedTabFor(user.Role),
+						"code":          "ROLE_MISMATCH",
+						"actual_role":   user.Role,
+						"requested_tab": requestedRole,
+						"suggested_tab": suggestedTabFor(user.Role),
 					},
 				})
 				return
@@ -378,16 +378,16 @@ func (h *Handler) Signup(w http.ResponseWriter, r *http.Request) {
 		year := time.Now().Year()
 
 		newSchool := &store.School{
-			ID:               store.NewID("sch"),
-			SchoolID:         schoolID,
-			Name:             schoolName,
-			Code:             uniqueCode,
-			Status:           "active",
-			ApprovalStatus:   "approved",
-			ApprovedAt:       &now,
-			ApprovedBy:       "auto",
-			CreatedAt:        now,
-			UpdatedAt:        now,
+			ID:             store.NewID("sch"),
+			SchoolID:       schoolID,
+			Name:           schoolName,
+			Code:           uniqueCode,
+			Status:         "active",
+			ApprovalStatus: "approved",
+			ApprovedAt:     &now,
+			ApprovedBy:     "auto",
+			CreatedAt:      now,
+			UpdatedAt:      now,
 		}
 		newYear := &store.AcademicYear{
 			ID:          yearID,

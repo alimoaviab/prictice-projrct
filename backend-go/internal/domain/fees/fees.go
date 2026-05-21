@@ -17,17 +17,18 @@
 //   - Effective amount = invoice amount + sum(active adjustments at due_at)
 //     where penalty is added and discount/waiver/scholarship are subtracted.
 //   - Status:  paid_amount <= 0           → "unpaid"
-//              paid_amount >= effective    → "paid"
-//              otherwise                  → "partial"
+//     paid_amount >= effective    → "paid"
+//     otherwise                  → "partial"
 //   - Receipt/invoice generation uses the same prefix and date layout.
 package fees
 
 import (
+	"crypto/rand"
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math/rand"
+	"math/big"
 	"net/http"
 	"sort"
 	"strconv"
@@ -182,7 +183,14 @@ func titleCase(s string) string {
 }
 
 func makeInvoiceNo(studentID, month string, year int) string {
-	src := fmt.Sprintf("%s:%s:%d:%d:%d", studentID, month, year, time.Now().UnixNano(), rand.Int())
+	rNum, err := rand.Int(rand.Reader, big.NewInt(1<<62))
+	var rVal int64
+	if err != nil {
+		rVal = time.Now().UnixNano() // fallback if entropy exhausted
+	} else {
+		rVal = rNum.Int64()
+	}
+	src := fmt.Sprintf("%s:%s:%d:%d:%d", studentID, month, year, time.Now().UnixNano(), rVal)
 	h := sha1.Sum([]byte(src))
 	hash := strings.ToUpper(hex.EncodeToString(h[:])[:10])
 	mn, _ := monthToNum(month)
@@ -193,7 +201,13 @@ func makeInvoiceNo(studentID, month string, year int) string {
 }
 
 func makeReceiptNo() string {
-	suffix := fmt.Sprintf("%X", rand.Uint32()&0xFFFFFF)
+	rNum, err := rand.Int(rand.Reader, big.NewInt(0x1000000)) // 0xFFFFFF + 1
+	var suffix string
+	if err != nil {
+		suffix = fmt.Sprintf("%X", time.Now().UnixNano()&0xFFFFFF)
+	} else {
+		suffix = fmt.Sprintf("%X", rNum.Int64())
+	}
 	return fmt.Sprintf("RCP-%s-%s", strings.ToUpper(fmt.Sprintf("%X", time.Now().Unix())), suffix)
 }
 
@@ -671,9 +685,9 @@ func (h *Handler) DuplicateClassFee(w http.ResponseWriter, r *http.Request) {
 // ─── Generate monthly invoices ───────────────────────────────────────────
 
 type generateInput struct {
-	ClassID    string `json:"class_id"`
-	Month      string `json:"month"`
-	Year       int    `json:"year"`
+	ClassID    string   `json:"class_id"`
+	Month      string   `json:"month"`
+	Year       int      `json:"year"`
 	StudentIDs []string `json:"student_ids,omitempty"`
 }
 
@@ -698,7 +712,7 @@ func (h *Handler) Generate(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			return nil, api.NewControlledError("VALIDATION_ERROR", "Invalid month.", 400, nil)
 		}
-		
+
 		// Find the academic year that contains this month/year.
 		targetDate := time.Date(body.Year, time.Month(mn), 15, 0, 0, 0, 0, time.UTC)
 		var yearID string
@@ -1274,13 +1288,13 @@ func (h *Handler) ClassesSummary(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			byClass[c.ID] = map[string]any{
-				"_id":          c.ID,
-				"id":           c.ID,
-				"name":         c.Name,
-				"section":      c.Section,
-				"total":        0.0,
-				"collected":    0.0,
-				"pending":      0.0,
+				"_id":           c.ID,
+				"id":            c.ID,
+				"name":          c.Name,
+				"section":       c.Section,
+				"total":         0.0,
+				"collected":     0.0,
+				"pending":       0.0,
 				"student_count": 0,
 				"invoice_count": 0,
 			}
@@ -1317,13 +1331,14 @@ func (h *Handler) ClassesSummary(w http.ResponseWriter, r *http.Request) {
 // LedgerDashboard implements GET /api/fees/ledger.
 //
 // Returns the shape the React fee page expects:
-//   {
-//     stats:       { monthly_total, monthly_collection, pending_amount,
-//                    paid_count, partial_count, unpaid_count, collection_rate },
-//     students:    [ { student, current_fee, carry_forward, total_payable,
-//                      paid_total, remaining, status }, ... ],
-//     pagination:  { total, page, limit, pages }
-//   }
+//
+//	{
+//	  stats:       { monthly_total, monthly_collection, pending_amount,
+//	                 paid_count, partial_count, unpaid_count, collection_rate },
+//	  students:    [ { student, current_fee, carry_forward, total_payable,
+//	                   paid_total, remaining, status }, ... ],
+//	  pagination:  { total, page, limit, pages }
+//	}
 //
 // Filters: status (all|paid|partial|unpaid), class_id, month, year, search,
 // page, limit.
@@ -1468,13 +1483,13 @@ func (h *Handler) LedgerDashboard(w http.ResponseWriter, r *http.Request) {
 		}
 
 		type ledgerEntry struct {
-			Student       map[string]any `json:"student"`
-			CurrentFee    map[string]any `json:"current_fee"`
-			CarryForward  float64        `json:"carry_forward"`
-			TotalPayable  float64        `json:"total_payable"`
-			PaidTotal     float64        `json:"paid_total"`
-			Remaining     float64        `json:"remaining"`
-			Status        string         `json:"status"`
+			Student      map[string]any `json:"student"`
+			CurrentFee   map[string]any `json:"current_fee"`
+			CarryForward float64        `json:"carry_forward"`
+			TotalPayable float64        `json:"total_payable"`
+			PaidTotal    float64        `json:"paid_total"`
+			Remaining    float64        `json:"remaining"`
+			Status       string         `json:"status"`
 		}
 
 		entries := make([]ledgerEntry, 0, len(studentByID))
@@ -1519,7 +1534,7 @@ func (h *Handler) LedgerDashboard(w http.ResponseWriter, r *http.Request) {
 				}
 
 				isCurrent := monthQ == "" || (strings.EqualFold(f.Month, monthQ) && (yearQ == "" || strconv.Itoa(f.Year) == yearQ))
-				
+
 				isPrevious := false
 				if monthQ != "" && yearQ != "" {
 					isPrevious = isEarlier(f.Month, f.Year, monthQ, yearNum)

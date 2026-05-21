@@ -68,9 +68,9 @@ type MemStore struct {
 	// Certificate collections.
 	CertificateTemplates  []*CertificateTemplate
 	GeneratedCertificates []*GeneratedCertificate
-	Invoices       []*Invoice
-	Transactions   []*Transaction
-	Subscriptions  []*Subscription
+	Invoices              []*Invoice
+	Transactions          []*Transaction
+	Subscriptions         []*Subscription
 
 	// ─── Lookup indexes (perf phase 1) ──────────────────────────────────
 	//

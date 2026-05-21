@@ -1,8 +1,9 @@
 // Package realtime provides a WebSocket hub with Redis Pub/Sub fan-out.
 //
 // Architecture:
-//   Client → WS /ws → Hub.ServeWS() → registers connection
-//   Redis Pub/Sub → Hub.subscribeSchool() → fan-out to all school's connections
+//
+//	Client → WS /ws → Hub.ServeWS() → registers connection
+//	Redis Pub/Sub → Hub.subscribeSchool() → fan-out to all school's connections
 //
 // Thread safety: sync.RWMutex protects the connections map.
 // Keepalive: ping/pong every 30s, 45s read deadline.

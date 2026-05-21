@@ -148,11 +148,11 @@ type PaymentRequest struct {
 	SubmittedAt     time.Time  `json:"submitted_at"`
 	VerifiedAt      *time.Time `json:"verified_at,omitempty"`
 	VerifiedBy      string     `json:"verified_by,omitempty"`
-	RejectionReason string    `json:"rejection_reason,omitempty"`
+	RejectionReason string     `json:"rejection_reason,omitempty"`
 	Notes           string     `json:"notes,omitempty"`
 	// Joined fields
-	SchoolName      string     `json:"school_name,omitempty"`
-	PlanName        string     `json:"plan_name,omitempty"`
+	SchoolName string `json:"school_name,omitempty"`
+	PlanName   string `json:"plan_name,omitempty"`
 }
 
 type uploadPaymentInput struct {
@@ -301,13 +301,13 @@ func (h *Handler) AdminVerifyPayment(w http.ResponseWriter, r *http.Request) {
 		h.recordHistory(r.Context(), schoolID, planName, studentLimit, amount, "paid", now, endDate, "subscribe")
 
 		return map[string]any{
-			"payment_id":     paymentID,
+			"payment_id":      paymentID,
 			"subscription_id": subID,
-			"school_id":      schoolID,
-			"plan":           planName,
-			"student_limit":  studentLimit,
-			"end_date":       endDate,
-			"verified":       true,
+			"school_id":       schoolID,
+			"plan":            planName,
+			"student_limit":   studentLimit,
+			"end_date":        endDate,
+			"verified":        true,
 		}, nil
 	}))
 }
@@ -462,11 +462,11 @@ func (h *Handler) AdminAnalytics(w http.ResponseWriter, r *http.Request) {
 
 		return map[string]any{
 			"total_schools":    totalSchools,
-			"active_subs":     activeSubs,
-			"expired_subs":    expiredSubs,
+			"active_subs":      activeSubs,
+			"expired_subs":     expiredSubs,
 			"pending_payments": pendingPayments,
-			"trial_users":     trialUsers,
-			"monthly_revenue": monthlyRevenue,
+			"trial_users":      trialUsers,
+			"monthly_revenue":  monthlyRevenue,
 		}, nil
 	}))
 }

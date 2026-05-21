@@ -340,12 +340,12 @@ func (s *subjectInput) UnmarshalJSON(b []byte) error {
 }
 
 type createInput struct {
-	ClassID  string         `json:"class_id"`
-	Title    string         `json:"title"`
-	Type     string         `json:"type,omitempty"` // exam | test
-	StartsAt string         `json:"starts_at"`
-	Status   string         `json:"status,omitempty"`
-	Description string      `json:"description,omitempty"`
+	ClassID     string `json:"class_id"`
+	Title       string `json:"title"`
+	Type        string `json:"type,omitempty"` // exam | test
+	StartsAt    string `json:"starts_at"`
+	Status      string `json:"status,omitempty"`
+	Description string `json:"description,omitempty"`
 
 	// New shape — preferred.
 	Subjects []subjectInput `json:"subjects,omitempty"`

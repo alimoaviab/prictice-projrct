@@ -10,16 +10,16 @@ import (
 // JWT and the x-academic-year-id header, then attached to the http.Request
 // context for downstream handlers.
 type RequestContext struct {
-	SchoolID              string   `json:"school_id"`
-	UserID                string   `json:"user_id"`
-	Role                  string   `json:"role"`
-	App                   string   `json:"app"`
-	Permissions           []string `json:"permissions"`
-	ActiveAcademicYearID  string   `json:"active_academic_year_id,omitempty"`
-	SessionID             string   `json:"session_id,omitempty"`
-	ActorEmail            string   `json:"actor_email,omitempty"`
-	IP                    string   `json:"ip,omitempty"`
-	UserAgent             string   `json:"user_agent,omitempty"`
+	SchoolID             string   `json:"school_id"`
+	UserID               string   `json:"user_id"`
+	Role                 string   `json:"role"`
+	App                  string   `json:"app"`
+	Permissions          []string `json:"permissions"`
+	ActiveAcademicYearID string   `json:"active_academic_year_id,omitempty"`
+	SessionID            string   `json:"session_id,omitempty"`
+	ActorEmail           string   `json:"actor_email,omitempty"`
+	IP                   string   `json:"ip,omitempty"`
+	UserAgent            string   `json:"user_agent,omitempty"`
 }
 
 type ctxKey string

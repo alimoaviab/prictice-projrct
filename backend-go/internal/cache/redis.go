@@ -57,9 +57,9 @@ func New(redisURL string) *Client {
 	}
 
 	// Connection pool settings optimized for a multi-tenant ERP.
-	opts.PoolSize = 20            // Max connections in pool
-	opts.MinIdleConns = 5         // Keep warm connections
-	opts.MaxRetries = 2           // Retry transient failures
+	opts.PoolSize = 20    // Max connections in pool
+	opts.MinIdleConns = 5 // Keep warm connections
+	opts.MaxRetries = 2   // Retry transient failures
 	opts.DialTimeout = 3 * time.Second
 	opts.ReadTimeout = 2 * time.Second
 	opts.WriteTimeout = 2 * time.Second

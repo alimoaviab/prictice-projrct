@@ -9,10 +9,10 @@ import (
 
 // ResolveAcademicYearID returns the academic year ID the caller intended to
 // scope a query to. Resolution order matches the original:
-//   1. Explicit `requestedID` if it belongs to the caller's school.
-//   2. `ctx.ActiveAcademicYearID` (from the JWT or x-academic-year-id header).
-//   3. Whichever year on this tenant has `is_active=true`.
-//   4. Empty string if the tenant has no year at all.
+//  1. Explicit `requestedID` if it belongs to the caller's school.
+//  2. `ctx.ActiveAcademicYearID` (from the JWT or x-academic-year-id header).
+//  3. Whichever year on this tenant has `is_active=true`.
+//  4. Empty string if the tenant has no year at all.
 func ResolveAcademicYearID(s *store.MemStore, ctx *api.RequestContext, requestedID string) string {
 	s.RLock()
 	defer s.RUnlock()
