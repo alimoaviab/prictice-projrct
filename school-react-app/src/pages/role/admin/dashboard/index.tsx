@@ -28,10 +28,16 @@ export function AdminDashboardPage() {
   const stats = [
     { title: "Students", value: overview?.totalStudents ?? "0", icon: "school", color: "text-blue-600 bg-blue-50" },
     { title: "Teachers", value: overview?.totalTeachers ?? "0", icon: "badge", color: "text-emerald-600 bg-emerald-50" },
+    { title: "Parents", value: overview?.totalParents ?? "0", icon: "people", color: "text-indigo-600 bg-indigo-50" },
+    { title: "Classes", value: overview?.totalClasses ?? "0", icon: "class", color: "text-cyan-600 bg-cyan-50" },
+    { title: "Subjects", value: overview?.totalSubjects ?? "0", icon: "menu_book", color: "text-violet-600 bg-violet-50" },
     { title: "Attendance", value: `${overview?.attendanceToday ?? 0}%`, icon: "fact_check", color: "text-amber-600 bg-amber-50" },
     { title: "Unmarked", value: overview?.unmarkedStudents ?? "0", icon: "pending", color: "text-orange-600 bg-orange-50" },
-    { title: "Fees", value: `${overview?.feeCollection?.percentage ?? 0}%`, icon: "payments", color: "text-purple-600 bg-purple-50" },
     { title: "Exams", value: overview?.activeExams ?? "0", icon: "quiz", color: "text-rose-600 bg-rose-50" },
+    { title: "Homework", value: overview?.totalHomework ?? "0", icon: "assignment", color: "text-pink-600 bg-pink-50" },
+    { title: "Live Classes", value: overview?.totalLiveClasses ?? "0", icon: "videocam", color: "text-red-600 bg-red-50" },
+    { title: "Fees %", value: `${overview?.feeCollection?.percentage ?? 0}%`, icon: "payments", color: "text-purple-600 bg-purple-50" },
+    { title: "Pending Fees", value: `PKR ${(overview?.pendingFees ?? 0).toLocaleString()}`, icon: "account_balance_wallet", color: "text-slate-600 bg-slate-50" },
   ];
 
   if (isError) {
@@ -60,9 +66,9 @@ export function AdminDashboardPage() {
     <SchoolShell eyebrow="School Overview" title="Admin Dashboard">
 
       {/* 1. KPI Cards Row */}
-      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6">
         {loading ? (
-          Array(6).fill(0).map((_, i) => <div key={i} className="h-[80px] animate-pulse rounded-xl bg-slate-50 border border-slate-100" />)
+          Array(12).fill(0).map((_, i) => <div key={i} className="h-[80px] animate-pulse rounded-xl bg-slate-50 border border-slate-100" />)
         ) : (
           stats.map((stat) => (
             <div key={stat.title} className="premium-card relative flex items-center gap-2.5 p-2.5 transition-all hover:border-blue-200/60 hover:shadow-sm">

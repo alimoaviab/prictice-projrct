@@ -31,20 +31,29 @@ import (
 const settingsCacheTTL = 30 * time.Minute
 
 type Handler struct {
-	Store *store.MemStore
-	Cache *cache.Client
+	Store   *store.MemStore
+	Cache   *cache.Client
+	Persist func(table string, doc any)
 }
 
 // New keeps the original signature so existing callers continue to
 // compile without changes. It runs without a cache layer (graceful
 // degrade — same behaviour as before this phase).
-func New(s *store.MemStore) *Handler { return &Handler{Store: s} }
+func New(s *store.MemStore) *Handler { return &Handler{Store: s, Persist: func(string, any) {}} }
 
 // NewWithCache attaches a Redis client. Pass nil to opt out — the
 // handler treats a nil/unavailable cache as "no cache" and reads
 // directly from the MemStore exactly like before.
 func NewWithCache(s *store.MemStore, c *cache.Client) *Handler {
-	return &Handler{Store: s, Cache: c}
+	return &Handler{Store: s, Cache: c, Persist: func(string, any) {}}
+}
+
+// NewWithCacheAndPersist attaches both Redis and a persistence function.
+func NewWithCacheAndPersist(s *store.MemStore, c *cache.Client, save func(string, any)) *Handler {
+	if save == nil {
+		save = func(string, any) {}
+	}
+	return &Handler{Store: s, Cache: c, Persist: save}
 }
 
 func (h *Handler) findSettings(schoolID string) *store.SchoolSettings {
@@ -200,6 +209,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 						school.Website = web
 					}
 					school.UpdatedAt = now
+					h.Persist("schools", school)
 					break
 				}
 			}

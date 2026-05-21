@@ -8,7 +8,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X } from '@/components/icons';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -21,10 +21,12 @@ const NAV_LINKS = [
   { label: 'Platform', hash: '#platform' },
   { label: 'Security', hash: '#security' },
   { label: 'Pricing', hash: '#pricing' },
+  { label: 'Blog', to: '/blog' },
 ];
 
 export const Navbar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -34,6 +36,8 @@ export const Navbar = () => {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const isHome = location.pathname === '/';
 
   return (
     <header
@@ -49,28 +53,40 @@ export const Navbar = () => {
           <span className="w-10 h-10 rounded-xl overflow-hidden bg-white shadow-md ring-1 ring-slate-200 flex-shrink-0 group-hover:shadow-lg group-hover:ring-blue-200 transition-all">
             <img
               src="/logo.jpeg"
-              alt="Eduplexo"
+              alt="EduPlexo — AI School Management System Logo"
               className="w-full h-full object-cover"
               loading="eager"
+              width="40"
+              height="40"
             />
           </span>
           <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
-            Eduplexo
+            EduPlexo
           </span>
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-8">
-          {NAV_LINKS.map((link) => (
-            <a
-              key={link.label}
-              href={link.hash}
-              onClick={makeAnchorClickHandler(link.hash, navigate)}
-              className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors"
-            >
-              {link.label}
-            </a>
-          ))}
+        <nav className="hidden md:flex items-center gap-6" aria-label="Main navigation">
+          {NAV_LINKS.map((link) =>
+            link.to ? (
+              <Link
+                key={link.label}
+                to={link.to}
+                className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors"
+              >
+                {link.label}
+              </Link>
+            ) : (
+              <a
+                key={link.label}
+                href={link.hash ?? '#'}
+                onClick={makeAnchorClickHandler(link.hash ?? '#', navigate)}
+                className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors"
+              >
+                {link.label}
+              </a>
+            ),
+          )}
         </nav>
 
         {/* Auth CTA */}
@@ -96,6 +112,7 @@ export const Navbar = () => {
           className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label="Toggle Menu"
+          aria-expanded={mobileMenuOpen}
         >
           {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
@@ -112,18 +129,29 @@ export const Navbar = () => {
             className="absolute top-full left-0 right-0 bg-white border-b border-slate-200 shadow-xl md:hidden overflow-hidden"
           >
             <div className="flex flex-col p-4 space-y-1">
-              {NAV_LINKS.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.hash}
-                  onClick={makeAnchorClickHandler(link.hash, navigate, () =>
-                    setMobileMenuOpen(false),
-                  )}
-                  className="text-base font-medium text-slate-700 hover:text-blue-600 p-3 rounded-lg hover:bg-slate-50 transition-colors"
-                >
-                  {link.label}
-                </a>
-              ))}
+              {NAV_LINKS.map((link) =>
+                link.to ? (
+                  <Link
+                    key={link.label}
+                    to={link.to}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-base font-medium text-slate-700 hover:text-blue-600 p-3 rounded-lg hover:bg-slate-50 transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                ) : (
+                  <a
+                    key={link.label}
+                    href={link.hash ?? '#'}
+                    onClick={makeAnchorClickHandler(link.hash ?? '#', navigate, () =>
+                      setMobileMenuOpen(false),
+                    )}
+                    className="text-base font-medium text-slate-700 hover:text-blue-600 p-3 rounded-lg hover:bg-slate-50 transition-colors"
+                  >
+                    {link.label}
+                  </a>
+                ),
+              )}
               <div className="h-px bg-slate-100 w-full my-3" />
               <a
                 href={LOGIN_URL}

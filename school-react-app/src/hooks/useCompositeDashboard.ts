@@ -42,13 +42,22 @@ interface FeeSummary {
 interface Overview {
   totalStudents: number;
   totalTeachers: number;
+  totalParents: number;
+  totalGuardians: number;
   totalClasses: number;
+  totalSubjects: number;
   attendanceToday: number;
   attendanceDetailed: { present: number; absent: number; total: number };
   activeExams: number;
   pendingLeave: number;
   unmarkedStudents: number;
   feeCollection: { total: number; paid: number; percentage: number; pending_count: number };
+  totalHomework: number;
+  totalLiveClasses: number;
+  activeTeachers: number;
+  presentToday: number;
+  pendingFees: number;
+  collectedFees: number;
 }
 
 interface ActivityItem {

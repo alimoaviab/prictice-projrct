@@ -11,11 +11,14 @@ interface PaymentRequest {
   screenshot_url: string
   notes: string
   submitted_at: string
+  verified_at?: string
+  rejection_reason?: string
 }
 
 export function PaymentsPage() {
   const [payments, setPayments] = useState<PaymentRequest[]>([])
   const [loading, setLoading] = useState(true)
+  const [tab, setTab] = useState<'pending' | 'approved' | 'rejected'>('pending')
 
   useEffect(() => {
     fetchPayments()
@@ -23,22 +26,17 @@ export function PaymentsPage() {
 
   const fetchPayments = async () => {
     setLoading(true)
-    const res = await apiRequest<PaymentRequest[]>('/api/admin/payments/pending')
+    const res = await apiRequest('/api/admin/payments/all')
     if (res.ok && res.data) {
-      setPayments(res.data)
+      const d = res.data as any
+      setPayments(d.items || d.data || [])
     }
     setLoading(false)
   }
 
   const handleVerify = async (id: string) => {
-    if (!confirm('Are you sure you want to verify this payment? This will activate the school subscription.')) return
     const res = await apiRequest(`/api/admin/payments/${id}/verify`, { method: 'POST' })
-    if (res.ok) {
-      alert('Payment verified successfully!')
-      fetchPayments()
-    } else {
-      alert(res.error?.message || 'Failed to verify payment')
-    }
+    if (res.ok) fetchPayments()
   }
 
   const handleReject = async (id: string) => {
@@ -48,97 +46,127 @@ export function PaymentsPage() {
       method: 'POST',
       body: JSON.stringify({ reason })
     })
-    if (res.ok) {
-      alert('Payment rejected.')
-      fetchPayments()
-    } else {
-      alert(res.error?.message || 'Failed to reject payment')
-    }
+    if (res.ok) fetchPayments()
   }
 
-  if (loading) return <div className="p-8 text-center">Loading payments...</div>
+  const filtered = payments.filter((p) => {
+    if (tab === 'pending') return p.status === 'pending'
+    if (tab === 'approved') return p.status === 'verified'
+    return p.status === 'rejected'
+  })
+
+  const pendingCount = payments.filter(p => p.status === 'pending').length
+  const approvedCount = payments.filter(p => p.status === 'verified').length
+  const rejectedCount = payments.filter(p => p.status === 'rejected').length
+
+  const statusBadge = (s: string) => {
+    const map: Record<string, string> = {
+      pending: 'bg-amber-50 text-amber-700 border-amber-100',
+      verified: 'bg-blue-50 text-blue-700 border-blue-100',
+      rejected: 'bg-red-50 text-red-700 border-red-100',
+    }
+    return `text-[9px] font-bold px-2 py-0.5 rounded-full border ${map[s] || map.pending}`
+  }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Subscription Payments</h1>
-        <p className="text-sm text-slate-500 mt-1">Review and verify payment proofs from schools</p>
+    <div className="space-y-4">
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">Payments</h1>
+          <p className="text-xs text-slate-500 mt-0.5">Verify and manage school subscription payments</p>
+        </div>
+        <button onClick={fetchPayments} className="h-8 px-3 rounded-lg border border-slate-200 text-[10px] font-bold text-slate-600 hover:bg-slate-50 transition-colors">
+          Refresh
+        </button>
       </div>
 
+      {/* Summary */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: 'Pending', value: pendingCount, icon: 'schedule', color: 'text-amber-600', tab: 'pending' as const },
+          { label: 'Approved', value: approvedCount, icon: 'check_circle', color: 'text-blue-600', tab: 'approved' as const },
+          { label: 'Rejected', value: rejectedCount, icon: 'cancel', color: 'text-red-600', tab: 'rejected' as const },
+        ].map((s) => (
+          <button key={s.label} onClick={() => setTab(s.tab)} className={`bg-white rounded-xl border p-4 text-left transition-colors ${tab === s.tab ? 'border-blue-300 bg-blue-50/30' : 'border-slate-200 hover:border-slate-300'}`}>
+            <div className="flex items-center gap-2 mb-1">
+              <span className={`material-symbols-outlined text-[16px] ${s.color}`}>{s.icon}</span>
+              <span className="text-[10px] font-bold text-slate-500 uppercase">{s.label}</span>
+            </div>
+            <p className="text-xl font-bold text-slate-900">{s.value}</p>
+          </button>
+        ))}
+      </div>
+
+      {/* Table */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-slate-50 border-b border-slate-200">
-            <tr>
-              <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">School</th>
-              <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Plan / Amount</th>
-              <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Proof</th>
-              <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Submitted</th>
-              <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200">
-            {payments.length === 0 ? (
+        {loading ? (
+          <div className="p-12 text-center text-sm text-slate-400">Loading payments...</div>
+        ) : filtered.length === 0 ? (
+          <div className="p-16 text-center">
+            <span className="material-symbols-outlined text-4xl text-slate-200 mb-3">payments</span>
+            <p className="text-sm font-medium text-slate-500">No {tab} payments found</p>
+          </div>
+        ) : (
+          <table className="w-full">
+            <thead className="bg-slate-50 border-b border-slate-100">
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
-                  No pending payments found.
-                </td>
+                <th className="text-left px-4 py-3 text-[10px] font-bold text-slate-500 uppercase">School</th>
+                <th className="text-left px-4 py-3 text-[10px] font-bold text-slate-500 uppercase">Plan / Amount</th>
+                <th className="text-center px-4 py-3 text-[10px] font-bold text-slate-500 uppercase">Status</th>
+                <th className="text-left px-4 py-3 text-[10px] font-bold text-slate-500 uppercase">Proof</th>
+                <th className="text-left px-4 py-3 text-[10px] font-bold text-slate-500 uppercase">Date</th>
+                <th className="text-right px-4 py-3 text-[10px] font-bold text-slate-500 uppercase">Actions</th>
               </tr>
-            ) : (
-              payments.map((p) => (
-                <tr key={p.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <p className="font-bold text-slate-900">{p.school_name}</p>
-                    <p className="text-xs text-slate-500 font-mono">ID: {p.transaction_id}</p>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {filtered.map((p) => (
+                <tr key={p.id} className="hover:bg-blue-50/30 transition-colors">
+                  <td className="px-4 py-3">
+                    <p className="text-[12px] font-semibold text-slate-900">{p.school_name}</p>
+                    <p className="text-[10px] text-slate-400 font-mono">{p.transaction_id}</p>
                   </td>
-                  <td className="px-6 py-4">
-                    <p className="text-sm font-bold text-blue-600">{p.plan_name}</p>
-                    <p className="text-sm text-slate-900 font-bold">Rs {p.amount.toLocaleString()}</p>
+                  <td className="px-4 py-3">
+                    <p className="text-[11px] font-semibold text-blue-600">{p.plan_name}</p>
+                    <p className="text-[11px] font-bold text-slate-900">Rs {p.amount.toLocaleString()}</p>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3 text-center">
+                    <span className={statusBadge(p.status)}>{p.status === 'verified' ? 'Approved' : p.status}</span>
+                  </td>
+                  <td className="px-4 py-3">
                     <div className="space-y-1">
                       {p.screenshot_url && (
-                        <a 
-                          href={p.screenshot_url} 
-                          target="_blank" 
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:underline"
-                        >
+                        <a href={p.screenshot_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:underline">
                           <span className="material-symbols-outlined text-sm">image</span>
-                          View Screenshot
+                          Screenshot
                         </a>
                       )}
-                      {p.notes && (
-                        <div className="max-w-[200px]">
-                          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">SMS/Notes:</p>
-                          <p className="text-[11px] text-slate-700 line-clamp-2 italic">"{p.notes}"</p>
-                        </div>
-                      )}
+                      {p.notes && <p className="text-[10px] text-slate-500 italic line-clamp-1">"{p.notes}"</p>}
+                      {p.rejection_reason && <p className="text-[10px] text-red-500">Rejected: {p.rejection_reason}</p>}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-500">
-                    {new Date(p.submitted_at).toLocaleString()}
+                  <td className="px-4 py-3">
+                    <span className="text-[10px] text-slate-500">{new Date(p.submitted_at).toLocaleDateString()}</span>
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button 
-                        onClick={() => handleReject(p.id)}
-                        className="px-3 py-1.5 rounded-lg border border-red-200 text-red-600 text-xs font-bold hover:bg-red-50 transition-colors"
-                      >
-                        Reject
-                      </button>
-                      <button 
-                        onClick={() => handleVerify(p.id)}
-                        className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 shadow-sm shadow-emerald-100 transition-all"
-                      >
-                        Verify
-                      </button>
-                    </div>
+                  <td className="px-4 py-3 text-right">
+                    {p.status === 'pending' && (
+                      <div className="flex justify-end gap-1.5">
+                        <button onClick={() => handleReject(p.id)} className="h-6 px-2.5 text-[10px] font-semibold text-red-700 bg-red-50 border border-red-100 rounded-lg hover:bg-red-100 transition-colors">
+                          Reject
+                        </button>
+                        <button onClick={() => handleVerify(p.id)} className="h-6 px-2.5 text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-100 rounded-lg hover:bg-blue-100 transition-colors">
+                          Verify
+                        </button>
+                      </div>
+                    )}
+                    {p.status !== 'pending' && (
+                      <span className="text-[10px] text-slate-400">—</span>
+                    )}
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   )

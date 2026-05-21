@@ -28,13 +28,34 @@ import (
 
 // CompositeResponse is the all-in-one dashboard response.
 type CompositeResponse struct {
-	Overview        overview         `json:"overview"`
+	Overview        compositeOverview `json:"overview"`
 	Attendance      attendanceSummary `json:"attendance"`
 	Fees            feeSummary       `json:"fees"`
 	PendingLeaves   int              `json:"pendingLeaves"`
 	Activities      []map[string]any `json:"activities"`
 	UpcomingEvents  []map[string]any `json:"upcomingEvents"`
 	ClassAttendance []map[string]any `json:"classAttendance"`
+}
+
+type compositeOverview struct {
+	TotalStudents      int            `json:"totalStudents"`
+	TotalTeachers      int            `json:"totalTeachers"`
+	TotalParents       int            `json:"totalParents"`
+	TotalGuardians     int            `json:"totalGuardians"`
+	TotalClasses       int            `json:"totalClasses"`
+	TotalSubjects      int            `json:"totalSubjects"`
+	AttendanceToday    int            `json:"attendanceToday"`
+	AttendanceDetailed map[string]int `json:"attendanceDetailed"`
+	ActiveExams        int            `json:"activeExams"`
+	PendingLeave       int            `json:"pendingLeave"`
+	UnmarkedStudents   int            `json:"unmarkedStudents"`
+	FeeCollection      map[string]int `json:"feeCollection"`
+	TotalHomework      int            `json:"totalHomework"`
+	TotalLiveClasses   int            `json:"totalLiveClasses"`
+	ActiveTeachers     int            `json:"activeTeachers"`
+	PresentToday       int            `json:"presentToday"`
+	PendingFees        float64        `json:"pendingFees"`
+	CollectedFees      float64        `json:"collectedFees"`
 }
 
 type attendanceSummary struct {
@@ -106,10 +127,13 @@ func (h *CompositeHandler) compute(ctx *api.RequestContext, yearID string) Compo
 	h.Store.RLock()
 	defer h.Store.RUnlock()
 
-	var students, teachers, classes int
+	var students, teachers, parents, guardians, classes, subjects int
 	for _, s := range h.Store.Students {
 		if s.SchoolID == ctx.SchoolID && (yearID == "" || s.AcademicYearID == yearID) && s.Status == "active" {
 			students++
+			if s.Guardian.Name != "" {
+				guardians++
+			}
 		}
 	}
 	for _, t := range h.Store.Teachers {
@@ -117,9 +141,19 @@ func (h *CompositeHandler) compute(ctx *api.RequestContext, yearID string) Compo
 			teachers++
 		}
 	}
+	for _, p := range h.Store.Parents {
+		if p.SchoolID == ctx.SchoolID {
+			parents++
+		}
+	}
 	for _, c := range h.Store.Classes {
 		if c.SchoolID == ctx.SchoolID && (yearID == "" || c.AcademicYearID == yearID) && c.Status != "archived" {
 			classes++
+		}
+	}
+	for _, s := range h.Store.Subjects {
+		if s.SchoolID == ctx.SchoolID && s.Status == "active" {
+			subjects++
 		}
 	}
 
@@ -190,6 +224,22 @@ func (h *CompositeHandler) compute(ctx *api.RequestContext, yearID string) Compo
 		}
 	}
 
+	// Homework count
+	totalHomework := 0
+	for _, hw := range h.Store.Homework {
+		if hw.SchoolID == ctx.SchoolID && (yearID == "" || hw.AcademicYearID == yearID) && hw.Status != "draft" {
+			totalHomework++
+		}
+	}
+
+	// Live classes count
+	totalLiveClasses := 0
+	for _, lc := range h.Store.LiveClasses {
+		if lc.SchoolID == ctx.SchoolID && (yearID == "" || lc.AcademicYearID == yearID) && lc.Status == "scheduled" {
+			totalLiveClasses++
+		}
+	}
+
 	// Recent activities (last 10)
 	auditRows := make([]*store.AuditLog, 0)
 	for _, a := range h.Store.AuditLogs {
@@ -257,16 +307,25 @@ func (h *CompositeHandler) compute(ctx *api.RequestContext, yearID string) Compo
 	log.Printf("[composite] computed for school=%s year=%s", ctx.SchoolID, yearID)
 
 	return CompositeResponse{
-		Overview: overview{
+		Overview: compositeOverview{
 			TotalStudents:      students,
 			TotalTeachers:      teachers,
+			TotalParents:       parents,
+			TotalGuardians:     guardians,
 			TotalClasses:       classes,
+			TotalSubjects:      subjects,
 			AttendanceToday:    attPercent,
 			AttendanceDetailed: map[string]int{"present": present, "absent": absent, "total": len(marked)},
 			ActiveExams:        activeExams,
 			PendingLeave:       pendingLeaves,
 			UnmarkedStudents:   students - len(marked),
 			FeeCollection:      map[string]int{"total": int(feeTotal), "paid": int(feePaid), "percentage": feePercent, "pending_count": feePending},
+			TotalHomework:      totalHomework,
+			TotalLiveClasses:   totalLiveClasses,
+			ActiveTeachers:     teachers,
+			PresentToday:       present,
+			PendingFees:        feeTotal - feePaid,
+			CollectedFees:      feePaid,
 		},
 		Attendance: attendanceSummary{
 			Present: present, Absent: absent, Late: late,

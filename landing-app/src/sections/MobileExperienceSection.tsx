@@ -4,7 +4,7 @@ import { Smartphone, Bell, Clock, CalendarDays } from "@/components/icons";
 
 export const MobileExperienceSection = () => {
   return (
-    <section className="py-24 bg-white overflow-hidden relative">
+    <section className="py-24 bg-white overflow-hidden relative" aria-labelledby="mobile-heading">
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div className="flex flex-col lg:flex-row items-center gap-16">
 
@@ -74,18 +74,19 @@ export const MobileExperienceSection = () => {
                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 text-blue-600 text-sm font-semibold mb-6 border border-blue-100"
             >
                <Smartphone className="w-4 h-4" />
-               <span>Always Connected</span>
+               <span>Parent Portal Mobile App</span>
             </motion.div>
 
             <motion.h2
+              id="mobile-heading"
               initial={{ opacity: 0, x: 20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ delay: 0.1 }}
               className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight"
             >
-              School updates, <br />
-              <span className="text-blue-600">right in their pocket.</span>
+              School Updates, <br />
+              <span className="text-blue-600">Right in Their Pocket</span>
             </motion.h2>
 
             <motion.p
@@ -95,14 +96,14 @@ export const MobileExperienceSection = () => {
               transition={{ delay: 0.2 }}
               className="text-lg text-slate-600 mb-10 font-medium"
             >
-              Our mobile-first parent portal ensures families never miss a beat. From real-time attendance to instant fee payment, everything is just a tap away.
+              The EduPlexo mobile-first parent portal ensures families never miss a beat. From real-time attendance to instant fee payment, everything is just a tap away.
             </motion.p>
 
             <div className="space-y-6">
               {[
-                { icon: Bell, text: "Instant push notifications for emergencies and updates" },
-                { icon: Clock, text: "Real-time attendance tracking and alerts" },
-                { icon: CalendarDays, text: "Interactive school calendar and event RSVPs" }
+                { icon: Bell, text: "Instant push notifications for school emergencies and updates" },
+                { icon: Clock, text: "Real-time student attendance tracking and absence alerts" },
+                { icon: CalendarDays, text: "Interactive school calendar and event RSVPs for parents" }
               ].map((item, i) => (
                 <motion.div
                    key={i}

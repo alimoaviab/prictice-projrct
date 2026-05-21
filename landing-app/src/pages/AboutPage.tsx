@@ -13,6 +13,7 @@ import {
   HeartHandshake,
 } from '@/components/icons';
 
+import { Seo } from '@/components/Seo';
 import { PageShell } from '@/components/PageShell';
 
 const PILLARS = [
@@ -20,7 +21,7 @@ const PILLARS = [
     icon: Building2,
     title: 'Modern School Infrastructure',
     description:
-      'A unified operating system for academics, finance, and parent communication — replacing dozens of legacy tools with one elegant platform.',
+      'A unified school operating system for academics, finance, and parent communication — replacing dozens of legacy tools with one elegant school ERP platform.',
   },
   {
     icon: Sparkles,
@@ -56,18 +57,24 @@ const PILLARS = [
 
 const STATS = [
   { value: '99.99%', label: 'Uptime SLA' },
-  { value: '4', label: 'Connected portals' },
-  { value: '256-bit', label: 'AES encryption' },
-  { value: '24/7', label: 'Global support' },
+  { value: '4', label: 'Connected Portals' },
+  { value: '256-bit', label: 'AES Encryption' },
+  { value: '24/7', label: 'Global Support' },
 ];
 
 export function AboutPage() {
   return (
     <PageShell
       eyebrow="About EduPlexo"
-      title="Building the operating system for modern education."
-      description="EduPlexo is the AI-powered school platform trusted by institutions to run academics, operations, and family communication with the elegance of a global SaaS product."
+      title="Building the Operating System for Modern Education."
+      description="EduPlexo is the AI-powered school management platform trusted by institutions to run academics, operations, and family communication with the elegance of a global SaaS product."
     >
+      <Seo
+        title="About EduPlexo — AI School Management System Company"
+        description="Learn about EduPlexo, the AI-powered school management system and school ERP platform trusted by 50+ schools in Pakistan and worldwide."
+        keywords="about EduPlexo, school management system company, school ERP provider, education technology Pakistan, AI school software"
+        canonical="https://www.eduplexo.com/about"
+      />
       <div className="space-y-20">
         {/* Stats strip */}
         <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -89,7 +96,7 @@ export function AboutPage() {
         {/* Pillars */}
         <section>
           <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-3 tracking-tight">
-            What we stand for
+            What We Stand For
           </h2>
           <p className="text-slate-600 max-w-2xl mb-10">
             Six principles guide every screen, API, and decision we ship.
@@ -125,7 +132,7 @@ export function AboutPage() {
         {/* Closing statement */}
         <section className="rounded-3xl bg-gradient-to-br from-slate-900 to-slate-800 p-10 md:p-14 text-center">
           <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-            One platform. Every school. Built for the next decade.
+            One Platform. Every School. Built for the Next Decade.
           </h2>
           <p className="mt-5 text-slate-300 max-w-2xl mx-auto leading-relaxed">
             EduPlexo is engineered for the institutions shaping how the next

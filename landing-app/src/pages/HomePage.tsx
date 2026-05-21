@@ -10,6 +10,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
+import { Seo } from '@/components/Seo';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { SmoothScroll } from '@/components/SmoothScroll';
@@ -41,6 +42,14 @@ export function HomePage() {
 
   return (
     <div className="min-h-screen bg-slate-50 selection:bg-blue-100 selection:text-blue-900 font-sans">
+      <Seo
+        title="EduPlexo — #1 AI School Management System & School ERP Pakistan"
+        description="EduPlexo is the #1 AI-powered school management system and school ERP in Pakistan. Automate attendance, fees, exams, parent communication & more. Trusted by 50+ schools. Start free trial."
+        keywords="school management system, school ERP, school software Pakistan, student management system, school automation software, education ERP, parent portal, teacher portal, attendance management system, fee management system, AI school management"
+        canonical="https://www.eduplexo.com/"
+        ogTitle="EduPlexo — #1 AI School Management System & School ERP"
+        ogDescription="The #1 AI-powered school management system in Pakistan. Automate attendance, fees, exams, parent communication. Trusted by 50+ schools worldwide."
+      />
       <SmoothScroll>
         <Navbar />
         <main>

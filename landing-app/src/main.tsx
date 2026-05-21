@@ -10,6 +10,14 @@ import { TermsPage } from './pages/TermsPage';
 import { CookiesPage } from './pages/CookiesPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { SeoEnginePage } from './pages/SeoEnginePage';
+import { FeaturesPage } from './pages/FeaturesPage';
+import { PlatformPage } from './pages/PlatformPage';
+import { SecurityPage } from './pages/SecurityPage';
+import { PricingPage } from './pages/PricingPage';
+import { BookDemoPage } from './pages/BookDemoPage';
+import { ContactPage } from './pages/ContactPage';
+import { BlogIndexPage } from './pages/BlogIndexPage';
+import { BlogPostPage } from './pages/BlogPostPage';
 
 import './index.css';
 
@@ -18,6 +26,14 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/features" element={<FeaturesPage />} />
+        <Route path="/platform" element={<PlatformPage />} />
+        <Route path="/security" element={<SecurityPage />} />
+        <Route path="/pricing" element={<PricingPage />} />
+        <Route path="/book-demo" element={<BookDemoPage />} />
+        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/blog" element={<BlogIndexPage />} />
+        <Route path="/blog/:slug" element={<BlogPostPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/careers" element={<CareersPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
