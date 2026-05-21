@@ -4,7 +4,7 @@
  * Premium SaaS structure:
  *  - Brand area: logo, short product description, contact icons (WhatsApp + Email)
  *  - Product:    Features / Platform / Security / Pricing  (smooth-scroll on home)
- *  - Company:    About EduPlexo, Careers
+ *  - Company:    About EduPlexo, Careers, Contact, Blog
  *  - Legal:      Privacy Policy, Terms of Service, Cookie Policy
  *
  * Internal `#section` anchors smooth-scroll on the home route and gracefully
@@ -26,6 +26,8 @@ const PRODUCT_LINKS = [
 const COMPANY_LINKS = [
   { label: 'About EduPlexo', to: '/about' },
   { label: 'Careers', to: '/careers' },
+  { label: 'Contact Us', to: '/contact' },
+  { label: 'Blog', to: '/blog' },
 ];
 
 const LEGAL_LINKS = [
@@ -50,32 +52,33 @@ export const Footer = () => {
               <span className="w-9 h-9 rounded-xl overflow-hidden ring-1 ring-slate-200 bg-white shadow-sm flex-shrink-0">
                 <img
                   src="/logo.jpeg"
-                  alt="Eduplexo"
+                  alt="EduPlexo — School Management System Logo"
                   className="w-full h-full object-cover"
                   loading="lazy"
+                  width="36"
+                  height="36"
                 />
               </span>
               <span className="text-xl font-bold tracking-tight text-slate-900">
-                Eduplexo
+                EduPlexo
               </span>
             </Link>
 
             <p className="text-slate-500 text-sm leading-relaxed max-w-sm mb-7">
-              The AI-powered school operating system that unifies admin,
-              academics, and parent communication into one premium platform —
-              built for institutions that demand reliability, scale, and
-              elegance.
+              EduPlexo is the AI-powered school management system and school ERP
+              platform trusted by 50+ schools in Pakistan and worldwide. Unify
+              admin, academics, and parent communication into one premium platform.
             </p>
 
             <div className="flex items-center gap-3">
               <SocialIconLink
                 href={WHATSAPP_URL}
-                label="WhatsApp"
+                label="Contact EduPlexo on WhatsApp"
                 icon={<MessageCircle className="w-4 h-4" />}
               />
               <SocialIconLink
                 href={EMAIL_URL}
-                label="Email"
+                label="Email EduPlexo Support"
                 icon={<Mail className="w-4 h-4" />}
               />
             </div>
@@ -143,12 +146,13 @@ export const Footer = () => {
         {/* ── Bottom bar ──────────────────────────────────────────────── */}
         <div className="pt-8 border-t border-slate-200/60 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-slate-500">
-            © {new Date().getFullYear()} Eduplexo Technologies. All rights reserved.
+            © {new Date().getFullYear()} EduPlexo Technologies. All rights reserved.
           </p>
-          <div className="flex items-center gap-2 text-sm text-slate-500">
-            <span>Designed with</span>
-            <span className="text-red-500" aria-hidden="true">♥</span>
-            <span>for schools worldwide</span>
+          <div className="flex items-center gap-6 text-sm text-slate-500">
+            <Link to="/sitemap.xml" className="hover:text-blue-600 transition-colors">
+              Sitemap
+            </Link>
+            <span>EduPlexo — School ERP Pakistan</span>
           </div>
         </div>
       </div>

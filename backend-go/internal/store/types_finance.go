@@ -2,6 +2,43 @@ package store
 
 import "time"
 
+// Package represents a platform subscription package/plan.
+// Controls all limits, features, and module permissions for schools.
+type Package struct {
+	ID                    string    `json:"_id"`
+	Name                  string    `json:"name"`
+	Price                 float64   `json:"price"`
+	BillingCycle          string    `json:"billing_cycle"`
+	StartDate             time.Time `json:"start_date"`
+	ExpiryDate            time.Time `json:"expiry_date"`
+	StudentLimit          int       `json:"student_limit"`
+	TeacherLimit          int       `json:"teacher_limit"`
+	ParentLimit           int       `json:"parent_limit"`
+	ClassLimit            int       `json:"class_limit"`
+	StorageLimitMB        int       `json:"storage_limit_mb"`
+	ChatbotMonthlyLimit   int       `json:"chatbot_monthly_limit"`
+	AIUsageLimit          int       `json:"ai_usage_limit"`
+	QuestionGenLimit      int       `json:"question_gen_limit"`
+	ExamGenLimit          int       `json:"exam_gen_limit"`
+	LiveClassesLimit      int       `json:"live_classes_limit"`
+	BroadcastLimit        int       `json:"broadcast_limit"`
+	SupportType           string    `json:"support_type"`
+	CustomModules         []string  `json:"custom_modules"`
+	ModAttendance         bool      `json:"mod_attendance"`
+	ModHomework           bool      `json:"mod_homework"`
+	ModExams              bool      `json:"mod_exams"`
+	ModQuestionBank       bool      `json:"mod_question_bank"`
+	ModLiveClasses        bool      `json:"mod_live_classes"`
+	ModBroadcast          bool      `json:"mod_broadcast"`
+	ModFees               bool      `json:"mod_fees"`
+	ModBehavior           bool      `json:"mod_behavior"`
+	ModCertificates       bool      `json:"mod_certificates"`
+	ModAnalytics          bool      `json:"mod_analytics"`
+	Status                string    `json:"status"`
+	CreatedAt             time.Time `json:"created_at"`
+	UpdatedAt             time.Time `json:"updated_at"`
+}
+
 // SchoolPackage represents a custom package assigned to a school.
 // It defines student limits, pricing, and subscription details.
 type SchoolPackage struct {

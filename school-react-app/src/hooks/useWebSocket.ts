@@ -83,12 +83,15 @@ export function useWebSocket(opts: UseWebSocketOptions = {}) {
               queryClient.invalidateQueries({ queryKey: ["parent-attendance"] });
               queryClient.invalidateQueries({ queryKey: ["parent-student-attendance"] });
               queryClient.invalidateQueries({ queryKey: ["attendance-summary"] });
+              // Composite dashboard uses ["dashboard", "composite", schoolId, academicYearId]
               queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+              queryClient.invalidateQueries({ queryKey: ["dashboard", "composite"] });
               break;
 
             case "fee_update":
               queryClient.invalidateQueries({ queryKey: ["fees"] });
               queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+              queryClient.invalidateQueries({ queryKey: ["dashboard", "composite"] });
               break;
 
             case "job_progress":

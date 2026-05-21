@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+Disallow: /api/
+Disallow: /admin/
+Disallow: /_next/
+Disallow: /seo-engine
+
+Sitemap: https://www.eduplexo.com/sitemap.xml

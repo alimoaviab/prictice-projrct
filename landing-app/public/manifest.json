@@ -1,0 +1,25 @@
+{
+  "name": "EduPlexo — AI School Management System",
+  "short_name": "EduPlexo",
+  "description": "AI-powered school management system and ERP for modern educational institutions in Pakistan and worldwide.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#2563eb",
+  "background_color": "#f8fafc",
+  "categories": ["education", "productivity", "business"],
+  "icons": [
+    {
+      "src": "/logo.jpeg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}

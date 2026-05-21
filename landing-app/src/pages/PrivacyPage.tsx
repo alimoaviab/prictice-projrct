@@ -4,6 +4,7 @@
  * reviewed by the team's legal counsel before going live.
  */
 
+import { Seo } from '@/components/Seo';
 import { PageShell } from '@/components/PageShell';
 import { LegalSection, LegalList } from '@/components/LegalSection';
 
@@ -13,9 +14,16 @@ export function PrivacyPage() {
   return (
     <PageShell
       eyebrow="Privacy Policy"
-      title="Your school's data, handled with care."
-      description="How EduPlexo collects, uses, stores, and protects information across our platform."
+      title="Your School's Data, Handled with Care."
+      description="How EduPlexo collects, uses, stores, and protects information across our school management system platform."
     >
+      <Seo
+        title="Privacy Policy — EduPlexo School Management System"
+        description="EduPlexo privacy policy: how we collect, use, store, and protect student and school data in our school management system and ERP platform."
+        keywords="EduPlexo privacy policy, school data privacy, student data protection, school ERP privacy, education data security"
+        canonical="https://www.eduplexo.com/privacy"
+        noindex
+      />
       <p className="text-sm text-slate-500 mb-10">Last updated: {LAST_UPDATED}</p>
 
       <LegalSection number={1} title="The information we collect">

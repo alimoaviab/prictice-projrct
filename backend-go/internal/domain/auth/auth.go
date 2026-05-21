@@ -206,6 +206,22 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 			})
 			return
 		}
+
+		// Check approval_status for login guard
+		if school.ApprovalStatus == "pending" {
+			api.WriteJSON(w, http.StatusForbidden, map[string]any{
+				"ok":      false,
+				"message": "Your school registration is under review. Please wait for approval.",
+			})
+			return
+		}
+		if school.ApprovalStatus == "rejected" {
+			api.WriteJSON(w, http.StatusForbidden, map[string]any{
+				"ok":      false,
+				"message": "Your school registration was rejected. Reason: " + school.RejectionReason,
+			})
+			return
+		}
 	}
 
 	// Resolve the active academic year server-side, exactly like the
@@ -362,13 +378,16 @@ func (h *Handler) Signup(w http.ResponseWriter, r *http.Request) {
 		year := time.Now().Year()
 
 		newSchool := &store.School{
-			ID:        store.NewID("sch"),
-			SchoolID:  schoolID,
-			Name:      schoolName,
-			Code:      uniqueCode,
-			Status:    "active", // Bypassing Super Admin approval for now: changed from "pending"
-			CreatedAt: now,
-			UpdatedAt: now,
+			ID:               store.NewID("sch"),
+			SchoolID:         schoolID,
+			Name:             schoolName,
+			Code:             uniqueCode,
+			Status:           "active",
+			ApprovalStatus:   "approved",
+			ApprovedAt:       &now,
+			ApprovedBy:       "auto",
+			CreatedAt:        now,
+			UpdatedAt:        now,
 		}
 		newYear := &store.AcademicYear{
 			ID:          yearID,

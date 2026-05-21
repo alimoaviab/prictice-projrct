@@ -4,12 +4,12 @@ import { LoginPage } from './pages/LoginPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { SchoolsPage } from './pages/SchoolsPage'
 import { SchoolDetailPage } from './pages/SchoolDetailPage'
-import { PlansPage } from './pages/PlansPage'
 import { UsersPage } from './pages/UsersPage'
 import { PaymentsPage } from './pages/PaymentsPage'
-import { FinanceDashboardPage } from './pages/FinanceDashboardPage'
 import { PackagesPage } from './pages/PackagesPage'
-import { ExpensesPage } from './pages/ExpensesPage'
+import { SubscriptionsPage } from './pages/SubscriptionsPage'
+import { AIUsagePage } from './pages/AIUsagePage'
+import { SettingsPage } from './pages/SettingsPage'
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -20,12 +20,12 @@ export const router = createBrowserRouter([
       { path: '/dashboard', element: <DashboardPage /> },
       { path: '/schools', element: <SchoolsPage /> },
       { path: '/schools/:id', element: <SchoolDetailPage /> },
-      { path: '/plans', element: <PlansPage /> },
-      { path: '/users', element: <UsersPage /> },
-      { path: '/payments', element: <PaymentsPage /> },
-      { path: '/finance', element: <FinanceDashboardPage /> },
       { path: '/packages', element: <PackagesPage /> },
-      { path: '/expenses', element: <ExpensesPage /> },
+      { path: '/subscriptions', element: <SubscriptionsPage /> },
+      { path: '/payments', element: <PaymentsPage /> },
+      { path: '/ai-usage', element: <AIUsagePage /> },
+      { path: '/settings', element: <SettingsPage /> },
+      { path: '/users', element: <UsersPage /> },
     ],
   },
 ])

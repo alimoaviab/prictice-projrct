@@ -2,24 +2,25 @@ import React from "react";
 import { motion } from "framer-motion";
 
 const stats = [
-  { value: "50+", label: "Schools Worldwide" },
-  { value: "15k+", label: "Active Students" },
-  { value: "99.9%", label: "System Uptime" },
+  { value: "50+", label: "Schools Using EduPlexo" },
+  { value: "15k+", label: "Active Students Managed" },
+  { value: "99.9%", label: "School ERP Uptime" },
   { value: "24/7", label: "Priority Support" }
 ];
 
 export const TrustSection = () => {
   return (
-    <section className="py-20 bg-white border-y border-slate-200/60 relative overflow-hidden">
+    <section className="py-20 bg-white border-y border-slate-200/60 relative overflow-hidden" aria-labelledby="trust-heading">
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div className="text-center mb-16">
           <motion.h2
+            id="trust-heading"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-50px" }}
             className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-8 tracking-tight"
           >
-            TRUSTED BY FORWARD-THINKING INSTITUTIONS
+            TRUSTED BY FORWARD-THINKING SCHOOLS WORLDWIDE
           </motion.h2>
 
           {/* School Logos Mock */}

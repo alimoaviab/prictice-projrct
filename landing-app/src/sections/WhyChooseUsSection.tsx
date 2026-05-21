@@ -6,29 +6,29 @@ export const WhyChooseUsSection = () => {
   const points = [
     {
       icon: Zap,
-      title: "Lightning Fast Performance",
-      description: "Built on modern web technologies, our platform guarantees sub-second load times. No more waiting for reports to generate or pages to load.",
+      title: "Lightning Fast School Management Software",
+      description: "Built on modern web technologies, EduPlexo guarantees sub-second load times. No more waiting for reports to generate or pages to load in your school ERP.",
       color: "text-amber-500",
       bg: "bg-amber-50"
     },
     {
       icon: ShieldCheck,
-      title: "Enterprise-Grade Security",
-      description: "Role-based access control, strict data isolation, and end-to-end encryption ensure your school's data is always protected.",
+      title: "Enterprise-Grade School Data Security",
+      description: "Role-based access control, strict data isolation, and end-to-end encryption ensure your school data is always protected in EduPlexo school management system.",
       color: "text-emerald-500",
       bg: "bg-emerald-50"
     },
     {
       icon: Smartphone,
-      title: "Mobile-First Experience",
-      description: "A fully responsive design means teachers can grade on tablets, and parents can check updates on their phones seamlessly.",
+      title: "Mobile-First Parent & Teacher Experience",
+      description: "A fully responsive design means teachers can grade on tablets, and parents can check updates on their phones seamlessly through the EduPlexo mobile app.",
       color: "text-blue-500",
       bg: "bg-blue-50"
     }
   ];
 
   return (
-    <section id="security" className="py-24 bg-white relative overflow-hidden">
+    <section id="security" className="py-24 bg-white relative overflow-hidden" aria-labelledby="why-choose-heading">
       {/* Decorative background element - simplified for performance */}
       <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-50 to-transparent opacity-60 -translate-y-1/2 translate-x-1/3 pointer-events-none" />
 
@@ -37,12 +37,13 @@ export const WhyChooseUsSection = () => {
 
           <div className="w-full lg:w-1/2">
             <motion.h2
+              id="why-choose-heading"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight"
             >
-              Why modern schools choose <span className="text-blue-600">Eduplexo</span>
+              Why Modern Schools Choose <span className="text-blue-600">EduPlexo</span>
             </motion.h2>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -51,7 +52,7 @@ export const WhyChooseUsSection = () => {
               transition={{ delay: 0.1 }}
               className="text-lg text-slate-600 mb-10 font-medium"
             >
-              We believe school software shouldn't look like it was built in 2005. We've combined consumer-grade UX with enterprise-grade power.
+              We believe school software should not look like it was built in 2005. EduPlexo combines consumer-grade UX with enterprise-grade school ERP power.
             </motion.p>
 
             <div className="space-y-8">
@@ -86,13 +87,13 @@ export const WhyChooseUsSection = () => {
              >
                 <div className="absolute inset-0 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-3xl transform rotate-3 scale-105 opacity-10" />
                 <div className="bg-slate-900 rounded-3xl p-8 md:p-12 relative shadow-2xl overflow-hidden">
-                   <h3 className="text-3xl font-extrabold text-white mb-8">The Eduplexo Difference</h3>
+                   <h3 className="text-3xl font-extrabold text-white mb-8">The EduPlexo Difference</h3>
 
                    <ul className="space-y-6">
                      {[
-                       "Zero implementation fees",
+                       "Zero implementation fees for school ERP",
                        "Free data migration from legacy systems",
-                       "Unlimited data storage",
+                       "Unlimited data storage in cloud",
                        "24/7 priority customer support",
                        "Monthly feature updates"
                      ].map((item, i) => (

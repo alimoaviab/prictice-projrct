@@ -63,7 +63,7 @@ export const HeroSection = () => {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 backdrop-blur-md border border-blue-100 shadow-[0_4px_20px_rgba(37,99,235,0.05)] text-blue-600 text-sm font-semibold mb-8"
             >
               <Sparkles className="w-4 h-4 text-amber-500" />
-              <span>AI-Powered Enterprise Platform</span>
+              <span>#1 AI School Management System in Pakistan</span>
             </motion.div>
 
             <motion.h1
@@ -72,10 +72,11 @@ export const HeroSection = () => {
               transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
               className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 mb-6 leading-[1.1] drop-shadow-sm"
             >
-              Manage your school with{" "}
+              The Complete{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-                intelligent precision.
-              </span>
+                School ERP
+              </span>{" "}
+              for Modern Institutions
             </motion.h1>
 
             <motion.p
@@ -84,7 +85,7 @@ export const HeroSection = () => {
               transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
               className="text-xl text-slate-600 mb-10 max-w-2xl mx-auto leading-relaxed font-medium"
             >
-              An enterprise-grade ERP ecosystem built to automate operations, empower educators, and deliver real-time insights with cinematic polish.
+              EduPlexo is the AI-powered school management system that automates attendance, fees, exams, and parent communication. Trusted by 50+ schools across Pakistan and worldwide.
             </motion.p>
 
             <motion.div
@@ -107,6 +108,27 @@ export const HeroSection = () => {
               >
                 <Play className="w-4 h-4 fill-current" /> Watch Preview
               </a>
+            </motion.div>
+
+            {/* Social Proof */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+              className="mt-10 flex flex-wrap items-center justify-center gap-6 text-sm text-slate-500"
+            >
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                50+ Schools Trust EduPlexo
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Users className="w-4 h-4 text-blue-500" />
+                15,000+ Active Students
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Zap className="w-4 h-4 text-amber-500" />
+                99.9% Uptime
+              </span>
             </motion.div>
           </motion.div>
 
@@ -141,7 +163,7 @@ export const HeroSection = () => {
                     <div className="w-3.5 h-3.5 rounded-full bg-emerald-400 shadow-sm" />
                   </div>
                   <div className="mx-auto bg-slate-50 text-slate-400 text-xs font-semibold px-6 py-1.5 rounded-full border border-slate-200/50 shadow-inner">
-                    eduplexo.app
+                    eduplexo.com
                   </div>
                 </div>
 

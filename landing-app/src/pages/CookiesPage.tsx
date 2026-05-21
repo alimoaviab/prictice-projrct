@@ -2,6 +2,7 @@
  * Cookie Policy — explains the cookies we set and why.
  */
 
+import { Seo } from '@/components/Seo';
 import { PageShell } from '@/components/PageShell';
 import { LegalSection, LegalList } from '@/components/LegalSection';
 
@@ -11,9 +12,16 @@ export function CookiesPage() {
   return (
     <PageShell
       eyebrow="Cookie Policy"
-      title="How EduPlexo uses cookies."
-      description="We use a small number of cookies to keep you signed in, remember your preferences, and understand how the platform is used."
+      title="How EduPlexo Uses Cookies."
+      description="We use a small number of cookies to keep you signed in, remember your preferences, and understand how the school management platform is used."
     >
+      <Seo
+        title="Cookie Policy — EduPlexo School Management System"
+        description="EduPlexo cookie policy: how we use cookies and similar technologies in our school management system and ERP platform."
+        keywords="EduPlexo cookie policy, school software cookies, education platform tracking, school ERP cookies"
+        canonical="https://www.eduplexo.com/cookies"
+        noindex
+      />
       <p className="text-sm text-slate-500 mb-10">Last updated: {LAST_UPDATED}</p>
 
       <LegalSection number={1} title="What cookies are">

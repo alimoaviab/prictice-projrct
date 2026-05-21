@@ -3,6 +3,7 @@
  * and gives visitors a real way to reach the team.
  */
 
+import { Seo } from '@/components/Seo';
 import { Mail, MessageCircle } from '@/components/icons';
 
 import { PageShell } from '@/components/PageShell';
@@ -26,9 +27,15 @@ export function CareersPage() {
   return (
     <PageShell
       eyebrow="Careers"
-      title="Help build the school platform of the future."
-      description="We\u2019re a small, senior team obsessed with shipping the most polished school operating system on the planet. If that sounds like you, we\u2019d love to hear from you."
+      title="Help Build the School Platform of the Future."
+      description="Join EduPlexo — the AI-powered school management system team. We are building the most polished school operating system on the planet."
     >
+      <Seo
+        title="Careers at EduPlexo — School Management System Jobs"
+        description="Join the EduPlexo team. We are building the most polished school management system and school ERP platform. Remote-friendly, customer-focused."
+        keywords="EduPlexo careers, school management system jobs, education technology careers, school ERP jobs, EdTech jobs Pakistan"
+        canonical="https://www.eduplexo.com/careers"
+      />
       <div className="space-y-16">
         <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {CULTURE.map((c) => (
