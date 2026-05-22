@@ -1,0 +1,4 @@
+## 2024-05-22 - Secure Random Number Generation for Identifiers
+**Vulnerability:** Weak random number generation using `math/rand` and unhandled `crypto/rand.Read` errors. `math/rand` generates predictable sequences, making identifiers like invoice and certificate numbers susceptible to guessing. Unhandled `crypto/rand.Read` errors can lead to nil pointer panics or empty values if the system entropy pool is exhausted.
+**Learning:** Found usage of `math/rand` across domain logic (`fees.go`, `certificates.go`) for identifier generation. `crypto/rand` is crucial for unpredictability in a multi-tenant enterprise system, and errors from `rand.Read` must be caught to maintain stability.
+**Prevention:** Enforce the use of `crypto/rand` instead of `math/rand` for all security-sensitive or globally unique identifiers. Always check the error returned by `rand.Read` and provide a robust fallback (e.g., using `time.Now().UnixNano()`) to ensure graceful degradation.

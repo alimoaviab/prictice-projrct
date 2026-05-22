@@ -8,11 +8,11 @@
 package certificates
 
 import (
+	"crypto/rand"
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"sort"
 	"strings"
@@ -402,7 +402,11 @@ func certToMap(c *store.GeneratedCertificate) map[string]any {
 }
 
 func generateCertNo(schoolID, studentID string) string {
-	src := fmt.Sprintf("%s:%s:%d:%d", schoolID, studentID, time.Now().UnixNano(), rand.Int())
+	b := make([]byte, 8)
+	if _, err := rand.Read(b); err != nil {
+		b = []byte(fmt.Sprintf("%d", time.Now().UnixNano()))
+	}
+	src := fmt.Sprintf("%s:%s:%d:%s", schoolID, studentID, time.Now().UnixNano(), hex.EncodeToString(b))
 	h := sha1.Sum([]byte(src))
 	hash := strings.ToUpper(hex.EncodeToString(h[:])[:6])
 	return fmt.Sprintf("CERT-%d-%s", time.Now().Year(), hash)
@@ -410,7 +414,9 @@ func generateCertNo(schoolID, studentID string) string {
 
 func generateVerificationCode() string {
 	b := make([]byte, 12)
-	rand.Read(b)
+	if _, err := rand.Read(b); err != nil {
+		b = []byte(fmt.Sprintf("%d", time.Now().UnixNano()))
+	}
 	return strings.ToUpper(hex.EncodeToString(b)[:16])
 }
 
