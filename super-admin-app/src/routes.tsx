@@ -8,8 +8,10 @@ import { UsersPage } from './pages/UsersPage'
 import { PaymentsPage } from './pages/PaymentsPage'
 import { PackagesPage } from './pages/PackagesPage'
 import { SubscriptionsPage } from './pages/SubscriptionsPage'
-import { AIUsagePage } from './pages/AIUsagePage'
 import { SettingsPage } from './pages/SettingsPage'
+import { AIUsagePage } from './pages/AIUsagePage'
+import { ModerationPage } from './pages/ModerationPage'
+import { GlobalQuestionBankPage } from './pages/GlobalQuestionBankPage'
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -20,12 +22,14 @@ export const router = createBrowserRouter([
       { path: '/dashboard', element: <DashboardPage /> },
       { path: '/schools', element: <SchoolsPage /> },
       { path: '/schools/:id', element: <SchoolDetailPage /> },
+      { path: '/users', element: <UsersPage /> },
+      { path: '/payments', element: <PaymentsPage /> },
       { path: '/packages', element: <PackagesPage /> },
       { path: '/subscriptions', element: <SubscriptionsPage /> },
-      { path: '/payments', element: <PaymentsPage /> },
       { path: '/ai-usage', element: <AIUsagePage /> },
       { path: '/settings', element: <SettingsPage /> },
-      { path: '/users', element: <UsersPage /> },
+      { path: '/moderation', element: <ModerationPage /> },
+      { path: '/question-bank', element: <GlobalQuestionBankPage /> },
     ],
   },
 ])

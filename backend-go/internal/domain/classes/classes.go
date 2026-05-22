@@ -278,6 +278,16 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetSubjects implements GET /api/classes/:id/subjects.
+//
+// Returns the subjects attached to this class. ClassSubject only stores
+// `{name, total_marks, ...}` so we enrich each entry with the matching
+// school-wide Subject._id (looked up by name) when available. This lets
+// the frontend treat each subject as a stable {_id, name} pair without
+// caring whether the class has IDs of its own.
+//
+// Response shape: {"subjects": [...]} for backward compatibility, but the
+// items are flattened {_id, id, name, total_marks, passing_marks, teacher_id}
+// so any caller that just iterates and reads `_id`/`name` Just Works.
 func (h *Handler) GetSubjects(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	id := chi.URLParam(r, "id")
@@ -287,15 +297,62 @@ func (h *Handler) GetSubjects(w http.ResponseWriter, r *http.Request) {
 		}
 		h.Store.RLock()
 		defer h.Store.RUnlock()
+
+		// Build ID → subject map for fast lookup.
+		byID := make(map[string]*store.Subject, len(h.Store.Subjects))
+		byName := make(map[string]*store.Subject, len(h.Store.Subjects))
+		for _, s := range h.Store.Subjects {
+			if s.SchoolID != ctx.SchoolID {
+				continue
+			}
+			byID[s.ID] = s
+			byName[strings.ToLower(strings.TrimSpace(s.Name))] = s
+		}
+
 		for _, c := range h.Store.Classes {
 			if c.ID == id && c.SchoolID == ctx.SchoolID {
-				// We return the same shape as expected by the frontend: { subjects: [...] }
-				// If c.Subjects is nil, we return an empty slice to avoid null in JSON.
-				subs := c.Subjects
-				if subs == nil {
-					subs = []store.ClassSubject{}
+				out := make([]map[string]any, 0)
+
+				// First, use SubjectIDs (from database) if available
+				if len(c.SubjectIDs) > 0 {
+					for _, subjID := range c.SubjectIDs {
+						if s, ok := byID[subjID]; ok {
+							out = append(out, map[string]any{
+								"_id":           s.ID,
+								"id":            s.ID,
+								"name":          s.Name,
+								"total_marks":   s.TotalMarks,
+								"passing_marks": s.PassingMarks,
+								"teacher_id":    "",
+							})
+						}
+					}
 				}
-				return map[string]any{"subjects": subs}, nil
+
+				// Fallback to Subjects field (for backward compatibility)
+				if len(out) == 0 && len(c.Subjects) > 0 {
+					for _, cs := range c.Subjects {
+						subjID := ""
+						if matched, ok := byName[strings.ToLower(strings.TrimSpace(cs.Name))]; ok {
+							subjID = matched.ID
+						}
+						// Fallback: deterministic synthetic id so the UI
+						// can still pick by value=name.
+						if subjID == "" {
+							subjID = "name:" + cs.Name
+						}
+						out = append(out, map[string]any{
+							"_id":           subjID,
+							"id":            subjID,
+							"name":          cs.Name,
+							"total_marks":   cs.TotalMarks,
+							"passing_marks": cs.PassingMarks,
+							"teacher_id":    cs.TeacherID,
+						})
+					}
+				}
+
+				return map[string]any{"subjects": out}, nil
 			}
 		}
 		return nil, api.NewControlledError("NOT_FOUND", "Class not found.", 404, nil)

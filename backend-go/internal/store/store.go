@@ -68,6 +68,28 @@ type MemStore struct {
 	// Certificate collections.
 	CertificateTemplates  []*CertificateTemplate
 	GeneratedCertificates []*GeneratedCertificate
+
+	// Question Papers.
+	QuestionPapers []*QuestionPaper
+
+	// Questions (Internal Repository).
+	Questions []*Question
+
+	// Chapters.
+	Chapters []*Chapter
+
+	// Star Collections.
+	StarCollections []*StarCollection
+
+	// Import Logs.
+	ImportLogs []*ImportLog
+
+	// Exam Security.
+	ExamSecuritySettings []*ExamSecuritySettings
+	ExamSecurityLogs     []*ExamSecurityLog
+
+	// AI Generation.
+	AIGenerationLogs []*AIGenerationLog
 	Invoices       []*Invoice
 	Transactions   []*Transaction
 	Subscriptions  []*Subscription

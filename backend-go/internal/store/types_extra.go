@@ -311,3 +311,126 @@ type GeneratedCertificate struct {
 	Status           string    `json:"status"` // issued | revoked | expired
 	CreatedAt        time.Time `json:"created_at"`
 }
+
+// ─── Question Papers ─────────────────────────────────────────────────────
+
+type QuestionPaper struct {
+	ID          string    `json:"_id"`
+	SchoolID    string    `json:"school_id"`
+	Title       string    `json:"title"`
+	ClassID     string    `json:"class_id"`
+	ClassName   string    `json:"class_name"`
+	SubjectID   string    `json:"subject_id,omitempty"`
+	SubjectName string    `json:"subject_name,omitempty"`
+	ChapterIDs  []string  `json:"chapter_ids,omitempty"`
+	TeacherID   string    `json:"teacher_id,omitempty"`
+	TeacherName string    `json:"teacher_name,omitempty"`
+	Date        string    `json:"date,omitempty"`
+	Questions   string    `json:"questions,omitempty"`
+	Status      string    `json:"status"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+// ─── Questions (Internal Repository) ────────────────────────────────────
+
+type Question struct {
+	ID             string     `json:"_id"`
+	SchoolID       string     `json:"school_id"`
+	CreatedBy      string     `json:"created_by"`
+	CreatedByName  string     `json:"created_by_name,omitempty"`
+	ClassID        string     `json:"class_id"`
+	SubjectID      string     `json:"subject_id,omitempty"`
+	SubjectName    string     `json:"subject_name,omitempty"`
+	ChapterID      string     `json:"chapter_id,omitempty"`
+	Type           string     `json:"type"`
+	Difficulty     string     `json:"difficulty"`
+	QuestionHTML   string     `json:"question_html"`
+	Options        string     `json:"options,omitempty"`
+	Marks          int        `json:"marks,omitempty"`
+	Status         string     `json:"status"`
+	IsGlobal       bool       `json:"is_global"`
+	ApprovalStatus string     `json:"approval_status"`
+	ApprovedBy     string     `json:"approved_by,omitempty"`
+	ApprovedAt     *time.Time `json:"approved_at,omitempty"`
+	CreatedAt      time.Time  `json:"created_at"`
+	UpdatedAt      time.Time  `json:"updated_at"`
+}
+
+// ── Chapters ────────────────────────────────────────────────────────────
+
+type Chapter struct {
+	ID            string    `json:"_id"`
+	SchoolID      string    `json:"school_id"`
+	ClassID       string    `json:"class_id"`
+	ClassName     string    `json:"class_name,omitempty"`
+	SubjectID     string    `json:"subject_id,omitempty"`
+	SubjectName   string    `json:"subject_name,omitempty"`
+	Title         string    `json:"title"`
+	ChapterNumber int       `json:"chapter_number"`
+	IsDefault     bool      `json:"is_default"`
+	Status        string    `json:"status"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+}
+
+// ─── Star Collections ────────────────────────────────────────────────────
+
+type StarCollection struct {
+	ID        string    `json:"_id"`
+	UserID    string    `json:"user_id"`
+	SchoolID  string    `json:"school_id"`
+	Name      string    `json:"name"`
+	Color     string    `json:"color"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// ─── Import Logs ─────────────────────────────────────────────────────────
+
+type ImportLog struct {
+	ID           string    `json:"_id"`
+	TeacherID    string    `json:"teacher_id"`
+	SchoolID     string    `json:"school_id"`
+	FileName     string    `json:"file_name"`
+	TotalRows    int       `json:"total_rows"`
+	SuccessCount int       `json:"success_count"`
+	ErrorCount   int       `json:"error_count"`
+	Status       string    `json:"status"` // processing | completed | failed
+	Errors       string    `json:"errors"` // JSON
+	CreatedAt    time.Time `json:"created_at"`
+}
+
+// ─── Exam Security ───────────────────────────────────────────────────────
+
+type ExamSecuritySettings struct {
+	ExamID             string `json:"exam_id"`
+	ShuffleQuestions   bool   `json:"shuffle_questions"`
+	ShuffleOptions     bool   `json:"shuffle_options"`
+	IPRestriction      bool   `json:"ip_restriction"`
+	MaxTabSwitches     int    `json:"max_tab_switches"`
+	RequireFullscreen  bool   `json:"require_fullscreen"`
+	WebcamEnabled      bool   `json:"webcam_enabled"`
+	PerQuestionTimeLimit int  `json:"per_question_time_limit"` // seconds, 0 = disabled
+}
+
+type ExamSecurityLog struct {
+	ID        string    `json:"_id"`
+	ExamID    string    `json:"exam_id"`
+	StudentID string    `json:"student_id"`
+	EventType string    `json:"event_type"` // tab_switch, copy_attempt, fullscreen_exit, ip_change
+	EventData string    `json:"event_data"` // JSON
+	Timestamp time.Time `json:"timestamp"`
+}
+
+// ─── AI Generation Logs ──────────────────────────────────────────────────
+
+type AIGenerationLog struct {
+	ID         string    `json:"_id"`
+	TeacherID  string    `json:"teacher_id"`
+	SchoolID   string    `json:"school_id"`
+	Prompt     string    `json:"prompt"`
+	Model      string    `json:"model"`
+	TokensUsed int       `json:"tokens_used"`
+	QuestionsGenerated int `json:"questions_generated"`
+	CreatedAt  time.Time `json:"created_at"`
+}

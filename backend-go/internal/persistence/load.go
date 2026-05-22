@@ -66,6 +66,10 @@ func (p *Persister) Load(ctx context.Context, s *store.MemStore) error {
 		{"audit_logs", p.loadAuditLogs},
 		{"certificate_templates", p.loadCertificateTemplates},
 		{"generated_certificates", p.loadGeneratedCertificates},
+		{"chapters", p.loadChapters},
+		{"questions", p.loadQuestions},
+		{"question_papers", p.loadQuestionPapers},
+		{"star_collections", p.loadStarCollections},
 	}
 
 	s.Lock()
@@ -101,6 +105,12 @@ func (p *Persister) Load(ctx context.Context, s *store.MemStore) error {
 	s.FeePayments = nil
 	s.SchoolSettings = nil
 	s.AuditLogs = nil
+	s.CertificateTemplates = nil
+	s.GeneratedCertificates = nil
+	s.Chapters = nil
+	s.Questions = nil
+	s.QuestionPapers = nil
+	s.StarCollections = nil
 
 	for _, l := range loaders {
 		if err := l.fn(ctx, s); err != nil {
@@ -882,24 +892,27 @@ func (p *Persister) loadAuditLogs(ctx context.Context, s *store.MemStore) error 
 
 // silence "imported and not used" if we ever drop a usage.
 var _ = pgx.ErrNoRows
+var _ = time.Now
+
+// ─── Certificates ────────────────────────────────────────────────────────
 
 func (p *Persister) loadCertificateTemplates(ctx context.Context, s *store.MemStore) error {
 	rows, err := p.pool.Query(ctx, `
 		SELECT id, school_id, name, type, orientation, background_url, watermark_url,
 			border_style, body_text, elements, is_default, status, created_at, updated_at
-		FROM certificate_templates`)
+		FROM certificate_templates ORDER BY created_at`)
 	if err != nil {
 		return err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var v store.CertificateTemplate
+		v := &store.CertificateTemplate{}
 		if err := rows.Scan(&v.ID, &v.SchoolID, &v.Name, &v.Type, &v.Orientation,
-			&v.BackgroundURL, &v.WatermarkURL, &v.BorderStyle, &v.BodyText, &v.Elements,
-			&v.IsDefault, &v.Status, &v.CreatedAt, &v.UpdatedAt); err != nil {
+			&v.BackgroundURL, &v.WatermarkURL, &v.BorderStyle, &v.BodyText,
+			&v.Elements, &v.IsDefault, &v.Status, &v.CreatedAt, &v.UpdatedAt); err != nil {
 			return err
 		}
-		s.CertificateTemplates = append(s.CertificateTemplates, &v)
+		s.CertificateTemplates = append(s.CertificateTemplates, v)
 	}
 	return rows.Err()
 }
@@ -907,21 +920,120 @@ func (p *Persister) loadCertificateTemplates(ctx context.Context, s *store.MemSt
 func (p *Persister) loadGeneratedCertificates(ctx context.Context, s *store.MemStore) error {
 	rows, err := p.pool.Query(ctx, `
 		SELECT id, school_id, template_id, student_id, student_name, class_name,
-			certificate_type, certificate_no, verification_code, qr_code_url, pdf_url,
-			issue_date, expiry_date, status, created_at
-		FROM generated_certificates`)
+			certificate_type, certificate_no, verification_code, qr_code_url,
+			pdf_url, issue_date, expiry_date, status, created_at
+		FROM generated_certificates ORDER BY created_at DESC`)
 	if err != nil {
 		return err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var v store.GeneratedCertificate
-		if err := rows.Scan(&v.ID, &v.SchoolID, &v.TemplateID, &v.StudentID, &v.StudentName,
-			&v.ClassName, &v.CertificateType, &v.CertificateNo, &v.VerificationCode,
-			&v.QRCodeURL, &v.PDFURL, &v.IssueDate, &v.ExpiryDate, &v.Status, &v.CreatedAt); err != nil {
+		v := &store.GeneratedCertificate{}
+		var expiry *time.Time
+		if err := rows.Scan(&v.ID, &v.SchoolID, &v.TemplateID, &v.StudentID,
+			&v.StudentName, &v.ClassName, &v.CertificateType, &v.CertificateNo,
+			&v.VerificationCode, &v.QRCodeURL, &v.PDFURL, &v.IssueDate, &expiry,
+			&v.Status, &v.CreatedAt); err != nil {
 			return err
 		}
-		s.GeneratedCertificates = append(s.GeneratedCertificates, &v)
+		v.ExpiryDate = expiry
+		s.GeneratedCertificates = append(s.GeneratedCertificates, v)
+	}
+	return rows.Err()
+}
+
+// ─── Question Bank: Chapters ─────────────────────────────────────────────
+
+func (p *Persister) loadChapters(ctx context.Context, s *store.MemStore) error {
+	rows, err := p.pool.Query(ctx, `
+		SELECT id, school_id, class_id, class_name, subject_id, subject_name,
+			title, chapter_number, is_default, status, created_at, updated_at
+		FROM chapters ORDER BY chapter_number`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		v := &store.Chapter{}
+		if err := rows.Scan(&v.ID, &v.SchoolID, &v.ClassID, &v.ClassName,
+			&v.SubjectID, &v.SubjectName, &v.Title, &v.ChapterNumber,
+			&v.IsDefault, &v.Status, &v.CreatedAt, &v.UpdatedAt); err != nil {
+			return err
+		}
+		s.Chapters = append(s.Chapters, v)
+	}
+	return rows.Err()
+}
+
+// ─── Question Bank: Questions ────────────────────────────────────────────
+
+func (p *Persister) loadQuestions(ctx context.Context, s *store.MemStore) error {
+	rows, err := p.pool.Query(ctx, `
+		SELECT id, school_id, created_by, created_by_name, class_id, subject_id,
+			subject_name, chapter_id, type, difficulty, question_html, options,
+			marks, status, is_global, approval_status, approved_by, approved_at,
+			created_at, updated_at
+		FROM questions ORDER BY created_at DESC`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		v := &store.Question{}
+		var approvedAt *time.Time
+		if err := rows.Scan(&v.ID, &v.SchoolID, &v.CreatedBy, &v.CreatedByName,
+			&v.ClassID, &v.SubjectID, &v.SubjectName, &v.ChapterID, &v.Type,
+			&v.Difficulty, &v.QuestionHTML, &v.Options, &v.Marks, &v.Status,
+			&v.IsGlobal, &v.ApprovalStatus, &v.ApprovedBy, &approvedAt,
+			&v.CreatedAt, &v.UpdatedAt); err != nil {
+			return err
+		}
+		v.ApprovedAt = approvedAt
+		s.Questions = append(s.Questions, v)
+	}
+	return rows.Err()
+}
+
+// ─── Question Bank: Question Papers ──────────────────────────────────────
+
+func (p *Persister) loadQuestionPapers(ctx context.Context, s *store.MemStore) error {
+	rows, err := p.pool.Query(ctx, `
+		SELECT id, school_id, title, class_id, class_name, subject_id, subject_name,
+			chapter_ids, teacher_id, teacher_name, date, questions, status,
+			created_at, updated_at
+		FROM question_papers ORDER BY created_at DESC`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		v := &store.QuestionPaper{}
+		if err := rows.Scan(&v.ID, &v.SchoolID, &v.Title, &v.ClassID, &v.ClassName,
+			&v.SubjectID, &v.SubjectName, &v.ChapterIDs, &v.TeacherID, &v.TeacherName,
+			&v.Date, &v.Questions, &v.Status, &v.CreatedAt, &v.UpdatedAt); err != nil {
+			return err
+		}
+		s.QuestionPapers = append(s.QuestionPapers, v)
+	}
+	return rows.Err()
+}
+
+// ─── Star Collections ────────────────────────────────────────────────────
+
+func (p *Persister) loadStarCollections(ctx context.Context, s *store.MemStore) error {
+	rows, err := p.pool.Query(ctx, `
+		SELECT id, user_id, school_id, name, color, created_at
+		FROM star_collections ORDER BY created_at DESC`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		v := &store.StarCollection{}
+		if err := rows.Scan(&v.ID, &v.UserID, &v.SchoolID, &v.Name, &v.Color, &v.CreatedAt); err != nil {
+			return err
+		}
+		s.StarCollections = append(s.StarCollections, v)
 	}
 	return rows.Err()
 }

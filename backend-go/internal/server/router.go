@@ -12,6 +12,7 @@ import (
 	"github.com/eduplexo/backend-go/internal/config"
 	"github.com/eduplexo/backend-go/internal/domain/academicyear"
 	"github.com/eduplexo/backend-go/internal/domain/announcements"
+	"github.com/eduplexo/backend-go/internal/domain/analytics"
 	"github.com/eduplexo/backend-go/internal/domain/attendance"
 	authdomain "github.com/eduplexo/backend-go/internal/domain/auth"
 	"github.com/eduplexo/backend-go/internal/domain/behavior"
@@ -20,6 +21,7 @@ import (
 	"github.com/eduplexo/backend-go/internal/domain/dashboard"
 	"github.com/eduplexo/backend-go/internal/domain/events"
 	"github.com/eduplexo/backend-go/internal/domain/exams"
+	"github.com/eduplexo/backend-go/internal/domain/examsecurity"
 	"github.com/eduplexo/backend-go/internal/domain/fees"
 	"github.com/eduplexo/backend-go/internal/domain/homework"
 	"github.com/eduplexo/backend-go/internal/domain/leave"
@@ -27,6 +29,7 @@ import (
 	"github.com/eduplexo/backend-go/internal/domain/notifications"
 	"github.com/eduplexo/backend-go/internal/domain/packages"
 	"github.com/eduplexo/backend-go/internal/domain/parent"
+	"github.com/eduplexo/backend-go/internal/domain/questionpapers"
 	"github.com/eduplexo/backend-go/internal/domain/results"
 	"github.com/eduplexo/backend-go/internal/domain/seo"
 	"github.com/eduplexo/backend-go/internal/domain/settings"
@@ -290,6 +293,58 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Post("/certificates/{id}/revoke", certH.Revoke)
 			r.Get("/certificates/verify/{code}", certH.Verify)
 
+			// ─── Question Papers ──────────────────────────────────────────
+			qpH := questionpapers.New(s, saveFn)
+			r.Get("/question-papers", qpH.List)
+			r.Post("/question-papers", qpH.Create)
+			r.Get("/question-papers/{id}", qpH.Get)
+			r.Delete("/question-papers/{id}", qpH.Delete)
+			r.Post("/question-papers/auto-generate", qpH.AutoGeneratePaper)
+
+			// ─── Questions (Internal Repository) ─────────────────────────
+			r.Get("/questions", qpH.ListQuestions)
+			r.Post("/questions", qpH.CreateQuestion)
+			r.Get("/questions/stats", qpH.QuestionStats)
+			r.Delete("/questions/{id}", qpH.DeleteQuestion)
+			r.Post("/questions/{id}/archive", qpH.ArchiveQuestion)
+			r.Post("/questions/{id}/restore", qpH.RestoreQuestion)
+			r.Post("/questions/{id}/approve", qpH.ApproveQuestion)
+			r.Post("/questions/{id}/reject", qpH.RejectQuestion)
+			r.Post("/questions/{id}/star", qpH.StarQuestion)
+			r.Post("/questions/{id}/unstar", qpH.UnstarQuestion)
+			r.Get("/questions/starred", qpH.GetStarredIds)
+			r.Post("/questions/bulk/archive", qpH.BulkArchiveQuestions)
+			r.Post("/questions/bulk/delete", qpH.BulkDeleteQuestions)
+
+			// ─── Question Bank aliases (frontend uses /api/question-bank) ─
+			r.Get("/question-bank", qpH.ListQuestions)
+			r.Post("/question-bank", qpH.CreateQuestion)
+			r.Get("/question-bank/stats", qpH.QuestionStats)
+			r.Get("/question-bank/starred", qpH.GetStarredIds)
+			r.Post("/question-bank/{id}/archive", qpH.ArchiveQuestion)
+			r.Post("/question-bank/{id}/restore", qpH.RestoreQuestion)
+			r.Post("/question-bank/{id}/star", qpH.StarQuestion)
+			r.Post("/question-bank/{id}/unstar", qpH.UnstarQuestion)
+
+			// ─── Chapters (managed within Question Paper flow) ───────────
+			r.Get("/chapters", qpH.ListChapters)
+			r.Post("/chapters", qpH.CreateChapter)
+			r.Post("/chapters/seed-defaults", qpH.SeedDefaultChapters)
+			r.Post("/chapters/{id}/archive", qpH.ArchiveChapter)
+
+			// ─── Exam Security / Proctoring ───────────────────────────────
+			esH := examsecurity.New(s, saveFn)
+			r.Post("/exams/{id}/security-settings", esH.SaveSettings)
+			r.Get("/exams/{id}/security-settings", esH.GetSettings)
+			r.Get("/exams/{id}/security-log", esH.GetLogs)
+			r.Post("/security-events", esH.LogEvent)
+
+			// ─── Analytics ────────────────────────────────────────────────
+			anlH := analytics.New(s)
+			r.Get("/analytics/exam/{examId}/class-summary", anlH.ClassSummary)
+			r.Get("/analytics/chapter-performance", anlH.ChapterPerformance)
+			r.Get("/analytics/school-overview", anlH.SchoolOverview)
+
 			// ─── Fees domain (full implementation) ────────────────────────
 			fH := fees.NewWithCache(s, saveFn, rdb)
 			stH.OnStudentCreated = func(ctx *api.RequestContext, stu *store.Student) {
@@ -397,6 +452,18 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			// Settings
 			r.Get("/super-admin/settings", saH.GetSettings)
 			r.Patch("/super-admin/settings", saH.UpdateSettings)
+
+			// Global Question Bank (Super Admin only)
+			r.Get("/super-admin/global-bank/classes", qpH.GlobalListClasses)
+			r.Get("/super-admin/global-bank/subjects", qpH.GlobalListSubjects)
+			r.Get("/super-admin/global-bank/chapters", qpH.GlobalListChapters)
+			r.Post("/super-admin/global-bank/chapters", qpH.GlobalCreateChapter)
+			r.Delete("/super-admin/global-bank/chapters/{id}", qpH.GlobalDeleteChapter)
+			r.Get("/super-admin/global-bank/questions", qpH.GlobalListQuestions)
+			r.Post("/super-admin/global-bank/questions", qpH.GlobalCreateQuestion)
+			r.Put("/super-admin/global-bank/questions/{id}", qpH.GlobalUpdateQuestion)
+			r.Delete("/super-admin/global-bank/questions/{id}", qpH.GlobalDeleteQuestion)
+			r.Get("/super-admin/global-bank/stats", qpH.GlobalStats)
 
 			// Parents — admin/teacher use these to link students to
 			// existing parent accounts during student creation. The

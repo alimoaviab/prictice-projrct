@@ -73,6 +73,14 @@ func upsertRow(ctx context.Context, tx pgx.Tx, table string, doc any) error {
 		return upsertCertificateTemplate(ctx, tx, v)
 	case *store.GeneratedCertificate:
 		return upsertGeneratedCertificate(ctx, tx, v)
+	case *store.Chapter:
+		return upsertChapter(ctx, tx, v)
+	case *store.Question:
+		return upsertQuestion(ctx, tx, v)
+	case *store.QuestionPaper:
+		return upsertQuestionPaper(ctx, tx, v)
+	case *store.StarCollection:
+		return upsertStarCollection(ctx, tx, v)
 	}
 	return fmt.Errorf("upsert: unknown document type for table %s", table)
 }
@@ -743,7 +751,7 @@ func upsertAuditLog(ctx context.Context, tx pgx.Tx, v *store.AuditLog) error {
 	return err
 }
 
-// ─── Certificate Templates ───────────────────────────────────────────────
+// ─── Certificates ────────────────────────────────────────────────────────
 
 func upsertCertificateTemplate(ctx context.Context, tx pgx.Tx, v *store.CertificateTemplate) error {
 	_, err := tx.Exec(ctx, `
@@ -757,13 +765,12 @@ func upsertCertificateTemplate(ctx context.Context, tx pgx.Tx, v *store.Certific
 			border_style=EXCLUDED.border_style, body_text=EXCLUDED.body_text,
 			elements=EXCLUDED.elements, is_default=EXCLUDED.is_default,
 			status=EXCLUDED.status, updated_at=EXCLUDED.updated_at
-	`, v.ID, v.SchoolID, v.Name, v.Type, v.Orientation,
-		v.BackgroundURL, v.WatermarkURL, v.BorderStyle, v.BodyText, v.Elements,
-		v.IsDefault, v.Status, v.CreatedAt, v.UpdatedAt)
+	`, v.ID, v.SchoolID, v.Name, defaultStr(v.Type, "character"),
+		defaultStr(v.Orientation, "landscape"), v.BackgroundURL, v.WatermarkURL,
+		v.BorderStyle, v.BodyText, defaultStr(v.Elements, "[]"),
+		v.IsDefault, defaultStr(v.Status, "active"), v.CreatedAt, v.UpdatedAt)
 	return err
 }
-
-// ─── Generated Certificates ──────────────────────────────────────────────
 
 func upsertGeneratedCertificate(ctx context.Context, tx pgx.Tx, v *store.GeneratedCertificate) error {
 	_, err := tx.Exec(ctx, `
@@ -773,12 +780,95 @@ func upsertGeneratedCertificate(ctx context.Context, tx pgx.Tx, v *store.Generat
 			status, created_at)
 		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
 		ON CONFLICT (id) DO UPDATE SET
-			student_name=EXCLUDED.student_name, class_name=EXCLUDED.class_name,
-			status=EXCLUDED.status, qr_code_url=EXCLUDED.qr_code_url,
-			pdf_url=EXCLUDED.pdf_url
-	`, v.ID, v.SchoolID, v.TemplateID, v.StudentID,
-		v.StudentName, v.ClassName, v.CertificateType, v.CertificateNo,
-		v.VerificationCode, v.QRCodeURL, v.PDFURL, v.IssueDate, v.ExpiryDate,
-		v.Status, v.CreatedAt)
+			template_id=EXCLUDED.template_id, student_name=EXCLUDED.student_name,
+			class_name=EXCLUDED.class_name, certificate_type=EXCLUDED.certificate_type,
+			certificate_no=EXCLUDED.certificate_no,
+			verification_code=EXCLUDED.verification_code,
+			qr_code_url=EXCLUDED.qr_code_url, pdf_url=EXCLUDED.pdf_url,
+			issue_date=EXCLUDED.issue_date, expiry_date=EXCLUDED.expiry_date,
+			status=EXCLUDED.status
+	`, v.ID, v.SchoolID, v.TemplateID, v.StudentID, v.StudentName, v.ClassName,
+		v.CertificateType, v.CertificateNo, v.VerificationCode, v.QRCodeURL,
+		v.PDFURL, v.IssueDate, v.ExpiryDate, defaultStr(v.Status, "issued"), v.CreatedAt)
+	return err
+}
+
+// ─── Question Bank: Chapters ─────────────────────────────────────────────
+
+func upsertChapter(ctx context.Context, tx pgx.Tx, v *store.Chapter) error {
+	_, err := tx.Exec(ctx, `
+		INSERT INTO chapters (id, school_id, class_id, class_name, subject_id,
+			subject_name, title, chapter_number, is_default, status,
+			created_at, updated_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+		ON CONFLICT (id) DO UPDATE SET
+			class_id=EXCLUDED.class_id, class_name=EXCLUDED.class_name,
+			subject_id=EXCLUDED.subject_id, subject_name=EXCLUDED.subject_name,
+			title=EXCLUDED.title, chapter_number=EXCLUDED.chapter_number,
+			is_default=EXCLUDED.is_default, status=EXCLUDED.status,
+			updated_at=EXCLUDED.updated_at
+	`, v.ID, v.SchoolID, v.ClassID, v.ClassName, v.SubjectID, v.SubjectName,
+		v.Title, v.ChapterNumber, v.IsDefault, defaultStr(v.Status, "active"),
+		v.CreatedAt, v.UpdatedAt)
+	return err
+}
+
+// ─── Question Bank: Questions ────────────────────────────────────────────
+
+func upsertQuestion(ctx context.Context, tx pgx.Tx, v *store.Question) error {
+	_, err := tx.Exec(ctx, `
+		INSERT INTO questions (id, school_id, created_by, created_by_name, class_id,
+			subject_id, subject_name, chapter_id, type, difficulty, question_html,
+			options, marks, status, is_global, approval_status, approved_by,
+			approved_at, created_at, updated_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
+		ON CONFLICT (id) DO UPDATE SET
+			class_id=EXCLUDED.class_id, subject_id=EXCLUDED.subject_id,
+			subject_name=EXCLUDED.subject_name, chapter_id=EXCLUDED.chapter_id,
+			type=EXCLUDED.type, difficulty=EXCLUDED.difficulty,
+			question_html=EXCLUDED.question_html, options=EXCLUDED.options,
+			marks=EXCLUDED.marks, status=EXCLUDED.status,
+			is_global=EXCLUDED.is_global, approval_status=EXCLUDED.approval_status,
+			approved_by=EXCLUDED.approved_by, approved_at=EXCLUDED.approved_at,
+			updated_at=EXCLUDED.updated_at
+	`, v.ID, v.SchoolID, v.CreatedBy, v.CreatedByName, v.ClassID,
+		v.SubjectID, v.SubjectName, v.ChapterID, defaultStr(v.Type, "short"),
+		defaultStr(v.Difficulty, "medium"), v.QuestionHTML, v.Options, v.Marks,
+		defaultStr(v.Status, "active"), v.IsGlobal,
+		defaultStr(v.ApprovalStatus, "pending"), v.ApprovedBy, v.ApprovedAt,
+		v.CreatedAt, v.UpdatedAt)
+	return err
+}
+
+// ─── Question Bank: Question Papers ──────────────────────────────────────
+
+func upsertQuestionPaper(ctx context.Context, tx pgx.Tx, v *store.QuestionPaper) error {
+	_, err := tx.Exec(ctx, `
+		INSERT INTO question_papers (id, school_id, title, class_id, class_name,
+			subject_id, subject_name, chapter_ids, teacher_id, teacher_name,
+			date, questions, status, created_at, updated_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+		ON CONFLICT (id) DO UPDATE SET
+			title=EXCLUDED.title, class_id=EXCLUDED.class_id,
+			class_name=EXCLUDED.class_name, subject_id=EXCLUDED.subject_id,
+			subject_name=EXCLUDED.subject_name, chapter_ids=EXCLUDED.chapter_ids,
+			teacher_id=EXCLUDED.teacher_id, teacher_name=EXCLUDED.teacher_name,
+			date=EXCLUDED.date, questions=EXCLUDED.questions,
+			status=EXCLUDED.status, updated_at=EXCLUDED.updated_at
+	`, v.ID, v.SchoolID, v.Title, v.ClassID, v.ClassName, v.SubjectID, v.SubjectName,
+		v.ChapterIDs, v.TeacherID, v.TeacherName, v.Date, v.Questions,
+		defaultStr(v.Status, "draft"), v.CreatedAt, v.UpdatedAt)
+	return err
+}
+
+// ─── Star Collections ────────────────────────────────────────────────────
+
+func upsertStarCollection(ctx context.Context, tx pgx.Tx, v *store.StarCollection) error {
+	_, err := tx.Exec(ctx, `
+		INSERT INTO star_collections (id, user_id, school_id, name, color, created_at)
+		VALUES ($1,$2,$3,$4,$5,$6)
+		ON CONFLICT (id) DO UPDATE SET
+			name=EXCLUDED.name, color=EXCLUDED.color
+	`, v.ID, v.UserID, v.SchoolID, v.Name, v.Color, v.CreatedAt)
 	return err
 }

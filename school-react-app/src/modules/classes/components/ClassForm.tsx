@@ -105,7 +105,7 @@ export function ClassForm({
     function validate() {
         const newErrors: Record<string, string> = {};
         if (!form.name.trim()) newErrors.name = "Class name is required";
-        if (!form.code?.trim()) newErrors.code = "Class code is required";
+        if (!form.code?.trim()) newErrors.code = "Grade is required";
         if (!form.academic_year_id?.trim()) newErrors.academic_year_id = "Academic Year is required";
         if ((form.subjects?.length || 0) === 0) newErrors.subjects = "At least one subject is required";
         
@@ -223,14 +223,32 @@ export function ClassForm({
                         error={errors.name}
                         className="font-bold"
                     />
-                    <Input
-                        label="Class code *"
-                        placeholder="C10"
-                        value={form.code}
-                        onChange={(e) => setForm({ ...form, code: e.target.value })}
-                        error={errors.code}
-                        className="font-bold"
-                    />
+                    <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-500">Grade (1-12) *</label>
+                        <select
+                            value={form.code}
+                            onChange={(e) => setForm({ ...form, code: e.target.value })}
+                            className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm font-bold text-slate-900 focus:border-blue-500 outline-none bg-white"
+                        >
+                            <option value="">Select Grade</option>
+                            <option value="nursery">Nursery</option>
+                            <option value="kg-1">KG-1</option>
+                            <option value="kg-2">KG-2</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                        </select>
+                        {errors.code && <p className="text-[10px] text-red-500 font-medium">{errors.code}</p>}
+                    </div>
                     <Input
                         label="Display order"
                         type="number"

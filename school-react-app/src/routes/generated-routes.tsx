@@ -13,21 +13,40 @@ import { PageLoader } from "@/components/PageLoader";
 
 // ─── Lazy wrapper helper ─────────────────────────────────────────────────
 // Wraps a lazy import in Suspense with the PageLoader skeleton fallback.
+// Includes automatic retry on chunk load failure (handles deploy cache misses).
 function lazyPage(
   importFn: () => Promise<any>,
   exportName?: string
 ) {
   const LazyComponent = lazy(async () => {
-    const mod = await importFn();
-    if (exportName && exportName in mod) {
-      return { default: (mod as Record<string, ComponentType<any>>)[exportName] };
+    try {
+      const mod = await importFn();
+      if (exportName && exportName in mod) {
+        return { default: (mod as Record<string, ComponentType<any>>)[exportName] };
+      }
+      if ("default" in mod) {
+        return mod as { default: ComponentType<any> };
+      }
+      const firstExport = Object.values(mod)[0];
+      return { default: firstExport as ComponentType<any> };
+    } catch (error: any) {
+      // If chunk load fails, retry once after a short delay
+      // This handles the case where a new build was deployed mid-session
+      const message = error?.message || "";
+      if (
+        message.includes("Failed to fetch dynamically imported module") ||
+        message.includes("Importing a module script failed") ||
+        message.includes("error loading dynamically imported module") ||
+        message.includes("Unable to preload CSS") ||
+        message.includes("ChunkLoadError")
+      ) {
+        // Force reload to get fresh index.html with correct chunk references
+        window.location.reload();
+        // Return a dummy component to satisfy TypeScript (reload will interrupt)
+        return { default: (() => null) as unknown as ComponentType<any> };
+      }
+      throw error;
     }
-    if ("default" in mod) {
-      return mod as { default: ComponentType<any> };
-    }
-    // If no default export, use the first exported component
-    const firstExport = Object.values(mod)[0];
-    return { default: firstExport as ComponentType<any> };
   });
 
   return (
@@ -108,6 +127,18 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/certificates/view/:id", element: lazyPage(() => import("@/pages/role/admin/certificates/view/Param_id"), "AdminCertificateViewPage") },
   { path: "/admin/certificates/generate/:id", element: lazyPage(() => import("@/pages/role/admin/certificates/generate/Param_id"), "AdminCertificateGeneratePage") },
 
+  // Question Papers
+  { path: "/admin/question-papers", element: lazyPage(() => import("@/pages/role/admin/question-papers"), "AdminQuestionPapersPage") },
+  { path: "/admin/question-papers/create", element: lazyPage(() => import("@/pages/role/admin/question-papers/create"), "AdminQuestionPaperCreatePage") },
+  { path: "/admin/question-papers/generator", element: lazyPage(() => import("@/pages/role/admin/question-papers/generator"), "AdminQuestionPaperGeneratorPage") },
+  { path: "/admin/question-papers/:id", element: lazyPage(() => import("@/pages/role/admin/question-papers/view"), "AdminQuestionPaperViewPage") },
+  { path: "/admin/question-papers/:id/edit", element: lazyPage(() => import("@/pages/role/admin/question-papers/create"), "AdminQuestionPaperCreatePage") },
+
+  // Question Bank (also accessible via Question Papers tab)
+  { path: "/admin/question-bank", element: lazyPage(() => import("@/pages/role/admin/question-bank"), "AdminQuestionBankPage") },
+  { path: "/admin/question-bank/starred", element: lazyPage(() => import("@/pages/role/admin/question-bank/starred"), "AdminStarredQuestionsPage") },
+  { path: "/admin/question-bank/archived", element: lazyPage(() => import("@/pages/role/admin/question-bank/archived"), "AdminArchivedQuestionsPage") },
+
   // Live Classes
   { path: "/admin/live-class", element: lazyPage(() => import("@/pages/role/admin/live-class"), "LiveClassPage") },
   { path: "/admin/live-class/create", element: lazyPage(() => import("@/pages/role/admin/live-class/create"), "AdminLiveClassCreatePage") },
@@ -184,6 +215,10 @@ export const teacherRoutes: RouteObject[] = [
   { path: "/teacher/timetable", element: lazyPage(() => import("@/pages/role/teacher/timetable"), "TeacherTimetablePage") },
   { path: "/teacher/leave", element: lazyPage(() => import("@/pages/role/teacher/leave")) },
   { path: "/teacher/leave/:id", element: lazyPage(() => import("@/pages/role/teacher/leave/Param_id"), "TeacherLeaveDetailPage") },
+
+  // Question Papers (Teacher)
+  { path: "/teacher/question-papers", element: lazyPage(() => import("@/pages/role/teacher/question-papers"), "TeacherQuestionPapersPage") },
+  { path: "/teacher/question-papers/create", element: lazyPage(() => import("@/pages/role/teacher/question-papers/create"), "TeacherQuestionPaperCreatePage") },
 ];
 
 // ─── Parent Routes (lazy-loaded) ─────────────────────────────────────────

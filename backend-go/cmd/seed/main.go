@@ -960,6 +960,120 @@ func createFees(classes []Class) {
 	log.Printf("✓ Created fee structure for %d classes", count)
 }
 
+// ─── Tests ───────────────────────────────────────────────────────────────
+
+func createTests(classes []Class, subjects []Subject) {
+	log.Println("→ Creating tests (Weekly/Monthly per class)...")
+	count := 0
+
+	testTypes := []string{"Weekly Test", "Monthly Test", "Quiz", "Class Test"}
+
+	for _, cls := range classes {
+		numTests := 2 + rand.Intn(3) // 2-4 tests per class
+		for i := 0; i < numTests; i++ {
+			subj := subjects[rand.Intn(len(subjects))]
+			testType := testTypes[rand.Intn(len(testTypes))]
+			daysOffset := -(rand.Intn(20) + 1) // 1-20 days ago
+
+			body := map[string]any{
+				"class_id":    cls.ID,
+				"subject":     subj.Name,
+				"title":       testType + " - " + subj.Name + " (" + cls.Name + ")",
+				"starts_at":   time.Now().AddDate(0, 0, daysOffset).Format("2006-01-02"),
+				"max_marks":   25 + rand.Intn(26), // 25-50 marks
+				"description": testType + " for " + subj.Name,
+			}
+			if _, err := apiCall("POST", "/api/tests", body); err == nil {
+				count++
+			}
+		}
+	}
+	log.Printf("✓ Created %d tests", count)
+}
+
+// ─── Certificates ────────────────────────────────────────────────────────
+
+func createCertificates(students []Student, classes []Class) {
+	log.Println("→ Creating certificate templates and generating certificates...")
+
+	// Create templates
+	templates := []struct {
+		Name, Type, Body string
+	}{
+		{
+			Name: "Character Certificate",
+			Type: "character",
+			Body: "This is to certify that the above named student has been a student of this institution and has shown good character and conduct throughout their stay.",
+		},
+		{
+			Name: "School Leaving Certificate",
+			Type: "school_leaving",
+			Body: "This is to certify that the above named student was enrolled in this institution and is leaving on their own accord. Their character and conduct has been satisfactory.",
+		},
+		{
+			Name: "Achievement Certificate",
+			Type: "achievement",
+			Body: "This certificate is awarded in recognition of outstanding academic performance and dedication to studies during the academic session.",
+		},
+		{
+			Name: "Participation Certificate",
+			Type: "participation",
+			Body: "This certificate is awarded for active participation in school activities and events during the academic year.",
+		},
+		{
+			Name: "Merit Certificate",
+			Type: "merit",
+			Body: "This certificate is awarded for securing a position of merit in the annual examinations. The student has demonstrated exceptional academic ability.",
+		},
+	}
+
+	templateIDs := make([]string, 0)
+	for _, t := range templates {
+		body := map[string]any{
+			"name":        t.Name,
+			"type":        t.Type,
+			"orientation": "landscape",
+			"body_text":   t.Body,
+			"elements":    "[]",
+		}
+		created, err := apiCall("POST", "/api/certificates/templates", body)
+		if err != nil {
+			continue
+		}
+		var result map[string]any
+		if err := json.Unmarshal(created, &result); err == nil {
+			if data, ok := result["data"].(map[string]any); ok {
+				if id, ok := data["_id"].(string); ok {
+					templateIDs = append(templateIDs, id)
+				}
+			}
+		}
+	}
+	log.Printf("  ✓ Created %d certificate templates", len(templateIDs))
+
+	// Generate certificates for some students
+	if len(templateIDs) == 0 || len(students) == 0 {
+		return
+	}
+
+	certCount := 0
+	// Generate 20-30 certificates across different templates
+	numToGenerate := 20 + rand.Intn(11)
+	for i := 0; i < numToGenerate && i < len(students); i++ {
+		templateID := templateIDs[rand.Intn(len(templateIDs))]
+		studentID := students[rand.Intn(len(students))].ID
+
+		body := map[string]any{
+			"template_id": templateID,
+			"student_ids": []string{studentID},
+		}
+		if _, err := apiCall("POST", "/api/certificates/generate", body); err == nil {
+			certCount++
+		}
+	}
+	log.Printf("  ✓ Generated %d certificates for students", certCount)
+}
+
 // ─── Announcements ───────────────────────────────────────────────────────
 
 func createAnnouncements() {
@@ -1064,7 +1178,9 @@ func main() {
 	createLeave(teachers, students)
 	createLiveClasses(classes, teachers, subjects)
 	createTimetables(classes, teachers, subjects)
+	createTests(classes, subjects)
 	createFees(classes)
+	createCertificates(students, classes)
 	createAnnouncements()
 
 	log.Println("═══════════════════════════════════════════════════════════")
