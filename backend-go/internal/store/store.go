@@ -61,6 +61,7 @@ type MemStore struct {
 
 	// Finance collections.
 	SchoolPackages []*SchoolPackage
+	Packages       []*Package
 	Expenses       []*Expense
 	RevenueRecords []*RevenueRecord
 

@@ -175,6 +175,12 @@ export function CertificateListPage() {
                   ]}
                   actions={[
                     {
+                      label: "View",
+                      icon: "visibility",
+                      to: `/admin/certificates/edit/${template._id}`,
+                      accent: "blue",
+                    },
+                    {
                       label: "Edit",
                       icon: "edit",
                       to: `/admin/certificates/edit/${template._id}`,
@@ -229,6 +235,20 @@ export function CertificateListPage() {
                       to: `/admin/certificates/view/${cert._id}`,
                       accent: "blue",
                       primary: true,
+                    },
+                    {
+                      label: "Print",
+                      icon: "print",
+                      onClick: () => {
+                        // Direct print without opening view page
+                        const printWin = window.open("", "_blank");
+                        if (!printWin) return;
+                        const schoolName = document.querySelector("[data-school-name]")?.textContent || "School";
+                        printWin.document.write(`<!DOCTYPE html><html><head><title>Certificate - ${cert.student_name}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Georgia,serif;padding:60px;display:flex;align-items:center;justify-content:center;min-height:100vh}.cert{width:100%;max-width:800px;border:3px solid #d4a853;padding:60px;position:relative;text-align:center}.cert::before{content:'';position:absolute;inset:8px;border:1px solid #d4a85380;border-radius:4px}.school{font-size:28px;font-weight:bold;margin-bottom:4px}.title{font-size:22px;color:#1e40af;text-transform:uppercase;letter-spacing:3px;margin:20px 0;font-weight:bold}.divider{width:80px;height:2px;background:#d4a853;margin:10px auto}.body{font-size:14px;line-height:1.8;margin:30px auto;max-width:500px;color:#333}.footer{display:flex;justify-content:space-between;margin-top:50px;padding-top:20px;border-top:1px solid #eee}.sig{text-align:center}.sig-line{width:120px;height:1px;background:#666;margin-bottom:4px}.sig-label{font-size:10px;color:#666;text-transform:uppercase}.meta{font-size:9px;color:#999;margin-top:4px}@media print{body{padding:0}.cert{border:3px solid #d4a853}}</style></head><body><div class="cert"><p class="school">${schoolName}</p><div class="divider"></div><h1 class="title">${cert.certificate_type.replace("_", " ")}</h1><div class="divider"></div><p class="body">This is to certify that <strong>${cert.student_name}</strong> of Class <strong>${cert.class_name}</strong> has been a student of this institution.<br><br>This certificate is issued on ${new Date(cert.issue_date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}.</p><div class="footer"><div class="sig"><div class="sig-line"></div><span class="sig-label">Principal</span></div><div><p class="meta">${cert.certificate_no}</p><p class="meta">${cert.verification_code}</p></div><div class="sig"><div class="sig-line"></div><span class="sig-label">Class Teacher</span></div></div></div></body></html>`);
+                        printWin.document.close();
+                        setTimeout(() => printWin.print(), 300);
+                      },
+                      accent: "blue",
                     },
                     ...(cert.status === "issued"
                       ? [

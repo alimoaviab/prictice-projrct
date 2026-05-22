@@ -123,6 +123,8 @@ export const adminRoutes: RouteObject[] = [
   // Certificates
   { path: "/admin/certificates", element: lazyPage(() => import("@/pages/role/admin/certificates"), "AdminCertificatesPage") },
   { path: "/admin/certificates/create", element: lazyPage(() => import("@/pages/role/admin/certificates/create"), "AdminCertificateCreatePage") },
+  { path: "/admin/certificates/edit/:id", element: lazyPage(() => import("@/pages/role/admin/certificates/edit/Param_id"), "AdminCertificateEditPage") },
+  { path: "/admin/certificates/view/:id", element: lazyPage(() => import("@/pages/role/admin/certificates/view/Param_id"), "AdminCertificateViewPage") },
   { path: "/admin/certificates/generate/:id", element: lazyPage(() => import("@/pages/role/admin/certificates/generate/Param_id"), "AdminCertificateGeneratePage") },
 
   // Question Papers

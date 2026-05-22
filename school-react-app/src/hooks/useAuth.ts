@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { AuthUser, Role } from "@/types/auth";
 import { decodeJwtPayload, isTokenExpired } from "@/utils/jwt";
+import { resetTenantCache } from "@/lib/query-client";
 
 export type { Role };
 
@@ -99,6 +100,8 @@ export function useAuth() {
   }, []);
 
   const logout = () => {
+    resetTenantCache();
+
     const keysToKeep = ["theme", "language"];
     const preserved: Record<string, string> = {};
     keysToKeep.forEach((key) => {

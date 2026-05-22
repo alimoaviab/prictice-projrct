@@ -1,0 +1,19 @@
+# EduPlexo Security Information
+# https://eduplexo.com
+
+Contact: mailto:support@eduplexo.com
+Preferred-Languages: en, ur
+Canonical: https://eduplexo.com/security.txt
+Policy: https://eduplexo.com/privacy
+
+# Security Features
+# - JWT Authentication
+# - Role-Based Access Control (RBAC)
+# - AES-256 Data Encryption
+# - HTTPS/TLS everywhere
+# - Input validation & sanitization
+# - SQL injection prevention
+# - XSS protection
+# - CSRF protection
+# - Rate limiting
+# - Audit logging

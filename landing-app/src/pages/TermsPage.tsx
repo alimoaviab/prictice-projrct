@@ -3,6 +3,7 @@
  * Wording is generic; have legal counsel review before publishing.
  */
 
+import { Seo } from '@/components/Seo';
 import { PageShell } from '@/components/PageShell';
 import { LegalSection, LegalList } from '@/components/LegalSection';
 
@@ -12,9 +13,16 @@ export function TermsPage() {
   return (
     <PageShell
       eyebrow="Terms of Service"
-      title="The agreement between you and EduPlexo."
-      description="These terms govern your use of the EduPlexo platform, websites, and related services."
+      title="The Agreement Between You and EduPlexo."
+      description="These terms govern your use of the EduPlexo school management system platform, websites, and related services."
     >
+      <Seo
+        title="Terms of Service — EduPlexo School Management System"
+        description="Terms of service for EduPlexo school management system and school ERP platform. Governing your use of our education technology services."
+        keywords="EduPlexo terms of service, school management system terms, school ERP agreement, education software terms"
+        canonical="https://www.eduplexo.com/terms"
+        noindex
+      />
       <p className="text-sm text-slate-500 mb-10">Last updated: {LAST_UPDATED}</p>
 
       <LegalSection number={1} title="Acceptance of terms">

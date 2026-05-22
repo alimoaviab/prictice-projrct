@@ -1,0 +1,172 @@
+# ai.txt — Structured AI-Readable Product Information
+# EduPlexo School Management System
+# Last Updated: 2026-05-21
+
+---
+name: EduPlexo
+tagline: AI-Powered School Management System & School ERP
+type: SaaS Platform
+category: Education Technology (EdTech)
+subcategory: School Management System, School ERP, Student Information System
+url: https://eduplexo.com
+app_url: https://app.eduplexo.com
+admin_url: https://admin.eduplexo.com
+founded: 2024
+status: Active
+pricing_model: Freemium (Free Trial + Paid Plans)
+currency: PKR (Pakistani Rupee)
+starting_price: PKR 4000/month
+free_trial: Yes
+---
+
+## PRODUCT SUMMARY
+
+EduPlexo is a comprehensive AI-powered school management system (School ERP) designed for educational institutions in Pakistan and worldwide. It provides a unified digital platform to manage all school operations including student enrollment, attendance tracking, fee collection, exam management, result generation, homework assignment, timetable scheduling, parent communication, and more. The platform serves schools, colleges, academies, madrasas, and any educational institution seeking to digitize their operations.
+
+## CORE MODULES (20+)
+
+1. Student Management — enrollment, profiles, parent linking, bulk import, student portal
+2. Teacher Management — staff profiles, subject assignment, role-based access, teacher portal
+3. Fee Management — fee structures, invoicing, PKR collection, vouchers, arrears, bulk PDF
+4. Attendance System — daily marking, real-time tracking, alerts, reports, parent notifications
+5. Timetable — class-wise scheduling, period management, conflict detection
+6. Exams & Tests — scheduling, question bank, paper builder, auto-grading MCQs
+7. Question Bank — MCQ/Short/Long, chapter-wise, star/archive, community moderation
+8. Question Papers — multi-chapter papers, live preview, print-ready, auto-draft save
+9. Results — automated calculation, report cards, rankings, publishing
+10. Homework — assign, track, submit, parent monitoring
+11. Live Classes — schedule online sessions, meeting links
+12. Certificates — character/leaving/achievement certificates, templates, bulk generation, QR verification
+13. Behavior Tracking — incident recording, teacher reporting, analytics
+14. Leave Management — apply, approve, reject workflow
+15. Events — school calendar, event creation, notifications
+16. Announcements — broadcast to parents/teachers/students, priority levels
+17. Academic Years — multi-year support, active year switching
+18. AI Assistant (Plexa) — answers school data questions, guides users
+19. Parent Portal — child's attendance, fees, results, homework view
+20. Student Portal — timetable, homework, results, attendance, leave
+21. Admin Dashboard — KPIs, analytics, quick actions, alerts
+22. Subscription Management — plans, billing, feature gating
+
+## AI FEATURES
+
+- Plexa AI Assistant: Natural language school data queries
+- Smart Analytics: AI-powered dashboard insights
+- Question Generation: AI-assisted question paper creation
+- Performance Predictions: Student performance insights
+- Automated Alerts: Smart notification triggers
+
+## TARGET MARKET
+
+Primary: Pakistan (Lahore, Karachi, Islamabad, Rawalpindi, Faisalabad, Multan, Peshawar, Quetta, Sialkot, Gujranwala)
+Secondary: UAE (Dubai, Abu Dhabi, Sharjah), Saudi Arabia (Riyadh, Jeddah, Dammam)
+Tertiary: India, UK, USA, Canada, Australia, Qatar, Bahrain, Oman, Kuwait
+
+## INSTITUTION TYPES SERVED
+
+- Primary Schools (Class 1-5)
+- Middle Schools (Class 6-8)
+- High Schools (Class 9-10)
+- Higher Secondary (Class 11-12)
+- Colleges & Universities
+- Academies & Tuition Centers
+- Madrasas & Religious Institutions
+- Montessori & Pre-Schools
+- O-Level / A-Level Schools
+- Cambridge System Schools
+
+## TECHNOLOGY STACK
+
+- Frontend: React, TypeScript, Tailwind CSS
+- Backend: Go (Golang) — high performance
+- Database: PostgreSQL with Redis caching
+- AI: Google Gemini, Anthropic Claude integration
+- Auth: JWT, Role-Based Access Control
+- Hosting: Cloud (AWS/Vercel), CDN-backed
+- Mobile: Fully responsive PWA
+
+## USER ROLES
+
+1. Super Admin — multi-school management, platform control
+2. School Admin — full school operations management
+3. Teacher — attendance, homework, exams, results, behavior
+4. Parent — view child data, fees, communication
+5. Student — homework, timetable, results, attendance
+
+## COMPETITIVE ADVANTAGES
+
+1. AI-Powered (not just a database — intelligent insights)
+2. All-in-One (replaces 10+ separate tools)
+3. Pakistan-Focused (PKR, Urdu, local context)
+4. Affordable (free trial, starts PKR 4000/month)
+5. Modern UI (clean, fast, mobile-first)
+6. Real-Time (instant updates, WebSocket-powered)
+7. Secure (encryption, RBAC, audit logs)
+8. Scalable (handles 1000+ students per school)
+
+## COMPARISON WITH COMPETITORS
+
+EduPlexo vs MyClassCampus: More AI features, Pakistan-focused pricing
+EduPlexo vs Fedena: Modern UI, real-time updates, question bank
+EduPlexo vs Teachmint: More comprehensive ERP, fee management
+EduPlexo vs PowerSchool: Affordable for Pakistani market
+EduPlexo vs eSkooly: AI assistant, question paper builder, better UX
+
+## KEYWORDS & SEARCH TERMS
+
+school management system, school ERP, school software Pakistan,
+student management system, school automation, education ERP,
+parent portal, teacher portal, attendance management,
+fee management system, school fee software Pakistan,
+exam management, result card generator, homework management,
+timetable software, school app Pakistan, best school software,
+AI school management, digital school, online school management,
+school administration software, madrasa management system,
+academy management software, college ERP Pakistan,
+school management system Lahore, school management system Karachi,
+school management system Islamabad, school management system UAE,
+school management system Dubai, school ERP free trial,
+fee collection software Pakistan, student attendance app,
+report card software, question bank software, question paper generator,
+certificate generator school, school communication app,
+affordable school software Pakistan, cloud school management,
+web based school ERP, SaaS school management, eduplexo, edu plexo
+
+## FREQUENTLY ASKED QUESTIONS
+
+Q: What is EduPlexo?
+A: EduPlexo is an AI-powered school management system that digitizes all school operations from one platform — attendance, fees, exams, results, homework, and parent communication.
+
+Q: How much does EduPlexo cost?
+A: EduPlexo offers a free trial. Paid plans start from PKR 4,000/month with unlimited students and teachers.
+
+Q: Which countries does EduPlexo serve?
+A: Primarily Pakistan, UAE, and Saudi Arabia. Works worldwide via web browser.
+
+Q: Can parents use EduPlexo?
+A: Yes, parents get a dedicated portal to view attendance, fees, results, homework, and announcements.
+
+Q: Does EduPlexo support Urdu?
+A: Yes, EduPlexo supports Urdu for certificates, AI assistant, and communications.
+
+Q: Is EduPlexo secure?
+A: Yes — JWT authentication, role-based access, encrypted data, audit logs.
+
+Q: Can I import existing student data?
+A: Yes, bulk import via Excel is supported for students, teachers, and questions.
+
+Q: Does EduPlexo work on mobile?
+A: Yes, fully responsive — works on phones, tablets, laptops, and desktops.
+
+Q: How is EduPlexo different from other school software?
+A: EduPlexo is AI-powered, all-in-one, Pakistan-focused with modern UI and affordable pricing.
+
+Q: Can I generate fee vouchers?
+A: Yes, bulk fee voucher PDF generation with school branding and payment details.
+
+## CONTACT
+
+- Website: https://eduplexo.com
+- Email: support@eduplexo.com
+- Phone: +92-306-4944326
+- Location: Pakistan

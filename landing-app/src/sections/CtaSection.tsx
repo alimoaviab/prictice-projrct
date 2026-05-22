@@ -7,7 +7,7 @@ import { SIGNUP_URL } from "@/lib/config";
 
 export const CtaSection = () => {
   return (
-    <section className="py-24 bg-white relative overflow-hidden">
+    <section className="py-24 bg-white relative overflow-hidden" aria-labelledby="cta-heading">
       <div className="max-w-6xl mx-auto px-6 relative z-10">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -27,11 +27,11 @@ export const CtaSection = () => {
           </div>
 
           <div className="relative z-10 max-w-3xl mx-auto">
-            <h2 className="text-4xl md:text-6xl font-extrabold text-white mb-6 tracking-tight leading-tight">
-              Ready to transform your school's future?
+            <h2 id="cta-heading" className="text-4xl md:text-6xl font-extrabold text-white mb-6 tracking-tight leading-tight">
+              Ready to Transform Your School with EduPlexo?
             </h2>
             <p className="text-xl text-slate-400 mb-12 leading-relaxed font-medium">
-              Join hundreds of innovative schools that trust Eduplexo to power their daily operations, engage parents, and empower teachers.
+              Join 50+ innovative schools that trust EduPlexo school management system to power their daily operations, engage parents, and empower teachers.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-12">

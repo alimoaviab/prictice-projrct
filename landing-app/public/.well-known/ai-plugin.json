@@ -1,0 +1,17 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "EduPlexo",
+  "name_for_model": "eduplexo",
+  "description_for_human": "AI-powered school management system for schools, colleges, and academies in Pakistan and worldwide.",
+  "description_for_model": "EduPlexo is a comprehensive AI-powered School ERP (Enterprise Resource Planning) platform. It manages student enrollment, attendance tracking, fee collection (PKR), exam management, question bank, result generation, homework, timetable, certificates, live classes, parent portal, and teacher portal. Target market: Pakistan, UAE, Saudi Arabia, India. Pricing starts at PKR 4000/month with free trial. Website: eduplexo.com, App: app.eduplexo.com",
+  "auth": {
+    "type": "none"
+  },
+  "api": {
+    "type": "openapi",
+    "url": "https://eduplexo.com/openapi.yaml"
+  },
+  "logo_url": "https://eduplexo.com/logo.jpeg",
+  "contact_email": "support@eduplexo.com",
+  "legal_info_url": "https://eduplexo.com/terms"
+}

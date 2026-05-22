@@ -1,0 +1,93 @@
+# EduPlexo — AI-Powered School Management System & School ERP
+# Website: https://eduplexo.com
+# App: https://app.eduplexo.com
+# Admin: https://admin.eduplexo.com
+
+# Allow all crawlers
+User-agent: *
+Allow: /
+Allow: /llms.txt
+Allow: /ai.txt
+Allow: /sitemap.xml
+Allow: /about
+Allow: /careers
+Allow: /privacy
+Allow: /terms
+Allow: /cookies
+
+# Sitemap
+Sitemap: https://www.eduplexo.com/sitemap.xml
+
+# ─── AI Model Crawlers (Explicitly Allowed) ──────────────────────────────
+
+# OpenAI / ChatGPT
+User-agent: GPTBot
+Allow: /
+Allow: /llms.txt
+Allow: /ai.txt
+
+User-agent: ChatGPT-User
+Allow: /
+Allow: /llms.txt
+Allow: /ai.txt
+
+# Google AI (Gemini, Bard, SGE)
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+# Microsoft / Bing / Copilot
+User-agent: Bingbot
+Allow: /
+
+User-agent: MicrosoftPreview
+Allow: /
+
+# Anthropic / Claude
+User-agent: anthropic-ai
+Allow: /
+Allow: /llms.txt
+Allow: /ai.txt
+
+User-agent: ClaudeBot
+Allow: /
+Allow: /llms.txt
+Allow: /ai.txt
+
+# Perplexity AI
+User-agent: PerplexityBot
+Allow: /
+Allow: /llms.txt
+Allow: /ai.txt
+
+# Meta AI
+User-agent: FacebookBot
+Allow: /
+
+User-agent: Meta-ExternalAgent
+Allow: /
+
+# Apple (Siri, Spotlight)
+User-agent: Applebot
+Allow: /
+
+# Cohere AI
+User-agent: cohere-ai
+Allow: /
+Allow: /llms.txt
+
+# You.com
+User-agent: YouBot
+Allow: /
+
+# Common Crawl (used by many AI models for training)
+User-agent: CCBot
+Allow: /
+
+# ─── AI Content Files ────────────────────────────────────────────────────
+# These files contain structured information about EduPlexo for AI models:
+# /llms.txt — Full product description, features, FAQ for LLM consumption
+# /ai.txt — Concise AI-readable product summary with structured data
+# /sitemap.xml — All public pages for indexing

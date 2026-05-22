@@ -14,7 +14,7 @@ export const PricingSection = () => {
       students: "Up to 200 Students",
       priceMonthly: "4,000",
       priceYearly: "38,400",
-      description: "Perfect for small growing schools needing core management tools.",
+      description: "Perfect for small growing schools needing core school management tools.",
       features: ["Student & Staff Directory", "Basic Attendance Tracking", "Fee Collection", "Parent Portal App", "Standard Support"],
       isPopular: false,
       isCustom: false,
@@ -24,7 +24,7 @@ export const PricingSection = () => {
       students: "Up to 500 Students",
       priceMonthly: "9,000",
       priceYearly: "86,400",
-      description: "Advanced features for established schools scaling their operations.",
+      description: "Advanced school ERP features for established schools scaling their operations.",
       features: ["Everything in Starter", "Advanced AI Analytics", "Automated Report Cards", "Payroll Management", "Priority 24/7 Support"],
       isPopular: true,
       isCustom: false,
@@ -34,7 +34,7 @@ export const PricingSection = () => {
       students: "800+ Students",
       priceMonthly: "Custom",
       priceYearly: "Custom",
-      description: "Complete ERP ecosystem tailored for large multi-campus institutions.",
+      description: "Complete school ERP ecosystem tailored for large multi-campus institutions.",
       features: ["Everything in Growth", "Multi-Campus Management", "Custom Module Development", "Dedicated Account Manager", "On-Premise Deployment Option"],
       isPopular: false,
       isCustom: true,
@@ -75,16 +75,17 @@ export const PricingSection = () => {
   }, []);
 
   return (
-    <section id="pricing" className="py-24 bg-slate-50">
-      <div className="max-w-7xl mx-auto px-6">
+    <section id="pricing" className="py-24 bg-slate-50" aria-labelledby="pricing-heading">
+      <div className="max-w-6xl mx-auto px-6">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <motion.h2
+            id="pricing-heading"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-50px" }}
             className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight"
           >
-            Transparent, <span className="text-blue-600">predictable</span> pricing.
+            Transparent School ERP <span className="text-blue-600">Pricing</span>
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -93,7 +94,7 @@ export const PricingSection = () => {
             transition={{ delay: 0.1 }}
             className="text-lg text-slate-600 font-medium mb-10"
           >
-            No hidden fees, no per-user licensing. Choose the plan that fits your campus size.
+            No hidden fees, no per-user licensing. Choose the EduPlexo plan that fits your campus size.
           </motion.p>
 
           {/* Toggle */}
@@ -118,7 +119,7 @@ export const PricingSection = () => {
           </motion.div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 xl:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 xl:gap-10 justify-items-center">
           {plans.map((plan, index) => (
             <motion.div
               key={index}
@@ -126,7 +127,7 @@ export const PricingSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className={`relative bg-white rounded-[2rem] p-6 md:p-8 transition-all duration-300 flex flex-col hover:-translate-y-2 ${
+              className={`relative w-full max-w-md bg-white rounded-[2rem] p-6 md:p-8 transition-all duration-300 flex flex-col hover:-translate-y-2 ${
                 plan.isPopular
                   ? "border-2 border-blue-500 shadow-2xl shadow-blue-500/10 scale-[1.02] z-10"
                   : "border border-slate-200/60 shadow-lg hover:shadow-xl"

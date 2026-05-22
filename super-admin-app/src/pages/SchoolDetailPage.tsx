@@ -19,7 +19,13 @@ interface SchoolDetail {
   student_count: number
   teacher_count: number
   class_count: number
+  parent_count: number
+  subject_count: number
+  plan: string
+  revenue: number
+  expiry: string
   created_at: string
+  updated_at: string
 }
 
 export function SchoolDetailPage() {
@@ -30,7 +36,7 @@ export function SchoolDetailPage() {
   const [saving, setSaving] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [newPassword, setNewPassword] = useState('')
-  
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -43,22 +49,19 @@ export function SchoolDetailPage() {
 
   const loadDetails = async () => {
     setLoading(true)
-    const res = await apiRequest(`/api/super-admin/schools`)
+    const res = await apiRequest(`/api/super-admin/schools/${id}`)
     if (res.ok && res.data) {
-      const schools = (res.data.items || res.data.data || []) as SchoolDetail[]
-      const found = schools.find(s => s._id === id || s.school_id === id)
-      if (found) {
-        setSchool(found)
-        setFormData({
-          name: found.name || '',
-          email: found.email || '',
-          phone: found.phone || '',
-          address: found.address || '',
-          city: found.city || '',
-          principal_name: found.principal_name || '',
-          website: found.website || ''
-        })
-      }
+      const s = res.data as SchoolDetail
+      setSchool(s)
+      setFormData({
+        name: s.name || '',
+        email: s.email || '',
+        phone: s.phone || '',
+        address: s.address || '',
+        city: s.city || '',
+        principal_name: s.principal_name || '',
+        website: s.website || ''
+      })
     }
     setLoading(false)
   }
@@ -73,8 +76,7 @@ export function SchoolDetailPage() {
       body: JSON.stringify(formData)
     })
     if (res.ok) {
-      alert('Profile updated successfully')
-      loadDetails()
+      await loadDetails()
     }
     setSaving(false)
   }
@@ -87,238 +89,292 @@ export function SchoolDetailPage() {
       body: JSON.stringify({ password: newPassword })
     })
     if (res.ok) {
-      alert('Password updated successfully')
       setNewPassword('')
-      loadDetails()
     }
     setSaving(false)
   }
 
-  if (loading) return <div className="p-8 text-center text-slate-500">Loading school details...</div>
-  if (!school) return <div className="p-8 text-center text-red-500">School not found</div>
+  const handleStatusChange = async (newStatus: string) => {
+    const res = await apiRequest(`/api/super-admin/schools/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: newStatus, reason: 'Admin action' })
+    })
+    if (res.ok) loadDetails()
+  }
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="text-center">
+        <span className="material-symbols-outlined text-3xl text-blue-600 animate-spin">progress_activity</span>
+        <p className="text-sm text-slate-500 mt-2">Loading school details...</p>
+      </div>
+    </div>
+  )
+  if (!school) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="text-center">
+        <span className="material-symbols-outlined text-3xl text-red-400">error</span>
+        <p className="text-sm text-red-500 mt-2">School not found</p>
+      </div>
+    </div>
+  )
+
+  const statusColor = (s: string) => {
+    const map: Record<string, string> = {
+      active: 'bg-blue-50 text-blue-700 border-blue-100',
+      suspended: 'bg-red-50 text-red-700 border-red-100',
+      pending: 'bg-amber-50 text-amber-700 border-amber-100',
+      expired: 'bg-slate-50 text-slate-600 border-slate-100',
+    }
+    return `text-[10px] font-bold px-2.5 py-1 rounded-full border ${map[s] || map.expired}`
+  }
+
+  const initials = school.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <button 
-          onClick={() => navigate('/schools')}
-          className="h-9 w-9 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors"
-        >
-          <span className="material-symbols-outlined text-lg">arrow_back</span>
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">{school.name}</h1>
-          <p className="text-sm text-slate-500 mt-1">Platform ID: {school.school_id} • Code: {school.code}</p>
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate('/schools')}
+            className="h-9 w-9 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors"
+          >
+            <span className="material-symbols-outlined text-lg">arrow_back</span>
+          </button>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold">
+              {initials}
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-slate-900">{school.name}</h1>
+              <p className="text-[11px] text-slate-500">ID: {school.school_id} · Code: {school.code}</p>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={statusColor(school.status)}>{school.status}</span>
+          {school.status === 'active' && (
+            <button onClick={() => handleStatusChange('suspended')} className="h-7 px-3 text-[10px] font-bold text-red-700 bg-red-50 border border-red-100 rounded-lg hover:bg-red-100 transition-colors">
+              Suspend
+            </button>
+          )}
+          {(school.status === 'suspended' || school.status === 'expired') && (
+            <button onClick={() => handleStatusChange('active')} className="h-7 px-3 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg hover:bg-emerald-100 transition-colors">
+              Activate
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Profile Section - Editable Form */}
-        <div className="lg:col-span-2 space-y-6">
-          <form onSubmit={handleUpdateProfile} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <h3 className="font-semibold text-slate-900 flex items-center gap-2">
-                <span className="material-symbols-outlined text-blue-600 text-xl">apartment</span>
-                School Information
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* LEFT: School Profile */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Profile Form */}
+          <form onSubmit={handleUpdateProfile} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <span className="material-symbols-outlined text-blue-600 text-[18px]">apartment</span>
+                School Profile
               </h3>
-              <div className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 rounded-lg">
-                <span className="material-symbols-outlined text-base">group</span>
-                <span className="text-sm font-bold">{school.student_count} Students</span>
-              </div>
+              <span className="text-[10px] font-semibold text-slate-400">Edit details</span>
             </div>
-            
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">School Name</label>
-                <input 
+            <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">School Name</label>
+                <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter school name"
+                  className="w-full h-8 px-3 rounded-lg border border-slate-200 text-[12px] font-medium text-slate-900 placeholder-slate-400 outline-none focus:border-blue-500"
+                  placeholder="School name"
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Principal Name</label>
-                <input 
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Principal Name</label>
+                <input
                   type="text"
                   value={formData.principal_name}
                   onChange={(e) => setFormData({...formData, principal_name: e.target.value})}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter principal name"
+                  className="w-full h-8 px-3 rounded-lg border border-slate-200 text-[12px] font-medium text-slate-900 placeholder-slate-400 outline-none focus:border-blue-500"
+                  placeholder="Principal name"
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Contact Email</label>
-                <input 
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Contact Email</label>
+                <input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter email address"
+                  className="w-full h-8 px-3 rounded-lg border border-slate-200 text-[12px] font-medium text-slate-900 placeholder-slate-400 outline-none focus:border-blue-500"
+                  placeholder="Email address"
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Contact Phone</label>
-                <input 
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Contact Phone</label>
+                <input
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter phone number"
+                  className="w-full h-8 px-3 rounded-lg border border-slate-200 text-[12px] font-medium text-slate-900 placeholder-slate-400 outline-none focus:border-blue-500"
+                  placeholder="Phone number"
                 />
               </div>
-              <div className="md:col-span-2 space-y-2">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Address</label>
-                <input 
+              <div className="md:col-span-2 space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Address</label>
+                <input
                   type="text"
                   value={formData.address}
                   onChange={(e) => setFormData({...formData, address: e.target.value})}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter school address"
+                  className="w-full h-8 px-3 rounded-lg border border-slate-200 text-[12px] font-medium text-slate-900 placeholder-slate-400 outline-none focus:border-blue-500"
+                  placeholder="Full address"
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">City</label>
-                <input 
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">City</label>
+                <input
                   type="text"
                   value={formData.city}
                   onChange={(e) => setFormData({...formData, city: e.target.value})}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter city"
+                  className="w-full h-8 px-3 rounded-lg border border-slate-200 text-[12px] font-medium text-slate-900 placeholder-slate-400 outline-none focus:border-blue-500"
+                  placeholder="City"
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Website</label>
-                <input 
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Website</label>
+                <input
                   type="url"
                   value={formData.website}
                   onChange={(e) => setFormData({...formData, website: e.target.value})}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter website URL"
+                  className="w-full h-8 px-3 rounded-lg border border-slate-200 text-[12px] font-medium text-slate-900 placeholder-slate-400 outline-none focus:border-blue-500"
+                  placeholder="Website URL"
                 />
               </div>
             </div>
-
-            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
-              <button 
+            <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-2">
+              <button
                 type="button"
                 onClick={() => loadDetails()}
                 disabled={saving}
-                className="px-4 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 font-medium text-sm hover:bg-slate-50 disabled:opacity-50 transition-colors"
+                className="h-7 px-3 rounded-lg border border-slate-200 bg-white text-[10px] font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-colors"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 type="submit"
                 disabled={saving}
-                className="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium text-sm hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
+                className="h-7 px-4 rounded-lg bg-blue-600 text-white text-[10px] font-bold hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-1.5"
               >
-                <span className="material-symbols-outlined text-base">check_circle</span>
+                <span className="material-symbols-outlined text-[14px]">check_circle</span>
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
           </form>
 
-          {/* Password Section */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-              <h3 className="font-semibold text-slate-900 flex items-center gap-2">
-                <span className="material-symbols-outlined text-slate-600 text-xl">lock</span>
+          {/* Admin Password */}
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div className="px-5 py-3 border-b border-slate-100">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <span className="material-symbols-outlined text-slate-500 text-[18px]">lock</span>
                 Admin Password
               </h3>
             </div>
-            <div className="p-6 space-y-4">
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">New Password</label>
+            <div className="p-5 flex items-end gap-3">
+              <div className="flex-1 space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">New Password</label>
                 <div className="relative">
-                  <input 
+                  <input
                     type={showPassword ? "text" : "password"}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full h-8 px-3 pr-8 rounded-lg border border-slate-200 text-[12px] font-medium text-slate-900 placeholder-slate-400 outline-none focus:border-blue-500"
                     placeholder="Enter new password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                   >
-                    <span className="material-symbols-outlined text-lg">
+                    <span className="material-symbols-outlined text-[16px]">
                       {showPassword ? "visibility_off" : "visibility"}
                     </span>
                   </button>
                 </div>
               </div>
-              <button 
+              <button
                 type="button"
                 onClick={handleChangePassword}
                 disabled={saving || !newPassword}
-                className="w-full px-4 py-2 rounded-lg bg-slate-900 text-white font-medium text-sm hover:bg-slate-800 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                className="h-8 px-4 rounded-lg bg-slate-900 text-white text-[10px] font-bold hover:bg-slate-800 disabled:opacity-50 transition-colors flex items-center gap-1.5"
               >
-                <span className="material-symbols-outlined text-base">key</span>
-                {saving ? 'Updating...' : 'Update Password'}
+                <span className="material-symbols-outlined text-[14px]">key</span>
+                Update
               </button>
             </div>
           </div>
         </div>
 
-        {/* Sidebar Info */}
-        <div className="space-y-6">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-              <h3 className="font-semibold text-slate-900 flex items-center gap-2">
-                <span className="material-symbols-outlined text-slate-600 text-xl">info</span>
+        {/* RIGHT: Analytics Cards */}
+        <div className="space-y-4">
+          {/* System Details */}
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div className="px-5 py-3 border-b border-slate-100">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <span className="material-symbols-outlined text-blue-600 text-[18px]">info</span>
                 System Details
               </h3>
             </div>
-            <div className="p-6 space-y-5">
-              <div className="flex justify-between items-center py-2 border-b border-slate-50">
-                <span className="text-xs font-medium text-slate-500 uppercase">Platform Status</span>
-                <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${
-                  school.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                }`}>
-                  {school.status}
-                </span>
+            <div className="p-5 space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-bold text-slate-500 uppercase">Registered</span>
+                <span className="text-[11px] font-semibold text-slate-700">{new Date(school.created_at).toLocaleDateString()}</span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-slate-50">
-                <span className="text-xs font-medium text-slate-500 uppercase">Registered On</span>
-                <span className="text-sm font-medium text-slate-700">
-                  {new Date(school.created_at).toLocaleDateString()}
-                </span>
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-bold text-slate-500 uppercase">School Code</span>
+                <span className="text-[11px] font-mono font-bold text-slate-900">{school.code}</span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-slate-50">
-                <span className="text-xs font-medium text-slate-500 uppercase">School Code</span>
-                <span className="text-sm font-mono font-bold text-slate-900">{school.code}</span>
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-bold text-slate-500 uppercase">Plan</span>
+                <span className="text-[11px] font-bold text-blue-700">{school.plan || 'Free'}</span>
               </div>
-              <div className="pt-2">
-                <label className="block text-xs font-semibold text-slate-500 uppercase mb-2">Admin Email</label>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-sm font-medium text-slate-700">
-                  {school.owner_email}
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-bold text-slate-500 uppercase">Revenue</span>
+                <span className="text-[11px] font-bold text-slate-900">Rs {school.revenue?.toLocaleString() || 0}</span>
+              </div>
+              <div className="pt-2 border-t border-slate-100">
+                <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1.5">Admin Email</span>
+                <div className="p-2 bg-slate-50 rounded-lg border border-slate-100 text-[11px] font-medium text-slate-700">
+                  {school.owner_email || '—'}
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-slate-900 rounded-2xl p-6 text-white shadow-xl shadow-slate-200">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center">
-                <span className="material-symbols-outlined text-white">analytics</span>
-              </div>
-              <div>
-                <h4 className="font-bold text-sm">Quick Stats</h4>
-                <p className="text-[10px] text-slate-400">School Activity</p>
-              </div>
+          {/* Quick Stats - White cards with blue accent */}
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div className="px-5 py-3 border-b border-slate-100">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <span className="material-symbols-outlined text-blue-600 text-[18px]">analytics</span>
+                Quick Stats
+              </h3>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white/5 rounded-xl p-3">
-                <p className="text-[10px] text-slate-400 uppercase mb-1">Teachers</p>
-                <p className="text-xl font-bold">{school.teacher_count}</p>
-              </div>
-              <div className="bg-white/5 rounded-xl p-3">
-                <p className="text-[10px] text-slate-400 uppercase mb-1">Classes</p>
-                <p className="text-xl font-bold">{school.class_count}</p>
-              </div>
+            <div className="p-4 grid grid-cols-2 gap-2.5">
+              {[
+                { label: 'Students', value: school.student_count, icon: 'school', color: 'text-blue-600 bg-blue-50' },
+                { label: 'Teachers', value: school.teacher_count, icon: 'badge', color: 'text-emerald-600 bg-emerald-50' },
+                { label: 'Classes', value: school.class_count, icon: 'class', color: 'text-cyan-600 bg-cyan-50' },
+                { label: 'Parents', value: school.parent_count || 0, icon: 'people', color: 'text-indigo-600 bg-indigo-50' },
+                { label: 'Subjects', value: school.subject_count || 0, icon: 'menu_book', color: 'text-violet-600 bg-violet-50' },
+                { label: 'Revenue', value: `Rs ${(school.revenue || 0).toLocaleString()}`, icon: 'payments', color: 'text-amber-600 bg-amber-50' },
+              ].map((stat) => (
+                <div key={stat.label} className="p-2.5 rounded-lg border border-slate-100 bg-slate-50/50">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className={`material-symbols-outlined text-[12px] ${stat.color.split(' ')[0]}`}>{stat.icon}</span>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase">{stat.label}</span>
+                  </div>
+                  <p className="text-[14px] font-bold text-slate-900">{stat.value}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>

@@ -1,0 +1,219 @@
+# Edu Plexo — AI-Powered School Management System & School ERP
+
+> Edu Plexo (eduplexo.com) is the #1 AI-powered school management system
+> and school ERP platform for schools, colleges, academies, and madrasas
+> in Pakistan, UAE, Saudi Arabia, India, and worldwide.
+
+## What is Edu Plexo?
+
+Edu Plexo is a complete School ERP (Enterprise Resource Planning) system
+that digitizes all school operations from a single web-based platform.
+It replaces manual registers, paper-based attendance, handwritten fee
+receipts, and disconnected communication with one unified digital system.
+
+- Website: https://eduplexo.com
+- School App: https://app.eduplexo.com
+- Admin Portal: https://admin.eduplexo.com
+
+## Key Features & Modules
+
+### Student Management
+Complete student lifecycle management — enrollment, admission, profiles,
+parent linking, class assignment, promotion, transfer certificates,
+student portal access. Supports bulk student import via Excel.
+
+### Teacher & Staff Management
+Staff profiles, qualification records, subject assignment, class teacher
+allocation, role-based access control, teacher portal with dedicated dashboard.
+
+### Fee Management System
+Comprehensive fee collection system with PKR currency support. Features include:
+fee structure configuration per class, monthly recurring fees, one-time fees,
+fee voucher generation, bulk PDF export, partial payments, payment history,
+arrears tracking, daily collection reports, fee reminders.
+
+### Smart Attendance System
+Daily attendance marking with real-time tracking. Features: unmarked class
+alerts, attendance percentage reports, monthly/yearly reports, parent
+notifications on absence, bulk attendance marking, attendance analytics.
+
+### Timetable & Scheduling
+Class-wise weekly timetable creation. Period management, teacher allocation,
+room assignment, conflict detection, today's schedule view, teacher timetable view.
+
+### Exams & Tests Management
+Complete examination system — exam scheduling, test creation, question bank
+with MCQ/Short/Long question types, question paper builder, multi-chapter
+paper generation, auto-grading for MCQs, manual grading interface.
+
+### Question Bank & Question Papers
+AI-ready question bank organized by class, subject, chapter, difficulty.
+Features: star/favorite questions, archive system, community moderation,
+admin approval workflow, bulk import, question paper builder with live preview,
+print-ready papers, chapter-wise and full-book paper support.
+
+### Results & Report Cards
+Automated result calculation from exam marks. Features: subject-wise marks,
+grade calculation, class rankings, downloadable report cards, result
+publishing to parent/student portals, performance analytics.
+
+### Homework Management
+Digital homework assignment and tracking. Teachers assign homework per class/subject,
+set due dates, track submissions. Students view and submit from their portal.
+Parents can monitor homework status.
+
+### Live Classes
+Schedule and manage online live classes with meeting links. Support for
+class-wise and student-specific sessions. Integration-ready for Zoom/Google Meet.
+
+### Certificate Generation
+Auto-generate school certificates — character certificates, school leaving
+certificates, achievement certificates, merit certificates, participation
+certificates. Custom templates, bulk generation, print-ready output,
+QR code verification system.
+
+### Behavior Tracking
+Monitor and record student behavior — positive and negative incidents.
+Teacher reporting, admin review, parent visibility, behavior analytics.
+
+### Leave Management
+Digital leave request and approval system for students and teachers.
+Apply, approve, reject workflow. Leave history and balance tracking.
+
+### Events & Calendar
+School events management — create events, set dates, notify stakeholders.
+Event calendar view for all users.
+
+### Announcements & Communication
+Broadcast system for school-wide communication. Target specific audiences
+(all, parents only, teachers only, specific class). Priority levels,
+read tracking.
+
+### Academic Years Management
+Multi-year support with active year switching. All data scoped per academic
+year. Year-over-year comparison support.
+
+### AI-Powered Features
+- AI School Assistant (Plexa) — answers questions about school data
+- Smart Dashboard KPIs and analytics
+- Question paper generation assistance
+- Performance insights and recommendations
+
+### Parent Portal
+Dedicated parent access — view child's attendance, fee status, exam results,
+homework, timetable, behavior reports, announcements. Multi-child support.
+
+### Student Portal
+Student self-service — view timetable, homework, exam schedule, results,
+attendance record, fee status, live classes, leave applications.
+
+### Admin Dashboard
+Comprehensive admin overview — student count, teacher count, attendance
+today, fee collection, pending tasks, alerts, quick actions, analytics widgets.
+
+### Subscription & Billing
+School subscription management — plans (Starter, Growth, Enterprise),
+trial periods, payment tracking, feature gating per plan.
+
+### Role-Based Access Control
+Four primary roles: Admin, Teacher, Parent, Student. Each with specific
+permissions and portal access. Super Admin for multi-school management.
+
+## Technical Specifications
+
+- **Platform**: Web-based (works in any modern browser)
+- **Backend**: Go (high-performance API server)
+- **Frontend**: React with TypeScript
+- **Database**: PostgreSQL with Redis caching
+- **AI**: Google Gemini integration for school assistant
+- **Hosting**: Cloud-hosted with CDN
+- **Security**: JWT authentication, role-based access, encrypted data
+- **Mobile**: Fully responsive design, works on all devices
+
+## Pricing
+
+- **Starter Plan**: Free trial available
+- **Growth Plan**: PKR 4,000/month (most popular)
+- **Enterprise Plan**: Custom pricing for large institutions
+- All plans include unlimited students and teachers
+
+## Target Audience
+
+- Schools (primary, middle, high, higher secondary)
+- Colleges and universities
+- Academies and tuition centers
+- Madrasas and religious institutions
+- Montessori and pre-schools
+- Any educational institution needing digital management
+
+## Geographic Focus
+
+- Primary: Pakistan (Lahore, Karachi, Islamabad, Rawalpindi, Faisalabad, Multan, Peshawar, Quetta)
+- Secondary: UAE (Dubai, Abu Dhabi, Sharjah), Saudi Arabia (Riyadh, Jeddah)
+- Also serving: India, UK, USA, Canada, Australia
+
+## Why Choose Edu Plexo?
+
+1. AI-powered — not just a database, intelligent insights
+2. All-in-one — replaces 10+ separate tools
+3. Pakistan-focused — PKR currency, Urdu support, local payment methods
+4. Affordable — starts free, scales with your school
+5. Modern UI — clean, fast, mobile-friendly interface
+6. Real-time — instant updates across all portals
+7. Secure — bank-grade encryption, role-based access
+8. Support — dedicated customer support team
+
+## Keywords
+
+school management system, school ERP, school software Pakistan,
+student management system, school automation software, education ERP,
+parent portal, teacher portal, attendance management system,
+fee management system, school fee software, exam management system,
+result card generator, homework management, timetable software,
+school app Pakistan, best school software, AI school management,
+digital school, online school management, school administration software,
+madrasa management system, academy management software, college ERP,
+school management system Lahore, school management system Karachi,
+school management system Islamabad, school management system UAE,
+school management system Dubai, school ERP Pakistan, school ERP India,
+fee collection software, student attendance app, report card software,
+question bank software, question paper generator, certificate generator,
+school communication app, parent teacher communication app,
+school management system free trial, affordable school software,
+cloud school management, web based school ERP, SaaS school management,
+eduplexo, edu plexo, eduplex, school plexo
+
+## Frequently Asked Questions
+
+Q: What is Edu Plexo?
+A: Edu Plexo is an AI-powered school management system that helps schools digitize all operations including attendance, fees, exams, results, and parent communication from one platform.
+
+Q: Is Edu Plexo free?
+A: Edu Plexo offers a free trial. Paid plans start from PKR 4,000/month with unlimited students and teachers.
+
+Q: Which countries does Edu Plexo support?
+A: Edu Plexo primarily serves Pakistan, UAE, Saudi Arabia, and India. It works worldwide in any browser.
+
+Q: Can parents access Edu Plexo?
+A: Yes, parents get a dedicated portal to view their child's attendance, fees, results, homework, and school announcements.
+
+Q: Does Edu Plexo support Urdu?
+A: Yes, Edu Plexo supports Urdu language for certificates, communications, and the AI assistant.
+
+Q: Is Edu Plexo secure?
+A: Yes, Edu Plexo uses bank-grade encryption, JWT authentication, and role-based access control to protect all school data.
+
+Q: Can I generate fee vouchers?
+A: Yes, Edu Plexo generates printable fee vouchers in bulk with school branding, student details, and payment breakdown.
+
+Q: Does it work on mobile?
+A: Yes, Edu Plexo is fully responsive and works on all devices — phones, tablets, laptops, and desktops.
+
+## Contact
+
+- Website: https://eduplexo.com
+- App: https://app.eduplexo.com
+- Email: support@eduplexo.com
+- Phone: +92-306-4944326
+- Country: Pakistan
+- Currency: PKR (Pakistani Rupee)

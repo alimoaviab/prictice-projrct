@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS generated_certificates (
     class_name        TEXT DEFAULT '',
     certificate_type  TEXT NOT NULL,
     certificate_no    TEXT NOT NULL,
-    verification_code TEXT NOT NULL,
+    verification_code TEXT NOT NULL UNIQUE,
     qr_code_url       TEXT DEFAULT '',
     pdf_url           TEXT DEFAULT '',
     issue_date        TIMESTAMPTZ NOT NULL DEFAULT NOW(),

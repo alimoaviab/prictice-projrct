@@ -83,6 +83,7 @@ export function StudentFeeDashboard() {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
     const [exporting, setExporting] = useState(false);
     const [showExportDrawer, setShowExportDrawer] = useState(false);
+    const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
     // Plain-language export config. We never expose paper size,
     // orientation, compact density, or per-row notes — the engine
     // auto-derives all of those from the per-page count so admins
@@ -354,6 +355,23 @@ export function StudentFeeDashboard() {
                     </div>
 
                     <div className="flex items-center gap-2">
+                        {/* View Mode Toggle */}
+                        <div className="inline-flex items-center bg-slate-100 rounded-lg p-0.5 no-print">
+                            <button
+                                onClick={() => setViewMode("grid")}
+                                className={`h-8 w-8 rounded-md flex items-center justify-center transition-all ${viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
+                                title="Grid View"
+                            >
+                                <span className="material-symbols-outlined text-[18px]">grid_view</span>
+                            </button>
+                            <button
+                                onClick={() => setViewMode("list")}
+                                className={`h-8 w-8 rounded-md flex items-center justify-center transition-all ${viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
+                                title="List View"
+                            >
+                                <span className="material-symbols-outlined text-[18px]">view_list</span>
+                            </button>
+                        </div>
                         <button
                             onClick={() => setShowExportDrawer(true)}
                             className="h-10 px-4 rounded-xl border border-blue-200 bg-blue-50 text-[10px] font-black uppercase tracking-widest text-blue-700 hover:bg-blue-100 transition-all flex items-center gap-2 no-print shadow-sm"
@@ -421,6 +439,70 @@ export function StudentFeeDashboard() {
                             <span className="material-symbols-outlined text-base">settings</span>
                             Configure Class Fees
                         </button>
+                    </div>
+                ) : viewMode === "list" ? (
+                    /* ─── LIST VIEW ─────────────────────────────────────────── */
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead className="bg-slate-50 border-b border-slate-100">
+                                    <tr>
+                                        <th className="px-3 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-widest w-8">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedIds.size === data.students.length && data.students.length > 0}
+                                                onChange={() => {
+                                                    if (selectedIds.size === data.students.length) setSelectedIds(new Set());
+                                                    else setSelectedIds(new Set(data.students.map(e => e.student.id)));
+                                                }}
+                                                className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600"
+                                            />
+                                        </th>
+                                        <th className="px-3 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-widest">Student</th>
+                                        <th className="px-3 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-widest">Class</th>
+                                        <th className="px-3 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Monthly</th>
+                                        <th className="px-3 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Arrears</th>
+                                        <th className="px-3 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Paid</th>
+                                        <th className="px-3 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Balance</th>
+                                        <th className="px-3 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                                        <th className="px-3 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-widest w-28">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50">
+                                    {data.students.map((entry) => {
+                                        const isSelected = selectedIds.has(entry.student.id);
+                                        return (
+                                            <tr key={entry.student.id} className={`hover:bg-slate-50/50 transition-colors ${isSelected ? "bg-blue-50/30" : ""}`}>
+                                                <td className="px-3 py-2.5">
+                                                    <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(entry.student.id)} className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600" />
+                                                </td>
+                                                <td className="px-3 py-2.5">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="h-6 w-6 rounded-md bg-blue-600 flex items-center justify-center text-white font-black text-[8px] shrink-0">{entry.student.name.substring(0, 1).toUpperCase()}</div>
+                                                        <div className="min-w-0">
+                                                            <p className="text-[11px] font-bold text-slate-900 truncate">{entry.student.name}</p>
+                                                            <p className="text-[8px] text-slate-400">#{entry.student.admission_no}</p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-3 py-2.5 text-[10px] font-bold text-slate-600">{entry.student.class_name}</td>
+                                                <td className="px-3 py-2.5 text-[10px] font-bold text-slate-900 text-right">Rs {(entry.current_fee?.amount || 0).toLocaleString()}</td>
+                                                <td className="px-3 py-2.5 text-[10px] font-bold text-amber-600 text-right">{entry.carry_forward > 0 ? `Rs ${entry.carry_forward.toLocaleString()}` : "—"}</td>
+                                                <td className="px-3 py-2.5 text-[10px] font-bold text-emerald-600 text-right">{entry.paid_total > 0 ? `Rs ${entry.paid_total.toLocaleString()}` : "—"}</td>
+                                                <td className="px-3 py-2.5 text-[10px] font-black text-blue-700 text-right">Rs {entry.remaining.toLocaleString()}</td>
+                                                <td className="px-3 py-2.5">{getStatusBadge(entry.status)}</td>
+                                                <td className="px-3 py-2.5">
+                                                    <div className="flex items-center gap-1">
+                                                        <button disabled={entry.status === "paid" || saving} onClick={() => handleFullPayment(entry)} className="h-6 px-2 rounded-md bg-blue-600 text-[7px] font-bold text-white hover:bg-blue-700 disabled:opacity-20">Full</button>
+                                                        <button disabled={entry.status === "paid" || saving} onClick={() => { setIsPaying(entry); setPaymentForm({...paymentForm, amount: String(entry.remaining)}); }} className="h-6 px-2 rounded-md border border-slate-200 text-[7px] font-bold text-slate-500 hover:bg-slate-50">Partial</button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
