@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Parent Timetable — premium redesign matching the dashboards/live-class/
  * fees aesthetic.
@@ -171,7 +172,7 @@ export function ParentTimetablePage() {
 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
             <div className="flex items-center gap-1.5 text-slate-500">
-              <span className="material-symbols-outlined text-[14px]">school</span>
+              <AppIcon name="GraduationCap" size={14} />
               <span className="text-[11px] font-bold">
                 {selectedChild.class_name}
                 {selectedChild.class_section
@@ -181,16 +182,14 @@ export function ParentTimetablePage() {
             </div>
             {selectedChild.academic_year ? (
               <div className="flex items-center gap-1.5 text-slate-500">
-                <span className="material-symbols-outlined text-[14px]">
-                  calendar_today
-                </span>
+                <AppIcon name="Calendar" size={14} />
                 <span className="text-[11px] font-bold">
                   {selectedChild.academic_year}
                 </span>
               </div>
             ) : null}
             <div className="flex items-center gap-1.5 text-slate-500">
-              <span className="material-symbols-outlined text-[14px]">today</span>
+              <AppIcon name="Calendar" size={14} />
               <span className="text-[11px] font-bold">
                 {new Date().toLocaleDateString(undefined, {
                   weekday: "long",
@@ -202,9 +201,7 @@ export function ParentTimetablePage() {
           </div>
         </div>
 
-        <span className="material-symbols-outlined absolute right-[-10px] bottom-[-20px] text-[120px] text-slate-50 opacity-50 select-none pointer-events-none">
-          schedule
-        </span>
+        <AppIcon name="Clock" size={120} className="absolute right-[-10px] bottom-[-20px] text-slate-50 opacity-50 select-none pointer-events-none" />
       </div>
 
       {/* ── KPI strip ─────────────────────────────────────────────────── */}
@@ -358,11 +355,7 @@ function PremiumEmpty({
       <div
         className={`${compact ? "h-10 w-10" : "h-12 w-12"} rounded-full bg-white shadow-sm flex items-center justify-center mb-3`}
       >
-        <span
-          className={`material-symbols-outlined text-slate-300 ${compact ? "text-[20px]" : "text-[24px]"}`}
-        >
-          schedule
-        </span>
+        <AppIcon name="Clock" className={` text-slate-300 ${compact ? "text-[20px]" : "text-[24px]"} `} />
       </div>
       <p
         className={`${compact ? "text-[12px]" : "text-[13px]"} font-black text-slate-700`}

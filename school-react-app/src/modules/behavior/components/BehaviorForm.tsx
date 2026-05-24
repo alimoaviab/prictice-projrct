@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useState, useMemo, useEffect } from "react";
 import { BehaviorFormInput } from "../types/behavior.types";
 import { Button, Input, Select } from "@/components/ui";
@@ -154,7 +155,7 @@ export default function BehaviorForm({ initial, onSubmit, onCancel, students, cl
         {/* Section 2: Incident Details */}
         <div className="space-y-4">
             <div className="flex items-center gap-2 mb-2 px-1">
-                <span className="material-symbols-outlined text-[18px] text-slate-400">report_problem</span>
+                <AppIcon name="AlertTriangle" size={18} className="text-slate-400" />
                 <h3 className="text-[11px] font-black text-slate-900 normal-case tracking-tight">Incident Classification</h3>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-5 rounded-[2rem] bg-slate-50/50 border border-slate-100">
@@ -253,7 +254,7 @@ export default function BehaviorForm({ initial, onSubmit, onCancel, students, cl
           type="submit"
           className="h-10 px-10 bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-lg shadow-slate-900/20 text-[10px] font-bold normal-case  transition-all active:scale-95 flex items-center gap-2"
         >
-          <span className="material-symbols-outlined text-[18px]">add_task</span>
+          <AppIcon name="ListPlus" size={18} />
           {initial ? "Update Record" : "Create Record"}
         </Button>
       </div>

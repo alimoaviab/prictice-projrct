@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Results list page.
  *
@@ -332,9 +333,7 @@ export function ResultListPage({
       {!isParent && (
         <div className="bg-white p-2 rounded-xl border border-slate-100 shadow-sm flex flex-wrap items-center gap-3">
           <div className="relative flex-1 min-w-[200px]">
-            <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-lg text-slate-400">
-              search
-            </span>
+            <AppIcon name="Search" size={18} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               value={searchQuery}
               onChange={(e) => {
@@ -388,7 +387,7 @@ export function ResultListPage({
             )}
             className="h-9 flex items-center gap-2 px-4 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm active:scale-95 transition-all"
           >
-            <span className="material-symbols-outlined text-[16px]">add_chart</span>
+            <AppIcon name="BarChart2" size={16} />
             Record Results
           </Link>
 
@@ -402,7 +401,7 @@ export function ResultListPage({
               className="h-9 flex items-center gap-2 px-3 bg-white border border-slate-200 text-slate-700 rounded-lg text-[10px] font-black uppercase tracking-wider hover:border-blue-300 hover:text-blue-700 transition-all"
               title="Download a marksheet covering every visible row"
             >
-              <span className="material-symbols-outlined text-[16px]">picture_as_pdf</span>
+              <AppIcon name="FileText" size={16} />
               Export Sheet
             </button>
           )}

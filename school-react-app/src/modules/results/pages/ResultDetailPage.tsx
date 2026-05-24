@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useState, useEffect, useMemo } from "react";
 import { useParams, Link, useLocation } from "react-router-dom";
 import { 
@@ -125,7 +126,7 @@ export function ResultDetailPage() {
                  showToast("Generating marksheet...", "info");
                }}
              >
-               <span className="material-symbols-outlined text-lg">download</span>
+               <AppIcon name="Download" size={18} />
                Download Marksheet
              </Button>
           </div>
@@ -248,7 +249,7 @@ export function ResultDetailPage() {
         {row.remarks && (
           <div className="bg-blue-50/30 rounded-2xl p-6 border border-blue-100/50">
             <div className="flex items-center gap-2 mb-3">
-              <span className="material-symbols-outlined text-blue-600 text-lg">comment</span>
+              <AppIcon name="MessageSquare" size={18} className="text-blue-600" />
               <h4 className="text-xs font-black uppercase tracking-widest text-blue-600">Teacher Remarks</h4>
             </div>
             <p className="text-sm font-medium text-slate-700 leading-relaxed italic">"{row.remarks}"</p>
@@ -272,7 +273,7 @@ export function ResultDetailPage() {
            <div>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Grading Timeline</p>
               <div className="flex items-center gap-2">
-                 <span className="material-symbols-outlined text-slate-400 text-lg">calendar_today</span>
+                 <AppIcon name="Calendar" size={18} className="text-slate-400" />
                  <p className="text-sm font-bold text-slate-700">Recorded on {new Date(row.graded_at).toLocaleDateString(undefined, { dateStyle: 'long' })}</p>
               </div>
            </div>

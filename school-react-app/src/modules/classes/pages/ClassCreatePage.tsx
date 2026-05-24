@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -69,7 +70,7 @@ export function ClassCreatePage() {
           to="/admin/classes"
           className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-400 normal-case hover:text-slate-900 transition-all group"
         >
-          <span className="material-symbols-outlined text-[16px] group-hover:-translate-x-0.5 transition-transform">arrow_back</span>
+          <AppIcon name="ArrowLeft" size={16} className="group-hover:-translate-x-0.5 transition-transform" />
           Return to Classes
         </Link>
         <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 normal-case ">
@@ -95,7 +96,7 @@ export function ClassCreatePage() {
              <div className="mb-6 p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                    <div className="h-10 w-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600">
-                      <span className="material-symbols-outlined font-bold">priority_high</span>
+                      <AppIcon name="AlertTriangle" className="font-bold" />
                    </div>
                    <div>
                       <p className="text-xs font-bold text-amber-900">Academic Year Required</p>

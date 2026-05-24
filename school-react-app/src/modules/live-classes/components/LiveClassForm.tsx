@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import React, { useEffect, useState, FormEvent } from "react";
 import { Input, Select, Button } from "@/components/ui";
 import { showToast } from "@/utils/toast";
@@ -362,7 +363,7 @@ export function LiveClassForm({
 
           <div className="bg-blue-50 rounded-3xl p-6 border border-blue-100 flex items-start gap-4 h-[calc(100%-80px)]">
             <div className="h-10 w-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-               <span className="material-symbols-outlined">video_camera_front</span>
+               <AppIcon name="Video" />
             </div>
             <div>
                <h4 className="text-sm font-bold text-blue-900 normal-case tracking-tight">Live Class Session</h4>

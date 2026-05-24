@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useEffect, useRef, useState } from "react";
 
 export type ToastTone = "success" | "error" | "info" | "warning";
@@ -135,9 +136,7 @@ export function Toast({
         className={["flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg", styles.accent].join(" ")}
         aria-hidden="true"
       >
-        <span className={`material-symbols-outlined text-[20px] ${styles.iconColor}`}>
-          {styles.icon}
-        </span>
+        <AppIcon name={styles.icon} className={` text-[20px] ${styles.iconColor} `} />
       </div>
 
       <div className="min-w-0 flex-1 pr-1">
@@ -168,7 +167,7 @@ export function Toast({
         className="flex-shrink-0 rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
         aria-label="Dismiss notification"
       >
-        <span className="material-symbols-outlined text-[18px]">close</span>
+        <AppIcon name="X" size={18} />
       </button>
 
       {duration > 0 && (

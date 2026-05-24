@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useState } from "react";
 import { Card, DataState, Skeleton } from "@/components/ui";
 import { SettingsForm } from "../components/SettingsForm";
@@ -58,14 +59,14 @@ export function SettingsPage() {
                                 : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
                             }`}
                         >
-                            <span className="material-symbols-outlined text-[20px]">{tab.icon}</span>
+                            <AppIcon name={tab.icon} />
                             {tab.label}
                         </button>
                     ))}
 
                     <div className="mt-8 p-4 rounded-2xl bg-blue-50 border border-blue-100">
                         <div className="flex items-center gap-2 text-blue-600 mb-2">
-                            <span className="material-symbols-outlined text-[18px]">verified</span>
+                            <AppIcon name="CheckCircle" size={18} />
                             <span className="text-[10px] font-bold normal-case ">Enterprise Plan</span>
                         </div>
                         <p className="text-[11px] font-medium text-blue-700 leading-relaxed">

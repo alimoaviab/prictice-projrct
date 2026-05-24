@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useState, FormEvent } from "react";
 import { ClassRow, ClassFormInput, ClassSubject, GradeThreshold } from "../types/class.types";
 import { Select } from "@/components/ui";
@@ -118,7 +119,7 @@ export function ClassEditSidebar({
                                 onClick={() => onOpenFeeManager(classItem)}
                                 className="flex h-8 items-center gap-1.5 rounded-xl border border-violet-200 bg-violet-50 px-3 text-[10px] font-black uppercase tracking-[0.14em] text-violet-700 transition-all hover:bg-violet-100 active:scale-90"
                             >
-                                <span className="material-symbols-outlined text-[16px]">payments</span>
+                                <AppIcon name="CreditCard" size={16} />
                                 Fee Setup
                             </button>
                         )}
@@ -126,7 +127,7 @@ export function ClassEditSidebar({
                             onClick={handleClose}
                             className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-50 text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-900 active:scale-90 border border-slate-100"
                         >
-                            <span className="material-symbols-outlined text-lg">close</span>
+                            <AppIcon name="X" size={18} />
                         </button>
                     </div>
                 </div>
@@ -138,7 +139,7 @@ export function ClassEditSidebar({
                         <div className="space-y-5">
                             <div className="flex items-center gap-3">
                                 <div className="h-6 w-6 rounded-lg bg-blue-50 flex items-center justify-center">
-                                  <span className="material-symbols-outlined text-blue-600 text-sm font-bold">badge</span>
+                                  <AppIcon name="Award" size={14} className="text-blue-600 font-bold" />
                                 </div>
                                 <span className="text-[10px] font-bold normal-case tracking-[0.2em] text-slate-400">01. Identity Profile</span>
                             </div>
@@ -198,7 +199,7 @@ export function ClassEditSidebar({
                         <div className="space-y-4 pt-4">
                             <div className="flex items-center gap-3">
                                 <div className="h-6 w-6 rounded-lg bg-emerald-50 flex items-center justify-center">
-                                  <span className="material-symbols-outlined text-emerald-600 text-sm font-bold">school</span>
+                                  <AppIcon name="GraduationCap" size={14} className="text-emerald-600 font-bold" />
                                 </div>
                                 <span className="text-[10px] font-bold normal-case tracking-[0.2em] text-slate-400">02. Faculty Assignment (Optional)</span>
                             </div>
@@ -227,7 +228,7 @@ export function ClassEditSidebar({
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="h-6 w-6 rounded-lg bg-purple-50 flex items-center justify-center">
-                                        <span className="material-symbols-outlined text-purple-600 text-sm font-bold">schema</span>
+                                        <AppIcon name="Network" size={14} className="text-purple-600 font-bold" />
                                     </div>
                                     <span className="text-[10px] font-bold normal-case tracking-[0.2em] text-slate-400">03. Academic Spectrum *</span>
                                 </div>
@@ -255,7 +256,7 @@ export function ClassEditSidebar({
                                         disabled={addingSubject || !newSubject.trim()}
                                         className="h-6 w-6 flex items-center justify-center rounded bg-amber-50 text-amber-600 border border-amber-100 hover:bg-amber-100 disabled:opacity-50"
                                     >
-                                        <span className="material-symbols-outlined text-[14px]">add</span>
+                                        <AppIcon name="Plus" size={14} />
                                     </button>
                                 </div>
                             </div>
@@ -309,7 +310,7 @@ export function ClassEditSidebar({
                             </>
                         ) : (
                             <>
-                                <span className="material-symbols-outlined text-base">task_alt</span>
+                                <AppIcon name="CheckCircle2" size={16} />
                                 <span>Commit Changes</span>
                             </>
                         )}

@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Certificate Management — List page showing templates and generated certificates.
  */
@@ -72,7 +73,7 @@ export function CertificateListPage() {
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 px-4 py-3 shadow-[0_4px_18px_rgb(0,0,0,0.03)]">
         <div className="flex items-center gap-3 min-w-0">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white shrink-0 shadow-sm shadow-blue-600/15">
-            <span className="material-symbols-outlined text-lg">workspace_premium</span>
+            <AppIcon name="Award" size={18} />
           </div>
           <div className="min-w-0">
             <p className="text-[10px] font-bold text-slate-400 normal-case truncate">
@@ -87,7 +88,7 @@ export function CertificateListPage() {
         <div className="flex items-center gap-2 flex-wrap">
           {/* Search */}
           <div className="relative">
-            <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-base text-slate-400">search</span>
+            <AppIcon name="Search" size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -118,7 +119,7 @@ export function CertificateListPage() {
             onClick={() => navigate("/admin/certificates/create")}
             className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg bg-blue-600 text-white text-[12px] font-bold shadow-sm shadow-blue-600/15 hover:bg-blue-700 transition-colors active:scale-[0.98]"
           >
-            <span className="material-symbols-outlined text-base">add</span>
+            <AppIcon name="Plus" size={16} />
             New Template
           </button>
         </div>

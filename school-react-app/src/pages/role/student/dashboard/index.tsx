@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Student Dashboard — premium redesign that matches the admin/parent
  * portals' compact aesthetic.
@@ -368,7 +369,7 @@ export function StudentDashboardPage() {
           </h2>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
             <div className="flex items-center gap-1.5 text-slate-500">
-              <span className="material-symbols-outlined text-[14px]">school</span>
+              <AppIcon name="GraduationCap" size={14} />
               <span className="text-[11px] font-bold">
                 {className}
                 {section ? ` - ${section}` : ""}
@@ -376,13 +377,13 @@ export function StudentDashboardPage() {
             </div>
             {academicYear ? (
               <div className="flex items-center gap-1.5 text-slate-500">
-                <span className="material-symbols-outlined text-[14px]">calendar_today</span>
+                <AppIcon name="Calendar" size={14} />
                 <span className="text-[11px] font-bold">{academicYear}</span>
               </div>
             ) : null}
             {profile.guardian.name ? (
               <div className="flex items-center gap-1.5 text-slate-500">
-                <span className="material-symbols-outlined text-[14px]">supervisor_account</span>
+                <AppIcon name="Users" size={14} />
                 <span className="text-[11px] font-bold">
                   Guardian: {profile.guardian.name}
                 </span>
@@ -418,9 +419,7 @@ export function StudentDashboardPage() {
           </div>
         </div>
 
-        <span className="material-symbols-outlined absolute right-[-10px] bottom-[-20px] text-[120px] text-slate-50 opacity-50 select-none pointer-events-none">
-          school
-        </span>
+        <AppIcon name="GraduationCap" size={120} className="absolute right-[-10px] bottom-[-20px] text-slate-50 opacity-50 select-none pointer-events-none" />
       </div>
 
       {/* ── KPI strip ─────────────────────────────────────────────────── */}
@@ -456,9 +455,7 @@ export function StudentDashboardPage() {
               <TimetablePreview classId={classId} />
             ) : (
               <div className="py-10 text-center">
-                <span className="material-symbols-outlined text-slate-200 text-4xl mb-2">
-                  calendar_today
-                </span>
+                <AppIcon name="Calendar" size={36} className="text-slate-200 mb-2" />
                 <p className="text-[11px] font-medium text-slate-500">
                   No timetable available yet.
                 </p>
@@ -474,9 +471,7 @@ export function StudentDashboardPage() {
                 <h3 className="text-[10px] font-bold normal-case text-slate-400">
                   Things to Do
                 </h3>
-                <span className="material-symbols-outlined text-slate-300 text-base">
-                  task_alt
-                </span>
+                <AppIcon name="CheckCircle2" size={16} className="text-slate-300" />
               </div>
               <div className="space-y-1.5">
                 {[
@@ -524,9 +519,7 @@ export function StudentDashboardPage() {
                 <h3 className="text-[10px] font-bold normal-case text-slate-400">
                   Recent Exam Results
                 </h3>
-                <span className="material-symbols-outlined text-slate-300 text-base">
-                  quiz
-                </span>
+                <AppIcon name="HelpCircle" size={16} className="text-slate-300" />
               </div>
               <div className="space-y-2">
                 {upcomingExams.length > 0 ? (
@@ -563,9 +556,7 @@ export function StudentDashboardPage() {
                   })
                 ) : (
                   <div className="py-6 text-center">
-                    <span className="material-symbols-outlined text-slate-200 text-3xl mb-1">
-                      quiz
-                    </span>
+                    <AppIcon name="HelpCircle" size={30} className="text-slate-200 mb-1" />
                     <p className="text-[10px] font-medium text-slate-500">
                       No published results yet.
                     </p>
@@ -646,16 +637,12 @@ export function StudentDashboardPage() {
                   className="flex items-center justify-between p-2 rounded-lg border border-transparent hover:border-blue-100 hover:bg-blue-50/30 transition-all group"
                 >
                   <div className="flex items-center gap-2.5">
-                    <span className="material-symbols-outlined text-[16px] text-blue-500 group-hover:scale-110 transition-transform">
-                      {action.icon}
-                    </span>
+                    <AppIcon name={action.icon} size={16} className="text-blue-500 group-hover:scale-110 transition-transform" />
                     <span className="text-[11px] font-bold text-slate-700 group-hover:text-blue-600 transition-colors">
                       {action.label}
                     </span>
                   </div>
-                  <span className="material-symbols-outlined text-[14px] text-slate-300 group-hover:text-blue-500">
-                    chevron_right
-                  </span>
+                  <AppIcon name="ChevronRight" size={14} className="text-slate-300 group-hover:text-blue-500" />
                 </Link>
               ))}
             </div>
@@ -667,9 +654,7 @@ export function StudentDashboardPage() {
               <h3 className="text-[10px] font-bold normal-case text-slate-400">
                 Announcements
               </h3>
-              <span className="material-symbols-outlined text-slate-300 text-base">
-                campaign
-              </span>
+              <AppIcon name="Megaphone" size={16} className="text-slate-300" />
             </div>
             <div className="space-y-2 max-h-[360px] overflow-y-auto custom-scrollbar pr-1">
               {state.data.announcements?.announcements?.length ? (
@@ -706,9 +691,7 @@ export function StudentDashboardPage() {
                 })
               ) : (
                 <div className="py-8 text-center border-2 border-dashed border-slate-100 rounded-xl">
-                  <span className="material-symbols-outlined text-slate-200 text-3xl mb-1">
-                    campaign
-                  </span>
+                  <AppIcon name="Megaphone" size={30} className="text-slate-200 mb-1" />
                   <p className="text-[10px] font-medium text-slate-400">
                     No announcements right now.
                   </p>

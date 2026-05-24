@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { Link } from "react-router-dom";
 import { SchoolShell } from "@/layouts/SchoolShell";
 import { LiveClassList } from "@/components/live-classes/LiveClassList";
@@ -40,21 +41,21 @@ export function StudentLiveClassPage() {
                     className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-4 text-sm font-semibold text-slate-900 transition hover:border-slate-300 hover:bg-slate-50"
                   >
                     <span>Weekly Timetable</span>
-                    <span className="material-symbols-outlined text-slate-400">calendar_month</span>
+                    <AppIcon name="Calendar" className="text-slate-400" />
                 </Link>
                 <Link
                     to="/student/attendance"
                     className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-4 text-sm font-semibold text-slate-900 transition hover:border-slate-300 hover:bg-slate-50"
                   >
                     <span>My Attendance</span>
-                    <span className="material-symbols-outlined text-slate-400">how_to_reg</span>
+                    <AppIcon name="UserCheck" className="text-slate-400" />
                 </Link>
               </div>
             </div>
 
             <div className="rounded-[2rem] border border-slate-200 bg-indigo-50 p-6 shadow-sm">
               <div className="flex items-center gap-3 text-indigo-700 mb-3">
-                <span className="material-symbols-outlined">info</span>
+                <AppIcon name="Info" />
                 <h2 className="text-lg font-bold">Important Note</h2>
               </div>
               <p className="text-sm text-indigo-900">

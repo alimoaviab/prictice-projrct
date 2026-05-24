@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { FormEvent, useEffect, useState } from "react";
 import { SubjectRow, SubjectFormInput } from "../types";
 import { listTeachers } from "@/modules/teachers/services/teacher.service";
@@ -113,7 +114,7 @@ export function SubjectEditSidebar({ isOpen, subject, onClose, onSave, isSaving 
                         onClick={handleClose}
                         className="h-8 w-8 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-full transition-all"
                     >
-                        <span className="material-symbols-outlined text-[20px]">close</span>
+                        <AppIcon name="X" />
                     </button>
                 </div>
 
@@ -263,7 +264,7 @@ export function SubjectEditSidebar({ isOpen, subject, onClose, onSave, isSaving 
                         {isSaving ? (
                              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                         ) : (
-                            <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                            <AppIcon name="CheckCircle2" size={18} />
                         )}
                         {isSaving ? "Saving..." : "Save Subject"}
                     </button>

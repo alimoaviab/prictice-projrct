@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { Skeleton } from "@/components/ui";
 import { SchoolShell } from "@/layouts/SchoolShell";
 import { Link } from "react-router-dom";
@@ -44,7 +45,7 @@ export function AdminDashboardPage() {
     return (
       <SchoolShell eyebrow="Overview" title="Dashboard">
         <div className="rounded-xl border border-red-100 bg-red-50 p-6 text-center">
-          <span className="material-symbols-outlined mb-2 text-2xl text-red-500">error</span>
+          <AppIcon name="AlertCircle" size={24} className="mb-2 text-red-500" />
           <h2 className="text-sm font-bold text-red-900">Failed to load dashboard</h2>
           <p className="text-[11px] text-red-600">{error?.message || "Unknown error"}</p>
           <button
@@ -73,7 +74,7 @@ export function AdminDashboardPage() {
           stats.map((stat) => (
             <div key={stat.title} className="premium-card relative flex items-center gap-2.5 p-2.5 transition-all hover:border-blue-200/60 hover:shadow-sm">
               <div className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg ${stat.color} border border-current/5 shadow-sm`}>
-                <span className="material-symbols-outlined text-[16px]">{stat.icon}</span>
+                <AppIcon name={stat.icon} size={16} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[9px] font-bold normal-case text-slate-400">{stat.title}</p>
@@ -88,7 +89,7 @@ export function AdminDashboardPage() {
       <div className="mb-4 flex items-center justify-between px-4 py-2 bg-blue-50/30 rounded-xl border border-blue-100/50">
         <div className="flex items-center gap-3">
           <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white">
-            <span className="material-symbols-outlined text-[14px]">checklist</span>
+            <AppIcon name="ListTodo" size={14} />
           </div>
           <div>
             <p className="text-[10px] font-bold text-slate-700">Attendance Tracker</p>
@@ -116,7 +117,7 @@ export function AdminDashboardPage() {
             <div className="premium-card p-3.5">
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-[10px] font-bold normal-case text-slate-400">Today's Attendance</h3>
-                <span className="material-symbols-outlined text-slate-300 text-base">today</span>
+                <AppIcon name="Calendar" size={16} className="text-slate-300" />
               </div>
               <div className="grid grid-cols-2 gap-2.5">
                 <div className="rounded-xl border border-emerald-50 bg-emerald-50/30 p-2.5 text-center">
@@ -139,7 +140,7 @@ export function AdminDashboardPage() {
             <div className="premium-card p-3.5">
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-[10px] font-bold normal-case text-slate-400">Things to Do</h3>
-                <span className="material-symbols-outlined text-slate-300 text-base">task_alt</span>
+                <AppIcon name="CheckCircle2" size={16} className="text-slate-300" />
               </div>
               <div className="space-y-1.5">
                 {[
@@ -162,7 +163,7 @@ export function AdminDashboardPage() {
           <div className="premium-card p-3.5">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-[10px] font-bold normal-case text-slate-400">Upcoming Events & Exams</h3>
-              <span className="material-symbols-outlined text-slate-300 text-base">event</span>
+              <AppIcon name="Calendar" size={16} className="text-slate-300" />
             </div>
             <div className="relative ml-2 pl-4 border-l-2 border-slate-100">
               {data?.upcomingEvents && data.upcomingEvents.length > 0 ? (
@@ -181,10 +182,10 @@ export function AdminDashboardPage() {
                 </div>
               ) : (
                 <div className="py-4 text-center">
-                  <span className="material-symbols-outlined text-slate-200 text-3xl mb-1">calendar_today</span>
+                  <AppIcon name="Calendar" size={30} className="text-slate-200 mb-1" />
                   <p className="text-[11px] font-medium text-slate-500 mb-3">No upcoming events scheduled.</p>
                   <Link to="/admin/events" className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg border border-slate-200 text-[10px] font-bold normal-case text-slate-600 hover:border-blue-300 hover:text-blue-600 transition-all">
-                    <span className="material-symbols-outlined text-sm">add</span>
+                    <AppIcon name="Plus" size={14} />
                     Create Event
                   </Link>
                 </div>
@@ -198,7 +199,7 @@ export function AdminDashboardPage() {
           <div className="premium-card p-3.5 h-full flex flex-col">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-[10px] font-bold normal-case text-slate-400">Recent Updates</h3>
-              <span className="material-symbols-outlined text-slate-300 text-base">rss_feed</span>
+              <AppIcon name="Rss" size={16} className="text-slate-300" />
             </div>
             <div className="flex-1 space-y-2 overflow-y-auto custom-scrollbar max-h-[520px] pr-1">
               {loading ? (
@@ -207,12 +208,10 @@ export function AdminDashboardPage() {
                 activities.map((act) => (
                   <div key={act._id} className="flex items-start gap-3 p-2 rounded-xl border border-transparent hover:border-slate-50 hover:bg-slate-50/50 transition-all group">
                     <div className="h-7 w-7 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 shrink-0 group-hover:bg-white group-hover:text-blue-600 group-hover:shadow-sm transition-all">
-                      <span className="material-symbols-outlined text-[15px]">
-                        {act.entity_type === "student" ? "school" :
+                      <AppIcon name={act.entity_type === "student" ? "school" :
                          act.entity_type === "fee" ? "payments" :
                          act.entity_type === "attendance" ? "fact_check" :
-                         act.entity_type === "live_class" ? "videocam" : "edit"}
-                      </span>
+                         act.entity_type === "live_class" ? "videocam" : "edit"} size={15} />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-[11px] font-bold text-slate-700 leading-tight">
@@ -227,7 +226,7 @@ export function AdminDashboardPage() {
                 ))
               ) : (
                 <div className="py-16 text-center border-2 border-dashed border-slate-50 rounded-2xl">
-                  <span className="material-symbols-outlined text-slate-100 text-4xl mb-2">history</span>
+                  <AppIcon name="History" size={36} className="text-slate-100 mb-2" />
                   <p className="text-[11px] font-bold text-slate-300 normal-case">No recent activity available.</p>
                 </div>
               )}

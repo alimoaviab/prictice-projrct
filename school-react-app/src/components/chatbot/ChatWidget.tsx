@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
@@ -389,7 +390,7 @@ export function ChatWidget() {
         className="fixed bottom-6 right-6 z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-2xl shadow-blue-600/30 hover:bg-blue-700 hover:scale-105 transition-all"
         aria-label="Open Plexa"
       >
-        <span className="material-symbols-outlined text-[28px]">smart_toy</span>
+        <AppIcon name="Bot" size={28} />
         <span className="absolute top-0 right-0 flex h-3 w-3">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
           <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500" />
@@ -407,7 +408,7 @@ export function ChatWidget() {
       <div dir="ltr" className="flex items-center justify-between px-4 py-3 bg-blue-600 text-white">
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-lg bg-white/20 flex items-center justify-center">
-            <span className="material-symbols-outlined text-lg">smart_toy</span>
+            <AppIcon name="Bot" size={18} />
           </div>
           <div>
             <h3 className="text-sm font-bold">{t.title}</h3>
@@ -425,10 +426,10 @@ export function ChatWidget() {
             <option value="urdu" className="text-slate-800">RU</option>
           </select>
           <button onClick={clearChat} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors" title={t.clearTitle}>
-            <span className="material-symbols-outlined text-base">delete_sweep</span>
+            <AppIcon name="Trash2" size={16} />
           </button>
           <button onClick={() => setIsOpen(false)} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors" title={t.closeTitle}>
-            <span className="material-symbols-outlined text-base">close</span>
+            <AppIcon name="X" size={16} />
           </button>
         </div>
       </div>
@@ -438,7 +439,7 @@ export function ChatWidget() {
         {messages.length === 0 && (
           <div className="text-center py-8">
             <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-3">
-              <span className="material-symbols-outlined text-2xl text-blue-600">waving_hand</span>
+              <AppIcon name="Hand" size={24} className="text-blue-600" />
             </div>
             <p className="text-sm font-semibold text-slate-700 mb-1">{t.greeting}</p>
             <p className="text-xs text-slate-500 mb-4">{t.greetingHint}</p>
@@ -493,9 +494,7 @@ export function ChatWidget() {
                         onClick={() => handleAction(a)}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-full transition-colors active:scale-95"
                       >
-                        <span className="material-symbols-outlined text-[15px]">
-                          {ICON_BY_INTENT[a.intent] || "arrow_forward"}
-                        </span>
+                        <AppIcon name={ICON_BY_INTENT[a.intent] || "arrow_forward"} size={15} />
                         {a.label}
                       </button>
                     ))}
@@ -530,7 +529,7 @@ export function ChatWidget() {
               aria-label="Stop"
               title="Stop"
             >
-              <span className="material-symbols-outlined text-lg">stop</span>
+              <AppIcon name="Square" size={18} />
             </button>
           ) : (
             <button
@@ -539,7 +538,7 @@ export function ChatWidget() {
               className="h-10 w-10 rounded-xl bg-blue-600 text-white flex items-center justify-center hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Send"
             >
-              <span className="material-symbols-outlined text-lg">send</span>
+              <AppIcon name="Send" size={18} />
             </button>
           )}
         </div>

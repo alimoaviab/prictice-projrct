@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Parent Live Classes — premium redesign that matches the admin/parent
  * portals' compact aesthetic introduced on the dashboards.
@@ -143,7 +144,7 @@ export function ParentLiveClassesPage() {
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
             {selectedChild ? (
               <div className="flex items-center gap-1.5 text-slate-500">
-                <span className="material-symbols-outlined text-[14px]">school</span>
+                <AppIcon name="GraduationCap" size={14} />
                 <span className="text-[11px] font-bold">
                   {selectedChild.class_name}
                   {selectedChild.class_section
@@ -153,7 +154,7 @@ export function ParentLiveClassesPage() {
               </div>
             ) : null}
             <div className="flex items-center gap-1.5 text-slate-500">
-              <span className="material-symbols-outlined text-[14px]">today</span>
+              <AppIcon name="Calendar" size={14} />
               <span className="text-[11px] font-bold">
                 {new Date().toLocaleDateString(undefined, {
                   weekday: "long",
@@ -163,7 +164,7 @@ export function ParentLiveClassesPage() {
               </span>
             </div>
             <div className="flex items-center gap-1.5 text-slate-500">
-              <span className="material-symbols-outlined text-[14px]">autorenew</span>
+              <AppIcon name="RefreshCw" size={14} />
               <span className="text-[11px] font-bold">Auto-refresh every 60s</span>
             </div>
           </div>
@@ -174,17 +175,11 @@ export function ParentLiveClassesPage() {
           onClick={() => refetch()}
           className="shrink-0 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 text-slate-600 text-[11px] font-bold hover:bg-slate-50 hover:border-blue-200 hover:text-blue-600 transition-all"
         >
-          <span
-            className={`material-symbols-outlined text-[16px] ${isFetching ? "animate-spin text-blue-600" : ""}`}
-          >
-            refresh
-          </span>
+          <AppIcon name="RefreshCw" size={16} className={` text-[16px] ${isFetching ? "animate-spin text-blue-600" : ""} `} />
           Refresh
         </button>
 
-        <span className="material-symbols-outlined absolute right-[-10px] bottom-[-20px] text-[120px] text-slate-50 opacity-50 select-none pointer-events-none">
-          videocam
-        </span>
+        <AppIcon name="Video" size={120} className="absolute right-[-10px] bottom-[-20px] text-slate-50 opacity-50 select-none pointer-events-none" />
       </div>
 
       {/* ── KPI strip ─────────────────────────────────────────────────── */}
@@ -224,7 +219,7 @@ export function ParentLiveClassesPage() {
         <div className="mb-4 rounded-2xl bg-gradient-to-r from-rose-50 via-rose-50/60 to-white border border-rose-100 p-4 flex flex-col md:flex-row md:items-center gap-3 shadow-sm">
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <div className="h-10 w-10 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
-              <span className="material-symbols-outlined text-[20px]">videocam</span>
+              <AppIcon name="Video" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
@@ -252,7 +247,7 @@ export function ParentLiveClassesPage() {
               rel="noopener noreferrer"
               className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-600 text-white text-[11px] font-black uppercase tracking-wider hover:bg-rose-700 transition-colors shadow-sm"
             >
-              <span className="material-symbols-outlined text-[16px]">call</span>
+              <AppIcon name="Phone" size={16} />
               Join Now
             </a>
           ) : null}
@@ -262,9 +257,7 @@ export function ParentLiveClassesPage() {
       {/* ── Filter bar ────────────────────────────────────────────────── */}
       <div className="mb-4 flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">
-            search
-          </span>
+          <AppIcon name="Search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             placeholder="Search by title, subject or teacher…"
@@ -274,9 +267,7 @@ export function ParentLiveClassesPage() {
           />
         </div>
         <div className="relative sm:w-48 shrink-0">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">
-            filter_list
-          </span>
+          <AppIcon name="SlidersHorizontal" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
@@ -287,9 +278,7 @@ export function ParentLiveClassesPage() {
             <option value="upcoming">Upcoming</option>
             <option value="ended">Completed</option>
           </select>
-          <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[16px] pointer-events-none">
-            expand_more
-          </span>
+          <AppIcon name="ChevronDown" size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
         </div>
       </div>
 
@@ -362,7 +351,7 @@ function MeetingRow({ meeting }: { meeting: LiveClassItem }) {
         <div
           className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${accent.bg} ${accent.text} border ${accent.border}`}
         >
-          <span className="material-symbols-outlined text-[18px]">videocam</span>
+          <AppIcon name="Video" size={18} />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-0.5 flex-wrap">
@@ -418,7 +407,7 @@ function JoinAction({ meeting }: { meeting: LiveClassItem }) {
         rel="noopener noreferrer"
         className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-600 text-white text-[11px] font-black uppercase tracking-wider hover:bg-rose-700 transition-colors shadow-sm"
       >
-        <span className="material-symbols-outlined text-[14px]">call</span>
+        <AppIcon name="Phone" size={14} />
         Join
       </a>
     );
@@ -426,14 +415,14 @@ function JoinAction({ meeting }: { meeting: LiveClassItem }) {
   if (meeting.status === "upcoming") {
     return (
       <span className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-50 text-slate-500 text-[11px] font-bold border border-slate-100">
-        <span className="material-symbols-outlined text-[14px]">schedule</span>
+        <AppIcon name="Clock" size={14} />
         Scheduled
       </span>
     );
   }
   return (
     <span className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-slate-400 text-[11px] font-bold">
-      <span className="material-symbols-outlined text-[14px]">check_circle</span>
+      <AppIcon name="CheckCircle2" size={14} />
       Ended
     </span>
   );
@@ -471,9 +460,7 @@ function EmptyState() {
   return (
     <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 p-12 text-center flex flex-col items-center justify-center">
       <div className="h-12 w-12 rounded-full bg-white shadow-sm flex items-center justify-center mb-3">
-        <span className="material-symbols-outlined text-slate-300 text-[24px]">
-          videocam_off
-        </span>
+        <AppIcon name="VideoOff" size={24} className="text-slate-300" />
       </div>
       <p className="text-[13px] font-black text-slate-700">No live classes scheduled</p>
       <p className="text-[11px] text-slate-500 mt-1 max-w-sm">
@@ -488,9 +475,7 @@ function NoMatchesState({ onClear }: { onClear: () => void }) {
   return (
     <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 p-10 text-center flex flex-col items-center">
       <div className="h-12 w-12 rounded-full bg-white shadow-sm flex items-center justify-center mb-3">
-        <span className="material-symbols-outlined text-slate-300 text-[22px]">
-          search_off
-        </span>
+        <AppIcon name="SearchX" size={22} className="text-slate-300" />
       </div>
       <p className="text-[12px] font-black text-slate-700">No matches</p>
       <p className="text-[11px] text-slate-500 mt-1 max-w-sm">

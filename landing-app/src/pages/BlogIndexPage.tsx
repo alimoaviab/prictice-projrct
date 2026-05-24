@@ -4,7 +4,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Calendar, Clock, ArrowRight } from '@/components/icons';
+import { AppIcon } from "shared/ui/AppIcon";
 
 interface BlogPost {
   slug: string;
@@ -160,7 +160,7 @@ export function BlogIndexPage() {
                     <div>
                       <div className="text-xs font-semibold text-slate-900">{post.author}</div>
                       <div className="flex items-center gap-2 text-xs text-slate-500">
-                        <Calendar className="w-3 h-3" />
+                        <AppIcon name="Calendar" className="w-3 h-3" />
                         {post.date}
                       </div>
                     </div>
@@ -169,7 +169,7 @@ export function BlogIndexPage() {
                     to={`/blog/${post.slug}`}
                     className="text-blue-600 hover:text-blue-700 transition-colors"
                   >
-                    <ArrowRight className="w-4 h-4" />
+                    <AppIcon name="ArrowRight" className="w-4 h-4" />
                   </Link>
                 </div>
               </div>
@@ -191,7 +191,7 @@ export function BlogIndexPage() {
             href="/book-demo"
             className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-full font-semibold shadow-lg hover:bg-blue-700 hover:-translate-y-1 transition-all"
           >
-            Book a Demo <ArrowRight className="w-4 h-4" />
+            Book a Demo <AppIcon name="ArrowRight" className="w-4 h-4" />
           </a>
         </motion.div>
       </main>

@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -60,15 +61,15 @@ export const LiveExamList: React.FC<LiveExamListProps> = ({ role }) => {
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
                 <span className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[18px]">school</span>
+                    <AppIcon name="GraduationCap" size={18} />
                     {exam.class_id?.name || "All Classes"}
                 </span>
                 <span className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[18px]">book</span>
+                    <AppIcon name="BookOpen" size={18} />
                     {exam.subject_id?.name || "Subject"}
                 </span>
                 <span className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[18px]">timer</span>
+                    <AppIcon name="Clock" size={18} />
                     {exam.duration} mins
                 </span>
               </div>
@@ -112,11 +113,11 @@ export const LiveExamList: React.FC<LiveExamListProps> = ({ role }) => {
 
           <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4 text-xs font-medium text-slate-400">
             <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-[16px]">calendar_today</span>
+              <AppIcon name="Calendar" size={16} />
               Starts: {new Date(exam.start_time).toLocaleString()}
             </span>
             <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-[16px]">history</span>
+              <AppIcon name="History" size={16} />
               Ends: {new Date(exam.end_time).toLocaleString()}
             </span>
           </div>

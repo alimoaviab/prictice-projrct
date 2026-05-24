@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Book, GraduationCap, PenTool, Atom, Sparkles } from "@/components/icons";
+import { AppIcon } from "shared/ui/AppIcon";
 
 export default function AestheticAuthGraphic() {
   return (
@@ -18,7 +18,7 @@ export default function AestheticAuthGraphic() {
         className="relative z-20"
       >
         <div className="bg-white/90 backdrop-blur-xl p-8 rounded-[40px] shadow-[0_30px_60px_rgba(0,0,0,0.1)] border border-white/20 relative group">
-          <GraduationCap size={120} className="text-blue-600 group-hover:scale-110 transition-transform duration-500" strokeWidth={1.5} />
+          <AppIcon name="GraduationCap" size={120}  className="text-blue-600 group-hover:scale-110 transition-transform duration-500" strokeWidth={1.5} />
           
           {/* Subtle Glow */}
           <div className="absolute inset-0 bg-blue-400/20 blur-[60px] rounded-full -z-10 animate-pulse" />
@@ -41,7 +41,7 @@ export default function AestheticAuthGraphic() {
         className="absolute top-10 left-10 z-10"
       >
         <div className="bg-white/80 backdrop-blur-lg p-5 rounded-3xl shadow-xl border border-white/30">
-          <Book size={48} className="text-pink-500" strokeWidth={1.5} />
+          <AppIcon name="Book" size={48}  className="text-pink-500" strokeWidth={1.5} />
         </div>
       </motion.div>
 
@@ -61,7 +61,7 @@ export default function AestheticAuthGraphic() {
         className="absolute bottom-10 right-10 z-10"
       >
         <div className="bg-white/80 backdrop-blur-lg p-6 rounded-[30px] shadow-xl border border-white/30">
-          <Atom size={56} className="text-blue-400" strokeWidth={1.5} />
+          <AppIcon name="Atom" size={56}  className="text-blue-400" strokeWidth={1.5} />
         </div>
       </motion.div>
 
@@ -80,7 +80,7 @@ export default function AestheticAuthGraphic() {
         className="absolute top-1/2 -left-20 z-10"
       >
         <div className="bg-white/90 backdrop-blur-lg p-4 rounded-full shadow-lg border border-white/40">
-          <PenTool size={32} className="text-orange-400" strokeWidth={2} />
+          <AppIcon name="PenTool" size={32}  className="text-orange-400" strokeWidth={2} />
         </div>
       </motion.div>
 
@@ -106,7 +106,7 @@ export default function AestheticAuthGraphic() {
             left: `${10 + i * 15}%`,
           }}
         >
-          <Sparkles size={16} className="text-blue-200" fill="currentColor" />
+          <AppIcon name="Sparkles" size={16}  className="text-blue-200" fill="currentColor" />
         </motion.div>
       ))}
 

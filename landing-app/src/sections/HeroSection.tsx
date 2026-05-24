@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
-import { ArrowRight, Play, ShieldCheck, Zap, BarChart3, Users, CreditCard, Sparkles } from "@/components/icons";
+import { AppIcon } from "shared/ui/AppIcon";
 import { LOGIN_URL, SIGNUP_URL } from "@/lib/config";
 import { whatsappUrl, WhatsappMessages } from "@/lib/whatsapp";
 
@@ -62,7 +62,7 @@ export const HeroSection = () => {
               transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 backdrop-blur-md border border-blue-100 shadow-[0_4px_20px_rgba(37,99,235,0.05)] text-blue-600 text-sm font-semibold mb-8"
             >
-              <Sparkles className="w-4 h-4 text-amber-500" />
+              <AppIcon name="Sparkles" className="w-4 h-4 text-amber-500" />
               <span>#1 AI School Management System in Pakistan</span>
             </motion.div>
 
@@ -98,7 +98,7 @@ export const HeroSection = () => {
                 href={SIGNUP_URL}
                 className="w-full sm:w-auto px-8 py-4 bg-blue-600 text-white rounded-full font-semibold shadow-[0_8px_30px_rgba(37,99,235,0.24)] hover:bg-blue-700 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(37,99,235,0.32)] transition-all duration-300 flex items-center justify-center gap-2"
               >
-                Start Free Trial <ArrowRight className="w-4 h-4" />
+                Start Free Trial <AppIcon name="ArrowRight" className="w-4 h-4" />
               </a>
               <a
                 href={whatsappUrl(WhatsappMessages.bookDemo())}
@@ -106,7 +106,7 @@ export const HeroSection = () => {
                 rel="noopener noreferrer"
                 className="w-full sm:w-auto px-8 py-4 bg-white/80 backdrop-blur-sm text-slate-900 rounded-full font-semibold shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2 border border-slate-200/60"
               >
-                <Play className="w-4 h-4 fill-current" /> Watch Preview
+                <AppIcon name="Play" className="w-4 h-4 fill-current" /> Watch Preview
               </a>
             </motion.div>
 
@@ -118,15 +118,15 @@ export const HeroSection = () => {
               className="mt-10 flex flex-wrap items-center justify-center gap-6 text-sm text-slate-500"
             >
               <span className="flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                <AppIcon name="ShieldCheck" className="w-4 h-4 text-emerald-500" />
                 50+ Schools Trust EduPlexo
               </span>
               <span className="flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-blue-500" />
+                <AppIcon name="Users" className="w-4 h-4 text-blue-500" />
                 15,000+ Active Students
               </span>
               <span className="flex items-center gap-1.5">
-                <Zap className="w-4 h-4 text-amber-500" />
+                <AppIcon name="Zap" className="w-4 h-4 text-amber-500" />
                 99.9% Uptime
               </span>
             </motion.div>
@@ -188,13 +188,13 @@ export const HeroSection = () => {
                       {/* Top Row Stats */}
                       <div className="grid grid-cols-3 gap-6">
                         {[
-                          { icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
-                          { icon: CreditCard, color: "text-emerald-600", bg: "bg-emerald-50" },
-                          { icon: BarChart3, color: "text-indigo-600", bg: "bg-indigo-50" }
+                          { icon: "Users", color: "text-blue-600", bg: "bg-blue-50" },
+                          { icon: "CreditCard", color: "text-emerald-600", bg: "bg-emerald-50" },
+                          { icon: "BarChart3", color: "text-indigo-600", bg: "bg-indigo-50" }
                         ].map((stat, i) => (
                           <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm flex flex-col gap-4 hover:shadow-md hover:-translate-y-1 transition-all">
                             <div className={`w-10 h-10 rounded-xl ${stat.bg} flex items-center justify-center`}>
-                              <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                              <AppIcon name={stat.icon} className={`w-5 h-5 ${stat.color}`} />
                             </div>
                             <div>
                               <div className="h-4 w-16 bg-slate-100 rounded mb-2" />
@@ -230,7 +230,7 @@ export const HeroSection = () => {
                 <div className="backdrop-blur-xl bg-white/80 p-4 rounded-2xl border border-white/60 shadow-2xl w-72 ring-1 ring-slate-900/5">
                   <div className="flex items-center gap-3 mb-3">
                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg">
-                        <Sparkles className="w-5 h-5 text-white" />
+                        <AppIcon name="Sparkles" className="w-5 h-5 text-white" />
                      </div>
                      <div>
                        <div className="text-sm font-bold text-slate-900">AI Insight</div>

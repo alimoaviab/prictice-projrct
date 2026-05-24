@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { useQueryParams } from "@/hooks/useQueryParams";
@@ -166,7 +167,7 @@ export function StudentListPage() {
           back to "all students". */}
       {classFilter && (
         <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2 ring-1 ring-blue-900/5">
-          <span className="material-symbols-outlined text-base text-blue-600">filter_alt</span>
+          <AppIcon name="Filter" size={16} className="text-blue-600" />
           <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
             Filtering by class
           </span>
@@ -181,7 +182,7 @@ export function StudentListPage() {
             onClick={() => updateQuery({ class_id: "" })}
             className="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg bg-white border border-blue-200 text-[11px] font-bold text-blue-700 hover:bg-blue-100 transition-colors"
           >
-            <span className="material-symbols-outlined text-sm">close</span>
+            <AppIcon name="X" size={14} />
             Show all
           </button>
         </div>
@@ -191,7 +192,7 @@ export function StudentListPage() {
       <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md border-slate-200/60 shadow-sm rounded-xl">
         <div className="flex flex-1 items-center gap-2 max-w-2xl">
           <div className="relative flex-1">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
+            <AppIcon name="Search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               value={searchQuery}
               onChange={(e) => {
@@ -230,7 +231,7 @@ export function StudentListPage() {
                 viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              <span className="material-symbols-outlined text-base">grid_view</span>
+              <AppIcon name="LayoutGrid" size={16} />
               Grid
             </button>
             <button
@@ -242,7 +243,7 @@ export function StudentListPage() {
                 viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              <span className="material-symbols-outlined text-base">view_list</span>
+              <AppIcon name="ViewList" size={16} />
               List
             </button>
           </div>
@@ -255,7 +256,7 @@ export function StudentListPage() {
             to={withQuery("/admin/students/create")}
             className="inline-flex h-9 items-center gap-2 px-5 text-[11px] font-bold normal-case  text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
           >
-            <span className="material-symbols-outlined text-lg">person_add</span>
+            <AppIcon name="UserPlus" size={18} />
             Add student
           </Link>
         </div>
@@ -377,7 +378,7 @@ export function StudentListPage() {
         </p>
         <div className="flex items-center gap-2">
           <button className="h-9 px-4 rounded-xl border border-slate-200 text-[10px] font-bold normal-case  text-slate-400 cursor-not-allowed flex items-center gap-2">
-            <span className="material-symbols-outlined text-base">chevron_left</span>
+            <AppIcon name="ChevronLeft" size={16} />
             Previous
           </button>
           <div className="flex items-center gap-1">
@@ -385,7 +386,7 @@ export function StudentListPage() {
           </div>
           <button className="h-9 px-4 rounded-xl border border-slate-200 text-[10px] font-bold normal-case  text-slate-400 cursor-not-allowed flex items-center gap-2">
             Next
-            <span className="material-symbols-outlined text-base">chevron_right</span>
+            <AppIcon name="ChevronRight" size={16} />
           </button>
         </div>
       </div>

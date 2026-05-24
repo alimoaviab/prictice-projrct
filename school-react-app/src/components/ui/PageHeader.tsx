@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 
@@ -23,7 +24,7 @@ export function PageHeader({ title, subtitle, description, eyebrow, actions, bre
         <nav className="flex items-center gap-1.5 mb-3 text-xs text-slate-400">
           {breadcrumb.map((item, i) => (
             <span key={i} className="flex items-center gap-1.5">
-              {i > 0 && <span className="material-symbols-outlined text-[12px]">chevron_right</span>}
+              {i > 0 && <AppIcon name="ChevronRight" size={12} />}
               {item.href ? (
                 <Link to={item.href} className="hover:text-blue-600 transition-colors font-medium">
                   {item.label}

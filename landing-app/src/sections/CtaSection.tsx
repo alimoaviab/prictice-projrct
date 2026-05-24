@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, CheckCircle2, ShieldCheck } from "@/components/icons";
+import { AppIcon } from "shared/ui/AppIcon";
 
 import { whatsappUrl, WhatsappMessages } from "@/lib/whatsapp";
 import { SIGNUP_URL } from "@/lib/config";
@@ -20,10 +20,10 @@ export const CtaSection = () => {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/40 via-slate-950 to-slate-950" />
 
           <div className="absolute top-10 left-10 text-white/5 hidden md:block">
-             <ShieldCheck className="w-32 h-32" />
+             <AppIcon name="ShieldCheck" className="w-32 h-32" />
           </div>
           <div className="absolute bottom-10 right-10 text-white/5 hidden md:block">
-             <ShieldCheck className="w-48 h-48" />
+             <AppIcon name="ShieldCheck" className="w-48 h-48" />
           </div>
 
           <div className="relative z-10 max-w-3xl mx-auto">
@@ -39,7 +39,7 @@ export const CtaSection = () => {
                 href={SIGNUP_URL}
                 className="w-full sm:w-auto px-10 py-5 bg-blue-600 text-white rounded-full font-bold shadow-lg shadow-blue-600/30 hover:bg-blue-500 hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2 text-lg"
               >
-                Start Free Trial <ArrowRight className="w-5 h-5" />
+                Start Free Trial <AppIcon name="ArrowRight" className="w-5 h-5" />
               </a>
               <a
                 href={whatsappUrl(WhatsappMessages.bookDemo())}
@@ -53,13 +53,13 @@ export const CtaSection = () => {
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-8 text-sm font-medium text-slate-400">
               <span className="flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-emerald-500" /> No credit card required
+                <AppIcon name="CheckCircle2" className="w-5 h-5 text-emerald-500" /> No credit card required
               </span>
               <span className="flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-emerald-500" /> 14-day free trial
+                <AppIcon name="CheckCircle2" className="w-5 h-5 text-emerald-500" /> 14-day free trial
               </span>
               <span className="flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-emerald-500" /> Free data migration
+                <AppIcon name="CheckCircle2" className="w-5 h-5 text-emerald-500" /> Free data migration
               </span>
             </div>
           </div>

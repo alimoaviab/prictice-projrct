@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Question Papers — List page showing all created papers.
  *
@@ -53,7 +54,7 @@ export function QuestionPaperListPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 px-4 py-3 shadow-[0_4px_18px_rgb(0,0,0,0.03)]">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white shrink-0 shadow-sm">
-            <span className="material-symbols-outlined text-lg">description</span>
+            <AppIcon name="FileText" size={18} />
           </div>
           <div>
             <p className="text-[13px] font-bold text-slate-900 tracking-tight">Question Papers</p>
@@ -63,7 +64,7 @@ export function QuestionPaperListPage() {
 
         <div className="flex items-center gap-2 flex-wrap">
           <div className="relative">
-            <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-base text-slate-400">search</span>
+            <AppIcon name="Search" size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -75,7 +76,7 @@ export function QuestionPaperListPage() {
             to={`${rolePrefix}/question-bank`}
             className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-white border border-slate-200 text-[12px] font-bold text-slate-700 hover:bg-slate-50 transition-colors"
           >
-            <span className="material-symbols-outlined text-base">library_books</span>
+            <AppIcon name="Library" size={16} />
             Question Bank
           </Link>
           <button
@@ -83,7 +84,7 @@ export function QuestionPaperListPage() {
             onClick={() => navigate(`${rolePrefix}/question-papers/create`)}
             className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg bg-indigo-600 text-white text-[12px] font-bold shadow-sm shadow-indigo-600/15 hover:bg-indigo-700 transition-colors active:scale-[0.98]"
           >
-            <span className="material-symbols-outlined text-base">add</span>
+            <AppIcon name="Plus" size={16} />
             Create New Paper
           </button>
         </div>
@@ -146,28 +147,28 @@ export function QuestionPaperListPage() {
                           className="h-7 w-7 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 hover:text-emerald-600 transition-colors"
                           title="Print"
                         >
-                          <span className="material-symbols-outlined text-[14px]">print</span>
+                          <AppIcon name="Printer" size={14} />
                         </button>
                         <Link
                           to={`${rolePrefix}/question-papers/${paper._id}`}
                           className="h-7 w-7 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 hover:text-blue-600 transition-colors"
                           title="View"
                         >
-                          <span className="material-symbols-outlined text-[14px]">visibility</span>
+                          <AppIcon name="Eye" size={14} />
                         </Link>
                         <Link
                           to={`${rolePrefix}/question-papers/${paper._id}/edit`}
                           className="h-7 w-7 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 hover:text-indigo-600 transition-colors"
                           title="Edit"
                         >
-                          <span className="material-symbols-outlined text-[14px]">edit</span>
+                          <AppIcon name="Pencil" size={14} />
                         </Link>
                         <button
                           onClick={() => setPendingDelete(paper._id)}
                           className="h-7 w-7 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 hover:text-red-600 transition-colors"
                           title="Delete"
                         >
-                          <span className="material-symbols-outlined text-[14px]">delete</span>
+                          <AppIcon name="Trash2" size={14} />
                         </button>
                       </div>
                     </td>

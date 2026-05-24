@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useCallback, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -63,7 +64,7 @@ export function ResultCreatePage() {
         to={pathname.includes("/teacher") ? "/teacher/results" : "/admin/results"}
         className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition-colors"
       >
-        <span className="material-symbols-outlined text-lg">arrow_back</span>
+        <AppIcon name="ArrowLeft" size={18} />
         Back to Results
       </Link>
 

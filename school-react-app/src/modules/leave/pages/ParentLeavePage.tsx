@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Parent leave portal — apply for leave on behalf of the active child
  * and watch admin approval status in real time.
@@ -168,9 +169,7 @@ export default function ParentLeavePage() {
                             onClick={() => setOpen(true)}
                             className="h-10 px-4 rounded-xl bg-white text-blue-700 text-[12px] font-bold shadow-md hover:bg-blue-50 active:scale-[0.98] transition-all inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <span className="material-symbols-outlined text-[18px]">
-                                edit_calendar
-                            </span>
+                            <AppIcon name="CalendarDays" size={18} />
                             Apply for leave
                         </button>
                     </div>
@@ -339,17 +338,13 @@ function LeaveTimelineCard({
                             <span
                                 className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-[10px] font-bold capitalize ${accent}`}
                             >
-                                <span className="material-symbols-outlined text-[13px]">
-                                    {typeIcon}
-                                </span>
+                                <AppIcon name={typeIcon} size={13} />
                                 {typeLabel}
                             </span>
                             <span
                                 className={`inline-flex items-center gap-1 px-2 py-1 rounded-full border text-[10px] font-bold ${status.pill}`}
                             >
-                                <span className="material-symbols-outlined text-[13px]">
-                                    {status.icon}
-                                </span>
+                                <AppIcon name={status.icon} size={13} />
                                 {status.label}
                             </span>
                             <span className="text-[10px] font-bold text-slate-400">
@@ -386,9 +381,7 @@ function LeaveTimelineCard({
 
                     <div className="flex flex-col items-start md:items-end gap-2 shrink-0">
                         <div className="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2">
-                            <span className="material-symbols-outlined text-[18px] text-slate-400">
-                                event
-                            </span>
+                            <AppIcon name="Calendar" size={18} className="text-slate-400" />
                             <div className="text-right">
                                 <p className="text-[11px] font-bold text-slate-700 leading-tight">
                                     {fmtDate(row.start_date)}
@@ -405,9 +398,7 @@ function LeaveTimelineCard({
                                 onClick={onCancel}
                                 className="text-[10px] font-bold text-rose-500 hover:text-rose-600 inline-flex items-center gap-1"
                             >
-                                <span className="material-symbols-outlined text-[15px]">
-                                    cancel
-                                </span>
+                                <AppIcon name="XCircle" size={15} />
                                 Withdraw
                             </button>
                         )}
@@ -538,7 +529,7 @@ function ApplyLeaveModal({
                             className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
                             aria-label="Close"
                         >
-                            <span className="material-symbols-outlined text-[20px]">close</span>
+                            <AppIcon name="X" />
                         </button>
                     </div>
                 </div>
@@ -563,9 +554,7 @@ function ApplyLeaveModal({
                                                 : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
                                         }`}
                                     >
-                                        <span className="material-symbols-outlined text-[15px]">
-                                            {opt.icon}
-                                        </span>
+                                        <AppIcon name={opt.icon} size={15} />
                                         {opt.label}
                                     </button>
                                 );
@@ -594,9 +583,7 @@ function ApplyLeaveModal({
 
                     {days > 0 && (
                         <div className="flex items-center gap-2 rounded-xl bg-slate-50/80 border border-slate-100 px-3 py-2">
-                            <span className="material-symbols-outlined text-[18px] text-slate-400">
-                                schedule
-                            </span>
+                            <AppIcon name="Clock" size={18} className="text-slate-400" />
                             <p className="text-[11px] font-bold text-slate-600">
                                 {days} day{days > 1 ? "s" : ""} of leave requested
                             </p>
@@ -645,9 +632,7 @@ function ApplyLeaveModal({
                                 </>
                             ) : (
                                 <>
-                                    <span className="material-symbols-outlined text-[17px]">
-                                        send
-                                    </span>
+                                    <AppIcon name="Send" size={17} />
                                     Send for review
                                 </>
                             )}

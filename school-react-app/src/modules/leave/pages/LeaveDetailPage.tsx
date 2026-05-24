@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Admin leave detail page — read-only inspection + approval actions.
  *
@@ -117,7 +118,7 @@ export function LeaveDetailPage() {
           className="h-8 w-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100"
           aria-label="Back to leave"
         >
-          <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+          <AppIcon name="ChevronLeft" size={18} />
         </Link>
         <div className="flex-1 min-w-0">
           <h2 className="text-[16px] font-black text-slate-900 leading-tight truncate">
@@ -188,7 +189,7 @@ export function LeaveDetailPage() {
                   disabled={busy}
                   className="h-9 w-full bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg gap-2"
                 >
-                  <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                  <AppIcon name="CheckCircle2" size={16} />
                   Approve request
                 </Button>
                 <Button
@@ -197,7 +198,7 @@ export function LeaveDetailPage() {
                   disabled={busy}
                   className="h-9 w-full bg-white border border-rose-300 text-rose-700 hover:bg-rose-50 text-[11px] font-bold rounded-lg gap-2"
                 >
-                  <span className="material-symbols-outlined text-[16px]">cancel</span>
+                  <AppIcon name="XCircle" size={16} />
                   Reject…
                 </Button>
               </div>
@@ -220,7 +221,7 @@ export function LeaveDetailPage() {
                 className="text-[10px] font-bold text-rose-500 hover:text-rose-700 inline-flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
                 title={isPending ? "Decide on the request first" : "Delete this record"}
               >
-                <span className="material-symbols-outlined text-sm">delete</span>
+                <AppIcon name="Trash2" size={14} />
                 Delete record
               </button>
             </div>
@@ -230,25 +231,19 @@ export function LeaveDetailPage() {
             <p className="text-[10px] font-bold text-slate-400 mb-2">Audit</p>
             <ul className="space-y-2 text-[11px] font-medium text-slate-600">
               <li className="flex items-start gap-2">
-                <span className="material-symbols-outlined text-[14px] text-slate-400 mt-0.5">
-                  schedule
-                </span>
+                <AppIcon name="Clock" size={14} className="text-slate-400 mt-0.5" />
                 Submitted{" "}
                 {row.created_at ? new Date(row.created_at).toLocaleString() : "—"}
               </li>
               {row.approved_at && (
                 <li className="flex items-start gap-2">
-                  <span className="material-symbols-outlined text-[14px] text-emerald-500 mt-0.5">
-                    check_circle
-                  </span>
+                  <AppIcon name="CheckCircle2" size={14} className="text-emerald-500 mt-0.5" />
                   Approved {new Date(row.approved_at).toLocaleString()}
                 </li>
               )}
               {row.status === "rejected" && (
                 <li className="flex items-start gap-2">
-                  <span className="material-symbols-outlined text-[14px] text-rose-500 mt-0.5">
-                    cancel
-                  </span>
+                  <AppIcon name="XCircle" size={14} className="text-rose-500 mt-0.5" />
                   Rejected
                 </li>
               )}

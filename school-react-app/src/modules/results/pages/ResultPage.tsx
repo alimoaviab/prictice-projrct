@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useMemo, useState, useCallback, useEffect } from "react";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { Card, DataState, Skeleton, TableSkeleton, Badge, DataTable, DataTableColumn, RowAction, StatCardGrid } from "@/components/ui";
@@ -230,7 +231,7 @@ export function ResultPage() {
             <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md border-slate-200/60 shadow-sm rounded-xl no-print">
                 <div className="flex flex-1 items-center gap-2 max-w-2xl">
                     <div className="relative flex-1">
-                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
+                        <AppIcon name="Search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
                             value={searchQuery}
                             onChange={(e) => {
@@ -292,7 +293,7 @@ export function ResultPage() {
                         onClick={() => window.print()}
                         className="h-9 px-4 rounded-xl border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all flex items-center gap-2 no-print"
                     >
-                        <span className="material-symbols-outlined text-base">print</span>
+                        <AppIcon name="Printer" size={16} />
                         Print report
                     </button>
                     <div className="h-6 w-px bg-slate-200 no-print" />
@@ -303,7 +304,7 @@ export function ResultPage() {
                                 viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
                             }`}
                         >
-                            <span className="material-symbols-outlined text-base">grid_view</span>
+                            <AppIcon name="LayoutGrid" size={16} />
                             Grid
                         </button>
                         <button
@@ -312,7 +313,7 @@ export function ResultPage() {
                                 viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
                             }`}
                         >
-                            <span className="material-symbols-outlined text-base">view_list</span>
+                            <AppIcon name="ViewList" size={16} />
                             List
                         </button>
                     </div>
@@ -327,7 +328,7 @@ export function ResultPage() {
                             isAdding ? "bg-slate-900 text-white" : "bg-blue-600 text-white shadow-blue-600/20 hover:bg-blue-700"
                         }`}
                     >
-                        <span className="material-symbols-outlined text-lg">{isAdding ? "close" : "add_box"}</span>
+                        <AppIcon name={isAdding ? "close" : "add_box"} size={18} />
                         {isAdding ? "Cancel" : "Add result"}
                     </button>
                 </div>
@@ -408,7 +409,7 @@ export function ResultPage() {
                                             </div>
 
                                             <div className="flex items-center gap-2 pt-4 border-t border-slate-50">
-                                                <span className="material-symbols-outlined text-blue-600 text-sm">description</span>
+                                                <AppIcon name="FileText" size={14} className="text-blue-600" />
                                                 <div className="flex-1 min-w-0">
                                                     <p className="text-[10px] font-bold text-slate-900 truncate normal-case ">{row.exam_title}</p>
                                                     <p className="text-[9px] font-bold text-slate-400 normal-case ">
@@ -428,7 +429,7 @@ export function ResultPage() {
                                               onClick={() => exportMarksheet(row, { schoolName })}
                                               className="text-[10px] font-bold text-slate-400 normal-case  hover:text-blue-600 flex items-center gap-1 transition-colors"
                                             >
-                                                <span className="material-symbols-outlined text-sm">history_edu</span>
+                                                <AppIcon name="BookOpen" size={14} />
                                                 Report
                                             </button>
                                             <button 
@@ -439,7 +440,7 @@ export function ResultPage() {
                                               className="group/btn h-8 px-4 rounded-lg bg-blue-600 text-[10px] font-bold text-white normal-case  hover:bg-blue-700 transition-all flex items-center gap-2 shadow-sm active:scale-95"
                                             >
                                                 Details
-                                                <span className="material-symbols-outlined text-sm transition-transform group-hover/btn:translate-x-1">query_stats</span>
+                                                <AppIcon name="QueryStats" size={14} className="transition-transform group-hover/btn:translate-x-1" />
                                             </button>
                                         </div>
                                     </div>

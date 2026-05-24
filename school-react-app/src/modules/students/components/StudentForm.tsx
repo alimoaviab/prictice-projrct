@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { FormEvent, useEffect, useState } from "react";
 import { Button, Input, Select } from "@/components/ui";
 import { serviceRequest } from "@/services/service-client";
@@ -204,7 +205,7 @@ export function StudentForm(props: StudentFormProps | LegacyStudentFormProps) {
       <div className="space-y-4">
         <div className="flex items-center gap-3 mb-2">
             <div className="h-8 w-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100">
-                <span className="material-symbols-outlined text-[20px]">school</span>
+                <AppIcon name="GraduationCap" />
             </div>
             <div>
                 <h3 className="text-[11px] font-black text-slate-900 normal-case tracking-tight">Academic Placement</h3>
@@ -255,7 +256,7 @@ export function StudentForm(props: StudentFormProps | LegacyStudentFormProps) {
       <div className="space-y-4">
         <div className="flex items-center gap-3 mb-2">
             <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100">
-                <span className="material-symbols-outlined text-[20px]">person</span>
+                <AppIcon name="User" />
             </div>
             <div>
                 <h3 className="text-[11px] font-black text-slate-900 normal-case tracking-tight">Personal Details</h3>
@@ -289,7 +290,7 @@ export function StudentForm(props: StudentFormProps | LegacyStudentFormProps) {
       <div className="space-y-4">
         <div className="flex items-center gap-3 mb-2">
             <div className="h-8 w-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100">
-                <span className="material-symbols-outlined text-[20px]">family_restroom</span>
+                <AppIcon name="Users" />
             </div>
             <div>
                 <h3 className="text-[11px] font-black text-slate-900 normal-case tracking-tight">Guardian Details</h3>
@@ -328,7 +329,7 @@ export function StudentForm(props: StudentFormProps | LegacyStudentFormProps) {
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-2xl bg-white flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-100">
-                <span className="material-symbols-outlined text-[24px]">lock_person</span>
+                <AppIcon name="UserCheck" size={24} />
             </div>
             <div>
                 <h3 className="text-sm font-black text-indigo-900 normal-case tracking-tight">Account Credentials</h3>
@@ -383,7 +384,7 @@ export function StudentForm(props: StudentFormProps | LegacyStudentFormProps) {
           <div className="md:col-span-2">
             {checkingEmail && (
               <p className="text-[10px] text-blue-600 mt-1 flex items-center gap-1 px-1">
-                <span className="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>
+                <AppIcon name="Loader2" size={14} className="animate-spin" />
                 Checking school records for existing parent account...
               </p>
             )}
@@ -395,9 +396,7 @@ export function StudentForm(props: StudentFormProps | LegacyStudentFormProps) {
                   <div className={`h-10 w-10 rounded-full flex items-center justify-center text-white shadow-md ${
                     (existingParent as any).role_mismatch ? 'bg-rose-600 shadow-rose-200' : 'bg-blue-600 shadow-blue-200'
                   }`}>
-                    <span className="material-symbols-outlined text-[20px]">
-                      {(existingParent as any).role_mismatch ? 'warning' : 'person_check'}
-                    </span>
+                    <AppIcon name={(existingParent as any).role_mismatch ? 'warning' : 'person_check'} />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
@@ -441,7 +440,7 @@ export function StudentForm(props: StudentFormProps | LegacyStudentFormProps) {
                             }}
                             className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[10px] font-black transition-all shadow-lg shadow-blue-600/20 active:scale-95"
                           >
-                            <span className="material-symbols-outlined text-[14px]">link</span>
+                            <AppIcon name="Link" size={14} />
                             Link Student to this Parent
                           </button>
                           <button
@@ -464,7 +463,7 @@ export function StudentForm(props: StudentFormProps | LegacyStudentFormProps) {
             {linkMode && existingParent && (
               <div className="mt-4 p-4 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center gap-3 animate-fade-in shadow-sm">
                 <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
-                  <span className="material-symbols-outlined text-[18px]">verified</span>
+                  <AppIcon name="CheckCircle" size={18} />
                 </div>
                 <div>
                   <p className="text-[10px] font-black text-emerald-900 leading-none">Smart Link Active</p>
@@ -479,14 +478,14 @@ export function StudentForm(props: StudentFormProps | LegacyStudentFormProps) {
                   }}
                   className="ml-auto h-7 w-7 flex items-center justify-center rounded-lg hover:bg-emerald-100 text-emerald-400 transition-colors"
                 >
-                  <span className="material-symbols-outlined text-[18px]">close</span>
+                  <AppIcon name="X" size={18} />
                 </button>
               </div>
             )}
           </div>
         </div>
         <div className="flex items-center gap-2 px-1">
-            <span className="material-symbols-outlined text-[14px] text-indigo-400">info</span>
+            <AppIcon name="Info" size={14} className="text-indigo-400" />
             <p className="text-[10px] font-medium text-indigo-400 italic">This email will be used for Parent Portal login and child updates.</p>
         </div>
       </div>

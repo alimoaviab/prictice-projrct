@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Behavior list page.
  *
@@ -347,9 +348,7 @@ export function BehaviorListPage({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           <div className="flex flex-1 flex-wrap items-center gap-2">
             <div className="relative flex-1 min-w-[200px] max-w-sm">
-              <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-base text-slate-400">
-                search
-              </span>
+              <AppIcon name="Search" size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 value={searchQuery}
                 onChange={(e) => {
@@ -456,7 +455,7 @@ export function BehaviorListPage({
                 onClick={clearFilters}
                 className="h-7 inline-flex items-center gap-1 px-2 rounded-md text-[11px] font-bold text-slate-400 hover:text-slate-700 transition-colors"
               >
-                <span className="material-symbols-outlined text-sm">close</span>
+                <AppIcon name="X" size={14} />
                 Clear
               </button>
             )}
@@ -474,7 +473,7 @@ export function BehaviorListPage({
                   viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500"
                 }`}
               >
-                <span className="material-symbols-outlined text-sm">grid_view</span>
+                <AppIcon name="LayoutGrid" size={14} />
                 Grid
               </button>
               <button
@@ -487,7 +486,7 @@ export function BehaviorListPage({
                   viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500"
                 }`}
               >
-                <span className="material-symbols-outlined text-sm">view_list</span>
+                <AppIcon name="ViewList" size={14} />
                 List
               </button>
             </div>
@@ -501,7 +500,7 @@ export function BehaviorListPage({
                 to={withQuery("/teacher/behavior/create")}
                 className="inline-flex h-9 items-center gap-2 px-4 text-[11px] font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all shadow-sm active:scale-95"
               >
-                <span className="material-symbols-outlined text-base">add_circle</span>
+                <AppIcon name="PlusCircle" size={16} />
                 Add report
               </Link>
             )}
@@ -594,7 +593,7 @@ export function BehaviorListPage({
                     onClick={() => navigate(`${detailBase}/${row._id}`)}
                     className="text-[10px] font-bold text-slate-500 hover:text-slate-900 inline-flex items-center gap-1"
                   >
-                    <span className="material-symbols-outlined text-sm">visibility</span>
+                    <AppIcon name="Eye" size={14} />
                     View
                   </button>
 
@@ -605,7 +604,7 @@ export function BehaviorListPage({
                       className="h-7 px-3 rounded-lg bg-blue-600 text-[10px] font-bold text-white hover:bg-blue-700 transition-all flex items-center gap-1 shadow-sm active:scale-95"
                     >
                       Review
-                      <span className="material-symbols-outlined text-[14px]">play_arrow</span>
+                      <AppIcon name="Play" size={14} />
                     </button>
                   )}
                   {row.status === "reviewing" && !isParent && (
@@ -630,7 +629,7 @@ export function BehaviorListPage({
                     row.status === "dismissed" ||
                     row.status === "escalated") && (
                     <span className="text-[9px] font-bold text-slate-400 inline-flex items-center gap-1">
-                      <span className="material-symbols-outlined text-sm">history</span>
+                      <AppIcon name="History" size={14} />
                       Finalized
                     </span>
                   )}

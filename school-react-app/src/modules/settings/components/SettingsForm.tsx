@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { ChangeEvent, FormEvent, useRef, useState } from "react";
 import { Button, Input } from "@/components/ui";
 import { SettingsFormInput } from "../types/settings.types";
@@ -249,9 +250,7 @@ export function SettingsForm({
                                     {optimizing ? (
                                         <span className="h-6 w-6 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
                                     ) : (
-                                        <span className="material-symbols-outlined text-3xl text-slate-300">
-                                            add_photo_alternate
-                                        </span>
+                                        <AppIcon name="ImagePlus" size={30} className="text-slate-300" />
                                     )}
                                 </div>
                                 <div className="text-center">
@@ -296,7 +295,7 @@ export function SettingsForm({
 
             <div className="mt-12 flex items-center justify-between pt-6 border-t border-slate-100 sticky bottom-0 bg-white/80 backdrop-blur-md py-4 z-10">
                 <div className="flex items-center gap-2 text-emerald-600">
-                    <span className="material-symbols-outlined text-[18px]">cloud_done</span>
+                    <AppIcon name="CloudDone" size={18} />
                     <span className="text-[11px] font-bold normal-case ">All changes staged</span>
                 </div>
                 <Button
@@ -311,7 +310,7 @@ export function SettingsForm({
                         </span>
                     ) : (
                         <span className="flex items-center gap-2">
-                            <span className="material-symbols-outlined text-[20px]">save</span>
+                            <AppIcon name="Save" />
                             Commit Changes
                         </span>
                     )}

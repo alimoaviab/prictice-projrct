@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
@@ -152,7 +153,7 @@ export function AnnouncementListPage() {
       <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md border-slate-200/60 shadow-sm rounded-xl">
         <div className="flex flex-1 items-center gap-2 max-w-2xl">
           <div className="relative flex-1">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
+            <AppIcon name="Search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               value={searchQuery}
               onChange={(e) => {
@@ -192,7 +193,7 @@ export function AnnouncementListPage() {
                 viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              <span className="material-symbols-outlined text-base">grid_view</span>
+              <AppIcon name="LayoutGrid" size={16} />
               Grid
             </button>
             <button
@@ -204,7 +205,7 @@ export function AnnouncementListPage() {
                 viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              <span className="material-symbols-outlined text-base">view_list</span>
+              <AppIcon name="ViewList" size={16} />
               List
             </button>
           </div>
@@ -217,7 +218,7 @@ export function AnnouncementListPage() {
             to={withQuery(pathname.includes("/teacher") ? "/teacher/announcements/create" : "/admin/announcements/create")}
             className="inline-flex h-9 items-center gap-2 px-5 text-[11px] font-bold normal-case  text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
           >
-            <span className="material-symbols-outlined text-lg">campaign</span>
+            <AppIcon name="Megaphone" size={18} />
             New Notice
           </Link>
         </div>
@@ -239,7 +240,7 @@ export function AnnouncementListPage() {
                   <div className="p-5">
                     <div className="flex items-start justify-between mb-4">
                       <div className="h-10 w-10 rounded-xl bg-slate-900 text-white flex items-center justify-center text-[11px] font-bold normal-case shadow-lg group-hover:scale-110 transition-transform">
-                        <span className="material-symbols-outlined text-lg">campaign</span>
+                        <AppIcon name="Megaphone" size={18} />
                       </div>
                       <Badge
                         variant={row.priority === "urgent" ? "error" : row.priority === "high" ? "warning" : "secondary"}
@@ -261,17 +262,17 @@ export function AnnouncementListPage() {
                   
                   <div className="mt-auto px-5 py-3 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between group-hover:bg-white transition-all">
                      <div className="flex items-center gap-2 text-slate-400">
-                        <span className="material-symbols-outlined text-sm">schedule</span>
+                        <AppIcon name="Clock" size={14} />
                         <span className="text-[9px] font-bold normal-case ">
                           {row.created_at ? new Date(row.created_at).toLocaleDateString() : "Pending"}
                         </span>
                      </div>
                      <div className="flex items-center gap-1">
                         <button onClick={() => alert(`Broadcast Details: ${row.title}`)} className="h-7 w-7 flex items-center justify-center rounded text-slate-400 hover:text-blue-600 transition-all">
-                           <span className="material-symbols-outlined text-lg">visibility</span>
+                           <AppIcon name="Eye" size={18} />
                         </button>
                         <button onClick={() => deleteAnnouncement(row._id)} className="h-7 w-7 flex items-center justify-center rounded text-slate-400 hover:text-red-500 transition-all">
-                           <span className="material-symbols-outlined text-lg">delete</span>
+                           <AppIcon name="Trash2" size={18} />
                         </button>
                      </div>
                   </div>

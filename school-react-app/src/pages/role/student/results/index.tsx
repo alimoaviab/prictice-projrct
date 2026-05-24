@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Student Results — premium redesign with real Print Marksheet actions.
  *
@@ -208,21 +209,19 @@ export function StudentResultsPage() {
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
             {headerClass ? (
               <div className="flex items-center gap-1.5 text-slate-500">
-                <span className="material-symbols-outlined text-[14px]">school</span>
+                <AppIcon name="GraduationCap" size={14} />
                 <span className="text-[11px] font-bold">{headerClass}</span>
               </div>
             ) : null}
             <div className="flex items-center gap-1.5 text-slate-500">
-              <span className="material-symbols-outlined text-[14px]">leaderboard</span>
+              <AppIcon name="Leaderboard" size={14} />
               <span className="text-[11px] font-bold">
                 {rows.length} exam{rows.length === 1 ? "" : "s"} graded
               </span>
             </div>
             {rows.length > 0 ? (
               <div className="flex items-center gap-1.5 text-slate-500">
-                <span className="material-symbols-outlined text-[14px]">
-                  trending_up
-                </span>
+                <AppIcon name="TrendingUp" size={14} />
                 <span className="text-[11px] font-bold">
                   {stats.avgPercent}% average
                 </span>
@@ -237,14 +236,12 @@ export function StudentResultsPage() {
             onClick={handlePrintAll}
             className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-[11px] font-black uppercase tracking-wider hover:bg-blue-700 transition-colors shadow-sm no-print"
           >
-            <span className="material-symbols-outlined text-[16px]">print</span>
+            <AppIcon name="Printer" size={16} />
             Print Combined Marksheet
           </button>
         ) : null}
 
-        <span className="material-symbols-outlined absolute right-[-10px] bottom-[-20px] text-[120px] text-slate-50 opacity-50 select-none pointer-events-none">
-          leaderboard
-        </span>
+        <AppIcon name="Leaderboard" size={120} className="absolute right-[-10px] bottom-[-20px] text-slate-50 opacity-50 select-none pointer-events-none" />
       </div>
 
       {/* ── KPI strip ──────────────────────────────────────────────── */}
@@ -392,9 +389,7 @@ export function StudentResultsPage() {
                     onClick={() => handlePrintRow(row)}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-[10px] font-black uppercase tracking-wider hover:bg-blue-700 transition-colors shadow-sm no-print"
                   >
-                    <span className="material-symbols-outlined text-[14px]">
-                      print
-                    </span>
+                    <AppIcon name="Printer" size={14} />
                     Print Marksheet
                   </button>
                 </div>
@@ -421,9 +416,7 @@ function PremiumEmpty({
   return (
     <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 p-12 text-center flex flex-col items-center justify-center">
       <div className="h-12 w-12 rounded-full bg-white shadow-sm flex items-center justify-center mb-3">
-        <span className="material-symbols-outlined text-slate-300 text-[24px]">
-          leaderboard
-        </span>
+        <AppIcon name="Leaderboard" size={24} className="text-slate-300" />
       </div>
       <p className="text-[13px] font-black text-slate-700">{title}</p>
       <p className="text-[11px] text-slate-500 mt-1 max-w-sm">{message}</p>

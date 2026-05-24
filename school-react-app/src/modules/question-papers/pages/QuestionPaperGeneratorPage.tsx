@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Question Paper Generator — Enterprise-grade module.
  *
@@ -284,7 +285,7 @@ export function QuestionPaperGeneratorPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link to="/admin/question-papers" className="h-9 w-9 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors">
-            <span className="material-symbols-outlined text-lg">arrow_back</span>
+            <AppIcon name="ArrowLeft" size={18} />
           </Link>
           <div>
             <h1 className="text-lg font-bold text-slate-900 tracking-tight">Question Paper Generator</h1>
@@ -294,13 +295,13 @@ export function QuestionPaperGeneratorPage() {
         <div className="flex items-center gap-2">
           {step === "select" && selectedIds.size > 0 && (
             <button onClick={() => setStep("settings")} className="h-9 px-4 rounded-lg bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 transition-colors inline-flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-sm">tune</span>
+              <AppIcon name="Sliders" size={14} />
               Configure Paper ({selectedIds.size})
             </button>
           )}
           {step === "settings" && (
             <button onClick={() => setStep("preview")} className="h-9 px-4 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors inline-flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-sm">visibility</span>
+              <AppIcon name="Eye" size={14} />
               Preview Paper
             </button>
           )}
@@ -310,11 +311,11 @@ export function QuestionPaperGeneratorPage() {
                 ← Edit Settings
               </button>
               <button onClick={handlePrint} className="h-9 px-4 rounded-lg bg-slate-800 text-white text-xs font-bold hover:bg-slate-900 transition-colors inline-flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-sm">print</span>
+                <AppIcon name="Printer" size={14} />
                 Print / PDF
               </button>
               <button onClick={handleSave} disabled={saving} className="h-9 px-4 rounded-lg bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 disabled:opacity-50 transition-colors inline-flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-sm">save</span>
+                <AppIcon name="Save" size={14} />
                 {saving ? "Saving..." : "Save Paper"}
               </button>
             </>
@@ -420,11 +421,11 @@ export function QuestionPaperGeneratorPage() {
                     Clear
                   </button>
                   <button onClick={() => setStep("preview")} className="h-8 px-3 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors inline-flex items-center gap-1">
-                    <span className="material-symbols-outlined text-sm">visibility</span>
+                    <AppIcon name="Eye" size={14} />
                     Preview
                   </button>
                   <button onClick={() => setStep("settings")} className="h-8 px-4 rounded-lg bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 transition-colors inline-flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-sm">description</span>
+                    <AppIcon name="FileText" size={14} />
                     Generate Paper
                   </button>
                 </>
@@ -469,7 +470,7 @@ function SelectQuestionsStep({
           <Select value={difficultyFilter} onChange={onDifficultyChange} options={[{ value: "", label: "All Difficulty" }, { value: "easy", label: "Easy" }, { value: "medium", label: "Medium" }, { value: "hard", label: "Hard" }]} />
           <Select value={marksFilter} onChange={onMarksChange} options={[{ value: "", label: "All Marks" }, { value: "1", label: "1 mark" }, { value: "2", label: "2 marks" }, { value: "3", label: "3 marks" }, { value: "5", label: "5 marks" }, { value: "8", label: "8 marks" }, { value: "10", label: "10 marks" }]} />
           <div className="relative flex-1 min-w-[200px]">
-            <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-base text-slate-400">search</span>
+            <AppIcon name="Search" size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input value={search} onChange={e => onSearchChange(e.target.value)} placeholder="Search questions..." className="w-full h-9 rounded-lg border border-slate-200 pl-8 pr-3 text-xs font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none" />
           </div>
         </div>
@@ -493,7 +494,7 @@ function SelectQuestionsStep({
       {/* Questions List */}
       {!classId && (
         <div className="text-center py-16 bg-white rounded-xl border border-slate-200">
-          <span className="material-symbols-outlined text-4xl text-slate-200 mb-3">library_books</span>
+          <AppIcon name="Library" size={36} className="text-slate-200 mb-3" />
           <p className="text-sm font-medium text-slate-500">Select a class to load questions from the bank</p>
         </div>
       )}

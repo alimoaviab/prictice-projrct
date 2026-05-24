@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Behavior detail page — admin / teacher review surface.
  *
@@ -98,7 +99,7 @@ export function BehaviorDetailPage({ role = "admin" }: Props) {
           className="h-8 w-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100"
           aria-label="Back"
         >
-          <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+          <AppIcon name="ChevronLeft" size={18} />
         </Link>
         <div className="flex-1 min-w-0">
           <h2 className="text-[16px] font-black text-slate-900 leading-tight truncate">
@@ -195,9 +196,7 @@ export function BehaviorDetailPage({ role = "admin" }: Props) {
                         rel="noreferrer"
                         className="text-[12px] font-bold text-blue-600 hover:underline inline-flex items-center gap-1"
                       >
-                        <span className="material-symbols-outlined text-base">
-                          attach_file
-                        </span>
+                        <AppIcon name="Paperclip" size={16} />
                         Attachment {i + 1}
                       </a>
                     </li>
@@ -219,7 +218,7 @@ export function BehaviorDetailPage({ role = "admin" }: Props) {
                   disabled={busy}
                   className="h-9 w-full bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-lg gap-2"
                 >
-                  <span className="material-symbols-outlined text-[16px]">play_arrow</span>
+                  <AppIcon name="Play" size={16} />
                   Start review
                 </Button>
               )}
@@ -267,7 +266,7 @@ export function BehaviorDetailPage({ role = "admin" }: Props) {
                     disabled={busy}
                     className="text-[10px] font-bold text-rose-500 hover:text-rose-700 inline-flex items-center gap-1 disabled:opacity-40"
                   >
-                    <span className="material-symbols-outlined text-sm">delete</span>
+                    <AppIcon name="Trash2" size={14} />
                     Delete record
                   </button>
                 </div>
@@ -279,17 +278,13 @@ export function BehaviorDetailPage({ role = "admin" }: Props) {
             <p className="text-[10px] font-bold text-slate-400 mb-2">Audit</p>
             <ul className="space-y-2 text-[11px] font-medium text-slate-600">
               <li className="flex items-start gap-2">
-                <span className="material-symbols-outlined text-[14px] text-slate-400 mt-0.5">
-                  schedule
-                </span>
+                <AppIcon name="Clock" size={14} className="text-slate-400 mt-0.5" />
                 Created{" "}
                 {row.created_at ? new Date(row.created_at).toLocaleString() : "—"}
               </li>
               {row.updated_at && row.updated_at !== row.created_at && (
                 <li className="flex items-start gap-2">
-                  <span className="material-symbols-outlined text-[14px] text-blue-500 mt-0.5">
-                    update
-                  </span>
+                  <AppIcon name="Clock" size={14} className="text-blue-500 mt-0.5" />
                   Updated {new Date(row.updated_at).toLocaleString()}
                 </li>
               )}

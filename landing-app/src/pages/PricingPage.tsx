@@ -3,7 +3,7 @@ import { Seo } from '@/components/Seo';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Building2, ArrowRight } from '@/components/icons';
+import { AppIcon } from "shared/ui/AppIcon";
 import { whatsappUrl, WhatsappMessages } from '@/lib/whatsapp';
 import { SIGNUP_URL } from '@/lib/config';
 
@@ -129,7 +129,7 @@ export function PricingPage() {
               <div className="space-y-4 mb-10 flex-1">
                 {plan.features.map((feature, i) => (
                   <div key={i} className="flex items-start gap-3">
-                    <CheckCircle2 className={`w-5 h-5 flex-shrink-0 mt-0.5 ${plan.isPopular ? 'text-blue-500' : 'text-slate-400'}`} />
+                    <AppIcon name="CheckCircle2" className={`w-5 h-5 flex-shrink-0 mt-0.5 ${plan.isPopular ? 'text-blue-500' : 'text-slate-400'}`} />
                     <span className="text-slate-700">{feature}</span>
                   </div>
                 ))}
@@ -150,7 +150,7 @@ export function PricingPage() {
                 }`}
               >
                 {plan.priceMonthly === 'Custom' ? (
-                  <><Building2 className="w-5 h-5" /> Contact Sales</>
+                  <><AppIcon name="Building2" className="w-5 h-5" /> Contact Sales</>
                 ) : (
                   'Start Free Trial'
                 )}
@@ -178,7 +178,7 @@ export function PricingPage() {
               'Comprehensive training',
             ].map((item, i) => (
               <div key={i} className="flex items-center gap-2 text-slate-700">
-                <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                <AppIcon name="CheckCircle2" className="w-5 h-5 text-emerald-500 flex-shrink-0" />
                 {item}
               </div>
             ))}
@@ -201,7 +201,7 @@ export function PricingPage() {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-full font-semibold shadow-lg hover:bg-blue-700 hover:-translate-y-1 transition-all"
           >
-            Contact Sales <ArrowRight className="w-4 h-4" />
+            Contact Sales <AppIcon name="ArrowRight" className="w-4 h-4" />
           </a>
         </motion.div>
       </main>

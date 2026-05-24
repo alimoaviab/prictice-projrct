@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { SchoolShell } from "@/layouts/SchoolShell";
 import { DataState, Skeleton } from "@/components/ui";
 import { useSelectedChild } from "@/contexts/SelectedChildContext";
@@ -81,7 +82,7 @@ export function ParentAttendancePage() {
               <div key={m.label} className="p-4 rounded-xl border border-slate-50 bg-slate-50/30">
                 <div className="flex items-center gap-3">
                    <div className={`h-8 w-8 rounded-lg ${m.bg} ${m.color} flex items-center justify-center`}>
-                      <span className="material-symbols-outlined text-[18px]">{m.icon}</span>
+                      <AppIcon name={m.icon} size={18} />
                    </div>
                    <div>
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">{m.label}</p>
@@ -97,7 +98,7 @@ export function ParentAttendancePage() {
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
            <div className="px-6 py-4 border-b border-slate-50 flex items-center justify-between">
               <h3 className="text-[13px] font-black text-slate-900 tracking-tight">Recent Activity Log</h3>
-              <span className="material-symbols-outlined text-slate-300">history</span>
+              <AppIcon name="History" className="text-slate-300" />
            </div>
            <div className="divide-y divide-slate-50">
               {view.recent_records.length === 0 ? (

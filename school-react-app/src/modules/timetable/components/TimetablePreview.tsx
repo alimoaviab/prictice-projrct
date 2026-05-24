@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useMemo } from "react";
 import { useTimetable } from "../hooks/useTimetable";
 
@@ -37,7 +38,7 @@ export function TimetablePreview({ classId, teacherId }: { classId?: string; tea
     if (todayRows.length === 0) {
         return (
             <div className="py-8 flex flex-col items-center justify-center text-center opacity-40">
-                <span className="material-symbols-outlined text-3xl mb-2">event_busy</span>
+                <AppIcon name="CalendarX" size={30} className="mb-2" />
                 <p className="text-[11px] font-bold text-slate-500">No classes scheduled for today</p>
             </div>
         );
@@ -60,11 +61,11 @@ export function TimetablePreview({ classId, teacherId }: { classId?: string; tea
                         </div>
                         <div className="flex items-center gap-3 mt-0.5">
                             <div className="flex items-center gap-1 text-slate-400">
-                                <span className="material-symbols-outlined text-[12px]">person</span>
+                                <AppIcon name="User" size={12} />
                                 <span className="text-[10px] font-medium truncate max-w-[80px]">{row.teacher_name || 'Unassigned'}</span>
                             </div>
                             <div className="flex items-center gap-1 text-slate-400">
-                                <span className="material-symbols-outlined text-[12px]">meeting_room</span>
+                                <AppIcon name="DoorOpen" size={12} />
                                 <span className="text-[10px] font-medium">{row.room || 'No Room'}</span>
                             </div>
                         </div>

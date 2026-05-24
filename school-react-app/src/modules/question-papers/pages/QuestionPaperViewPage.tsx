@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Question Paper View — Shows a saved paper with print and edit options.
  * NO page reloads.
@@ -77,16 +78,16 @@ export function QuestionPaperViewPage() {
       {/* Actions Bar */}
       <div className="flex items-center justify-between print:hidden">
         <Link to="/admin/question-papers" className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-900 transition-all group">
-          <span className="material-symbols-outlined text-[16px] group-hover:-translate-x-0.5 transition-transform">arrow_back</span>
+          <AppIcon name="ArrowLeft" size={16} className="group-hover:-translate-x-0.5 transition-transform" />
           Back to Papers
         </Link>
         <div className="flex items-center gap-2">
           <button onClick={handlePrint} className="h-8 px-3 rounded-lg border border-slate-200 text-[11px] font-bold text-slate-700 hover:bg-slate-50 transition-colors inline-flex items-center gap-1.5">
-            <span className="material-symbols-outlined text-sm">print</span>
+            <AppIcon name="Printer" size={14} />
             Print
           </button>
           <button onClick={() => navigate(`/admin/question-papers/${id}/edit`)} className="h-8 px-3 rounded-lg bg-indigo-600 text-white text-[11px] font-bold hover:bg-indigo-700 transition-colors inline-flex items-center gap-1.5">
-            <span className="material-symbols-outlined text-sm">edit</span>
+            <AppIcon name="Pencil" size={14} />
             Edit Paper
           </button>
         </div>

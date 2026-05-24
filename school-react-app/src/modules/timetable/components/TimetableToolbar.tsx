@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Compact, scalable toolbar for /admin/timetable.
  *
@@ -85,7 +86,7 @@ export function TimetableToolbar({
       {/* Left — brand + class selector */}
       <div className="flex items-center gap-3 min-w-0">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white shrink-0 shadow-sm shadow-blue-600/15">
-          <span className="material-symbols-outlined text-lg">calendar_month</span>
+          <AppIcon name="Calendar" size={18} />
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-bold text-slate-400 normal-case truncate">
@@ -102,9 +103,7 @@ export function TimetableToolbar({
               <span className="truncate max-w-[220px] md:max-w-[320px]">
                 {active ? active.label : "All classes"}
               </span>
-              <span className="material-symbols-outlined text-base text-slate-400">
-                {open ? "expand_less" : "expand_more"}
-              </span>
+              <AppIcon name={open ? "expand_less" : "expand_more"} size={16} className="text-slate-400" />
             </button>
 
             {open && (
@@ -114,9 +113,7 @@ export function TimetableToolbar({
               >
                 <div className="p-2 border-b border-slate-100">
                   <div className="flex items-center gap-2 px-2.5 py-1.5 bg-slate-50 rounded-lg border border-slate-200 focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-600/10 transition-all">
-                    <span className="material-symbols-outlined text-slate-400 text-base">
-                      search
-                    </span>
+                    <AppIcon name="Search" size={16} className="text-slate-400" />
                     <input
                       autoFocus
                       type="text"
@@ -131,7 +128,7 @@ export function TimetableToolbar({
                         onClick={() => setSearch("")}
                         className="text-slate-400 hover:text-slate-600"
                       >
-                        <span className="material-symbols-outlined text-sm">close</span>
+                        <AppIcon name="X" size={14} />
                       </button>
                     )}
                   </div>
@@ -151,7 +148,7 @@ export function TimetableToolbar({
                     >
                       <span className="text-[12px] font-bold">All classes</span>
                       {!classId && (
-                        <span className="material-symbols-outlined text-base text-blue-600">check</span>
+                        <AppIcon name="Check" size={16} className="text-blue-600" />
                       )}
                     </button>
                   </li>
@@ -177,7 +174,7 @@ export function TimetableToolbar({
                         >
                           <span className="text-[12px] font-bold truncate">{opt.label}</span>
                           {classId === opt.id && (
-                            <span className="material-symbols-outlined text-base text-blue-600">check</span>
+                            <AppIcon name="Check" size={16} className="text-blue-600" />
                           )}
                         </button>
                       </li>
@@ -203,7 +200,7 @@ export function TimetableToolbar({
             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200 text-[10px] font-bold text-rose-600"
             title="Scheduling conflicts detected"
           >
-            <span className="material-symbols-outlined text-base">warning</span>
+            <AppIcon name="AlertTriangle" size={16} />
             {conflictsCount} {conflictsCount === 1 ? "conflict" : "conflicts"}
           </Link>
         )}
@@ -219,9 +216,7 @@ export function TimetableToolbar({
             }`}
             title="Toggle compact view"
           >
-            <span className="material-symbols-outlined text-base">
-              {isCompact ? "expand" : "compress"}
-            </span>
+            <AppIcon name={isCompact ? "expand" : "compress"} size={16} />
             {isCompact ? "Spacious" : "Compact"}
           </button>
         </div>
@@ -232,7 +227,7 @@ export function TimetableToolbar({
             onClick={onNewEntry}
             className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-blue-600 text-white text-[12px] font-bold shadow-sm shadow-blue-600/15 hover:bg-blue-700 transition-colors active:scale-[0.98]"
           >
-            <span className="material-symbols-outlined text-base">add</span>
+            <AppIcon name="Plus" size={16} />
             New period
           </button>
         )}

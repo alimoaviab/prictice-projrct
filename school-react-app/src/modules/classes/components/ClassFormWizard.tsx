@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useState, useMemo } from "react";
 import { ClassFormInput, ClassRow, GradeThreshold, ClassSubject } from "../types/class.types";
 import { Badge } from "@/components/ui";
@@ -187,7 +188,7 @@ export function ClassFormWizard({
                     : "bg-white border-slate-200 text-slate-400"
                   }`}
                 >
-                  <span className="material-symbols-outlined font-bold text-xl">{s.icon}</span>
+                  <AppIcon name={s.icon} className="font-bold" />
                 </div>
                 <div className="text-center absolute -bottom-10 whitespace-nowrap">
                   <p className={`text-[10px] font-bold uppercase tracking-wider ${step === s.id ? "text-blue-600" : "text-slate-400"}`}>{s.title}</p>
@@ -280,7 +281,7 @@ export function ClassFormWizard({
                       onClick={() => setShowAddModal(true)}
                       className="h-10 px-6 rounded-xl bg-blue-600 text-white text-[10px] font-bold uppercase tracking-wider hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95 flex items-center justify-center gap-2"
                     >
-                      <span className="material-symbols-outlined text-base font-bold">add</span>
+                      <AppIcon name="Plus" size={16} className="font-bold" />
                       Direct Subject Registration
                     </button>
                   )}
@@ -289,7 +290,7 @@ export function ClassFormWizard({
                 {subjectOptions.length === 0 ? (
                   <div className="py-12 flex flex-col items-center text-center border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/30">
                     <div className="h-12 w-12 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 mb-4 shadow-sm">
-                      <span className="material-symbols-outlined text-2xl font-bold">menu_book</span>
+                      <AppIcon name="BookOpen" size={24} className="font-bold" />
                     </div>
                     <h4 className="text-xs font-bold text-slate-900 mb-1">Institutional Syllabus is Empty</h4>
                     <p className="text-[10px] text-slate-400 max-w-[200px] font-medium leading-relaxed mb-6">Your institutional curriculum hasn't been initialized yet.</p>
@@ -332,10 +333,10 @@ export function ClassFormWizard({
                                 className="w-full bg-transparent border-b border-white text-[10px] font-bold text-white outline-none"
                               />
                               <button onClick={handleUpdateSubject} disabled={isUpdatingSubject} className="text-white hover:scale-110">
-                                <span className="material-symbols-outlined text-sm font-bold">check</span>
+                                <AppIcon name="Check" size={14} className="font-bold" />
                               </button>
                               <button onClick={() => setEditingSubjectId(null)} className="text-white/70 hover:scale-110">
-                                <span className="material-symbols-outlined text-sm font-bold">close</span>
+                                <AppIcon name="X" size={14} className="font-bold" />
                               </button>
                             </div>
                           ) : (
@@ -355,21 +356,21 @@ export function ClassFormWizard({
                                 className={`h-6 w-6 rounded-md flex items-center justify-center transition-colors ${isSelected ? "bg-white/10 hover:bg-white/20 text-white" : "bg-blue-50 hover:bg-blue-100 text-blue-600"}`}
                                 title="Edit Name"
                               >
-                                <span className="material-symbols-outlined text-[14px] font-bold">edit</span>
+                                <AppIcon name="Pencil" size={14} className="font-bold" />
                               </button>
                               <button 
                                 onClick={(e) => handleDeleteSubject(subject.id, e)}
                                 className={`h-6 w-6 rounded-md flex items-center justify-center transition-colors ${isSelected ? "bg-white/10 hover:bg-white/20 text-white" : "bg-red-50 hover:bg-red-100 text-red-500"}`}
                                 title="Remove Curriculum"
                               >
-                                <span className="material-symbols-outlined text-[14px] font-bold">delete</span>
+                                <AppIcon name="Trash2" size={14} className="font-bold" />
                               </button>
                             </div>
                           )}
 
                           {isSelected && !isEditing && (
                             <div className="absolute top-0 right-0 h-3 w-3 bg-white flex items-center justify-center text-blue-600">
-                              <span className="material-symbols-outlined text-[8px] font-bold">check</span>
+                              <AppIcon name="Check" size={8} className="font-bold" />
                             </div>
                           )}
                         </div>
@@ -394,7 +395,7 @@ export function ClassFormWizard({
                     <div key={subject.id} className="flex flex-col md:flex-row md:items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 gap-4 group hover:border-blue-200 transition-colors">
                       <div className="flex items-center gap-3">
                         <div className="h-8 w-8 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-blue-600 shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-all">
-                          <span className="material-symbols-outlined text-sm font-bold">menu_book</span>
+                          <AppIcon name="BookOpen" size={14} className="font-bold" />
                         </div>
                         <h4 className="text-[11px] font-bold text-slate-700 uppercase tracking-tight">{subject.name}</h4>
                       </div>
@@ -563,7 +564,7 @@ export function ClassFormWizard({
         <div className="premium-card bg-slate-900 p-6 border-slate-800 shadow-2xl rounded-3xl sticky top-24">
           <div className="flex items-center gap-3 mb-6">
             <div className="h-10 w-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
-              <span className="material-symbols-outlined font-bold">info</span>
+              <AppIcon name="Info" className="font-bold" />
             </div>
             <div>
               <p className="text-[9px] font-bold text-blue-400 uppercase tracking-widest leading-none mb-1">Contextual Guide</p>
@@ -600,7 +601,7 @@ export function ClassFormWizard({
                 ].map((item, i) => (
                   <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/[0.08] transition-colors group">
                     <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-slate-500 text-base group-hover:text-blue-400 transition-colors">{item.icon}</span>
+                      <AppIcon name={item.icon} size={16} className="text-slate-500 group-hover:text-blue-400 transition-colors" />
                       <span className="text-[10px] font-bold text-slate-400">{item.label}</span>
                     </div>
                     <span className="text-[10px] font-bold text-white">{item.value}</span>
@@ -619,7 +620,7 @@ export function ClassFormWizard({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                  <span className="material-symbols-outlined font-bold">add_box</span>
+                  <AppIcon name="PlusSquare" className="font-bold" />
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider leading-none mb-1">New Subject</p>
@@ -627,7 +628,7 @@ export function ClassFormWizard({
                 </div>
               </div>
               <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600">
-                <span className="material-symbols-outlined font-bold">close</span>
+                <AppIcon name="X" className="font-bold" />
               </button>
             </div>
 

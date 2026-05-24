@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { LiveClassCard } from "./LiveClassCard";
-import { Search, Filter, CalendarX2 } from "@/components/icons";
+import { AppIcon } from "shared/ui/AppIcon";
 import { bindRefresh, publish } from "@/services/data-bus";
 import { serviceRequest } from "@/services/service-client";
 
@@ -120,7 +120,7 @@ export const LiveClassList: React.FC<LiveClassListProps> = ({ role }) => {
       {/* Filter Bar */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <AppIcon name="Search" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
             type="text"
             placeholder="Search classes, subjects, or teachers..."
@@ -130,7 +130,7 @@ export const LiveClassList: React.FC<LiveClassListProps> = ({ role }) => {
           />
         </div>
         <div className="relative sm:w-48 shrink-0">
-          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <AppIcon name="Filter" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <select
             className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 appearance-none transition-all cursor-pointer"
             value={statusFilter}
@@ -149,7 +149,7 @@ export const LiveClassList: React.FC<LiveClassListProps> = ({ role }) => {
       {filteredClasses.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 p-12 text-center flex flex-col items-center justify-center">
           <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-             <CalendarX2 className="h-6 w-6 text-slate-400" />
+             <AppIcon name="CalendarX2" className="h-6 w-6 text-slate-400" />
           </div>
           <p className="font-semibold text-slate-900 text-base">No sessions found</p>
           <p className="text-sm text-slate-500 mt-1 max-w-sm">

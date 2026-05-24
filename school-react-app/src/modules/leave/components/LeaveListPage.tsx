@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Admin Leave list — review-only.
  *
@@ -262,7 +263,7 @@ export default function LeaveListPage() {
           description="Manage your leave requests and student leave requests for your assigned classes."
           actions={
             <Button onClick={() => setIsSubmitModalOpen(true)}>
-              <span className="material-symbols-outlined text-lg mr-2">add</span>
+              <AppIcon name="Plus" size={18} className="mr-2" />
               Submit leave
             </Button>
           }
@@ -296,9 +297,7 @@ export default function LeaveListPage() {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           <div className="flex flex-1 items-center flex-wrap gap-2">
             <div className="relative flex-1 min-w-[200px] max-w-sm">
-              <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-base text-slate-400">
-                search
-              </span>
+              <AppIcon name="Search" size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 value={searchQuery}
                 onChange={(e) => {
@@ -368,7 +367,7 @@ export default function LeaveListPage() {
                 onClick={clearFilters}
                 className="h-7 inline-flex items-center gap-1 px-2 rounded-md text-[11px] font-bold text-slate-400 hover:text-slate-700 transition-colors"
               >
-                <span className="material-symbols-outlined text-sm">close</span>
+                <AppIcon name="X" size={14} />
                 Clear
               </button>
             )}
@@ -386,7 +385,7 @@ export default function LeaveListPage() {
                   viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500"
                 }`}
               >
-                <span className="material-symbols-outlined text-sm">grid_view</span>
+                <AppIcon name="LayoutGrid" size={14} />
                 Grid
               </button>
               <button
@@ -399,7 +398,7 @@ export default function LeaveListPage() {
                   viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500"
                 }`}
               >
-                <span className="material-symbols-outlined text-sm">view_list</span>
+                <AppIcon name="ViewList" size={14} />
                 List
               </button>
             </div>
@@ -475,7 +474,7 @@ export default function LeaveListPage() {
                     onClick={() => navigate(`${detailBase}/${row._id}`)}
                     className="text-[10px] font-bold text-slate-500 hover:text-slate-900 inline-flex items-center gap-1"
                   >
-                    <span className="material-symbols-outlined text-sm">visibility</span>
+                    <AppIcon name="Eye" size={14} />
                     View
                   </button>
                   {row.status === "pending" ? (
@@ -485,9 +484,7 @@ export default function LeaveListPage() {
                         onClick={() => approveLeave(row._id)}
                         className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 inline-flex items-center gap-1"
                       >
-                        <span className="material-symbols-outlined text-sm">
-                          check_circle
-                        </span>
+                        <AppIcon name="CheckCircle2" size={14} />
                         Approve
                       </button>
                       <button
@@ -495,13 +492,13 @@ export default function LeaveListPage() {
                         onClick={() => setRejectingId(row._id)}
                         className="text-[10px] font-bold text-rose-500 hover:text-rose-600 inline-flex items-center gap-1"
                       >
-                        <span className="material-symbols-outlined text-sm">cancel</span>
+                        <AppIcon name="XCircle" size={14} />
                         Reject
                       </button>
                     </div>
                   ) : (
                     <span className="text-[10px] font-bold text-slate-400 inline-flex items-center gap-1">
-                      <span className="material-symbols-outlined text-sm">history</span>
+                      <AppIcon name="History" size={14} />
                       Finalized
                     </span>
                   )}
@@ -583,7 +580,7 @@ export default function LeaveListPage() {
                 className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 transition-colors"
                 aria-label="Close"
               >
-                <span className="material-symbols-outlined">close</span>
+                <AppIcon name="X" />
               </button>
             </div>
             <div className="p-5">

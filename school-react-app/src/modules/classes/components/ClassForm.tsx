@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { FormEvent, useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button, Input, Select } from "@/components/ui";
@@ -191,7 +192,7 @@ export function ClassForm({
             {/* Summary Bar */}
             <div className="flex items-center gap-4 p-1.5 bg-slate-50/50 rounded-xl border border-slate-100 text-[11px] font-bold normal-case  text-slate-500">
                 <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-sm text-blue-600">visibility</span>
+                    <AppIcon name="Eye" size={14} className="text-blue-600" />
                     <span>{subjectCount} subjects</span>
                 </div>
                 <div className="w-px h-4 bg-slate-200" />
@@ -207,7 +208,7 @@ export function ClassForm({
             {/* Validation Banner */}
             {subjectCount === 0 && (
                 <div className="flex items-center gap-3 p-2.5 bg-amber-50 rounded-xl border border-amber-100 text-amber-700 text-xs font-bold">
-                    <span className="material-symbols-outlined text-sm">info</span>
+                    <AppIcon name="Info" size={14} />
                     Add at least 1 subject to continue
                 </div>
             )}
@@ -275,7 +276,7 @@ export function ClassForm({
                                     onClick={onCreateAcademicYear}
                                     className="h-7 px-3 rounded-lg border border-blue-100 bg-blue-50/50 text-[9px] font-black text-blue-600 uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all flex items-center gap-2 active:scale-95 group"
                                 >
-                                    <span className="material-symbols-outlined text-[14px]">add_circle</span>
+                                    <AppIcon name="PlusCircle" size={14} />
                                     New Session
                                 </button>
                             )}
@@ -292,7 +293,7 @@ export function ClassForm({
                         />
                         {academicYearOptions.length === 0 && (
                             <p className="text-[10px] font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100 flex items-center gap-2">
-                                <span className="material-symbols-outlined text-[14px]">warning</span>
+                                <AppIcon name="AlertTriangle" size={14} />
                                 No academic year found.
                             </p>
                         )}
@@ -328,7 +329,7 @@ export function ClassForm({
                                 onClick={addSubject}
                                 className="h-9 px-4 bg-blue-600 text-white rounded-lg text-[11px] font-bold gap-2"
                             >
-                                <span className="material-symbols-outlined text-sm">add</span>
+                                <AppIcon name="Plus" size={14} />
                                 Add Subject
                             </Button>
                             <Button type="button" variant="ghost" className="h-9 px-4 border border-slate-200 rounded-lg text-[11px] font-bold">Template</Button>
@@ -350,7 +351,7 @@ export function ClassForm({
                                 {/* Name */}
                                 <div className="flex-[2] min-w-[110px] space-y-1">
                                     <div className={`flex items-center gap-1.5 p-1 rounded-lg transition-all ${errors[`subject_${index}_name`] ? 'bg-red-50 border border-red-200' : ''}`}>
-                                        <span className={`material-symbols-outlined text-[14px] ${errors[`subject_${index}_name`] ? 'text-red-400' : 'text-slate-300'}`}>book</span>
+                                        <AppIcon name="BookOpen" size={14} className={` text-[14px] ${errors[`subject_${index} _name`] ? 'text-red-400' : 'text-slate-300'}`} />
                                         <input
                                             placeholder="Subject Name"
                                             value={subject.name}
@@ -398,7 +399,7 @@ export function ClassForm({
                                     onClick={() => removeSubject(index)}
                                     className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-300 hover:bg-red-50 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
                                 >
-                                    <span className="material-symbols-outlined text-[14px]">delete</span>
+                                    <AppIcon name="Trash2" size={14} />
                                 </button>
                             </div>
                         ))}
@@ -417,7 +418,7 @@ export function ClassForm({
                                 onClick={addGrade}
                                 className="h-9 px-4 bg-blue-600 text-white rounded-lg text-[11px] font-bold gap-2"
                             >
-                                <span className="material-symbols-outlined text-sm">add</span>
+                                <AppIcon name="Plus" size={14} />
                                 Add Grade
                             </Button>
                             <Button 
@@ -426,7 +427,7 @@ export function ClassForm({
                                 onClick={resetGrades}
                                 className="h-9 px-4 border border-slate-200 rounded-lg text-[11px] font-bold gap-2"
                             >
-                                <span className="material-symbols-outlined text-sm">refresh</span>
+                                <AppIcon name="RefreshCw" size={14} />
                                 Reset
                             </Button>
                         </div>
@@ -461,9 +462,7 @@ export function ClassForm({
                                             <option value="-">-</option>
                                         </select>
                                         {!(grade.grade.charAt(1) === "+" || grade.grade.charAt(1) === "-") && (
-                                            <span className="material-symbols-outlined text-[16px] text-slate-400 pointer-events-none select-none z-0">
-                                                arrow_drop_down
-                                            </span>
+                                            <AppIcon name="ChevronDown" size={16} className="text-slate-400 pointer-events-none select-none z-0" />
                                         )}
                                     </div>
                                 </div>
@@ -496,7 +495,7 @@ export function ClassForm({
                                     onClick={() => removeGrade(index)}
                                     className="p-2 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
                                 >
-                                    <span className="material-symbols-outlined text-[18px]">delete</span>
+                                    <AppIcon name="Trash2" size={18} />
                                 </button>
                             </div>
                         ))}

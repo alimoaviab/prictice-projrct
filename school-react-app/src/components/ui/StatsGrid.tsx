@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import type { ReactNode } from "react";
 import { StatCard } from "./StatCard";
 
@@ -29,7 +30,7 @@ export function StatsGrid({ stats, columns = 4 }: StatsGridProps) {
           key={i}
           title={stat.title}
           value={stat.value}
-          icon={<span className="material-symbols-outlined text-xl">{stat.icon}</span>}
+          icon={<AppIcon name={stat.icon} />}
           iconBg={stat.iconBg || "bg-blue-100"}
           iconColor={stat.iconColor || "text-blue-600"}
           trend={stat.trend}

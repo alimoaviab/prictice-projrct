@@ -3,7 +3,7 @@ import { Seo } from '@/components/Seo';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { Calendar, Clock, ArrowLeft, ArrowRight, Share2 } from '@/components/icons';
+import { AppIcon } from "shared/ui/AppIcon";
 import { whatsappUrl, WhatsappMessages } from '@/lib/whatsapp';
 
 interface BlogArticle {
@@ -861,7 +861,7 @@ export function BlogPostPage() {
           onClick={() => navigate('/blog')}
           className="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 transition-colors mb-8"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <AppIcon name="ArrowLeft" className="w-4 h-4" />
           Back to Blog
         </button>
 
@@ -875,15 +875,15 @@ export function BlogPostPage() {
             </h1>
             <div className="flex items-center gap-4 text-sm text-slate-500">
               <div className="flex items-center gap-1">
-                <Calendar className="w-4 h-4" />
+                <AppIcon name="Calendar" className="w-4 h-4" />
                 {article.date}
               </div>
               <div className="flex items-center gap-1">
-                <Clock className="w-4 h-4" />
+                <AppIcon name="Clock" className="w-4 h-4" />
                 {article.readTime}
               </div>
               <button className="flex items-center gap-1 hover:text-blue-600 transition-colors">
-                <Share2 className="w-4 h-4" />
+                <AppIcon name="Share2" className="w-4 h-4" />
                 Share
               </button>
             </div>
@@ -929,7 +929,7 @@ export function BlogPostPage() {
                 href="/book-demo"
                 className="px-8 py-4 bg-blue-600 text-white rounded-full font-semibold shadow-lg hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center gap-2"
               >
-                Book a Demo <ArrowRight className="w-4 h-4" />
+                Book a Demo <AppIcon name="ArrowRight" className="w-4 h-4" />
               </a>
               <a
                 href={whatsappUrl(WhatsappMessages.bookDemo())}

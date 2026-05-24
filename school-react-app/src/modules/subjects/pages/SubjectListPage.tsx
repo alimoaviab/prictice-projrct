@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { Link } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { DataTable, DataTableColumn, RowAction, Badge, DataState, Skeleton, TableSkeleton, StatCardGrid } from "@/components/ui";
@@ -158,7 +159,7 @@ export function SubjectListPage() {
       <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md border-slate-200/60 shadow-sm rounded-xl">
         <div className="flex flex-1 items-center gap-2 max-w-2xl">
           <div className="relative flex-1">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
+            <AppIcon name="Search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -186,7 +187,7 @@ export function SubjectListPage() {
                 viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              <span className="material-symbols-outlined text-base">grid_view</span>
+              <AppIcon name="LayoutGrid" size={16} />
               Grid
             </button>
             <button
@@ -195,7 +196,7 @@ export function SubjectListPage() {
                 viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              <span className="material-symbols-outlined text-base">view_list</span>
+              <AppIcon name="ViewList" size={16} />
               List
             </button>
           </div>
@@ -208,7 +209,7 @@ export function SubjectListPage() {
             onClick={() => setIsAdding(true)}
             className="inline-flex h-9 items-center gap-2 px-5 text-[11px] font-bold normal-case  text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
           >
-            <span className="material-symbols-outlined text-lg">add_box</span>
+            <AppIcon name="PlusSquare" size={18} />
             Register Subject
           </button>
         </div>
@@ -233,7 +234,7 @@ export function SubjectListPage() {
                   <div className="p-5">
                     <div className="flex items-start justify-between mb-4">
                       <div className="h-10 w-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shadow-sm transition-transform group-hover:scale-110">
-                        <span className="material-symbols-outlined font-bold">menu_book</span>
+                        <AppIcon name="BookOpen" className="font-bold" />
                       </div>
                       <div className="flex items-center gap-1 bg-slate-50/50 rounded-lg p-1 border border-slate-100">
                         <button
@@ -241,14 +242,14 @@ export function SubjectListPage() {
                           title="Configure"
                           className="h-7 w-7 flex items-center justify-center rounded text-slate-400 hover:bg-white hover:text-blue-600 hover:shadow-sm transition-all"
                         >
-                          <span className="material-symbols-outlined text-base">settings</span>
+                          <AppIcon name="Settings" size={16} />
                         </button>
                         <button
                           onClick={() => handleDelete(row._id)}
                           title="Remove"
                           className="h-7 w-7 flex items-center justify-center rounded text-slate-400 hover:bg-white hover:text-red-500 hover:shadow-sm transition-all"
                         >
-                          <span className="material-symbols-outlined text-base">delete</span>
+                          <AppIcon name="Trash2" size={16} />
                         </button>
                       </div>
                     </div>
@@ -290,7 +291,7 @@ export function SubjectListPage() {
 
                   <div className="mt-auto px-5 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between group-hover:bg-white transition-all">
                     <div className="flex items-center gap-2">
-                       <span className="material-symbols-outlined text-slate-400 text-sm">calendar_month</span>
+                       <AppIcon name="Calendar" size={14} className="text-slate-400" />
                        <p className="text-[10px] font-bold text-slate-400 normal-case ">
                          {row.academic_year || "All Sessions"}
                        </p>
@@ -300,7 +301,7 @@ export function SubjectListPage() {
                       className="group/btn h-8 px-4 rounded-lg bg-blue-600 text-[10px] font-bold text-white normal-case  hover:bg-blue-700 transition-all flex items-center gap-2 shadow-sm active:scale-95"
                     >
                       Manage
-                      <span className="material-symbols-outlined text-sm transition-transform group-hover/btn:translate-x-1">arrow_forward</span>
+                      <AppIcon name="ArrowRight" size={14} className="transition-transform group-hover/btn:translate-x-1" />
                     </button>
                   </div>
                 </div>

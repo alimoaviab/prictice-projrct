@@ -3,41 +3,41 @@ import { Seo } from '@/components/Seo';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { motion } from 'framer-motion';
-import { LineChart, Layout, Users, Shield, MessageSquare, CheckCircle2, ArrowRight } from '@/components/icons';
+import { AppIcon } from "shared/ui/AppIcon";
 import { whatsappUrl, WhatsappMessages } from '@/lib/whatsapp';
 import { SIGNUP_URL } from '@/lib/config';
 
 const platformModules = [
   {
-    icon: Layout,
+    icon: "Layout",
     title: 'Admin Dashboard',
     description: 'Centralized command center for school administrators. Monitor all operations, manage staff permissions, configure system settings, and access real-time institutional analytics from a single interface.',
     features: ['Multi-campus oversight', 'Role-based permissions', 'System configuration', 'Real-time monitoring', 'Audit logs'],
     image: '/admin-preview.png',
   },
   {
-    icon: LineChart,
+    icon: "LineChart",
     title: 'Analytics & Intelligence',
     description: 'Transform raw school data into actionable insights with AI-powered analytics. Track enrollment trends, predict fee collection, identify at-risk students, and generate comprehensive institutional reports.',
     features: ['Visual dashboards', 'Predictive analytics', 'Custom reports', 'Data export', 'Trend analysis'],
     image: '/analytics-preview.png',
   },
   {
-    icon: Users,
+    icon: "Users",
     title: 'Student Records Management',
     description: 'Complete digital lifecycle management for every student from admission to graduation. Store academic records, attendance history, behavioral notes, medical information, and parent contacts securely.',
     features: ['Digital profiles', 'Academic history', 'Document storage', 'Medical records', 'Parent contacts'],
     image: '/students-preview.png',
   },
   {
-    icon: Shield,
+    icon: "Shield",
     title: 'Security & Access Control',
     description: 'Enterprise-grade security with bank-level encryption, tenant isolation, and granular access controls. Every data point is protected with role-based permissions and comprehensive audit trails.',
     features: ['AES-256 encryption', 'Tenant isolation', 'Access controls', 'Audit trails', 'Data backups'],
     image: '/security-preview.png',
   },
   {
-    icon: MessageSquare,
+    icon: "MessageSquare",
     title: 'Plexa AI Command Agent',
     description: 'Your conversational AI assistant that understands natural language queries about your school. Ask about attendance, fees, students, or any metric and get instant answers with actionable recommendations.',
     features: ['Natural language queries', 'Instant analytics', 'Proactive alerts', 'Automated actions', 'Role-based intelligence'],
@@ -90,14 +90,14 @@ export function PlatformPage() {
             >
               <div className="flex-1">
                 <div className={`w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center mb-6 shadow-sm`}>
-                  <module.icon className="w-7 h-7 text-white" />
+                  <AppIcon name={module.icon} className="w-7 h-7 text-white" />
                 </div>
                 <h2 className="text-3xl font-bold text-slate-900 mb-4">{module.title}</h2>
                 <p className="text-lg text-slate-600 leading-relaxed mb-6">{module.description}</p>
                 <ul className="space-y-3">
                   {module.features.map((feature, i) => (
                     <li key={i} className="flex items-center gap-2 text-slate-700">
-                      <CheckCircle2 className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                      <AppIcon name="CheckCircle2" className="w-5 h-5 text-blue-500 flex-shrink-0" />
                       {feature}
                     </li>
                   ))}
@@ -134,7 +134,7 @@ export function PlatformPage() {
               rel="noopener noreferrer"
               className="px-8 py-4 bg-blue-600 text-white rounded-full font-semibold shadow-lg hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center gap-2"
             >
-              Book a Demo <ArrowRight className="w-4 h-4" />
+              Book a Demo <AppIcon name="ArrowRight" className="w-4 h-4" />
             </a>
             <a
               href={SIGNUP_URL}

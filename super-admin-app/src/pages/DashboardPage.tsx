@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiRequest } from '@/lib/api'
@@ -192,7 +193,7 @@ export function DashboardPage() {
         {schoolKPIs.map((kpi) => (
           <div key={kpi.label} className="bg-white rounded-lg border border-slate-200 p-3">
             <div className="flex items-center gap-2 mb-2">
-              <span className={`material-symbols-outlined text-sm ${kpi.color || 'text-blue-600'}`}>{kpi.icon}</span>
+              <AppIcon name={kpi.icon} size={14} className={` ${kpi.color || 'text-blue-600'} `} />
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{kpi.label}</span>
             </div>
             <div className="flex items-baseline gap-1">
@@ -212,7 +213,7 @@ export function DashboardPage() {
         {revenueKPIs.map((kpi) => (
           <div key={kpi.label} className="bg-white rounded-lg border border-slate-200 p-3">
             <div className="flex items-center gap-2 mb-2">
-              <span className={`material-symbols-outlined text-sm ${kpi.color || 'text-blue-600'}`}>{kpi.icon}</span>
+              <AppIcon name={kpi.icon} size={14} className={` ${kpi.color || 'text-blue-600'} `} />
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{kpi.label}</span>
             </div>
             <span className="text-lg font-bold text-slate-900">{kpi.value}</span>
@@ -225,7 +226,7 @@ export function DashboardPage() {
         {subscriptionKPIs.map((kpi) => (
           <div key={kpi.label} className="bg-white rounded-lg border border-slate-200 p-3">
             <div className="flex items-center gap-2 mb-2">
-              <span className={`material-symbols-outlined text-sm ${kpi.color || 'text-blue-600'}`}>{kpi.icon}</span>
+              <AppIcon name={kpi.icon} size={14} className={` ${kpi.color || 'text-blue-600'} `} />
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{kpi.label}</span>
             </div>
             <span className="text-lg font-bold text-slate-900">{kpi.value}</span>
@@ -244,7 +245,7 @@ export function DashboardPage() {
         ].map((kpi) => (
           <div key={kpi.label} className="bg-white rounded-lg border border-slate-200 p-3">
             <div className="flex items-center gap-2 mb-2">
-              <span className={`material-symbols-outlined text-sm ${kpi.color}`}>{kpi.icon}</span>
+              <AppIcon name={kpi.icon} size={14} className={` ${kpi.color} `} />
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{kpi.label}</span>
             </div>
             <span className="text-lg font-bold text-slate-900">{kpi.value}</span>
@@ -381,7 +382,7 @@ export function DashboardPage() {
                   onClick={() => navigate(action.href)}
                   className="flex items-center gap-2 p-2.5 rounded-lg border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors text-left"
                 >
-                  <span className="material-symbols-outlined text-sm text-blue-600">{action.icon}</span>
+                  <AppIcon name={action.icon} size={14} className="text-blue-600" />
                   <span className="text-[10px] font-bold text-slate-700">{action.label}</span>
                 </button>
               ))}
@@ -411,9 +412,7 @@ export function DashboardPage() {
                 }
                 return (
                   <div key={i} className="flex items-start gap-2.5">
-                    <span className={`material-symbols-outlined text-sm mt-0.5 ${colorMap[activity.type] || 'text-slate-400'}`}>
-                      {iconMap[activity.type] || 'info'}
-                    </span>
+                    <AppIcon name={iconMap[activity.type] || 'info'} size={14} className={` mt-0.5 ${colorMap[activity.type] || 'text-slate-400'} `} />
                     <div className="flex-1 min-w-0">
                       <p className="text-[11px] text-slate-700 leading-snug">{activity.message}</p>
                       <p className="text-[9px] text-slate-400 mt-0.5">

@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * /admin/homework — Homework dashboard page.
  *
@@ -188,7 +189,7 @@ export function HomeworkPage({ role, studentId }: HomeworkPageProps) {
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 px-4 py-3 shadow-[0_4px_18px_rgb(0,0,0,0.03)]">
         <div className="flex items-center gap-3 min-w-0">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white shrink-0 shadow-sm shadow-blue-600/15">
-            <span className="material-symbols-outlined text-lg">assignment</span>
+            <AppIcon name="FileText" size={18} />
           </div>
           <div className="min-w-0">
             <p className="text-[10px] font-bold text-slate-400 normal-case truncate">
@@ -203,9 +204,7 @@ export function HomeworkPage({ role, studentId }: HomeworkPageProps) {
         <div className="flex items-center gap-2 flex-wrap">
           {/* Search */}
           <div className="relative">
-            <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-base text-slate-400">
-              search
-            </span>
+            <AppIcon name="Search" size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -238,7 +237,7 @@ export function HomeworkPage({ role, studentId }: HomeworkPageProps) {
               onClick={() => navigate(createPath)}
               className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg bg-blue-600 text-white text-[12px] font-bold shadow-sm shadow-blue-600/15 hover:bg-blue-700 transition-colors active:scale-[0.98]"
             >
-              <span className="material-symbols-outlined text-base">add</span>
+              <AppIcon name="Plus" size={16} />
               New assignment
             </button>
           )}
@@ -267,7 +266,7 @@ export function HomeworkPage({ role, studentId }: HomeworkPageProps) {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px]">
             <div className="px-6 py-8 md:px-8 md:py-10">
               <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-blue-50 text-blue-600 mb-4">
-                <span className="material-symbols-outlined text-xl">assignment</span>
+                <AppIcon name="FileText" />
               </div>
               <h3 className="text-lg font-bold text-slate-900 tracking-tight">
                 {searchQuery || statusFilter !== "all"
@@ -287,7 +286,7 @@ export function HomeworkPage({ role, studentId }: HomeworkPageProps) {
                     onClick={() => navigate(createPath)}
                     className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-blue-600 text-white text-[12px] font-bold shadow-sm shadow-blue-600/15 hover:bg-blue-700 transition-colors active:scale-[0.98]"
                   >
-                    <span className="material-symbols-outlined text-base">add</span>
+                    <AppIcon name="Plus" size={16} />
                     Create first assignment
                   </button>
                 )}
@@ -300,7 +299,7 @@ export function HomeworkPage({ role, studentId }: HomeworkPageProps) {
                     }}
                     className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg border border-slate-200 bg-white text-[12px] font-bold text-slate-700 hover:border-blue-300 hover:text-blue-700 transition-colors"
                   >
-                    <span className="material-symbols-outlined text-base">filter_alt_off</span>
+                    <AppIcon name="FilterX" size={16} />
                     Clear filters
                   </button>
                 )}
@@ -318,9 +317,7 @@ export function HomeworkPage({ role, studentId }: HomeworkPageProps) {
                   { icon: "send", text: "Publish — students see it instantly" },
                 ].map((tip) => (
                   <li key={tip.icon} className="flex items-start gap-2">
-                    <span className="material-symbols-outlined text-base text-blue-500 mt-0.5">
-                      {tip.icon}
-                    </span>
+                    <AppIcon name={tip.icon} size={16} className="text-blue-500 mt-0.5" />
                     <span className="text-[12px] font-medium text-slate-600">{tip.text}</span>
                   </li>
                 ))}

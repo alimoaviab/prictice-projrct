@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import React, { useState } from "react";
 
 interface CreateLiveClassModalProps {
@@ -69,7 +70,7 @@ export const CreateLiveClassModal: React.FC<CreateLiveClassModalProps> = ({
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-slate-900">Schedule Live Class</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
-            <span className="material-symbols-outlined">close</span>
+            <AppIcon name="X" />
           </button>
         </div>
 

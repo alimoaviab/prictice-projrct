@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { Link } from "react-router-dom";
 import { SchoolShell } from "@/layouts/SchoolShell";
 import { LiveClassList } from "@/components/live-classes/LiveClassList";
@@ -62,7 +63,7 @@ export function TeacherLiveClassPage() {
                   <p className="text-[9px] md:text-[10px] font-bold normal-case tracking-[0.3em] text-slate-400">{item.title}</p>
                   <p className={`mt-2 md:mt-3 text-2xl md:text-3xl font-bold ${item.tone}`}>{item.value}</p>
                 </div>
-                <span className="material-symbols-outlined text-2xl md:text-3xl text-slate-300">{item.icon}</span>
+                <AppIcon name={item.icon} size={24} className="md:text-3xl text-slate-300" />
               </div>
               <p className="mt-3 md:mt-4 text-xs md:text-sm text-slate-500">{item.detail}</p>
             </div>
@@ -96,14 +97,14 @@ export function TeacherLiveClassPage() {
                   className="w-full flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3 md:py-4 text-xs md:text-sm font-semibold text-slate-900 transition hover:border-slate-300 hover:bg-slate-50"
                 >
                   <span>Create Live Class</span>
-                  <span className="material-symbols-outlined text-slate-400">add_circle</span>
+                  <AppIcon name="PlusCircle" className="text-slate-400" />
                 </button>
                 <Link
                   to="/teacher/timetable"
                   className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3 md:py-4 text-xs md:text-sm font-semibold text-slate-900 transition hover:border-slate-300 hover:bg-slate-50"
                 >
                   <span>View Timetable</span>
-                  <span className="material-symbols-outlined text-slate-400">schedule</span>
+                  <AppIcon name="Clock" className="text-slate-400" />
                 </Link>
               </div>
             </div>

@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useEffect, useState } from 'react'
 import { apiRequest } from '@/lib/api'
 
@@ -53,7 +54,7 @@ export function AIUsagePage() {
         ].map((s) => (
           <div key={s.label} className="bg-white rounded-xl border border-slate-200 p-4">
             <div className="flex items-center gap-2 mb-1">
-              <span className={`material-symbols-outlined text-[16px] ${s.color}`}>{s.icon}</span>
+              <AppIcon name={s.icon} size={16} className={` text-[16px] ${s.color} `} />
               <span className="text-[10px] font-bold text-slate-500 uppercase">{s.label}</span>
             </div>
             <p className="text-xl font-bold text-slate-900">{s.value}</p>
@@ -64,7 +65,7 @@ export function AIUsagePage() {
       {/* Search */}
       <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200">
         <div className="relative flex-1 max-w-xs">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[16px]">search</span>
+          <AppIcon name="Search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -80,7 +81,7 @@ export function AIUsagePage() {
           <div className="p-12 text-center text-sm text-slate-400">Loading AI usage...</div>
         ) : filtered.length === 0 ? (
           <div className="p-16 text-center">
-            <span className="material-symbols-outlined text-4xl text-slate-200 mb-3">smart_toy</span>
+            <AppIcon name="Bot" size={36} className="text-slate-200 mb-3" />
             <p className="text-sm font-medium text-slate-500">No usage data found</p>
           </div>
         ) : (

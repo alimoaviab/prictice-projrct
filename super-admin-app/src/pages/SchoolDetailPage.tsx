@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { apiRequest } from '@/lib/api'
@@ -57,7 +58,7 @@ export function SchoolDetailPage() {
   if (loading) return (
     <div className="flex items-center justify-center h-64">
       <div className="text-center">
-        <span className="material-symbols-outlined text-3xl text-blue-600 animate-spin">progress_activity</span>
+        <AppIcon name="Loader2" size={30} className="text-blue-600 animate-spin" />
         <p className="text-sm text-slate-500 mt-2">Loading school details...</p>
       </div>
     </div>
@@ -65,7 +66,7 @@ export function SchoolDetailPage() {
   if (!school) return (
     <div className="flex items-center justify-center h-64">
       <div className="text-center">
-        <span className="material-symbols-outlined text-3xl text-red-400">error</span>
+        <AppIcon name="AlertCircle" size={30} className="text-red-400" />
         <p className="text-sm text-red-500 mt-2">School not found</p>
       </div>
     </div>
@@ -92,7 +93,7 @@ export function SchoolDetailPage() {
             onClick={() => navigate('/schools')}
             className="h-9 w-9 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors"
           >
-            <span className="material-symbols-outlined text-lg">arrow_back</span>
+            <AppIcon name="ArrowLeft" size={18} />
           </button>
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold">
@@ -126,11 +127,11 @@ export function SchoolDetailPage() {
           <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
             <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <span className="material-symbols-outlined text-blue-600 text-[18px]">apartment</span>
+                <AppIcon name="Building2" size={18} className="text-blue-600" />
                 School Profile
               </h3>
               <span className="text-[10px] font-semibold text-slate-400 flex items-center gap-1">
-                <span className="material-symbols-outlined text-[14px]">visibility</span>
+                <AppIcon name="Eye" size={14} />
                 View only
               </span>
             </div>
@@ -187,7 +188,7 @@ export function SchoolDetailPage() {
           <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
             <div className="px-5 py-3 border-b border-slate-100">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <span className="material-symbols-outlined text-blue-600 text-[18px]">info</span>
+                <AppIcon name="Info" size={18} className="text-blue-600" />
                 System Details
               </h3>
             </div>
@@ -221,7 +222,7 @@ export function SchoolDetailPage() {
           <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
             <div className="px-5 py-3 border-b border-slate-100">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <span className="material-symbols-outlined text-blue-600 text-[18px]">analytics</span>
+                <AppIcon name="BarChart3" size={18} className="text-blue-600" />
                 Quick Stats
               </h3>
             </div>
@@ -236,7 +237,7 @@ export function SchoolDetailPage() {
               ].map((stat) => (
                 <div key={stat.label} className="p-2.5 rounded-lg border border-slate-100 bg-slate-50/50">
                   <div className="flex items-center gap-1.5 mb-1">
-                    <span className={`material-symbols-outlined text-[12px] ${stat.color.split(' ')[0]}`}>{stat.icon}</span>
+                    <AppIcon name={stat.icon} size={12} className={` text-[12px] ${stat.color.split(' ')[0]} `} />
                     <span className="text-[9px] font-bold text-slate-400 uppercase">{stat.label}</span>
                   </div>
                   <p className="text-[14px] font-bold text-slate-900">{stat.value}</p>

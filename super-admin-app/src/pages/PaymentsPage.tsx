@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useEffect, useState } from 'react'
 import { apiRequest } from '@/lib/api'
 
@@ -89,7 +90,7 @@ export function PaymentsPage() {
         ].map((s) => (
           <button key={s.label} onClick={() => setTab(s.tab)} className={`bg-white rounded-xl border p-4 text-left transition-colors ${tab === s.tab ? 'border-blue-300 bg-blue-50/30' : 'border-slate-200 hover:border-slate-300'}`}>
             <div className="flex items-center gap-2 mb-1">
-              <span className={`material-symbols-outlined text-[16px] ${s.color}`}>{s.icon}</span>
+              <AppIcon name={s.icon} size={16} className={` text-[16px] ${s.color} `} />
               <span className="text-[10px] font-bold text-slate-500 uppercase">{s.label}</span>
             </div>
             <p className="text-xl font-bold text-slate-900">{s.value}</p>
@@ -103,7 +104,7 @@ export function PaymentsPage() {
           <div className="p-12 text-center text-sm text-slate-400">Loading payments...</div>
         ) : filtered.length === 0 ? (
           <div className="p-16 text-center">
-            <span className="material-symbols-outlined text-4xl text-slate-200 mb-3">payments</span>
+            <AppIcon name="CreditCard" size={36} className="text-slate-200 mb-3" />
             <p className="text-sm font-medium text-slate-500">No {tab} payments found</p>
           </div>
         ) : (
@@ -136,7 +137,7 @@ export function PaymentsPage() {
                     <div className="space-y-1">
                       {p.screenshot_url && (
                         <a href={p.screenshot_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:underline">
-                          <span className="material-symbols-outlined text-sm">image</span>
+                          <AppIcon name="Image" size={14} />
                           Screenshot
                         </a>
                       )}

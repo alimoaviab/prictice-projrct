@@ -12,7 +12,7 @@
  */
 // ksjhanksasm
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, MessageCircle } from '@/components/icons';
+import { AppIcon } from "shared/ui/AppIcon";
 
 import { makeAnchorClickHandler } from '@/lib/scroll-to';
 
@@ -74,12 +74,12 @@ export const Footer = () => {
               <SocialIconLink
                 href={WHATSAPP_URL}
                 label="Contact EduPlexo on WhatsApp"
-                icon={<MessageCircle className="w-4 h-4" />}
+                icon={<AppIcon name="MessageCircle" className="w-4 h-4" />}
               />
               <SocialIconLink
                 href={EMAIL_URL}
                 label="Email EduPlexo Support"
-                icon={<Mail className="w-4 h-4" />}
+                icon={<AppIcon name="Mail" className="w-4 h-4" />}
               />
             </div>
           </div>

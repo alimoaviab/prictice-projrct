@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useState, useEffect } from "react";
 
 export function StudentExamPortal({ examId }: { examId: string }) {
@@ -205,7 +206,7 @@ export function StudentExamPortal({ examId }: { examId: string }) {
       ) : (
          <div className="text-center py-10 space-y-4">
              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 mb-4">
-                 <span className="material-symbols-outlined text-3xl">check_circle</span>
+                 <AppIcon name="CheckCircle2" size={30} />
              </div>
              <h3 className="text-2xl font-bold text-slate-800">Exam Submitted</h3>
              <p className="text-slate-600">Your responses have been recorded successfully.</p>

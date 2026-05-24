@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect } from "react";
 
@@ -64,7 +65,7 @@ export function DashboardDrawer({
                   <div className="flex items-center gap-4">
                     {icon && (
                       <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 shadow-sm border border-blue-100/50">
-                        <span className="material-symbols-outlined text-[22px]">{icon}</span>
+                        <AppIcon name={icon} size={22} />
                       </div>
                     )}
                     <div>
@@ -80,7 +81,7 @@ export function DashboardDrawer({
                     onClick={onClose}
                     className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-50 hover:text-slate-900 transition-all active:scale-90"
                   >
-                    <span className="material-symbols-outlined text-[20px]">close</span>
+                    <AppIcon name="X" />
                   </button>
                 </div>
               </div>

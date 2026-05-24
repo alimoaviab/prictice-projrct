@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { SchoolShell } from "@/layouts/SchoolShell";
@@ -41,12 +42,12 @@ export function LiveExamMonitorPage() {
                 onClick={() => navigate(-1)}
                 className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors"
             >
-                <span className="material-symbols-outlined">arrow_back</span>
+                <AppIcon name="ArrowLeft" />
                 Back to List
             </button>
             <div className="flex items-center gap-4">
                 <span className="flex items-center gap-1 text-sm font-medium text-slate-500">
-                    <span className="material-symbols-outlined text-[18px]">groups</span>
+                    <AppIcon name="Users" size={18} />
                     {submissions.length} Students Active
                 </span>
                 <span className={`rounded-full px-3 py-1 text-xs font-bold normal-case ${exam.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
@@ -142,7 +143,7 @@ export function LiveExamMonitorPage() {
 
                 <div className="rounded-[2rem] border border-slate-200/70 bg-red-50 p-6 shadow-sm">
                     <div className="flex items-center gap-2 text-red-700 mb-3">
-                        <span className="material-symbols-outlined text-[20px]">warning</span>
+                        <AppIcon name="AlertTriangle" />
                         <h3 className="font-bold">Security Alerts</h3>
                     </div>
                     <p className="text-xs text-red-900/70 mb-4">

@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useMemo, useState } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useEvents } from "../hooks/useEvents";
@@ -50,7 +51,7 @@ export default function EventListPage({ filters }: { filters?: EventListFilters 
       render: (row) => (
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-            <span className="material-symbols-outlined text-lg font-black">event</span>
+            <AppIcon name="Calendar" size={18} className="font-black" />
           </div>
           <div>
             <p className="font-black text-slate-900 leading-none mb-1 tracking-tight">{row.title}</p>
@@ -138,7 +139,7 @@ export default function EventListPage({ filters }: { filters?: EventListFilters 
       <div className="p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white border border-slate-100 shadow-sm rounded-xl">
         <div className="flex flex-1 items-center gap-2 max-w-2xl">
           <div className="relative flex-1">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-slate-400">search</span>
+            <AppIcon name="Search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -166,7 +167,7 @@ export default function EventListPage({ filters }: { filters?: EventListFilters 
                 viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
               }`}
             >
-              <span className="material-symbols-outlined text-base">grid_view</span>
+              <AppIcon name="LayoutGrid" size={16} />
               Grid
             </button>
             <button
@@ -175,7 +176,7 @@ export default function EventListPage({ filters }: { filters?: EventListFilters 
                 viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
               }`}
             >
-              <span className="material-symbols-outlined text-base">view_list</span>
+              <AppIcon name="ViewList" size={16} />
               List
             </button>
           </div>
@@ -185,7 +186,7 @@ export default function EventListPage({ filters }: { filters?: EventListFilters 
               to={createPath}
               className="h-9 inline-flex items-center gap-2 px-5 text-[10px] font-black uppercase tracking-widest text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all shadow-md shadow-blue-600/10 active:scale-95"
             >
-              <span className="material-symbols-outlined text-[16px]">add</span>
+              <AppIcon name="Plus" size={16} />
               Add Event
             </Link>
           )}
@@ -208,7 +209,7 @@ export default function EventListPage({ filters }: { filters?: EventListFilters 
                   <div className="p-5 flex-1">
                     <div className="flex items-start justify-between mb-4">
                       <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <span className="material-symbols-outlined text-xl font-black">event</span>
+                        <AppIcon name="Calendar" className="font-black" />
                       </div>
                       <Badge
                         variant={row.status === "scheduled" ? "warning" : row.status === "completed" ? "success" : "error"}
@@ -231,16 +232,16 @@ export default function EventListPage({ filters }: { filters?: EventListFilters 
                   
                   <div className="px-5 py-3 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
                      <div className="flex items-center gap-2 text-slate-400">
-                        <span className="material-symbols-outlined text-[14px]">location_on</span>
+                        <AppIcon name="MapPin" size={14} />
                         <span className="text-[9px] font-black uppercase tracking-tighter truncate max-w-[120px]">{row.location || "Global"}</span>
                      </div>
                      {!isParent && (
                         <div className="flex items-center gap-1">
                           <Link to={editPath(row._id)} className="h-7 w-7 flex items-center justify-center rounded text-slate-300 hover:text-blue-600 transition-all">
-                             <span className="material-symbols-outlined text-[18px]">edit_square</span>
+                             <AppIcon name="SquarePen" size={18} />
                           </Link>
                           <button onClick={() => deleteEvent(row._id)} className="h-7 w-7 flex items-center justify-center rounded text-slate-300 hover:text-rose-600 transition-all">
-                             <span className="material-symbols-outlined text-[18px]">delete</span>
+                             <AppIcon name="Trash2" size={18} />
                           </button>
                         </div>
                      )}

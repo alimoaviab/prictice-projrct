@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { motion, AnimatePresence } from "framer-motion";
 import { AcademicYearRow } from "../types/academicYear.types";
 
@@ -43,7 +44,7 @@ export function DeleteSessionSidebar({
                         <div className="flex items-center justify-between px-6 py-5 border-b border-blue-50 bg-white">
                             <div className="flex items-center gap-3">
                                 <div className="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center border border-red-100">
-                                    <span className="material-symbols-outlined text-red-600 text-[20px]">delete_forever</span>
+                                    <AppIcon name="Trash2" className="text-red-600" />
                                 </div>
                                 <div>
                                     <h2 className="text-[12px] font-bold text-slate-900 uppercase tracking-tight">Delete Session</h2>
@@ -54,14 +55,14 @@ export function DeleteSessionSidebar({
                                 onClick={onClose}
                                 className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-slate-900 transition-all"
                             >
-                                <span className="material-symbols-outlined text-xl">close</span>
+                                <AppIcon name="X" />
                             </button>
                         </div>
 
                         {/* Content */}
                         <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-white">
                             <div className="p-4 rounded-2xl bg-red-50 border border-red-100 flex items-start gap-3">
-                                <span className="material-symbols-outlined text-red-600 text-sm">warning</span>
+                                <AppIcon name="AlertTriangle" size={14} className="text-red-600" />
                                 <p className="text-[11px] font-bold text-red-900 leading-relaxed">
                                     Are you sure you want to permanently delete the <span className="underline">"{session.year}"</span> session?
                                 </p>

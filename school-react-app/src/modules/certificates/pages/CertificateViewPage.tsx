@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Certificate View Page — Shows generated certificate with print.
  */
@@ -50,13 +51,13 @@ export function CertificateViewPage() {
     <div className="max-w-4xl mx-auto space-y-5">
       <div className="flex items-center justify-between print:hidden">
         <Link to="/admin/certificates" className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-900 transition-all group">
-          <span className="material-symbols-outlined text-[16px] group-hover:-translate-x-0.5 transition-transform">arrow_back</span>
+          <AppIcon name="ArrowLeft" size={16} className="group-hover:-translate-x-0.5 transition-transform" />
           Back to Certificates
         </Link>
         <div className="flex items-center gap-2">
           <Badge variant={cert.status === "issued" ? "primary" : "secondary"}>{cert.status}</Badge>
           <Button variant="secondary" onClick={() => window.print()}>
-            <span className="material-symbols-outlined text-sm mr-1">print</span>
+            <AppIcon name="Printer" size={14} className="mr-1" />
             Print Certificate
           </Button>
         </div>

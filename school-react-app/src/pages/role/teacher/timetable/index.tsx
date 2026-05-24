@@ -1,23 +1,5 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { 
-  Calendar, 
-  Clock, 
-  MapPin, 
-  Users, 
-  ChevronLeft, 
-  ChevronRight, 
-  LayoutGrid, 
-  List, 
-  CalendarDays,
-  Search,
-  Filter,
-  RefreshCcw,
-  BookOpen,
-  ArrowRight,
-  ClipboardCheck,
-  CheckCircle2,
-  AlertCircle
-} from "@/components/icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { SchoolShell } from "@/layouts/SchoolShell";
 import { useAuth } from "@/hooks/useAuth";
@@ -233,7 +215,7 @@ export function TeacherTimetablePage() {
           <div className="bg-white/90 backdrop-blur-2xl border border-slate-200/60 shadow-lg shadow-slate-200/20 rounded-xl p-1.5 flex flex-col md:flex-row md:items-center justify-between gap-2">
             <div className="flex flex-1 items-center gap-2 max-w-xl">
               <div className="relative flex-1 group">
-                <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-base text-slate-400 group-focus-within:text-blue-600 transition-colors">search</span>
+                <AppIcon name="Search" size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
                 <input 
                   placeholder="Quick Search..." 
                   className="h-8 w-full rounded-lg border border-slate-200 bg-white/50 pl-9 pr-2 text-[11px] font-bold text-slate-700 outline-none transition-all focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-600/5 placeholder:text-slate-400"
@@ -258,7 +240,7 @@ export function TeacherTimetablePage() {
               </div>
               <div className="h-4 w-px bg-slate-200 mx-0.5" />
               <Button variant="secondary" className="h-8 rounded-lg px-3 border-slate-200 font-black text-[9px] uppercase tracking-widest text-slate-700 hover:bg-slate-50 transition-all">
-                <span className="material-symbols-outlined text-base mr-1.5">tune</span>
+                <AppIcon name="Sliders" size={16} className="mr-1.5" />
                 Filter
               </Button>
             </div>
@@ -314,10 +296,10 @@ function LiveClassWidget({ live }: { live: { current?: TimetableRecord, next?: T
                 <h2 className="text-2xl font-black tracking-tight leading-none">{live.current.subject_name}</h2>
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1 rounded-lg text-[10px] font-bold uppercase">
-                    <span className="material-symbols-outlined text-sm">groups</span> {live.current.class_name} {live.current.section}
+                    <AppIcon name="Users" size={14} /> {live.current.class_name} {live.current.section}
                   </div>
                   <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1 rounded-lg text-[10px] font-bold uppercase">
-                    <span className="material-symbols-outlined text-sm">meeting_room</span> Room {live.current.room}
+                    <AppIcon name="DoorOpen" size={14} /> Room {live.current.room}
                   </div>
                 </div>
               </motion.div>
@@ -325,7 +307,7 @@ function LiveClassWidget({ live }: { live: { current?: TimetableRecord, next?: T
               <motion.div key="next" className="space-y-2">
                 <h2 className="text-xl font-black tracking-tight text-white/90">{live.next.subject_name}</h2>
                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-lg text-[10px] font-bold">
-                  <span className="material-symbols-outlined text-sm">timer</span> Starts {live.next.start_time}
+                  <AppIcon name="Clock" size={14} /> Starts {live.next.start_time}
                 </div>
               </motion.div>
             ) : (
@@ -338,14 +320,14 @@ function LiveClassWidget({ live }: { live: { current?: TimetableRecord, next?: T
           <div className="flex -space-x-2">
              {[1,2,3].map(i => (
                <div key={i} className="h-7 w-7 rounded-full border-2 border-blue-700 bg-blue-500/50 flex items-center justify-center overflow-hidden">
-                  <span className="material-symbols-outlined text-xs text-white/40">person</span>
+                  <AppIcon name="User" size={12} className="text-white/40" />
                </div>
              ))}
           </div>
           
           <button className="group/btn relative inline-flex items-center gap-2 px-4 h-9 bg-white rounded-lg text-blue-700 transition-all hover:pr-6 active:scale-95 text-[10px] font-black uppercase tracking-widest">
             <span>Attendance</span>
-            <span className="material-symbols-outlined text-sm group-hover/btn:translate-x-1 transition-transform">arrow_forward</span>
+            <AppIcon name="ArrowRight" size={14} className="group-hover/btn:translate-x-1 transition-transform" />
           </button>
         </div>
       </div>
@@ -415,7 +397,7 @@ function PeriodCard({ item }: { item: TimetableRecord }) {
       className={`absolute inset-1 p-2 rounded-xl border ${style} flex flex-col justify-between shadow-sm hover:shadow-lg transition-all group cursor-pointer overflow-hidden backdrop-blur-[1px]`}
     >
       <div className="absolute top-0 right-0 p-1 opacity-5">
-        <span className="material-symbols-outlined text-2xl">calendar_today</span>
+        <AppIcon name="Calendar" size={24} />
       </div>
       
       <div>
@@ -423,7 +405,7 @@ function PeriodCard({ item }: { item: TimetableRecord }) {
           <span className="text-[8px] font-black tracking-tighter opacity-70">
             {item.start_time}
           </span>
-          <span className="material-symbols-outlined text-[10px] opacity-0 group-hover:opacity-100 transition-all">more_vert</span>
+          <AppIcon name="MoreVertical" size={10} className="opacity-0 group-hover:opacity-100 transition-all" />
         </div>
         <h4 className="text-[10px] font-black tracking-tight leading-tight truncate">{item.subject_name}</h4>
         <p className="text-[8px] font-bold opacity-60 uppercase tracking-widest">{item.class_name} {item.section}</p>
@@ -431,7 +413,7 @@ function PeriodCard({ item }: { item: TimetableRecord }) {
 
       <div className="mt-auto pt-1.5 border-t border-current/5 flex items-center justify-between">
         <div className="flex items-center gap-0.5">
-          <span className="material-symbols-outlined text-[11px]">meeting_room</span>
+          <AppIcon name="DoorOpen" size={11} />
           <span className="text-[8px] font-black uppercase">R{item.room}</span>
         </div>
       </div>
@@ -479,7 +461,7 @@ function AgendaCard({ item }: { item: TimetableRecord }) {
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-slate-50 border border-slate-100 text-slate-300 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all shadow-inner">
-             <span className="material-symbols-outlined text-xl">school</span>
+             <AppIcon name="GraduationCap" />
           </div>
           <div>
             <h4 className="text-sm font-black text-slate-900 tracking-tight leading-none mb-1">{item.subject_name}</h4>
@@ -554,7 +536,7 @@ function StatSmallCard({ label, value, sub, icon, color, bg }: { label: string; 
   return (
     <div className="bg-white border border-slate-200/60 rounded-2xl p-3 shadow-sm flex flex-col justify-between group hover:border-blue-400/30 transition-all">
       <div className={`h-8 w-8 rounded-xl ${bg} ${color} flex items-center justify-center shadow-sm`}>
-        <span className="material-symbols-outlined text-lg">{icon}</span>
+        <AppIcon name={icon} size={18} />
       </div>
       <div className="mt-3">
         <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">{label}</p>
@@ -573,7 +555,7 @@ function ViewToggle({ active, onClick, icon, label }: { active: boolean; onClick
       onClick={onClick}
       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${active ? "bg-white text-blue-600 shadow-sm font-black ring-1 ring-slate-200" : "text-slate-400 font-bold hover:text-slate-600"}`}
     >
-      <span className="material-symbols-outlined text-base">{icon}</span>
+      <AppIcon name={icon} size={16} />
       <span className="text-[8px] uppercase tracking-[0.1em]">{label}</span>
     </button>
   );
@@ -587,7 +569,7 @@ function EmptyScheduleState({ onRefresh }: { onRefresh: () => void }) {
       className="flex flex-col items-center justify-center py-20 bg-white rounded-[2rem] border border-slate-200/60 shadow-lg relative overflow-hidden"
     >
       <div className="h-20 w-20 bg-slate-50 rounded-3xl flex items-center justify-center mb-6 shadow-inner">
-        <span className="material-symbols-outlined text-3xl text-slate-200">calendar_add_on</span>
+        <AppIcon name="CalendarPlus" size={30} className="text-slate-200" />
       </div>
       <h3 className="text-xl font-black text-slate-900 tracking-tight">Ledger Empty</h3>
       <p className="text-slate-400 mt-2 font-bold max-w-xs text-center uppercase tracking-widest text-[9px] px-6">
@@ -596,7 +578,7 @@ function EmptyScheduleState({ onRefresh }: { onRefresh: () => void }) {
       <div className="mt-8 flex items-center gap-3">
         <button onClick={onRefresh} className="flex items-center gap-2 px-6 h-12 bg-blue-600 rounded-xl text-white text-[9px] font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 active:scale-95 transition-all">
           <span>Synchronize</span>
-          <span className="material-symbols-outlined text-base animate-spin-slow">refresh</span>
+          <AppIcon name="RefreshCw" size={16} className="animate-spin-slow" />
         </button>
       </div>
     </motion.div>

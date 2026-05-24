@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Ported from old-app/school-app/components/parent/ChildSwitcher.tsx with
  * `next/link` removed (not needed here) and minor type tightening. UI and
@@ -61,9 +62,7 @@ export function ChildSwitcher() {
                 {selectedChild.class_name}
               </p>
             </div>
-            <span className="material-symbols-outlined text-[16px] text-slate-400">
-              {isOpen ? "expand_less" : "expand_more"}
-            </span>
+            <AppIcon name={isOpen ? "expand_less" : "expand_more"} size={16} className="text-slate-400" />
           </>
         )}
       </button>
@@ -107,9 +106,7 @@ export function ChildSwitcher() {
                     </p>
                   </div>
                   {selectedChild?.student_id === child.student_id && (
-                    <span className="material-symbols-outlined text-[16px] text-blue-600">
-                      check_circle
-                    </span>
+                    <AppIcon name="CheckCircle2" size={16} className="text-blue-600" />
                   )}
                 </button>
               ))}

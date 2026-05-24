@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import type { ReactNode } from "react";
 
 interface StatCardProps {
@@ -21,9 +22,7 @@ export function StatCard({ title, value, icon, iconBg = "bg-blue-100", iconColor
           <p className="mt-2 text-2xl font-bold text-slate-900 tracking-tight">{value}</p>
           {trend && (
             <div className="mt-2 flex items-center gap-1">
-              <span className={`material-symbols-outlined text-sm ${trend.positive ? "text-green-600" : "text-red-600"}`}>
-                {trend.positive ? "trending_up" : "trending_down"}
-              </span>
+              <AppIcon name={trend.positive ? "trending_up" : "trending_down"} size={14} className={` ${trend.positive ? "text-green-600" : "text-red-600"} `} />
               <span className={`text-xs font-semibold ${trend.positive ? "text-green-600" : "text-red-600"}`}>
                 {trend.value}
               </span>

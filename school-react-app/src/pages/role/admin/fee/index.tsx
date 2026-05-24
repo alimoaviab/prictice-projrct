@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SchoolShell } from "@/layouts/SchoolShell";
@@ -327,7 +328,7 @@ export function StudentFeeDashboard() {
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-slate-50/50 p-2 rounded-2xl border border-slate-100 no-print">
                     <div className="flex items-center gap-2 flex-1 w-full">
                         <form onSubmit={handleSearch} className="relative flex-1 max-w-sm group">
-                            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px] transition-colors group-focus-within:text-blue-600">search</span>
+                            <AppIcon name="Search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-blue-600" />
                             <input 
                                 type="text" 
                                 placeholder="Search admission or name..." 
@@ -362,21 +363,21 @@ export function StudentFeeDashboard() {
                                 className={`h-8 w-8 rounded-md flex items-center justify-center transition-all ${viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
                                 title="Grid View"
                             >
-                                <span className="material-symbols-outlined text-[18px]">grid_view</span>
+                                <AppIcon name="LayoutGrid" size={18} />
                             </button>
                             <button
                                 onClick={() => setViewMode("list")}
                                 className={`h-8 w-8 rounded-md flex items-center justify-center transition-all ${viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
                                 title="List View"
                             >
-                                <span className="material-symbols-outlined text-[18px]">view_list</span>
+                                <AppIcon name="ViewList" size={18} />
                             </button>
                         </div>
                         <button
                             onClick={() => setShowExportDrawer(true)}
                             className="h-10 px-4 rounded-xl border border-blue-200 bg-blue-50 text-[10px] font-black uppercase tracking-widest text-blue-700 hover:bg-blue-100 transition-all flex items-center gap-2 no-print shadow-sm"
                         >
-                            <span className="material-symbols-outlined text-base">picture_as_pdf</span>
+                            <AppIcon name="FileText" size={16} />
                             Generate PDF
                             {selectedIds.size > 0 ? (
                                 <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-blue-600 text-white text-[9px]">
@@ -411,7 +412,7 @@ export function StudentFeeDashboard() {
                             className="h-10 inline-flex items-center gap-1.5 px-3 rounded-xl border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-slate-900 hover:border-slate-300 transition-colors"
                             title="Clear all filters"
                           >
-                            <span className="material-symbols-outlined text-[16px]">filter_alt_off</span>
+                            <AppIcon name="FilterX" size={16} />
                             Reset
                           </button>
                         )}
@@ -426,7 +427,7 @@ export function StudentFeeDashboard() {
                 ) : !data?.students || data.students.length === 0 ? (
                     <div className="py-16 flex flex-col items-center justify-center text-center bg-white rounded-3xl border border-dashed border-slate-200 no-print">
                         <div className="h-12 w-12 rounded-full bg-blue-50 flex items-center justify-center mb-4 text-blue-400">
-                            <span className="material-symbols-outlined text-3xl">account_balance_wallet</span>
+                            <AppIcon name="Wallet" size={30} />
                         </div>
                         <h4 className="font-black text-slate-900 text-base">No fee records found for {filters.month.toUpperCase()} {filters.year}</h4>
                         <p className="text-[11px] text-slate-400 mt-2 max-w-sm mx-auto leading-relaxed">
@@ -436,7 +437,7 @@ export function StudentFeeDashboard() {
                             onClick={() => navigate('/admin/classes')}
                             className="mt-6 inline-flex items-center gap-2 no-print px-6 py-2.5 rounded-xl bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
                         >
-                            <span className="material-symbols-outlined text-base">settings</span>
+                            <AppIcon name="Settings" size={16} />
                             Configure Class Fees
                         </button>
                     </div>
@@ -523,7 +524,7 @@ export function StudentFeeDashboard() {
                                     }}
                                     className={`absolute top-2 right-2 z-20 h-5 w-5 rounded-md border-2 flex items-center justify-center transition-all no-print ${isSelected ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-slate-300 text-transparent hover:border-blue-400'}`}
                                 >
-                                    <span className="material-symbols-outlined text-[14px] font-black">check</span>
+                                    <AppIcon name="Check" size={14} className="font-black" />
                                 </button>
 
                                 {/* HEADER */}
@@ -592,7 +593,7 @@ export function StudentFeeDashboard() {
                             onClick={() => setFilters({...filters, page: filters.page - 1})}
                             className="h-8 w-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-blue-600 disabled:opacity-50 transition-all"
                         >
-                            <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+                            <AppIcon name="ChevronLeft" size={18} />
                         </button>
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                             Page {filters.page} of {data.pagination.pages}
@@ -602,7 +603,7 @@ export function StudentFeeDashboard() {
                             onClick={() => setFilters({...filters, page: filters.page + 1})}
                             className="h-8 w-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-blue-600 disabled:opacity-50 transition-all"
                         >
-                            <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+                            <AppIcon name="ChevronRight" size={18} />
                         </button>
                     </div>
                 )}
@@ -620,7 +621,7 @@ export function StudentFeeDashboard() {
                                     onClick={() => setIsPaying(null)}
                                     className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-colors"
                                 >
-                                    <span className="material-symbols-outlined text-[16px]">close</span>
+                                    <AppIcon name="X" size={16} />
                                 </button>
                             </div>
                             <p className="text-[9px] font-bold text-blue-600 uppercase tracking-widest truncate">{isPaying.student.name}</p>
@@ -695,7 +696,7 @@ export function StudentFeeDashboard() {
                                     <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                 ) : (
                                     <>
-                                        <span className="material-symbols-outlined text-[16px]">verified</span>
+                                        <AppIcon name="CheckCircle" size={16} />
                                         Confirm Collection
                                     </>
                                 )}
@@ -716,7 +717,7 @@ export function StudentFeeDashboard() {
                                     onClick={() => setShowExportDrawer(false)}
                                     className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-colors"
                                 >
-                                    <span className="material-symbols-outlined text-[16px]">close</span>
+                                    <AppIcon name="X" size={16} />
                                 </button>
                             </div>
                             <p className="text-[9px] font-bold text-blue-600 uppercase tracking-widest">
@@ -867,7 +868,7 @@ export function StudentFeeDashboard() {
                                                         onClick={() => toggleSelect(e.student.id)}
                                                         className="h-6 w-6 rounded-md text-slate-400 hover:text-rose-500 hover:bg-rose-50 flex items-center justify-center transition-colors"
                                                     >
-                                                        <span className="material-symbols-outlined text-[16px]">close</span>
+                                                        <AppIcon name="X" size={16} />
                                                     </button>
                                                 </div>
                                             ))
@@ -887,7 +888,7 @@ export function StudentFeeDashboard() {
                                 ) : (
                                     <>
                                         <span className="text-[14px] font-bold tracking-tight inline-flex items-center gap-2">
-                                            <span className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+                                            <AppIcon name="FileText" size={18} />
                                             Generate Fee Vouchers
                                         </span>
                                         <span className="text-[11px] font-medium text-blue-100/90">

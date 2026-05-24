@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Compact stat card. ~50% the visual mass of the legacy stat tile so
  * dashboards no longer feel oversized.
@@ -62,7 +63,7 @@ export function StatCardCompact({
       <div
         className={`flex h-9 w-9 items-center justify-center rounded-lg ${iconBg} ${iconText} shrink-0 transition-transform group-hover:scale-105`}
       >
-        <span className="material-symbols-outlined text-lg">{icon}</span>
+        <AppIcon name={icon} size={18} />
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-[10px] font-bold text-slate-400 normal-case truncate">

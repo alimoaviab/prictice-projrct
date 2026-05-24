@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Parent Fees — premium redesign matching the admin/parent dashboards'
  * compact aesthetic.
@@ -237,9 +238,9 @@ export function ParentFeesPage() {
               }`}
             >
               {isPaidUp ? (
-                <span className="material-symbols-outlined text-[12px]">check_circle</span>
+                <AppIcon name="CheckCircle2" size={12} />
               ) : (
-                <span className="material-symbols-outlined text-[12px]">pending_actions</span>
+                <AppIcon name="PendingActions" size={12} />
               )}
               {isPaidUp ? "All paid" : summary.status}
             </span>
@@ -249,7 +250,7 @@ export function ParentFeesPage() {
           </h2>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
             <div className="flex items-center gap-1.5 text-slate-500">
-              <span className="material-symbols-outlined text-[14px]">school</span>
+              <AppIcon name="GraduationCap" size={14} />
               <span className="text-[11px] font-bold">
                 {selectedChild.class_name}
                 {selectedChild.class_section
@@ -259,14 +260,14 @@ export function ParentFeesPage() {
             </div>
             {selectedChild.academic_year ? (
               <div className="flex items-center gap-1.5 text-slate-500">
-                <span className="material-symbols-outlined text-[14px]">calendar_today</span>
+                <AppIcon name="Calendar" size={14} />
                 <span className="text-[11px] font-bold">
                   {selectedChild.academic_year}
                 </span>
               </div>
             ) : null}
             <div className="flex items-center gap-1.5 text-slate-500">
-              <span className="material-symbols-outlined text-[14px]">receipt_long</span>
+              <AppIcon name="Receipt" size={14} />
               <span className="text-[11px] font-bold">
                 {components.length} invoice{components.length === 1 ? "" : "s"}
               </span>
@@ -303,9 +304,7 @@ export function ParentFeesPage() {
           </div>
         </div>
 
-        <span className="material-symbols-outlined absolute right-[-10px] bottom-[-20px] text-[120px] text-slate-50 opacity-50 select-none pointer-events-none">
-          payments
-        </span>
+        <AppIcon name="CreditCard" size={120} className="absolute right-[-10px] bottom-[-20px] text-slate-50 opacity-50 select-none pointer-events-none" />
       </div>
 
       {/* ── KPI strip ─────────────────────────────────────────────────── */}
@@ -348,7 +347,7 @@ export function ParentFeesPage() {
       <div className="mb-4 flex items-center justify-between px-4 py-2.5 bg-blue-50/30 rounded-xl border border-blue-100/50">
         <div className="flex items-center gap-3 min-w-0">
           <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white shrink-0">
-            <span className="material-symbols-outlined text-[14px]">checklist</span>
+            <AppIcon name="ListTodo" size={14} />
           </div>
           <div className="min-w-0">
             <p className="text-[10px] font-bold text-slate-700">Ledger Pulse</p>
@@ -387,9 +386,7 @@ export function ParentFeesPage() {
                 Each invoice and its current status
               </p>
             </div>
-            <span className="material-symbols-outlined text-slate-300 text-base">
-              receipt_long
-            </span>
+            <AppIcon name="Receipt" size={16} className="text-slate-300" />
           </div>
 
           {components.length > 0 ? (
@@ -405,13 +402,11 @@ export function ParentFeesPage() {
                       <div
                         className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${tone.bg} ${tone.text}`}
                       >
-                        <span className="material-symbols-outlined text-[18px]">
-                          {fee.status === "paid"
+                        <AppIcon name={fee.status === "paid"
                             ? "verified"
                             : fee.status === "partial"
                               ? "hourglass_top"
-                              : "schedule"}
-                        </span>
+                              : "schedule"} size={18} />
                       </div>
                       <div className="min-w-0">
                         <p className="text-[12px] font-black text-slate-900 truncate">
@@ -457,9 +452,7 @@ export function ParentFeesPage() {
                 Most recent receipts
               </p>
             </div>
-            <span className="material-symbols-outlined text-slate-300 text-base">
-              history
-            </span>
+            <AppIcon name="History" size={16} className="text-slate-300" />
           </div>
 
           {payments.length > 0 ? (
@@ -472,9 +465,7 @@ export function ParentFeesPage() {
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className="h-8 w-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
-                        <span className="material-symbols-outlined text-[16px]">
-                          verified
-                        </span>
+                        <AppIcon name="CheckCircle" size={16} />
                       </div>
                       <div className="min-w-0">
                         <p className="text-[11px] font-black text-slate-800 truncate">
@@ -555,11 +546,7 @@ function PremiumEmpty({
       <div
         className={`${compact ? "h-10 w-10" : "h-12 w-12"} rounded-full bg-white shadow-sm flex items-center justify-center mb-3`}
       >
-        <span
-          className={`material-symbols-outlined text-slate-300 ${compact ? "text-[20px]" : "text-[24px]"}`}
-        >
-          receipt_long
-        </span>
+        <AppIcon name="Receipt" className={` text-slate-300 ${compact ? "text-[20px]" : "text-[24px]"} `} />
       </div>
       <p className={`${compact ? "text-[12px]" : "text-[13px]"} font-black text-slate-700`}>
         {title}

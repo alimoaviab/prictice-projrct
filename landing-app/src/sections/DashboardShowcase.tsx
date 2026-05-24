@@ -1,16 +1,16 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { LineChart, Layout, Users, Shield, MessageSquare } from "@/components/icons";
+import { AppIcon } from "shared/ui/AppIcon";
 
 export const DashboardShowcase = () => {
   const [activeTab, setActiveTab] = useState(0);
 
   const tabs = [
-    { id: "analytics", label: "Analytics Dashboard", icon: LineChart, image: "/analytics-preview.png" },
-    { id: "admin", label: "Admin Dashboard", icon: Layout, image: "/admin-preview.png" },
-    { id: "students", label: "Student Records", icon: Users, image: "/students-preview.png" },
-    { id: "security", label: "Access Control", icon: Shield, image: "/security-preview.png" },
-    { id: "ai", label: "Plexa AI Agent", icon: MessageSquare, image: "/ai-preview.png" },
+    { id: "analytics", label: "Analytics Dashboard", icon: "LineChart", image: "/analytics-preview.png" },
+    { id: "admin", label: "Admin Dashboard", icon: "Layout", image: "/admin-preview.png" },
+    { id: "students", label: "Student Records", icon: "Users", image: "/students-preview.png" },
+    { id: "security", label: "Access Control", icon: "Shield", image: "/security-preview.png" },
+    { id: "ai", label: "Plexa AI Agent", icon: "MessageSquare", image: "/ai-preview.png" },
   ];
 
   return (
@@ -56,7 +56,7 @@ export const DashboardShowcase = () => {
                     }`}
                   >
                     <div className={`p-2 rounded-lg ${isActive ? "bg-white/20" : "bg-slate-100"}`}>
-                      <tab.icon className="w-5 h-5" />
+                      <AppIcon name={tab.icon} className="w-5 h-5" />
                     </div>
                     <span className="font-semibold">{tab.label}</span>
                   </button>

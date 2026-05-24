@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { Card } from "./Card";
 
 type DataStateVariant = "loading" | "empty" | "error" | "success" | "info";
@@ -39,12 +40,8 @@ export function DataState({
   const inner = (
     <div className="flex flex-col items-center justify-center gap-4 px-4 py-8 text-center md:px-6 md:py-10">
       <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${tokens.iconBg}`}>
-        <span
-          className={`material-symbols-outlined text-[26px] ${tokens.iconColor} ${isSpinning ? "animate-spin" : ""}`}
-          aria-hidden="true"
-        >
-          {iconName}
-        </span>
+        <AppIcon name={iconName} size={26} className={` text-[26px] ${tokens.iconColor} ${isSpinning ? "animate-spin" : ""}`}
+          aria-hidden="true" />
       </div>
       <div className="space-y-1.5">
         <h3 className={`text-base font-bold tracking-tight ${tokens.titleColor}`}>{title}</h3>
@@ -58,7 +55,7 @@ export function DataState({
           onClick={onRetry}
           className="inline-flex items-center gap-2 rounded-xl bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100"
         >
-          <span className="material-symbols-outlined text-[18px]">refresh</span>
+          <AppIcon name="RefreshCw" size={18} />
           {retryLabel}
         </button>
       )}

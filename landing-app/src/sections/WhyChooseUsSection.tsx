@@ -1,25 +1,25 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Zap, ShieldCheck, Smartphone, CheckCircle2 } from "@/components/icons";
+import { AppIcon } from "shared/ui/AppIcon";
 
 export const WhyChooseUsSection = () => {
   const points = [
     {
-      icon: Zap,
+      icon: "Zap",
       title: "Lightning Fast School Management Software",
       description: "Built on modern web technologies, EduPlexo guarantees sub-second load times. No more waiting for reports to generate or pages to load in your school ERP.",
       color: "text-amber-500",
       bg: "bg-amber-50"
     },
     {
-      icon: ShieldCheck,
+      icon: "ShieldCheck",
       title: "Enterprise-Grade School Data Security",
       description: "Role-based access control, strict data isolation, and end-to-end encryption ensure your school data is always protected in EduPlexo school management system.",
       color: "text-emerald-500",
       bg: "bg-emerald-50"
     },
     {
-      icon: Smartphone,
+      icon: "Smartphone",
       title: "Mobile-First Parent & Teacher Experience",
       description: "A fully responsive design means teachers can grade on tablets, and parents can check updates on their phones seamlessly through the EduPlexo mobile app.",
       color: "text-blue-500",
@@ -66,7 +66,7 @@ export const WhyChooseUsSection = () => {
                   className="flex gap-5"
                 >
                   <div className={`flex-shrink-0 w-12 h-12 rounded-2xl ${point.bg} flex items-center justify-center`}>
-                    <point.icon className={`w-6 h-6 ${point.color}`} />
+                    <AppIcon name={point.icon} className={`w-6 h-6 ${point.color}`} />
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-slate-900 mb-2">{point.title}</h3>
@@ -98,7 +98,7 @@ export const WhyChooseUsSection = () => {
                        "Monthly feature updates"
                      ].map((item, i) => (
                        <li key={i} className="flex items-center gap-3 text-slate-300 font-medium">
-                         <CheckCircle2 className="w-6 h-6 text-blue-400 flex-shrink-0" />
+                         <AppIcon name="CheckCircle2" className="w-6 h-6 text-blue-400 flex-shrink-0" />
                          <span className="text-lg">{item}</span>
                        </li>
                      ))}

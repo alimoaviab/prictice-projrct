@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Custom Premium Select Primitive — unified to the Eduplexo design system.
  *
@@ -95,9 +96,7 @@ export function Select({
           <span className="truncate">
             {selectedOption ? selectedOption.label : placeholder || "Select..."}
           </span>
-          <span className={`material-symbols-outlined text-[18px] text-slate-400 transition-transform duration-200 ${isOpen ? "rotate-180 text-blue-600" : ""}`}>
-            keyboard_arrow_down
-          </span>
+          <AppIcon name="KeyboardArrowDown" size={18} className={` text-[18px] text-slate-400 transition-transform duration-200 ${isOpen ? "rotate-180 text-blue-600" : ""} `} />
         </button>
 
         {isOpen && (
@@ -118,9 +117,7 @@ export function Select({
                 >
                   <span className="truncate">{option.label}</span>
                   {isSelected && (
-                    <span className="material-symbols-outlined text-[16px] text-blue-600">
-                      check
-                    </span>
+                    <AppIcon name="Check" size={16} className="text-blue-600" />
                   )}
                 </div>
               );

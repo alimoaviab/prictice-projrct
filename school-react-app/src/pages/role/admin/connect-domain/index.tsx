@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useState } from "react";
 import { SchoolShell } from "@/layouts/SchoolShell";
 
@@ -64,7 +65,7 @@ export function ConnectDomainPage() {
           <div className="border-b border-slate-200 px-6 py-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
-                <span className="material-symbols-outlined text-blue-600">language</span>
+                <AppIcon name="Globe" className="text-blue-600" />
               </div>
               <div>
                 <h2 className="text-lg font-bold text-slate-900">Connect Custom Domain</h2>
@@ -78,26 +79,26 @@ export function ConnectDomainPage() {
           {/* Info Banner */}
           <div className="border-b border-slate-200 bg-blue-50 px-6 py-4">
             <div className="flex gap-3">
-              <span className="material-symbols-outlined text-blue-600 text-xl">info</span>
+              <AppIcon name="Info" className="text-blue-600" />
               <div className="flex-1">
                 <h3 className="text-sm font-semibold text-blue-900 mb-1">
                   What happens when you connect a domain?
                 </h3>
                 <ul className="space-y-1 text-xs text-blue-800">
                   <li className="flex items-start gap-2">
-                    <span className="material-symbols-outlined text-sm mt-0.5">check_circle</span>
+                    <AppIcon name="CheckCircle2" size={14} className="mt-0.5" />
                     <span>Cloudflare DNS records will be automatically configured</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="material-symbols-outlined text-sm mt-0.5">check_circle</span>
+                    <AppIcon name="CheckCircle2" size={14} className="mt-0.5" />
                     <span>Free SSL certificate from Let's Encrypt will be generated</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="material-symbols-outlined text-sm mt-0.5">check_circle</span>
+                    <AppIcon name="CheckCircle2" size={14} className="mt-0.5" />
                     <span>SSL will auto-renew 30 days before expiry</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="material-symbols-outlined text-sm mt-0.5">check_circle</span>
+                    <AppIcon name="CheckCircle2" size={14} className="mt-0.5" />
                     <span>Your domain will be ready to use in minutes</span>
                   </li>
                 </ul>
@@ -113,9 +114,7 @@ export function ConnectDomainPage() {
                 Domain Name <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                  language
-                </span>
+                <AppIcon name="Globe" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
                   id="domain"
@@ -138,9 +137,7 @@ export function ConnectDomainPage() {
                 Server IP Address <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                  dns
-                </span>
+                <AppIcon name="Database" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
                   id="serverIP"
@@ -163,9 +160,7 @@ export function ConnectDomainPage() {
                 Admin Email <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                  email
-                </span>
+                <AppIcon name="Mail" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="email"
                   id="email"
@@ -192,13 +187,7 @@ export function ConnectDomainPage() {
                 }`}
               >
                 <div className="flex gap-3">
-                  <span
-                    className={`material-symbols-outlined ${
-                      result.success ? "text-green-600" : "text-red-600"
-                    }`}
-                  >
-                    {result.success ? "check_circle" : "error"}
-                  </span>
+                  <AppIcon name={result.success ? "check_circle" : "error"} className={` ${ result.success ? "text-green-600" : "text-red-600"} `} />
                   <div className="flex-1">
                     <h4
                       className={`text-sm font-semibold mb-1 ${
@@ -229,7 +218,7 @@ export function ConnectDomainPage() {
             {/* Submit Button */}
             <div className="flex items-center justify-between pt-4 border-t border-slate-200">
               <div className="text-xs text-slate-500">
-                <span className="material-symbols-outlined text-sm align-middle mr-1">lock</span>
+                <AppIcon name="Lock" size={14} className="align-middle mr-1" />
                 Your domain will be secured with SSL automatically
               </div>
               <button
@@ -244,7 +233,7 @@ export function ConnectDomainPage() {
                   </>
                 ) : (
                   <>
-                    <span className="material-symbols-outlined text-lg">add_link</span>
+                    <AppIcon name="Link2" size={18} />
                     <span>Connect Domain</span>
                   </>
                 )}
@@ -256,7 +245,7 @@ export function ConnectDomainPage() {
         {/* Help Section */}
         <div className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
           <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
-            <span className="material-symbols-outlined text-blue-600">help</span>
+            <AppIcon name="HelpCircle" className="text-blue-600" />
             Need Help?
           </h3>
           <div className="space-y-3 text-sm text-slate-600">

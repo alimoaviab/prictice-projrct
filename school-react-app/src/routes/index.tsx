@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Master route table with code splitting.
  *
@@ -55,7 +56,7 @@ function ChunkErrorBoundary() {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
       <div className="text-center max-w-md">
         <div className="h-16 w-16 rounded-2xl bg-blue-100 flex items-center justify-center mx-auto mb-4">
-          <span className="material-symbols-outlined text-3xl text-blue-600">refresh</span>
+          <AppIcon name="RefreshCw" size={30} className="text-blue-600" />
         </div>
         <h1 className="text-lg font-bold text-slate-900 mb-2">Page Update Available</h1>
         <p className="text-sm text-slate-500 mb-6">

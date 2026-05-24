@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { EmptyState } from "./EmptyState";
 import { Skeleton } from "./Skeleton";
@@ -193,7 +194,7 @@ export function DataTable<T>({
     return (
       <div className="flex flex-col items-center justify-center py-12 px-4 bg-white rounded-xl border border-dashed border-error/30">
         <div className="w-12 h-12 rounded-full bg-error/10 flex items-center justify-center mb-4">
-          <span className="material-symbols-outlined text-error">error</span>
+          <AppIcon name="AlertCircle" className="text-error" />
         </div>
         <h3 className="text-sm font-bold text-gray-900">Failed to load data</h3>
         <p className="text-xs text-gray-500 mt-1 mb-6 text-center max-w-xs">{error}</p>
@@ -229,9 +230,7 @@ export function DataTable<T>({
         <div className="flex items-center justify-between gap-4">
           {searchable && (
             <div className="relative flex-1 max-w-sm">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400">
-                search
-              </span>
+              <AppIcon name="Search" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search..."
@@ -258,7 +257,7 @@ export function DataTable<T>({
                       : "bg-blue-50 text-blue-600 hover:bg-blue-100"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-sm">{action.icon}</span>
+                  <AppIcon name={action.icon} size={14} />
                   {action.label}
                 </button>
               ))}
@@ -311,9 +310,7 @@ export function DataTable<T>({
                     {sortable &&
                       column.sortable !== false &&
                       sort.key === column.key && (
-                        <span className="material-symbols-outlined text-base">
-                          {sort.direction === "asc" ? "arrow_upward" : "arrow_downward"}
-                        </span>
+                        <AppIcon name={sort.direction === "asc" ? "arrow_upward" : "arrow_downward"} size={16} />
                       )}
                   </div>
                 </th>
@@ -378,7 +375,7 @@ export function DataTable<T>({
                                   : "text-slate-400 hover:bg-slate-100 hover:text-slate-700"
                             }`}
                           >
-                            <span className="material-symbols-outlined text-lg">{action.icon}</span>
+                            <AppIcon name={action.icon} size={18} />
                           </button>
                         ))}
                       </div>
@@ -403,7 +400,7 @@ export function DataTable<T>({
               disabled={page === 1}
               className="rounded-lg border border-slate-200 p-2 text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <span className="material-symbols-outlined">chevron_left</span>
+              <AppIcon name="ChevronLeft" />
             </button>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
               <button
@@ -421,7 +418,7 @@ export function DataTable<T>({
               disabled={page === totalPages}
               className="rounded-lg border border-slate-200 p-2 text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <span className="material-symbols-outlined">chevron_right</span>
+              <AppIcon name="ChevronRight" />
             </button>
           </div>
         </div>

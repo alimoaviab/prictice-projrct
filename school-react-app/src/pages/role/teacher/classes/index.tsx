@@ -1,27 +1,6 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { 
-  Users, 
-  BookOpen, 
-  ClipboardCheck, 
-  Calendar, 
-  Search, 
-  Filter, 
-  LayoutGrid, 
-  List, 
-  MoreVertical,
-  X,
-  RefreshCcw,
-  Clock,
-  ArrowUpRight,
-  TrendingUp,
-  Mail,
-  GraduationCap,
-  ChevronRight,
-  CheckCircle2,
-  AlertCircle,
-  FileText
-} from "@/components/icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Badge, 
@@ -136,7 +115,7 @@ export function TeacherClassesPage() {
         <DataState variant="error" title="Workspace Load Failed" message={state.error} />
         <div className="mt-4 flex justify-center">
           <Button onClick={fetchClasses} variant="secondary" className="gap-2">
-            <RefreshCcw className="h-4 w-4" /> Retry Connection
+            <AppIcon name="RefreshCcw" className="h-4 w-4" /> Retry Connection
           </Button>
         </div>
       </SchoolShell>
@@ -160,7 +139,7 @@ export function TeacherClassesPage() {
         {/* OPERATIONAL TOOLBAR */}
         <section className="bg-white border border-slate-200 p-2 rounded-xl shadow-sm flex flex-wrap items-center gap-3">
           <div className="relative flex-1 min-w-[240px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+            <AppIcon name="Search" className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <Input 
               placeholder="Search by class, section or subject..." 
               className="pl-9 h-9 border-0 bg-slate-50 focus:bg-white text-xs font-medium rounded-lg"
@@ -195,28 +174,28 @@ export function TeacherClassesPage() {
               onClick={() => setViewMode("grid")} 
               className={`p-1.5 rounded-md transition-all ${viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-400"}`}
             >
-              <LayoutGrid className="h-3.5 w-3.5" />
+              <AppIcon name="LayoutGrid" className="h-3.5 w-3.5" />
             </button>
             <button 
               onClick={() => setViewMode("list")} 
               className={`p-1.5 rounded-md transition-all ${viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-400"}`}
             >
-              <List className="h-3.5 w-3.5" />
+              <AppIcon name="List" className="h-3.5 w-3.5" />
             </button>
           </div>
           
           <Button onClick={fetchClasses} variant="secondary" className="h-9 w-9 p-0 rounded-lg border-slate-200">
-            <RefreshCcw className="h-3.5 w-3.5 text-slate-500" />
+            <AppIcon name="RefreshCcw" className="h-3.5 w-3.5 text-slate-500" />
           </Button>
         </section>
 
         {/* STATS OVERVIEW (COMPACT) */}
         <section className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <StatPill label="Total Classes" value={stats.totalClasses} icon={<BookOpen className="h-3 w-3" />} />
-          <StatPill label="Enrolled Students" value={stats.totalStudents} icon={<Users className="h-3 w-3" />} />
-          <StatPill label="Pending Attendance" value={stats.pendingAttendance} icon={<ClipboardCheck className="h-3 w-3" />} variant={stats.pendingAttendance > 0 ? "warning" : "success"} />
-          <StatPill label="Today Lectures" value={stats.todayLectures} icon={<Clock className="h-3 w-3" />} />
-          <StatPill label="Upcoming Exams" value={stats.upcomingExams} icon={<Calendar className="h-3 w-3" />} />
+          <StatPill label="Total Classes" value={stats.totalClasses} icon={<AppIcon name="BookOpen" className="h-3 w-3" />} />
+          <StatPill label="Enrolled Students" value={stats.totalStudents} icon={<AppIcon name="Users" className="h-3 w-3" />} />
+          <StatPill label="Pending Attendance" value={stats.pendingAttendance} icon={<AppIcon name="ClipboardCheck" className="h-3 w-3" />} variant={stats.pendingAttendance > 0 ? "warning" : "success"} />
+          <StatPill label="Today Lectures" value={stats.todayLectures} icon={<AppIcon name="Clock" className="h-3 w-3" />} />
+          <StatPill label="Upcoming Exams" value={stats.upcomingExams} icon={<AppIcon name="Calendar" className="h-3 w-3" />} />
         </section>
 
         {/* MAIN CONTENT AREA */}
@@ -233,7 +212,7 @@ export function TeacherClassesPage() {
         ) : (
           <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border-2 border-dashed border-slate-100">
             <div className="h-12 w-12 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-              <BookOpen className="h-6 w-6 text-slate-300" />
+              <AppIcon name="BookOpen" className="h-6 w-6 text-slate-300" />
             </div>
             <h3 className="text-sm font-bold text-slate-900">No assigned classes found.</h3>
             <p className="text-[11px] text-slate-400 mt-1 max-w-[200px] text-center font-medium">Try adjusting your academic year filter or search query.</p>
@@ -280,7 +259,7 @@ function ClassCard({ classItem }: { classItem: ClassItem }) {
         <div className="flex items-center gap-2">
           <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 text-[8px] font-black py-0 px-1.5 h-4 uppercase">ACTIVE</Badge>
           <button className="h-6 w-6 rounded-md hover:bg-slate-50 flex items-center justify-center text-slate-400">
-            <MoreVertical className="h-3.5 w-3.5" />
+            <AppIcon name="MoreVertical" className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
@@ -288,17 +267,17 @@ function ClassCard({ classItem }: { classItem: ClassItem }) {
       {/* OPERATIONAL PILLS */}
       <div className="p-4 flex-1 space-y-3">
         <div className="flex flex-wrap gap-1.5">
-          <MetricPill label={`${classItem.enrolled_students} Students`} icon={<Users className="h-2.5 w-2.5" />} color="blue" />
-          <MetricPill label={`${classItem.lectures_today} Lectures Today`} icon={<Clock className="h-2.5 w-2.5" />} color="indigo" />
-          <MetricPill label={`${classItem.upcoming_exams} Upcoming Exams`} icon={<Calendar className="h-2.5 w-2.5" />} color="purple" />
-          <MetricPill label={`${classItem.pending_assignments} Homework Pending`} icon={<FileText className="h-2.5 w-2.5" />} color="orange" />
+          <MetricPill label={`${classItem.enrolled_students} Students`} icon={<AppIcon name="Users" className="h-2.5 w-2.5" />} color="blue" />
+          <MetricPill label={`${classItem.lectures_today} Lectures Today`} icon={<AppIcon name="Clock" className="h-2.5 w-2.5" />} color="indigo" />
+          <MetricPill label={`${classItem.upcoming_exams} Upcoming Exams`} icon={<AppIcon name="Calendar" className="h-2.5 w-2.5" />} color="purple" />
+          <MetricPill label={`${classItem.pending_assignments} Homework Pending`} icon={<AppIcon name="FileText" className="h-2.5 w-2.5" />} color="orange" />
         </div>
 
         {/* ATTENDANCE STATE */}
         <div className={`mt-4 p-3 rounded-lg border flex items-center justify-between transition-all ${classItem.attendance_pending ? "bg-orange-50/50 border-orange-100" : "bg-emerald-50/50 border-emerald-100"}`}>
           <div className="flex items-center gap-2.5">
             <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${classItem.attendance_pending ? "bg-orange-100 text-orange-600" : "bg-emerald-100 text-emerald-600"}`}>
-              {classItem.attendance_pending ? <AlertCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+              {classItem.attendance_pending ? <AppIcon name="AlertCircle" className="h-4 w-4" /> : <AppIcon name="CheckCircle2" className="h-4 w-4" />}
             </div>
             <div>
               <p className="text-[10px] font-black uppercase tracking-tight text-slate-900 leading-none">Attendance Status</p>
@@ -347,7 +326,7 @@ function ClassCard({ classItem }: { classItem: ClassItem }) {
             to={href}
             className="flex-1 flex flex-col items-center gap-1 py-1 rounded hover:bg-white hover:shadow-sm transition-all text-slate-400 hover:text-blue-600"
           >
-            <span className="material-symbols-outlined text-[14px]">{icon}</span>
+            <AppIcon name={icon} size={14} />
             <span className="text-[7px] font-black uppercase tracking-tighter">{label}</span>
           </Link>
         ))}
@@ -397,7 +376,7 @@ function ListView({ tableData }: { tableData: ClassItem[] }) {
                 <td className="px-5 py-4">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-black text-slate-700">{cls.enrolled_students}</span>
-                    <Users className="h-3 w-3 text-slate-300" />
+                    <AppIcon name="Users" className="h-3 w-3 text-slate-300" />
                   </div>
                 </td>
                 <td className="px-5 py-4">
@@ -426,7 +405,7 @@ function ListView({ tableData }: { tableData: ClassItem[] }) {
                     </Link>
                     <Link to={`/teacher/classes/${cls.id}`}>
                       <Button size="sm" variant="secondary" className="h-8 w-8 p-0 rounded-lg border-slate-200">
-                        <ArrowUpRight className="h-3.5 w-3.5 text-slate-400" />
+                        <AppIcon name="ArrowUpRight" className="h-3.5 w-3.5 text-slate-400" />
                       </Button>
                     </Link>
                   </div>

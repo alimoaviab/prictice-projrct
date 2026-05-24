@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Question Bank — Enterprise main page.
  *
@@ -270,7 +271,7 @@ export function QuestionBankPage({ defaultTab = "all" }: { defaultTab?: TabView 
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 px-4 py-3 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-600 text-white shrink-0 shadow-sm">
-            <span className="material-symbols-outlined text-lg">library_books</span>
+            <AppIcon name="Library" size={18} />
           </div>
           <div>
             <p className="text-[13px] font-bold text-slate-900 tracking-tight">Question Bank</p>
@@ -280,7 +281,7 @@ export function QuestionBankPage({ defaultTab = "all" }: { defaultTab?: TabView 
 
         <div className="flex items-center gap-2 flex-wrap">
           <div className="relative">
-            <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-base text-slate-400">search</span>
+            <AppIcon name="Search" size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -313,7 +314,7 @@ export function QuestionBankPage({ defaultTab = "all" }: { defaultTab?: TabView 
             onClick={() => setDrawerOpen(true)}
             className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg bg-violet-600 text-white text-[12px] font-bold shadow-sm hover:bg-violet-700 transition-colors active:scale-[0.98]"
           >
-            <span className="material-symbols-outlined text-base">add</span>
+            <AppIcon name="Plus" size={16} />
             Add Question
           </button>
         </div>
@@ -367,7 +368,7 @@ export function QuestionBankPage({ defaultTab = "all" }: { defaultTab?: TabView 
         {/* Inline Add-Chapter row — visible once a class is picked */}
         {classFilter && (
           <div className="mt-3 pt-3 border-t border-slate-100 flex items-center gap-2">
-            <span className="material-symbols-outlined text-[16px] text-slate-400">menu_book</span>
+            <AppIcon name="BookOpen" size={16} className="text-slate-400" />
             <input
               value={newChapterTitle}
               onChange={(e) => setNewChapterTitle(e.target.value)}
@@ -408,7 +409,7 @@ export function QuestionBankPage({ defaultTab = "all" }: { defaultTab?: TabView 
               }}
               className="h-7 px-3 rounded-lg bg-indigo-600 text-white text-[11px] font-bold hover:bg-indigo-700 transition-colors inline-flex items-center gap-1"
             >
-              <span className="material-symbols-outlined text-sm">description</span>
+              <AppIcon name="FileText" size={14} />
               Create Paper
             </button>
             {tab !== "archived" && (
@@ -499,7 +500,7 @@ function StatCard({ label, value, accent, icon }: { label: string; value: number
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-4 ring-1 ring-slate-900/5 shadow-sm flex items-center gap-3">
       <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${tones[accent]}`}>
-        <span className="material-symbols-outlined text-xl">{icon}</span>
+        <AppIcon name={icon} />
       </div>
       <div>
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{label}</p>
@@ -605,7 +606,7 @@ function QuestionCard({
             className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${starred ? "text-amber-500 bg-amber-50" : "text-slate-300 hover:text-amber-500 hover:bg-amber-50"}`}
             title={starred ? "Unstar" : "Star"}
           >
-            <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: starred ? '"FILL" 1' : '"FILL" 0' }}>star</span>
+            <AppIcon name="Star" size={18} style={{ fontVariationSettings: starred ? '"FILL" 1' : '"FILL" 0' }} />
           </button>
           {tab !== "archived" ? (
             <button
@@ -613,7 +614,7 @@ function QuestionCard({
               className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-slate-600 hover:bg-slate-50 transition-colors"
               title="Archive"
             >
-              <span className="material-symbols-outlined text-lg">archive</span>
+              <AppIcon name="Archive" size={18} />
             </button>
           ) : (
             <button
@@ -621,7 +622,7 @@ function QuestionCard({
               className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
               title="Restore"
             >
-              <span className="material-symbols-outlined text-lg">unarchive</span>
+              <AppIcon name="Unarchive" size={18} />
             </button>
           )}
         </div>
@@ -764,7 +765,7 @@ function AddQuestionDrawer({
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
           <h2 className="text-base font-bold text-slate-900">Add Question</h2>
           <button onClick={onClose} className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-700">
-            <span className="material-symbols-outlined text-lg">close</span>
+            <AppIcon name="X" size={18} />
           </button>
         </div>
 
@@ -876,7 +877,7 @@ function AddQuestionDrawer({
                     onClick={() => setCorrectIdx(i)}
                     className={`h-7 w-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${correctIdx === i ? "border-emerald-500 bg-emerald-500 text-white" : "border-slate-300 text-slate-300 hover:border-emerald-400"}`}
                   >
-                    {correctIdx === i && <span className="material-symbols-outlined text-sm">check</span>}
+                    {correctIdx === i && <AppIcon name="Check" size={14} />}
                   </button>
                   <input
                     type="text"

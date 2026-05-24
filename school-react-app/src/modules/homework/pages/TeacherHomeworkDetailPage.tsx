@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button, DataState, Skeleton, Badge } from "@/components/ui";
 import { useSafeAsync } from "@/hooks/useSafeAsync";
 import { serviceRequest } from "@/services/service-client";
-import { ChevronLeft, FileText, Calendar, User, BookOpen, Users } from "@/components/icons";
+import { AppIcon } from "shared/ui/AppIcon";
 import { Link } from "react-router-dom";
 
 interface HomeworkDetails {
@@ -73,7 +73,7 @@ export function TeacherHomeworkDetailPage({ homeworkId }: { homeworkId: string }
       <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
         <div className="flex items-center gap-4">
           <Link to="/teacher/homework" className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-all">
-            <ChevronLeft className="h-5 w-5" />
+            <AppIcon name="ChevronLeft" className="h-5 w-5" />
           </Link>
           <div>
             <h2 className="text-xl font-black text-slate-900">{hw.title}</h2>
@@ -94,7 +94,7 @@ export function TeacherHomeworkDetailPage({ homeworkId }: { homeworkId: string }
           <div className="bg-white border border-slate-200 p-8 rounded-2xl shadow-sm min-h-[400px]">
             <div className="flex items-center gap-2 mb-6">
               <div className="h-8 w-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                <FileText className="h-4 w-4" />
+                <AppIcon name="FileText" className="h-4 w-4" />
               </div>
               <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Instructions</h3>
             </div>
@@ -116,7 +116,7 @@ export function TeacherHomeworkDetailPage({ homeworkId }: { homeworkId: string }
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="h-9 w-9 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400">
-                    <User className="h-4 w-4" />
+                    <AppIcon name="User" className="h-4 w-4" />
                   </div>
                   <div>
                     <p className="text-[9px] font-bold text-slate-400 uppercase leading-none mb-1">Created By</p>
@@ -125,7 +125,7 @@ export function TeacherHomeworkDetailPage({ homeworkId }: { homeworkId: string }
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="h-9 w-9 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400">
-                    <Calendar className="h-4 w-4" />
+                    <AppIcon name="Calendar" className="h-4 w-4" />
                   </div>
                   <div>
                     <p className="text-[9px] font-bold text-slate-400 uppercase leading-none mb-1">Due Date</p>
@@ -136,7 +136,7 @@ export function TeacherHomeworkDetailPage({ homeworkId }: { homeworkId: string }
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="h-9 w-9 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400">
-                    <BookOpen className="h-4 w-4" />
+                    <AppIcon name="BookOpen" className="h-4 w-4" />
                   </div>
                   <div>
                     <p className="text-[9px] font-bold text-slate-400 uppercase leading-none mb-1">Max Score</p>
@@ -164,7 +164,7 @@ export function TeacherHomeworkDetailPage({ homeworkId }: { homeworkId: string }
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-slate-400" />
+                    <AppIcon name="Users" className="h-4 w-4 text-slate-400" />
                     <span className="text-[11px] font-bold text-slate-600">Total Students</span>
                   </div>
                   <span className="text-[13px] font-black text-slate-900">{submissions.length}</span>

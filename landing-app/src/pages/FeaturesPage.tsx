@@ -3,24 +3,13 @@ import { Seo } from '@/components/Seo';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { motion } from 'framer-motion';
-import {
-  Users,
-  CalendarCheck,
-  CreditCard,
-  LayoutDashboard,
-  BookOpen,
-  BarChart3,
-  BellRing,
-  GraduationCap,
-  CheckCircle2,
-  ArrowRight,
-} from '@/components/icons';
+import { AppIcon } from "shared/ui/AppIcon";
 import { whatsappUrl, WhatsappMessages } from '@/lib/whatsapp';
 import { SIGNUP_URL } from '@/lib/config';
 
 const features = [
   {
-    icon: Users,
+    icon: "Users",
     title: 'Student Information System',
     description:
       'Complete 360-degree view of student profiles, academic history, behavioral records, and enrollment data in one unified dashboard. Manage admissions, transfers, and graduations seamlessly.',
@@ -28,7 +17,7 @@ const features = [
     details: ['Admission management', 'Student profiles', 'Academic history', 'Behavioral tracking', 'Document management'],
   },
   {
-    icon: CalendarCheck,
+    icon: "CalendarCheck",
     title: 'Automated Attendance Tracking',
     description:
       'Lightning-fast attendance taking with real-time syncing to parent portals and automated absence alerts. Support for biometric, RFID, and manual entry methods.',
@@ -36,7 +25,7 @@ const features = [
     details: ['Biometric integration', 'RFID support', 'Real-time alerts', 'Parent notifications', 'Attendance reports'],
   },
   {
-    icon: CreditCard,
+    icon: "CreditCard",
     title: 'Fee Management & Online Payments',
     description:
       'Streamline fee collection with automated invoicing, online payment gateways, installment plans, and instant receipts. Track dues, generate ledgers, and send payment reminders automatically.',
@@ -44,7 +33,7 @@ const features = [
     details: ['Online payments', 'Auto invoicing', 'Installment plans', 'Fee ledgers', 'Payment reminders'],
   },
   {
-    icon: LayoutDashboard,
+    icon: "LayoutDashboard",
     title: 'Parent Portal & Mobile App',
     description:
       'Keep parents engaged with real-time access to grades, attendance, fee status, homework, and school announcements. Available as web portal and mobile app for iOS and Android.',
@@ -52,7 +41,7 @@ const features = [
     details: ['Real-time updates', 'Mobile app', 'Grade access', 'Fee tracking', 'Communication hub'],
   },
   {
-    icon: BookOpen,
+    icon: "BookOpen",
     title: 'Teacher Dashboard & Tools',
     description:
       'Empower educators with intuitive tools for lesson planning, grading, classroom management, and student performance tracking. Reduce administrative workload by 70%.',
@@ -60,7 +49,7 @@ const features = [
     details: ['Lesson planning', 'Grade management', 'Classroom tools', 'Performance tracking', 'Time-saving automation'],
   },
   {
-    icon: GraduationCap,
+    icon: "GraduationCap",
     title: 'Exam Management & Report Cards',
     description:
       'Generate beautiful, compliant report cards with dynamic grading scales, customized comments, and automated calculations. Support for multiple exam patterns and grading systems.',
@@ -68,7 +57,7 @@ const features = [
     details: ['Exam scheduling', 'Grade computation', 'Report cards', 'Transcript generation', 'Multiple grading systems'],
   },
   {
-    icon: BarChart3,
+    icon: "BarChart3",
     title: 'Advanced Analytics & Reports',
     description:
       'Turn school data into actionable insights with powerful visual reporting, trend analysis, and AI-powered predictions. Make data-driven decisions for institutional growth.',
@@ -76,7 +65,7 @@ const features = [
     details: ['Visual dashboards', 'Trend analysis', 'AI predictions', 'Custom reports', 'Data export'],
   },
   {
-    icon: BellRing,
+    icon: "BellRing",
     title: 'Smart Notifications & Communication',
     description:
       'Instant multi-channel communication via SMS, email, push notifications, and WhatsApp for urgent updates, event reminders, and automated alerts. Never miss critical communication.',
@@ -129,14 +118,14 @@ export function FeaturesPage() {
               className="bg-white rounded-2xl p-8 border border-slate-200/60 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
             >
               <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-6 shadow-sm`}>
-                <feature.icon className="w-7 h-7 text-white" />
+                <AppIcon name={feature.icon} className="w-7 h-7 text-white" />
               </div>
               <h2 className="text-2xl font-bold text-slate-900 mb-3">{feature.title}</h2>
               <p className="text-slate-600 leading-relaxed mb-6">{feature.description}</p>
               <ul className="space-y-2">
                 {feature.details.map((detail, i) => (
                   <li key={i} className="flex items-center gap-2 text-sm text-slate-700">
-                    <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    <AppIcon name="CheckCircle2" className="w-4 h-4 text-blue-500 flex-shrink-0" />
                     {detail}
                   </li>
                 ))}
@@ -162,7 +151,7 @@ export function FeaturesPage() {
               href={SIGNUP_URL}
               className="px-8 py-4 bg-blue-600 text-white rounded-full font-semibold shadow-lg hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center gap-2"
             >
-              Start Free Trial <ArrowRight className="w-4 h-4" />
+              Start Free Trial <AppIcon name="ArrowRight" className="w-4 h-4" />
             </a>
             <a
               href={whatsappUrl(WhatsappMessages.bookDemo())}

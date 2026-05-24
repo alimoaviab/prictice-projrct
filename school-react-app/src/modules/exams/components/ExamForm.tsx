@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Exam create form.
  *
@@ -245,7 +246,7 @@ export function ExamForm({
             error={errors.starts_at}
             required
             leftIcon={
-              <span className="material-symbols-outlined text-[16px]">calendar_today</span>
+              <AppIcon name="Calendar" size={16} />
             }
             className={inputCls}
           />
@@ -288,7 +289,7 @@ export function ExamForm({
                     }`}
                   >
                     {active && (
-                      <span className="material-symbols-outlined text-[13px]">check</span>
+                      <AppIcon name="Check" size={13} />
                     )}
                     {s.label}
                   </button>
@@ -322,9 +323,7 @@ export function ExamForm({
                 const error = errors[`marks_${s.subject_id}`];
                 return (
                   <div key={s.subject_id} className="flex items-center gap-3 px-3 py-2">
-                    <span className="material-symbols-outlined text-[16px] text-slate-400">
-                      menu_book
-                    </span>
+                    <AppIcon name="BookOpen" size={16} className="text-slate-400" />
                     <span className="flex-1 text-[12px] font-bold text-slate-800 truncate">
                       {s.subject_name || s.subject_id}
                     </span>
@@ -355,7 +354,7 @@ export function ExamForm({
                         className="ml-1 text-slate-400 hover:text-rose-600 transition-colors"
                         aria-label={`Remove ${s.subject_name}`}
                       >
-                        <span className="material-symbols-outlined text-[16px]">close</span>
+                        <AppIcon name="X" size={16} />
                       </button>
                     </div>
                   </div>
@@ -372,7 +371,7 @@ export function ExamForm({
           onChange={(e) => setField("title", e.target.value)}
           error={errors.title}
           required
-          leftIcon={<span className="material-symbols-outlined text-[16px]">title</span>}
+          leftIcon={<AppIcon name="Title" size={16} />}
           className={inputCls}
         />
 
@@ -410,7 +409,7 @@ export function ExamForm({
               </>
             ) : (
               <>
-                <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                <AppIcon name="CheckCircle2" size={16} />
                 {form.subjects.length > 1
                   ? `Schedule exam · ${form.subjects.length} subjects`
                   : "Schedule exam"}

@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Homework assignment form.
  *
@@ -201,7 +202,7 @@ export function HomeworkForm({
       {Object.keys(errors).length > 0 && (
         <div className="rounded-lg bg-rose-50 border border-rose-200 px-3 py-2.5">
           <div className="flex items-start gap-2">
-            <span className="material-symbols-outlined text-base text-rose-600 mt-0.5">error</span>
+            <AppIcon name="AlertCircle" size={16} className="text-rose-600 mt-0.5" />
             <div>
               <p className="text-[11px] font-bold text-rose-700">Fix the highlighted fields</p>
               <ul className="mt-1 text-[11px] font-medium text-rose-700/90 space-y-0.5">

@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Certificate Edit Page — Edit existing template.
  */
@@ -68,7 +69,7 @@ export function CertificateEditPage() {
   return (
     <div className="max-w-7xl mx-auto py-4 px-4 space-y-6">
       <Link to="/admin/certificates" className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-900 transition-all group">
-        <span className="material-symbols-outlined text-[16px] group-hover:-translate-x-0.5 transition-transform">arrow_back</span>
+        <AppIcon name="ArrowLeft" size={16} className="group-hover:-translate-x-0.5 transition-transform" />
         Back to Certificates
       </Link>
 

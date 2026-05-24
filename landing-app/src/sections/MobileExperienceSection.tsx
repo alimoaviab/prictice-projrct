@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Smartphone, Bell, Clock, CalendarDays } from "@/components/icons";
+import { AppIcon } from "shared/ui/AppIcon";
 
 export const MobileExperienceSection = () => {
   return (
@@ -45,7 +45,7 @@ export const MobileExperienceSection = () => {
                       {[1, 2, 3].map(i => (
                         <div key={i} className="bg-white rounded-xl p-3 shadow-sm border border-slate-100 flex gap-3 items-center">
                           <div className="w-10 h-10 rounded-full bg-blue-50 flex-shrink-0 flex items-center justify-center">
-                            <Bell className="w-4 h-4 text-blue-500" />
+                            <AppIcon name="Bell" className="w-4 h-4 text-blue-500" />
                           </div>
                           <div className="flex-1">
                             <div className="h-3 w-3/4 bg-slate-200 rounded mb-2" />
@@ -73,7 +73,7 @@ export const MobileExperienceSection = () => {
                viewport={{ once: true, margin: "-50px" }}
                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 text-blue-600 text-sm font-semibold mb-6 border border-blue-100"
             >
-               <Smartphone className="w-4 h-4" />
+               <AppIcon name="Smartphone" className="w-4 h-4" />
                <span>Parent Portal Mobile App</span>
             </motion.div>
 
@@ -101,9 +101,9 @@ export const MobileExperienceSection = () => {
 
             <div className="space-y-6">
               {[
-                { icon: Bell, text: "Instant push notifications for school emergencies and updates" },
-                { icon: Clock, text: "Real-time student attendance tracking and absence alerts" },
-                { icon: CalendarDays, text: "Interactive school calendar and event RSVPs for parents" }
+                { icon: "Bell", text: "Instant push notifications for school emergencies and updates" },
+                { icon: "Clock", text: "Real-time student attendance tracking and absence alerts" },
+                { icon: "CalendarDays", text: "Interactive school calendar and event RSVPs for parents" }
               ].map((item, i) => (
                 <motion.div
                    key={i}
@@ -114,7 +114,7 @@ export const MobileExperienceSection = () => {
                    className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100 hover:bg-white hover:shadow-md transition-all"
                 >
                    <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-blue-600 flex-shrink-0 border border-slate-100">
-                      <item.icon className="w-6 h-6" />
+                      <AppIcon name={item.icon} className="w-6 h-6" />
                    </div>
                    <span className="text-slate-700 font-bold">{item.text}</span>
                 </motion.div>

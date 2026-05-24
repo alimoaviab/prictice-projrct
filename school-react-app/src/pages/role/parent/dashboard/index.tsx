@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Parent dashboard.
  *
@@ -131,9 +132,7 @@ export function ParentDashboardPage() {
     return (
       <SchoolShell eyebrow="Guardian Portal" title="Academic Oversight">
         <div className="flex flex-col items-center justify-center h-64 text-center">
-          <span className="material-symbols-outlined text-4xl text-slate-200 mb-3">
-            family_restroom
-          </span>
+          <AppIcon name="Users" size={36} className="text-slate-200 mb-3" />
           <h3 className="text-sm font-bold text-slate-700">No student selected</h3>
           <p className="text-[11px] text-slate-400 mt-1">
             Pick a child from the header to load their dashboard.
@@ -173,7 +172,7 @@ export function ParentDashboardPage() {
           </h2>
           <div className="flex items-center gap-4 mt-2">
             <div className="flex items-center gap-1.5 text-slate-500">
-              <span className="material-symbols-outlined text-[14px]">school</span>
+              <AppIcon name="GraduationCap" size={14} />
               <span className="text-[11px] font-bold">
                 {studentInfo?.class || selectedChild.class_name}
                 {studentInfo?.section
@@ -211,9 +210,7 @@ export function ParentDashboardPage() {
           </div>
         </div>
 
-        <span className="material-symbols-outlined absolute right-[-10px] bottom-[-20px] text-[120px] text-slate-50 opacity-50 select-none">
-          badge
-        </span>
+        <AppIcon name="Award" size={120} className="absolute right-[-10px] bottom-[-20px] text-slate-50 opacity-50 select-none" />
       </div>
 
       {/* Metrics Grid */}
@@ -259,7 +256,7 @@ export function ParentDashboardPage() {
             <div
               className={`h-8 w-8 rounded-lg ${m.bg} ${m.color} flex items-center justify-center mb-3`}
             >
-              <span className="material-symbols-outlined text-[18px]">{m.icon}</span>
+              <AppIcon name={m.icon} size={18} />
             </div>
             <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-0.5">
               {m.label}
@@ -316,14 +313,10 @@ export function ParentDashboardPage() {
                   className="flex items-center justify-between p-3 rounded-xl border border-slate-50 hover:border-blue-200 hover:bg-blue-50/30 transition-all group"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-[18px] text-blue-500 group-hover:scale-110 transition-transform">
-                      {action.icon}
-                    </span>
+                    <AppIcon name={action.icon} size={18} className="text-blue-500 group-hover:scale-110 transition-transform" />
                     <span className="text-[11px] font-bold text-slate-700">{action.label}</span>
                   </div>
-                  <span className="material-symbols-outlined text-[14px] text-slate-300 group-hover:text-blue-500">
-                    chevron_right
-                  </span>
+                  <AppIcon name="ChevronRight" size={14} className="text-slate-300 group-hover:text-blue-500" />
                 </Link>
               ))}
             </div>

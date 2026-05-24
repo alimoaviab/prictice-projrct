@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { Link } from "react-router-dom";
 import { useCallback, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -48,7 +49,7 @@ export function TestCreatePage() {
           to="/admin/tests"
           className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-400 normal-case hover:text-slate-900 transition-all group"
         >
-          <span className="material-symbols-outlined text-[16px] group-hover:-translate-x-0.5 transition-transform">arrow_back</span>
+          <AppIcon name="ArrowLeft" size={16} className="group-hover:-translate-x-0.5 transition-transform" />
           Return to Tests
         </Link>
         <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 normal-case ">
@@ -65,7 +66,7 @@ export function TestCreatePage() {
             <div className="relative px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-slate-50/50 to-white">
               <div className="flex items-center gap-4">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-600 text-white shadow-lg shadow-amber-600/20">
-                  <span className="material-symbols-outlined text-lg">quiz</span>
+                  <AppIcon name="HelpCircle" size={18} />
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-slate-900 tracking-tight leading-none">Schedule New Test</h2>
@@ -103,7 +104,7 @@ export function TestCreatePage() {
           <div className="bg-slate-50/80 border border-slate-200 rounded-[20px] p-5 ring-1 ring-slate-900/5">
             <div className="flex items-center gap-2 mb-4">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-600">
-                <span className="material-symbols-outlined text-base">info</span>
+                <AppIcon name="Info" size={16} />
               </div>
               <h3 className="text-[11px] font-bold text-slate-900 normal-case tracking-tight">Assessment Guide</h3>
             </div>
@@ -143,15 +144,15 @@ export function TestCreatePage() {
                 <h4 className="text-[10px] font-bold text-slate-400 normal-case  mb-2.5">Quick Checklist</h4>
                 <ul className="space-y-1.5">
                   <li className="flex items-center gap-2 text-[10px] font-medium text-slate-600">
-                    <span className="material-symbols-outlined text-[14px] text-emerald-500">check_circle</span>
+                    <AppIcon name="CheckCircle2" size={14} className="text-emerald-500" />
                     Select target class
                   </li>
                   <li className="flex items-center gap-2 text-[10px] font-medium text-slate-600">
-                    <span className="material-symbols-outlined text-[14px] text-emerald-500">check_circle</span>
+                    <AppIcon name="CheckCircle2" size={14} className="text-emerald-500" />
                     Configure test parameters
                   </li>
                   <li className="flex items-center gap-2 text-[10px] font-medium text-slate-600">
-                    <span className="material-symbols-outlined text-[14px] text-emerald-500">check_circle</span>
+                    <AppIcon name="CheckCircle2" size={14} className="text-emerald-500" />
                     Add instructions
                   </li>
                 </ul>

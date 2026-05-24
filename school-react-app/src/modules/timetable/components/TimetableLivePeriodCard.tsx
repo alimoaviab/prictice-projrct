@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Live "what's happening right now" strip used at the top of the
  * timetable dashboard. Two compact cards: the current running period
@@ -51,9 +52,7 @@ function PeriodTile({
   return (
     <div className="flex items-center gap-3 bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 px-4 py-3 shadow-[0_4px_18px_rgb(0,0,0,0.03)] flex-1 min-w-0">
       <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border ${accentBg}`}>
-        <span className="material-symbols-outlined text-lg">
-          {isLive ? "play_circle" : "schedule"}
-        </span>
+        <AppIcon name={isLive ? "play_circle" : "schedule"} size={18} />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
@@ -105,7 +104,7 @@ export function TimetableLivePeriodCard({ summary }: Props) {
     return (
       <div className="flex items-center gap-3 bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 px-4 py-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
-          <span className="material-symbols-outlined text-lg">event_available</span>
+          <AppIcon name="CalendarCheck" size={18} />
         </div>
         <div>
           <p className="text-[10px] font-bold text-slate-400 normal-case">Today</p>

@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Universal entity grid wrapper. Standardizes the responsive grid every
  * list page uses for cards.
@@ -62,7 +63,7 @@ export function EntityGridEmpty({
     <div className="bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 shadow-[0_4px_18px_rgb(0,0,0,0.03)] px-6 py-10 text-center">
       <div className="flex flex-col items-center justify-center gap-4 max-w-sm mx-auto">
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-          <span className="material-symbols-outlined text-2xl">{icon}</span>
+          <AppIcon name={icon} size={24} />
         </div>
         <div className="space-y-1">
           <h3 className="text-base font-bold text-slate-900 tracking-tight">{title}</h3>

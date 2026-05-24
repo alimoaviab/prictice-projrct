@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { Link } from "react-router-dom";
 import { useEffect } from "react";
 import { Badge, Card, DataState, Skeleton, Button } from "@/components/ui";
@@ -5,26 +6,6 @@ import { SchoolShell } from "@/layouts/SchoolShell";
 import { useAuth } from "@/hooks/useAuth";
 import { useSafeAsync } from "@/hooks/useSafeAsync";
 import { serviceRequest } from "@/services/service-client";
-import {
-  Users,
-  BookOpen,
-  ClipboardCheck,
-  Calendar,
-  Clock,
-  AlertCircle,
-  CheckCircle2,
-  ChevronRight,
-  Plus,
-  ArrowUpRight,
-  Bell,
-  GraduationCap,
-  Video,
-  FileText,
-  Clock3,
-  CalendarDays,
-  LayoutDashboard,
-  CheckCircle
-} from "@/components/icons";
 
 type TeacherPortalResponse = {
   teacher: {
@@ -185,28 +166,28 @@ export function TeacherDashboardPage() {
             label="Today Attendance" 
             value={`${operationalStats.todayAttendance?.marked ?? 0}/${operationalStats.todayAttendance?.total ?? 0}`}
             sublabel={(operationalStats.todayAttendance?.total ?? 0) === (operationalStats.todayAttendance?.marked ?? 0) ? "All Marked" : "Pending Action"}
-            icon={<CheckCircle className="h-4 w-4" />}
+            icon={<AppIcon name="CheckCircle" className="h-4 w-4" />}
             status={(operationalStats.todayAttendance?.total ?? 0) === (operationalStats.todayAttendance?.marked ?? 0) ? "success" : "warning"}
           />
           <OpStatCard 
             label="Pending Results" 
             value={operationalStats.pendingGrading ?? 0}
             sublabel="Exams to Grade"
-            icon={<FileText className="h-4 w-4" />}
+            icon={<AppIcon name="FileText" className="h-4 w-4" />}
             status={(operationalStats.pendingGrading ?? 0) > 0 ? "danger" : "success"}
           />
           <OpStatCard 
             label="Homework" 
             value={operationalStats.homeworkStatus?.pending ?? 0}
             sublabel="Reviews Pending"
-            icon={<BookOpen className="h-4 w-4" />}
+            icon={<AppIcon name="BookOpen" className="h-4 w-4" />}
             status={(operationalStats.homeworkStatus?.pending ?? 0) > 0 ? "warning" : "success"}
           />
           <OpStatCard 
             label="Live Sessions" 
             value={todaySchedule.length}
             sublabel="Scheduled Today"
-            icon={<Video className="h-4 w-4" />}
+            icon={<AppIcon name="Video" className="h-4 w-4" />}
             status="info"
           />
         </section>
@@ -242,14 +223,14 @@ export function TeacherDashboardPage() {
                         <Badge variant="success" className="bg-emerald-50 text-emerald-600 border-emerald-100 text-[9px] py-1">Attendance Marked</Badge>
                       )}
                       <Button size="sm" variant="secondary" className="h-7 w-7 p-0 rounded-lg border-slate-200">
-                        <ArrowUpRight className="h-3 w-3 text-slate-400" />
+                        <AppIcon name="ArrowUpRight" className="h-3 w-3 text-slate-400" />
                       </Button>
                     </div>
                   </div>
                 )) : (
                   <div className="p-8 text-center">
                     <div className="mx-auto h-12 w-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 mb-3">
-                      <Calendar className="h-6 w-6" />
+                      <AppIcon name="Calendar" className="h-6 w-6" />
                     </div>
                     <p className="text-sm font-bold text-slate-600">No classes scheduled for today.</p>
                     <p className="text-[10px] text-slate-400 mt-1">Enjoy your free time or prepare for upcoming sessions.</p>
@@ -278,7 +259,7 @@ export function TeacherDashboardPage() {
             <section className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
               <div className="px-4 py-3 border-b border-slate-100">
                 <h3 className="text-xs font-black uppercase tracking-[0.15em] text-slate-500 flex items-center gap-2">
-                  <Clock3 className="h-3.5 w-3.5 text-blue-500" />
+                  <AppIcon name="Clock3" className="h-3.5 w-3.5 text-blue-500" />
                   Academic Timeline
                 </h3>
               </div>
@@ -301,7 +282,7 @@ export function TeacherDashboardPage() {
             <section className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
               <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
                 <h3 className="text-xs font-black uppercase tracking-[0.15em] text-slate-500 flex items-center gap-2">
-                  <Bell className="h-3.5 w-3.5 text-orange-500" />
+                  <AppIcon name="Bell" className="h-3.5 w-3.5 text-orange-500" />
                   Notices
                 </h3>
               </div>
@@ -352,13 +333,13 @@ function AlertCard({ priority, title, message, action }: {
   return (
     <div className={`p-3 border rounded-xl flex items-start gap-3 shadow-sm ${colors[priority]}`}>
       <div className={`mt-0.5 ${iconColors[priority]}`}>
-        <AlertCircle className="h-4 w-4" />
+        <AppIcon name="AlertCircle" className="h-4 w-4" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-[11px] font-black uppercase tracking-wider leading-none mb-1">{title}</p>
         <p className="text-[10px] font-medium opacity-80 leading-tight mb-2">{message}</p>
         <Link to={action} className="text-[9px] font-black uppercase tracking-widest hover:underline flex items-center gap-1">
-          Fix Now <ChevronRight className="h-2.5 w-2.5" />
+          Fix Now <AppIcon name="ChevronRight" className="h-2.5 w-2.5" />
         </Link>
       </div>
     </div>
@@ -400,7 +381,7 @@ function ClassCard({ id, name, section, studentCount, pendingHomework, upcomingE
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
-              <Users className="h-4 w-4" />
+              <AppIcon name="Users" className="h-4 w-4" />
             </div>
             <div>
               <h4 className="text-sm font-bold text-slate-900">{name} - {section}</h4>
@@ -408,7 +389,7 @@ function ClassCard({ id, name, section, studentCount, pendingHomework, upcomingE
             </div>
           </div>
           <Link to={`/teacher/classes/${id}`}>
-            <ArrowUpRight className="h-4 w-4 text-slate-300 group-hover:text-blue-500 transition-colors" />
+            <AppIcon name="ArrowUpRight" className="h-4 w-4 text-slate-300 group-hover:text-blue-500 transition-colors" />
           </Link>
         </div>
 
@@ -440,7 +421,7 @@ function ClassCard({ id, name, section, studentCount, pendingHomework, upcomingE
             to={href}
             className="flex-1 flex flex-col items-center gap-1 py-1 rounded hover:bg-white hover:shadow-sm transition-all text-slate-400 hover:text-blue-600"
           >
-            <span className="material-symbols-outlined text-[14px]">{icon}</span>
+            <AppIcon name={icon} size={14} />
             <span className="text-[7px] font-black uppercase tracking-tighter">{label}</span>
           </Link>
         ))}

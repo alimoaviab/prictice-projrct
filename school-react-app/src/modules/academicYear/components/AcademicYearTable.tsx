@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { Badge, Button, DataTable, type DataTableColumn } from "@/components/ui";
 import { AcademicYearRow } from "../types/academicYear.types";
 
@@ -53,7 +54,7 @@ export function AcademicYearTable({
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                 return (
                     <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-slate-300 text-sm">date_range</span>
+                        <AppIcon name="Calendar" size={14} className="text-slate-300" />
                         <span className="text-xs font-bold text-slate-600">{diffDays} Days</span>
                     </div>
                 );
@@ -88,7 +89,7 @@ export function AcademicYearTable({
                         }`}
                         title={row.is_active ? "Current Active Year" : "Set as Current"}
                     >
-                        <span className="material-symbols-outlined text-[16px]">{row.is_active ? "check_circle" : "radio_button_unchecked"}</span>
+                        <AppIcon name={row.is_active ? "check_circle" : "radio_button_unchecked"} size={16} />
                         {row.is_active ? "Active" : "Inactive"}
                     </button>
                     <div className="w-px h-3 bg-slate-100 mx-0.5" />
@@ -97,7 +98,7 @@ export function AcademicYearTable({
                         className="h-7 w-7 flex items-center justify-center rounded text-slate-400 hover:bg-slate-50 hover:text-blue-600 transition-colors"
                         title="Edit"
                     >
-                        <span className="material-symbols-outlined text-[18px]">edit_note</span>
+                        <AppIcon name="FileText" size={18} />
                     </button>
                     {/* 
                     <button 
@@ -105,7 +106,7 @@ export function AcademicYearTable({
                         className="h-7 w-7 flex items-center justify-center rounded text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"
                         title="Delete"
                     >
-                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                        <AppIcon name="Trash2" size={18} />
                     </button>
                     */}
                     <div className="w-px h-3 bg-slate-100 mx-0.5" />

@@ -7,7 +7,7 @@
 import { useState, useEffect, type ChangeEvent, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, EyeOff, ArrowRight, CheckCircle, AlertCircle } from "lucide-react";
+import { AppIcon } from "shared/ui/AppIcon";
 
 type Role = "admin" | "teacher" | "student";
 
@@ -294,14 +294,14 @@ export function SignupPage() {
               )}
             </AnimatePresence>
 
-            {error && <p className="text-[11px] text-red-500 font-bold bg-red-50/80 p-4 rounded-2xl border border-red-100 flex items-center gap-2 shadow-sm"><AlertCircle size={16} className="flex-shrink-0" />{error}</p>}
+            {error && <p className="text-[11px] text-red-500 font-bold bg-red-50/80 p-4 rounded-2xl border border-red-100 flex items-center gap-2 shadow-sm"><AppIcon name="AlertCircle" size={16}  className="flex-shrink-0" />{error}</p>}
 
             <div className="flex gap-4 pt-4">
               {step > 1 && <button type="button" onClick={prevStep} className="flex-1 h-12 bg-white/50 hover:bg-white/80 text-gray-600 font-bold rounded-2xl transition-all border border-white/40">Back</button>}
               {step < 3 ? (
-                <button type="button" onClick={nextStep} className="flex-[2] h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2">Next Step <ArrowRight size={20} /></button>
+                <button type="button" onClick={nextStep} className="flex-[2] h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2">Next Step <AppIcon name="ArrowRight" size={20} /></button>
               ) : (
-                <button type="submit" disabled={loading || !acceptTerms} className="flex-[2] h-12 bg-green-600 hover:bg-green-700 text-white font-bold rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">{loading ? "Processing..." : "Complete Setup"} {!loading && <CheckCircle size={20} />}</button>
+                <button type="submit" disabled={loading || !acceptTerms} className="flex-[2] h-12 bg-green-600 hover:bg-green-700 text-white font-bold rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">{loading ? "Processing..." : "Complete Setup"} {!loading && <AppIcon name="CheckCircle" size={20} />}</button>
               )}
             </div>
           </form>
@@ -345,7 +345,7 @@ function PasswordField({ label, name, value, onChange, show, onToggle }: any) {
       <div className="relative">
         <input name={name} type={show ? "text" : "password"} required value={value} onChange={onChange} placeholder="••••••••" className="w-full h-12 pl-6 pr-14 bg-white/50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-blue-600 transition-all outline-none text-gray-900 font-bold placeholder:text-gray-300" />
         <button type="button" onClick={onToggle} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors" tabIndex={-1}>
-          {show ? <EyeOff size={20} /> : <Eye size={20} />}
+          {show ? <AppIcon name="EyeOff" size={20} /> : <AppIcon name="Eye" size={20} />}
         </button>
       </div>
     </div>

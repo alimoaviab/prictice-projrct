@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { memo } from "react";
 
 type PaginationProps = {
@@ -57,7 +58,7 @@ export const Pagination = memo(function Pagination({
         </span>
         {isFetching && (
           <span className="inline-flex items-center gap-1 text-blue-600">
-            <span className="material-symbols-outlined text-[12px] animate-spin">progress_activity</span>
+            <AppIcon name="Loader2" size={12} className="animate-spin" />
             updating
           </span>
         )}
@@ -89,7 +90,7 @@ export const Pagination = memo(function Pagination({
             className="h-7 w-7 flex items-center justify-center rounded border border-slate-200 bg-white text-slate-500 hover:border-blue-300 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             aria-label="Previous page"
           >
-            <span className="material-symbols-outlined text-[14px]">chevron_left</span>
+            <AppIcon name="ChevronLeft" size={14} />
           </button>
 
           {sequence.map((p, idx) =>
@@ -120,7 +121,7 @@ export const Pagination = memo(function Pagination({
             className="h-7 w-7 flex items-center justify-center rounded border border-slate-200 bg-white text-slate-500 hover:border-blue-300 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             aria-label="Next page"
           >
-            <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+            <AppIcon name="ChevronRight" size={14} />
           </button>
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Input, Select } from "@/components/ui";
 import { Drawer } from "@/components/ui/Drawer";
@@ -217,7 +218,7 @@ export function ClassFeeManagerDrawer({ isOpen, classItem, onClose }: Props) {
             <p className="text-xs font-semibold text-slate-500">{classItem.academic_year || "Active academic year"}</p>
           </div>
           <button onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:text-slate-900">
-            <span className="material-symbols-outlined text-xl">close</span>
+            <AppIcon name="X" />
           </button>
         </div>
 
@@ -299,7 +300,7 @@ export function ClassFeeManagerDrawer({ isOpen, classItem, onClose }: Props) {
 
                 <div className="flex items-center gap-3 pt-2">
                   <Button type="button" onClick={handleCreate} disabled={saving || !draft.fee_type_id || !draft.amount || !draft.due_date}>
-                    <span className="material-symbols-outlined text-base">add</span>
+                    <AppIcon name="Plus" size={16} />
                     Add component
                   </Button>
                   <Button type="button" variant="ghost" onClick={() => setDraft(emptyDraft)}>

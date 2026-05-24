@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { SchoolShell } from "@/layouts/SchoolShell";
@@ -69,7 +70,7 @@ export function TeacherLiveExamPage() {
                   <p className="text-[10px] font-bold normal-case tracking-[0.3em] text-slate-400">{item.title}</p>
                   <p className={`mt-3 text-3xl font-bold ${item.tone}`}>{item.value}</p>
                 </div>
-                <span className="material-symbols-outlined text-3xl text-slate-300">{item.icon}</span>
+                <AppIcon name={item.icon} size={30} className="text-slate-300" />
               </div>
               <p className="mt-4 text-sm text-slate-500">{item.detail}</p>
             </div>
@@ -103,21 +104,21 @@ export function TeacherLiveExamPage() {
                     className="w-full flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-4 text-sm font-semibold text-slate-900 transition hover:border-slate-300 hover:bg-slate-50"
                   >
                     <span>Create Live Exam</span>
-                    <span className="material-symbols-outlined text-slate-400">add_circle</span>
+                    <AppIcon name="PlusCircle" className="text-slate-400" />
                 </button>
                 <Link
                     to="/teacher/exams"
                     className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-4 text-sm font-semibold text-slate-900 transition hover:border-slate-300 hover:bg-slate-50"
                   >
                     <span>Question Bank</span>
-                    <span className="material-symbols-outlined text-slate-400">quiz</span>
+                    <AppIcon name="HelpCircle" className="text-slate-400" />
                 </Link>
                 <Link
                     to="/teacher/classes"
                     className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-4 text-sm font-semibold text-slate-900 transition hover:border-slate-300 hover:bg-slate-50"
                   >
                     <span>My Classes</span>
-                    <span className="material-symbols-outlined text-slate-400">groups</span>
+                    <AppIcon name="Users" className="text-slate-400" />
                 </Link>
               </div>
             </div>

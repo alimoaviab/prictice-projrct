@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShieldCheck, BookOpen, Users } from "@/components/icons";
+import { AppIcon } from "shared/ui/AppIcon";
 
 export const RoleBasedExperienceSection = () => {
   const [activeRole, setActiveRole] = useState(0);
 
   const roles = [
-    { id: "admin", label: "Admin", icon: ShieldCheck },
-    { id: "teacher", label: "Teacher", icon: BookOpen },
-    { id: "parent", label: "Parent", icon: Users },
+    { id: "admin", label: "Admin", icon: "ShieldCheck" },
+    { id: "teacher", label: "Teacher", icon: "BookOpen" },
+    { id: "parent", label: "Parent", icon: "Users" },
   ];
 
   return (
@@ -49,7 +49,7 @@ export const RoleBasedExperienceSection = () => {
                   : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200"
               }`}
             >
-              <role.icon className="w-5 h-5" />
+              <AppIcon name={role.icon} className="w-5 h-5" />
               {role.label}
             </button>
           ))}

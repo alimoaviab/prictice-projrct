@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useEffect, useState } from 'react'
 import { apiRequest } from '@/lib/api'
 
@@ -165,7 +166,7 @@ export function PackagesPage() {
           onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true) }}
           className="h-8 px-4 rounded-lg bg-blue-600 text-white text-[11px] font-bold hover:bg-blue-700 transition-colors flex items-center gap-1.5"
         >
-          <span className="material-symbols-outlined text-[14px]">add</span>
+          <AppIcon name="Plus" size={14} />
           Create Package
         </button>
       </div>
@@ -173,7 +174,7 @@ export function PackagesPage() {
       {/* Filters */}
       <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200">
         <div className="relative flex-1 max-w-xs">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[16px]">search</span>
+          <AppIcon name="Search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -202,7 +203,7 @@ export function PackagesPage() {
         ].map((s) => (
           <div key={s.label} className="bg-white rounded-xl border border-slate-200 p-4">
             <div className="flex items-center gap-2 mb-1">
-              <span className="material-symbols-outlined text-[16px] text-blue-600">{s.icon}</span>
+              <AppIcon name={s.icon} size={16} className="text-blue-600" />
               <span className="text-[10px] font-bold text-slate-500 uppercase">{s.label}</span>
             </div>
             <p className="text-xl font-bold text-slate-900">{s.value}</p>
@@ -217,7 +218,7 @@ export function PackagesPage() {
         </div>
       ) : packages.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200 p-16 text-center">
-          <span className="material-symbols-outlined text-4xl text-slate-200 mb-3">inventory_2</span>
+          <AppIcon name="Inventory2" size={36} className="text-slate-200 mb-3" />
           <p className="text-sm font-medium text-slate-500">No packages found</p>
           <button onClick={() => setShowForm(true)} className="mt-3 text-[11px] font-bold text-blue-600 hover:underline">Create your first package</button>
         </div>
@@ -229,7 +230,7 @@ export function PackagesPage() {
               <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                 <div className="flex items-center gap-2.5">
                   <div className="h-8 w-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-[16px]">inventory_2</span>
+                    <AppIcon name="Inventory2" size={16} />
                   </div>
                   <div>
                     <h3 className="text-[13px] font-bold text-slate-900">{pkg.name}</h3>
@@ -250,19 +251,19 @@ export function PackagesPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-slate-500 flex items-center gap-1"><span className="material-symbols-outlined text-[12px]">school</span>Students</span>
+                    <span className="text-[10px] text-slate-500 flex items-center gap-1"><AppIcon name="GraduationCap" size={12} />Students</span>
                     <span className="text-[11px] font-bold text-slate-900">{pkg.student_limit}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-slate-500 flex items-center gap-1"><span className="material-symbols-outlined text-[12px]">badge</span>Teachers</span>
+                    <span className="text-[10px] text-slate-500 flex items-center gap-1"><AppIcon name="Award" size={12} />Teachers</span>
                     <span className="text-[11px] font-bold text-slate-900">{pkg.teacher_limit}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-slate-500 flex items-center gap-1"><span className="material-symbols-outlined text-[12px]">smart_toy</span>Chatbot</span>
+                    <span className="text-[10px] text-slate-500 flex items-center gap-1"><AppIcon name="Bot" size={12} />Chatbot</span>
                     <span className="text-[11px] font-bold text-slate-900">{pkg.chatbot_monthly_limit}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-slate-500 flex items-center gap-1"><span className="material-symbols-outlined text-[12px]">widgets</span>Modules</span>
+                    <span className="text-[10px] text-slate-500 flex items-center gap-1"><AppIcon name="Grid" size={12} />Modules</span>
                     <span className="text-[11px] font-bold text-slate-900">{getModuleCount(pkg)}/10</span>
                   </div>
                 </div>
@@ -292,7 +293,7 @@ export function PackagesPage() {
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <h3 className="text-sm font-bold text-slate-900">{editing ? 'Edit Package' : 'Create Package'}</h3>
               <button onClick={() => { setShowForm(false); setEditing(null) }} className="text-slate-400 hover:text-slate-600">
-                <span className="material-symbols-outlined text-lg">close</span>
+                <AppIcon name="X" size={18} />
               </button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
@@ -329,7 +330,7 @@ export function PackagesPage() {
               {/* Limits */}
               <div>
                 <h4 className="text-[11px] font-bold text-slate-900 mb-3 flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-blue-600 text-[14px]">tune</span>
+                  <AppIcon name="Sliders" size={14} className="text-blue-600" />
                   Limits
                 </h4>
                 <div className="grid grid-cols-3 gap-3">
@@ -357,14 +358,14 @@ export function PackagesPage() {
               {/* Module Permissions */}
               <div>
                 <h4 className="text-[11px] font-bold text-slate-900 mb-3 flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-blue-600 text-[14px]">widgets</span>
+                  <AppIcon name="Grid" size={14} className="text-blue-600" />
                   Module Permissions
                 </h4>
                 <div className="grid grid-cols-2 gap-2">
                   {moduleToggles.map((m) => (
                     <label key={m.key} className="flex items-center gap-2 p-2 rounded-lg border border-slate-100 hover:bg-slate-50 cursor-pointer">
                       <input type="checkbox" checked={form[m.key] as boolean} onChange={(e) => setForm({...form, [m.key]: e.target.checked})} className="rounded border-slate-300 text-blue-600" />
-                      <span className="material-symbols-outlined text-[14px] text-slate-400">{m.icon}</span>
+                      <AppIcon name={m.icon} size={14} className="text-slate-400" />
                       <span className="text-[11px] font-medium text-slate-700">{m.label}</span>
                     </label>
                   ))}

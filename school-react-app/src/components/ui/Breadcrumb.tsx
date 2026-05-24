@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { Link, useLocation } from "react-router-dom";
 
 interface BreadcrumbItem {
@@ -41,7 +42,7 @@ export function Breadcrumb() {
         {items.map((item, index) => (
           <li key={item.label} className="flex items-center gap-2">
             {index > 0 && (
-              <span className="material-symbols-outlined text-gray-300 text-base">chevron_right</span>
+              <AppIcon name="ChevronRight" size={16} className="text-gray-300" />
             )}
             {item.href ? (
               <Link

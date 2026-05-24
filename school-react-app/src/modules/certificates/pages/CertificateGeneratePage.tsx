@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Certificate Generate Page — Select students and bulk-generate certificates from a template.
  */
@@ -143,7 +144,7 @@ export function CertificateGeneratePage() {
           to="/admin/certificates"
           className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-900 transition-all group"
         >
-          <span className="material-symbols-outlined text-[16px] group-hover:-translate-x-0.5 transition-transform">arrow_back</span>
+          <AppIcon name="ArrowLeft" size={16} className="group-hover:-translate-x-0.5 transition-transform" />
           Back to Certificates
         </Link>
       </div>
@@ -160,7 +161,7 @@ export function CertificateGeneratePage() {
             <Card className="p-5">
               <div className="flex items-center gap-4">
                 <div className="h-12 w-12 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/20">
-                  <span className="material-symbols-outlined text-xl">workspace_premium</span>
+                  <AppIcon name="Award" />
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-slate-900">{template.name}</h2>
@@ -198,7 +199,7 @@ export function CertificateGeneratePage() {
                 className="w-full sm:w-48"
               />
               <div className="relative flex-1">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-base text-slate-400">search</span>
+                <AppIcon name="Search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -258,7 +259,7 @@ export function CertificateGeneratePage() {
                 </>
               ) : (
                 <>
-                  <span className="material-symbols-outlined text-base mr-2">verified</span>
+                  <AppIcon name="CheckCircle" size={16} className="mr-2" />
                   Generate {selectedStudents.size} Certificate{selectedStudents.size !== 1 ? "s" : ""}
                 </>
               )}
@@ -293,7 +294,7 @@ export function CertificateGeneratePage() {
               disabled={selectedStudents.size === 0}
               className="h-11 px-6"
             >
-              <span className="material-symbols-outlined text-base mr-2">print</span>
+              <AppIcon name="Printer" size={16} className="mr-2" />
               Print {selectedStudents.size} Certificate{selectedStudents.size !== 1 ? "s" : ""}
             </Button>
           </div>

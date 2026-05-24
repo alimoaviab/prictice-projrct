@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -141,7 +142,7 @@ export function ClassListPage() {
       <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md border-slate-200/60 shadow-sm rounded-xl">
         <div className="flex flex-1 items-center gap-2 max-w-4xl">
           <div className="relative flex-1">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
+            <AppIcon name="Search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               value={searchQuery}
               onChange={(e) => {
@@ -160,14 +161,14 @@ export function ClassListPage() {
               onClick={() => { setViewMode("grid"); updateQuery({ view: "grid" }); }}
               className={`flex h-7 items-center gap-2 rounded-md px-3 text-[11px] font-bold transition-all ${viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
             >
-              <span className="material-symbols-outlined text-base">grid_view</span>
+              <AppIcon name="LayoutGrid" size={16} />
               Grid
             </button>
             <button
               onClick={() => { setViewMode("list"); updateQuery({ view: "list" }); }}
               className={`flex h-7 items-center gap-2 rounded-md px-3 text-[11px] font-bold transition-all ${viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
             >
-              <span className="material-symbols-outlined text-base">view_list</span>
+              <AppIcon name="ViewList" size={16} />
               List
             </button>
           </div>
@@ -176,7 +177,7 @@ export function ClassListPage() {
             to={withQuery("/admin/classes/create")}
             className="inline-flex h-8 items-center gap-2 px-4 text-[10px] font-bold text-white bg-blue-600 border border-slate-900/10 rounded-lg hover:bg-blue-700 transition-all shadow-sm active:scale-95"
           >
-            <span className="material-symbols-outlined text-base">add_box</span>
+            <AppIcon name="PlusSquare" size={16} />
             Add class
           </Link>
         </div>
@@ -186,7 +187,7 @@ export function ClassListPage() {
       {classes.length === 0 && (
         <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex items-center gap-4 animate-in fade-in slide-in-from-top-4">
           <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-            <span className="material-symbols-outlined font-bold">info</span>
+            <AppIcon name="Info" className="font-bold" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-bold text-blue-900">Filtering by session</p>
@@ -249,7 +250,7 @@ export function ClassListPage() {
                     onClick={() => setPage(page - 1)}
                     className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-slate-400 border border-slate-200 transition-all hover:text-blue-600 hover:border-blue-200 disabled:opacity-20 disabled:hover:text-slate-400 disabled:hover:border-slate-200 group shadow-sm"
                   >
-                    <span className="material-symbols-outlined text-[20px] group-active:scale-90 transition-transform">chevron_left</span>
+                    <AppIcon name="ChevronLeft" className="group-active:scale-90 transition-transform" />
                   </button>
                   
                   <div className="flex items-center gap-1 px-1">
@@ -277,7 +278,7 @@ export function ClassListPage() {
                     onClick={() => setPage(page + 1)}
                     className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-slate-400 border border-slate-200 transition-all hover:text-blue-600 hover:border-blue-200 disabled:opacity-20 disabled:hover:text-slate-400 disabled:hover:border-slate-200 group shadow-sm"
                   >
-                    <span className="material-symbols-outlined text-[20px] group-active:scale-90 transition-transform">chevron_right</span>
+                    <AppIcon name="ChevronRight" className="group-active:scale-90 transition-transform" />
                   </button>
                 </div>
               </div>

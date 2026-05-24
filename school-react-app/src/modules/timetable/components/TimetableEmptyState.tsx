@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Empty state for the timetable grid.
  *
@@ -30,7 +31,7 @@ function GuidanceCard({
   return (
     <div className="flex items-start gap-3 bg-slate-50/60 border border-slate-200 rounded-lg px-3 py-2.5">
       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-white border border-slate-200 text-blue-600">
-        <span className="material-symbols-outlined text-base">{icon}</span>
+        <AppIcon name={icon} size={16} />
       </div>
       <div>
         <p className="text-[11px] font-bold text-slate-900 tracking-tight">{title}</p>
@@ -55,7 +56,7 @@ export function TimetableEmptyState({
         {/* Left — main empty state */}
         <div className="px-6 py-8 md:px-8 md:py-10">
           <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-blue-50 text-blue-600 mb-4">
-            <span className="material-symbols-outlined text-xl">event_busy</span>
+            <AppIcon name="CalendarX" />
           </div>
           <h3 className="text-lg font-bold text-slate-900 tracking-tight">
             {classId
@@ -74,21 +75,21 @@ export function TimetableEmptyState({
               onClick={onCreate}
               className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-blue-600 text-white text-[12px] font-bold shadow-sm shadow-blue-600/15 hover:bg-blue-700 transition-colors active:scale-[0.98]"
             >
-              <span className="material-symbols-outlined text-base">add</span>
+              <AppIcon name="Plus" size={16} />
               Add a period
             </button>
             <Link
               to="/admin/classes"
               className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg border border-slate-200 bg-white text-[12px] font-bold text-slate-700 hover:border-blue-300 hover:text-blue-700 transition-colors"
             >
-              <span className="material-symbols-outlined text-base">school</span>
+              <AppIcon name="GraduationCap" size={16} />
               Manage classes
             </Link>
             <Link
               to="/admin/teachers"
               className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg border border-slate-200 bg-white text-[12px] font-bold text-slate-700 hover:border-blue-300 hover:text-blue-700 transition-colors"
             >
-              <span className="material-symbols-outlined text-base">person</span>
+              <AppIcon name="User" size={16} />
               Manage teachers
             </Link>
           </div>
@@ -125,17 +126,13 @@ export function TimetableEmptyState({
                     className="w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg bg-white border border-slate-200 hover:border-blue-300 hover:text-blue-700 transition-colors text-left"
                   >
                     <span className="flex items-center gap-2 min-w-0">
-                      <span className="material-symbols-outlined text-base text-amber-500">
-                        warning
-                      </span>
+                      <AppIcon name="AlertTriangle" size={16} className="text-amber-500" />
                       <span className="text-[12px] font-bold text-slate-700 truncate">
                         {c.name}
                         {c.section ? ` (${c.section})` : ""}
                       </span>
                     </span>
-                    <span className="material-symbols-outlined text-base text-slate-400">
-                      chevron_right
-                    </span>
+                    <AppIcon name="ChevronRight" size={16} className="text-slate-400" />
                   </button>
                 </li>
               ))}

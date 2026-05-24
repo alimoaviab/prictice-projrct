@@ -12,21 +12,8 @@ import { showToast } from "@/utils/toast";
 import { serviceRequest } from "@/services/service-client";
 import { listAttendance, markAttendance } from "../services/attendance.service";
 import { AttendanceBulkInput, AttendanceStatus, AttendanceRecordRow } from "../types/attendance.types";
-import { 
-  CheckCircle2, 
-  AlertCircle, 
-  Clock, 
-  UserX, 
-  UserCheck, 
-  Calendar,
-  Users,
-  Search,
-  Check,
-  X,
-  History,
-  FileText,
-  ChevronRight
-} from "@/components/icons";
+import { AppIcon } from "shared/ui/AppIcon";
+import { CheckCircle2, UserX } from "lucide-react";
 
 interface ClassOption {
     id: string;
@@ -169,7 +156,7 @@ export function AttendanceBulkForm({ initialClassId, initialDate, viewMode = "li
             <div className="flex items-center justify-between px-6 py-4 bg-slate-50/50 border-b border-slate-100">
                <div className="flex items-center gap-3">
                   <div className="h-9 w-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                    <Users className="h-5 w-5" />
+                    <AppIcon name="Users" className="h-5 w-5" />
                   </div>
                   <div>
                     <h3 className="text-sm font-black text-slate-900 tracking-tight">Class Roster</h3>
@@ -184,7 +171,7 @@ export function AttendanceBulkForm({ initialClassId, initialDate, viewMode = "li
                     onClick={handleMarkAllPresent}
                     className="h-10 px-6 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black uppercase tracking-widest shadow-lg shadow-emerald-600/10 active:scale-95 transition-all flex items-center gap-2 rounded-xl"
                   >
-                    <Check className="h-4 w-4" />
+                    <AppIcon name="Check" className="h-4 w-4" />
                     Mark All Class Present
                   </Button>
                )}
@@ -329,7 +316,7 @@ export function AttendanceBulkForm({ initialClassId, initialDate, viewMode = "li
           ) : (
               <div className="py-24 flex flex-col items-center justify-center bg-white rounded-2xl border-2 border-dashed border-slate-100">
                 <div className="h-16 w-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mb-4">
-                  <UserX className="h-8 w-8" />
+                  <AppIcon name="UserX" className="h-8 w-8" />
                 </div>
                 <h3 className="text-lg font-black text-slate-900">No Students Found</h3>
                 <p className="text-sm text-slate-500 font-medium mt-1">Check class assignments or try a different search.</p>

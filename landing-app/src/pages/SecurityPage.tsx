@@ -3,38 +3,38 @@ import { Seo } from '@/components/Seo';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { motion } from 'framer-motion';
-import { ShieldCheck, Lock, Database, Key, Eye, Server, CheckCircle2, ArrowRight } from '@/components/icons';
+import { AppIcon } from "shared/ui/AppIcon";
 import { whatsappUrl, WhatsappMessages } from '@/lib/whatsapp';
 import { SIGNUP_URL } from '@/lib/config';
 
 const securityFeatures = [
   {
-    icon: Lock,
+    icon: "Lock",
     title: 'AES-256 Encryption',
     description: 'All data is encrypted at rest and in transit using military-grade AES-256 encryption. Your school data is protected with the same security standards used by banks and government institutions.',
   },
   {
-    icon: ShieldCheck,
+    icon: "ShieldCheck",
     title: 'Role-Based Access Control',
     description: 'Granular permission system ensures each user only accesses what they need. Administrators can define custom roles for teachers, parents, students, and staff with precise data visibility controls.',
   },
   {
-    icon: Database,
+    icon: "Database",
     title: 'Tenant Data Isolation',
     description: 'Each school data is completely isolated from every other tenant on the platform. No cross-tenant data access is possible, ensuring your institution data remains private and secure.',
   },
   {
-    icon: Key,
+    icon: "Key",
     title: 'Multi-Factor Authentication',
     description: 'Optional two-factor authentication adds an extra layer of security for all user accounts. Protect against unauthorized access with SMS or app-based verification codes.',
   },
   {
-    icon: Eye,
+    icon: "Eye",
     title: 'Comprehensive Audit Logs',
     description: 'Every action in the system is logged with timestamps, user IDs, and IP addresses. Administrators can review complete audit trails for compliance, security investigations, and accountability.',
   },
   {
-    icon: Server,
+    icon: "Server",
     title: 'Automated Daily Backups',
     description: 'Your data is backed up automatically every day with multiple redundant copies stored in geographically distributed data centers. Recovery is fast and guaranteed in case of any incident.',
   },
@@ -93,7 +93,7 @@ export function SecurityPage() {
               className="bg-white rounded-2xl p-8 border border-slate-200/60 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
             >
               <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center mb-6">
-                <feature.icon className="w-6 h-6 text-blue-600" />
+                <AppIcon name={feature.icon} className="w-6 h-6 text-blue-600" />
               </div>
               <h2 className="text-xl font-bold text-slate-900 mb-3">{feature.title}</h2>
               <p className="text-slate-600 leading-relaxed">{feature.description}</p>
@@ -116,7 +116,7 @@ export function SecurityPage() {
               <ul className="space-y-4">
                 {complianceItems.map((item, i) => (
                   <li key={i} className="flex items-center gap-3 text-slate-300">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                    <AppIcon name="CheckCircle2" className="w-5 h-5 text-emerald-400 flex-shrink-0" />
                     {item}
                   </li>
                 ))}
@@ -131,7 +131,7 @@ export function SecurityPage() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-full font-semibold shadow-lg hover:bg-blue-700 hover:-translate-y-1 transition-all"
               >
-                Discuss Security <ArrowRight className="w-4 h-4" />
+                Discuss Security <AppIcon name="ArrowRight" className="w-4 h-4" />
               </a>
             </div>
           </div>

@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import React, { useRef, useState } from "react";
 import VoucherGrid from "../components/VoucherGrid";
 import type { StudentData } from "../components/VoucherCard";
@@ -154,7 +155,7 @@ export const FeeVoucherPage: React.FC = () => {
         {/* Glowing Gradient Header */}
         <div className="relative rounded-3xl bg-gradient-to-r from-blue-700 via-indigo-800 to-blue-900 p-6 sm:p-8 text-white shadow-xl overflow-hidden">
           <div className="absolute right-0 bottom-0 top-0 w-1/3 opacity-15 pointer-events-none select-none">
-            <span className="material-symbols-outlined text-[180px] absolute right-[-20px] bottom-[-40px]">payments</span>
+            <AppIcon name="CreditCard" size={180} className="absolute right-[-20px] bottom-[-40px]" />
           </div>
           <div className="relative z-10 space-y-2">
             <span className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-[10px] font-black uppercase tracking-widest text-blue-200 border border-white/5">
@@ -189,7 +190,7 @@ export const FeeVoucherPage: React.FC = () => {
                   <option value={4}>4 Vouchers (A4 Portrait 2x2 Grid)</option>
                 </select>
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
-                  <span className="material-symbols-outlined text-lg">unfold_more</span>
+                  <AppIcon name="ChevronsUpDown" size={18} />
                 </div>
               </div>
             </div>
@@ -209,7 +210,7 @@ export const FeeVoucherPage: React.FC = () => {
                   <option value="multi">Multiple Students (Batch Class Printing)</option>
                 </select>
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
-                  <span className="material-symbols-outlined text-lg">unfold_more</span>
+                  <AppIcon name="ChevronsUpDown" size={18} />
                 </div>
               </div>
             </div>
@@ -275,7 +276,7 @@ export const FeeVoucherPage: React.FC = () => {
                 onClick={handleDownloadPDF}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-black uppercase tracking-wider transition-colors shadow-sm"
               >
-                <span className="material-symbols-outlined text-[16px]">download_for_offline</span>
+                <AppIcon name="Download" size={16} />
                 Download PDF
               </button>
               <button
@@ -283,7 +284,7 @@ export const FeeVoucherPage: React.FC = () => {
                 onClick={handlePrint}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase tracking-wider transition-colors shadow-md"
               >
-                <span className="material-symbols-outlined text-[16px]">print</span>
+                <AppIcon name="Printer" size={16} />
                 Print Vouchers
               </button>
             </div>

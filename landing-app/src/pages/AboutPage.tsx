@@ -4,51 +4,44 @@
  */
 
 import { motion } from 'framer-motion';
-import {
-  Sparkles,
-  Building2,
-  ShieldCheck,
-  Rocket,
-  Globe,
-  HeartHandshake,
-} from '@/components/icons';
+import { AppIcon } from "shared/ui/AppIcon";
 
 import { Seo } from '@/components/Seo';
 import { PageShell } from '@/components/PageShell';
 
 const PILLARS = [
   {
-    icon: Building2,
+    icon: "Building2",
     title: 'Modern School Infrastructure',
     description:
       'A unified school operating system for academics, finance, and parent communication — replacing dozens of legacy tools with one elegant school ERP platform.',
   },
   {
-    icon: Sparkles,
+    icon: "Sparkles",
     title: 'AI-Powered Education Management',
     description:
       'Embedded AI surfaces insights, predicts at-risk students, and automates the busywork that pulls teachers away from teaching.',
   },
   {
-    icon: ShieldCheck,
+    icon: "ShieldCheck",
     title: 'Trusted School Operating System',
     description:
       'Bank-grade encryption, strict tenant isolation, and audited access controls keep every school\u2019s data sovereign and protected.',
   },
   {
-    icon: Rocket,
+    icon: "Rocket",
     title: 'Built to Scale',
     description:
       'Engineered to grow with you — from a single campus to a multi-school network, without ever slowing the people who use it daily.',
   },
   {
-    icon: Globe,
+    icon: "Globe",
     title: 'Innovation by Design',
     description:
       'A design system, motion language, and product cadence inspired by the world\u2019s leading SaaS companies.',
   },
   {
-    icon: HeartHandshake,
+    icon: "HeartHandshake",
     title: 'Reliability You Can Feel',
     description:
       '99.99% uptime, transparent status, and a partner team that treats every school like a flagship customer.',
@@ -104,7 +97,7 @@ export function AboutPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {PILLARS.map((p, idx) => {
-              const Icon = p.icon;
+              // Removed Icon variable
               return (
                 <motion.article
                   key={p.title}
@@ -115,7 +108,7 @@ export function AboutPage() {
                   className="rounded-2xl bg-white border border-slate-200/60 p-7 hover:border-blue-200 hover:shadow-md transition-all"
                 >
                   <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-5">
-                    <Icon className="w-5 h-5" />
+                    <AppIcon name={p.icon} className="w-5 h-5"  />
                   </div>
                   <h3 className="text-lg font-bold text-slate-900 mb-2 tracking-tight">
                     {p.title}

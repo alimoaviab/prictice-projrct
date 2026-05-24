@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { SchoolShell } from "@/layouts/SchoolShell";
@@ -216,7 +217,7 @@ export function ClassFeePage() {
             <div className="flex items-center justify-between bg-white px-5 py-4 rounded-2xl border border-slate-100 shadow-sm">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
-                  <span className="material-symbols-outlined text-xl font-bold">payments</span>
+                  <AppIcon name="CreditCard" className="font-bold" />
                 </div>
                 <div>
                   <h2 className="text-lg font-black text-slate-900 tracking-tight">{data?.class_name}</h2>
@@ -224,7 +225,7 @@ export function ClassFeePage() {
                 </div>
               </div>
               <Button variant="ghost" onClick={() => navigate("/admin/classes")} className="h-9 px-4 rounded-lg border border-slate-200 text-[10px] font-bold uppercase tracking-wider hover:bg-slate-50">
-                <span className="material-symbols-outlined text-base mr-2">arrow_back</span>
+                <AppIcon name="ArrowLeft" size={16} className="mr-2" />
                 Back
               </Button>
             </div>
@@ -239,7 +240,7 @@ export function ClassFeePage() {
                 <div key={i} className={`p-4 rounded-2xl border border-${stat.color}-100 bg-${stat.color}-50/50 shadow-sm transition-all`}>
                   <div className="flex items-center justify-between mb-2">
                     <p className={`text-[9px] font-black uppercase tracking-widest text-${stat.color}-600`}>{stat.label}</p>
-                    <span className={`material-symbols-outlined text-${stat.color}-500 text-base`}>{stat.icon}</span>
+                    <AppIcon name={stat.icon} className={` text-${stat.color} -500 text-base`} />
                   </div>
                   <p className="text-xl font-black text-slate-900">{stat.value}</p>
                 </div>
@@ -333,7 +334,7 @@ export function ClassFeePage() {
                   <div className="space-y-3">
                     {!data?.fee_components || data.fee_components.length === 0 ? (
                       <div className="py-20 flex flex-col items-center text-center border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/30">
-                        <span className="material-symbols-outlined text-3xl text-slate-200 mb-3">receipt_long</span>
+                        <AppIcon name="Receipt" size={30} className="text-slate-200 mb-3" />
                         <p className="text-[11px] text-slate-400 font-bold">No fees defined for this unit.</p>
                       </div>
                     ) : (
@@ -347,7 +348,7 @@ export function ClassFeePage() {
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-4">
                                 <div className={`h-10 w-10 rounded-lg ${fee.billing_mode === 'recurring_monthly' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'} flex items-center justify-center shadow-sm`}>
-                                  <span className="material-symbols-outlined text-lg font-bold">{fee.billing_mode === 'recurring_monthly' ? 'sync' : 'event'}</span>
+                                  <AppIcon name={fee.billing_mode === 'recurring_monthly' ? 'sync' : 'event'} size={18} className="font-bold" />
                                 </div>
                                 <div>
                                   <h4 className="text-sm font-black text-slate-900">{fee.fee_type || "Standard Fee"}</h4>

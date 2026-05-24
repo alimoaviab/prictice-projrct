@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { SchoolShell } from "@/layouts/SchoolShell";
@@ -66,7 +67,7 @@ export function PaymentPage() {
               <div className="space-y-8">
                 <div>
                   <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-blue-600">account_balance</span>
+                    <AppIcon name="Landmark" className="text-blue-600" />
                     Payment Methods
                   </h3>
                   
@@ -105,7 +106,7 @@ export function PaymentPage() {
                     <div className="bg-emerald-50/50 rounded-2xl p-6 border border-emerald-100 relative overflow-hidden group hover:border-emerald-300 transition-all shadow-sm">
                       <div className="flex items-center gap-4 mb-4">
                         <div className="w-14 h-14 bg-white rounded-xl shadow-sm flex items-center justify-center p-2 text-emerald-600">
-                          <span className="material-symbols-outlined text-4xl font-bold">account_balance_wallet</span>
+                          <AppIcon name="Wallet" size={36} className="font-bold" />
                         </div>
                         <div>
                           <h4 className="font-bold text-gray-900 text-lg">Easypaisa</h4>
@@ -157,7 +158,7 @@ export function PaymentPage() {
                 </div>
 
                 <div className="p-6 bg-amber-50 rounded-2xl border border-amber-100 flex gap-4">
-                  <span className="material-symbols-outlined text-amber-600 text-2xl shrink-0">info</span>
+                  <AppIcon name="Info" size={24} className="text-amber-600 shrink-0" />
                   <div>
                     <p className="text-sm font-bold text-amber-900 mb-1">Payment Amount</p>
                     <p className="text-sm text-amber-800 leading-relaxed">
@@ -171,7 +172,7 @@ export function PaymentPage() {
               <div className="bg-slate-50/50 rounded-3xl p-8 border border-slate-100">
                 <form onSubmit={handleSubmit} className="space-y-8">
                   <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2 mb-2">
-                    <span className="material-symbols-outlined text-indigo-600">verified</span>
+                    <AppIcon name="CheckCircle" className="text-indigo-600" />
                     Submit Proof
                   </h3>
                   
@@ -200,7 +201,7 @@ export function PaymentPage() {
                         {file ? (
                           <div className="flex flex-col items-center">
                             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                              <span className="material-symbols-outlined text-4xl text-blue-600">check_circle</span>
+                              <AppIcon name="CheckCircle2" size={36} className="text-blue-600" />
                             </div>
                             <p className="text-base font-bold text-blue-900 truncate max-w-[250px]">{file.name}</p>
                             <button 
@@ -208,14 +209,14 @@ export function PaymentPage() {
                               onClick={(e) => { e.preventDefault(); setFile(null); }}
                               className="mt-3 text-sm text-red-500 hover:text-red-700 font-bold flex items-center gap-1"
                             >
-                              <span className="material-symbols-outlined text-sm">delete</span>
+                              <AppIcon name="Trash2" size={14} />
                               Remove File
                             </button>
                           </div>
                         ) : (
                           <div className="flex flex-col items-center">
                             <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-                              <span className="material-symbols-outlined text-4xl text-slate-400">cloud_upload</span>
+                              <AppIcon name="CloudUpload" size={36} className="text-slate-400" />
                             </div>
                             <p className="text-base text-gray-700 font-bold">Click to upload or drag & drop</p>
                             <p className="text-xs text-gray-400 mt-2">PNG, JPG or PDF up to 10MB</p>
@@ -259,7 +260,7 @@ export function PaymentPage() {
                         </>
                       ) : (
                         <>
-                          <span className="material-symbols-outlined text-2xl">send</span>
+                          <AppIcon name="Send" size={24} />
                           Submit Verification
                         </>
                       )}

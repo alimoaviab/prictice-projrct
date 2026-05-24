@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Timetable form — single-screen layout (no step wizard).
  *
@@ -253,9 +254,7 @@ export function TimetableForm({
       {Object.keys(errors).length > 0 && (
         <div className="rounded-lg bg-rose-50 border border-rose-200 px-3 py-2.5">
           <div className="flex items-start gap-2">
-            <span className="material-symbols-outlined text-base text-rose-600 mt-0.5">
-              error
-            </span>
+            <AppIcon name="AlertCircle" size={16} className="text-rose-600 mt-0.5" />
             <div className="flex-1">
               <p className="text-[11px] font-bold text-rose-700 tracking-tight">
                 Fix the highlighted fields to continue
@@ -273,7 +272,7 @@ export function TimetableForm({
       {/* Class chip — locked to the page's class context */}
       {activeClass && (
         <div className="flex items-center gap-2 rounded-lg bg-slate-50 border border-slate-200 px-3 py-2">
-          <span className="material-symbols-outlined text-base text-blue-600">school</span>
+          <AppIcon name="GraduationCap" size={16} className="text-blue-600" />
           <div className="flex-1 min-w-0">
             <p className="text-[10px] font-bold text-slate-400 normal-case">Editing class</p>
             <p className="text-[12px] font-bold text-slate-900 tracking-tight truncate">
@@ -470,7 +469,7 @@ function ConflictBanner({
   return (
     <div className={`rounded-lg border px-3 py-2.5 ${cls}`}>
       <div className="flex items-start gap-2">
-        <span className="material-symbols-outlined text-base mt-0.5">warning</span>
+        <AppIcon name="AlertTriangle" size={16} className="mt-0.5" />
         <div className="flex-1">
           <p className="text-[11px] font-bold tracking-tight">
             {title ??
@@ -533,7 +532,7 @@ function SearchableSelect({
         }`}
       >
         <div className="flex items-center gap-2 px-3 py-2">
-          <span className="material-symbols-outlined text-base text-slate-400">search</span>
+          <AppIcon name="Search" size={16} className="text-slate-400" />
           <input
             type="text"
             value={search}
@@ -551,7 +550,7 @@ function SearchableSelect({
               className="text-slate-400 hover:text-rose-600"
               aria-label="Clear selection"
             >
-              <span className="material-symbols-outlined text-base">close</span>
+              <AppIcon name="X" size={16} />
             </button>
           )}
         </div>
@@ -577,7 +576,7 @@ function SearchableSelect({
                 >
                   <span className="text-[12px] font-bold truncate">{o.label}</span>
                   {value === o.id && (
-                    <span className="material-symbols-outlined text-base text-blue-600">check</span>
+                    <AppIcon name="Check" size={16} className="text-blue-600" />
                   )}
                 </button>
               </li>

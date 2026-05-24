@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Global Question Bank — Super Admin page.
  *
@@ -191,12 +192,12 @@ export function GlobalQuestionBankPage() {
         <div className="ml-auto flex gap-2">
           {tab === 'chapters' && (
             <button onClick={() => setShowAddChapter(true)} className="h-9 px-4 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-sm">add</span> Add Chapter
+              <AppIcon name="Plus" size={14} /> Add Chapter
             </button>
           )}
           {tab === 'questions' && (
             <button onClick={() => setShowAddQuestion(true)} className="h-9 px-4 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-colors flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-sm">add</span> Add Question
+              <AppIcon name="Plus" size={14} /> Add Question
             </button>
           )}
         </div>
@@ -262,7 +263,7 @@ function StatCard({ label, value, accent, icon }: { label: string; value: number
   return (
     <div className={`rounded-xl border p-4 ${colors[accent] || colors.violet}`}>
       <div className="flex items-center gap-2 mb-1">
-        <span className="material-symbols-outlined text-lg">{icon}</span>
+        <AppIcon name={icon} size={18} />
         <span className="text-[10px] font-bold uppercase tracking-wide opacity-70">{label}</span>
       </div>
       <p className="text-2xl font-bold">{value}</p>
@@ -338,10 +339,10 @@ function QuestionsTab({ questions, loading, onDelete, onEdit }: { questions: Que
             {/* Actions */}
             <div className="flex items-center gap-1.5 shrink-0">
               <button onClick={() => onEdit(q)} className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-colors" title="Edit">
-                <span className="material-symbols-outlined text-base">edit</span>
+                <AppIcon name="Pencil" size={16} />
               </button>
               <button onClick={() => onDelete(q._id)} className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors" title="Delete">
-                <span className="material-symbols-outlined text-base">delete</span>
+                <AppIcon name="Trash2" size={16} />
               </button>
             </div>
           </div>
@@ -382,7 +383,7 @@ function ChaptersTab({ chapters, onDelete }: { chapters: ChapterItem[]; onDelete
               <td className="px-4 py-3 text-slate-500">{ch.subject_name || ch.subject_id}</td>
               <td className="px-4 py-3 text-right">
                 <button onClick={() => onDelete(ch._id)} className="h-7 w-7 rounded border border-slate-200 inline-flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors">
-                  <span className="material-symbols-outlined text-sm">delete</span>
+                  <AppIcon name="Trash2" size={14} />
                 </button>
               </td>
             </tr>
@@ -472,7 +473,7 @@ function AddQuestionDrawer({
         <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between z-10">
           <h2 className="text-lg font-bold text-slate-900">{editData ? 'Edit Question' : 'Add Global Question'}</h2>
           <button onClick={onClose} className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50">
-            <span className="material-symbols-outlined text-lg">close</span>
+            <AppIcon name="X" size={18} />
           </button>
         </div>
 
@@ -667,7 +668,7 @@ function AddChapterDrawer({
         <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between z-10">
           <h2 className="text-lg font-bold text-slate-900">Add Global Chapter</h2>
           <button onClick={onClose} className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50">
-            <span className="material-symbols-outlined text-lg">close</span>
+            <AppIcon name="X" size={18} />
           </button>
         </div>
 

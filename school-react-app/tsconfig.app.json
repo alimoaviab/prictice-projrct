@@ -23,7 +23,8 @@
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "shared/*": ["src/shared/*"]
     }
   },
   "include": ["src"],

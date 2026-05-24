@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiRequest } from '@/lib/api'
@@ -64,7 +65,7 @@ export function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-600/30">
-            <span className="material-symbols-outlined text-white text-2xl">shield_lock</span>
+            <AppIcon name="ShieldAlert" size={24} className="text-white" />
           </div>
           <h1 className="text-2xl font-bold text-slate-900">Super Admin</h1>
           <p className="text-sm text-slate-500 mt-1">Eduplexo Platform Control Panel</p>
@@ -73,7 +74,7 @@ export function LoginPage() {
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xl shadow-slate-200/50 space-y-4">
           {error && (
             <div className="p-3 rounded-lg bg-red-50 border border-red-100 text-sm text-red-700 font-medium flex items-start gap-2">
-              <span className="material-symbols-outlined text-base flex-shrink-0">error</span>
+              <AppIcon name="AlertCircle" size={16} className="flex-shrink-0" />
               <span>{error}</span>
             </div>
           )}
@@ -116,7 +117,7 @@ export function LoginPage() {
               </>
             ) : (
               <>
-                <span className="material-symbols-outlined text-base">login</span>
+                <AppIcon name="LogIn" size={16} />
                 Sign In
               </>
             )}

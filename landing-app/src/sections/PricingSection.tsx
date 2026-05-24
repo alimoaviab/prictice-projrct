@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, Building2 } from "@/components/icons";
+import { AppIcon } from "shared/ui/AppIcon";
 
 import { whatsappUrl, WhatsappMessages } from "@/lib/whatsapp";
 import { SIGNUP_URL } from "@/lib/config";
@@ -157,7 +157,7 @@ export const PricingSection = () => {
               <div className="space-y-4 mb-10 flex-1">
                 {plan.features.map((feature, i) => (
                   <div key={i} className="flex items-start gap-3">
-                    <CheckCircle2 className={`w-5 h-5 flex-shrink-0 mt-0.5 ${plan.isPopular ? 'text-blue-500' : 'text-slate-400'}`} />
+                    <AppIcon name="CheckCircle2" className={`w-5 h-5 flex-shrink-0 mt-0.5 ${plan.isPopular ? 'text-blue-500' : 'text-slate-400'}`} />
                     <span className="text-slate-700 font-medium">{feature}</span>
                   </div>
                 ))}
@@ -178,7 +178,7 @@ export const PricingSection = () => {
                 }`}
               >
                 {plan.priceMonthly === "Custom" ? (
-                  <><Building2 className="w-5 h-5" /> Contact Sales</>
+                  <><AppIcon name="Building2" className="w-5 h-5" /> Contact Sales</>
                 ) : (
                   "Start Free Trial"
                 )}

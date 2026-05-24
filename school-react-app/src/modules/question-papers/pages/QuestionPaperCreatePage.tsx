@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Create Question Paper — Full flow with integrated question creation.
  * 
@@ -314,7 +315,7 @@ export function QuestionPaperCreatePage() {
           to="/admin/question-papers"
           className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-900 transition-all group"
         >
-          <span className="material-symbols-outlined text-[16px] group-hover:-translate-x-0.5 transition-transform">arrow_back</span>
+          <AppIcon name="ArrowLeft" size={16} className="group-hover:-translate-x-0.5 transition-transform" />
           Back to Question Papers
         </Link>
       </div>
@@ -448,7 +449,7 @@ export function QuestionPaperCreatePage() {
                   className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-violet-600 text-white text-[11px] font-bold shadow-sm hover:bg-violet-700 transition-colors active:scale-[0.98]"
                   title="Browse & select from Question Bank"
                 >
-                  <span className="material-symbols-outlined text-sm">library_books</span>
+                  <AppIcon name="Library" size={14} />
                   Question Bank
                 </button>
                 <button
@@ -457,7 +458,7 @@ export function QuestionPaperCreatePage() {
                   className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-emerald-600 text-white text-[11px] font-bold shadow-sm hover:bg-emerald-700 transition-colors active:scale-[0.98]"
                   title="Auto-generate paper from question bank"
                 >
-                  <span className="material-symbols-outlined text-sm">auto_awesome</span>
+                  <AppIcon name="Sparkles" size={14} />
                   Auto Generate
                 </button>
                 <button
@@ -465,7 +466,7 @@ export function QuestionPaperCreatePage() {
                   onClick={() => setDrawerOpen(true)}
                   className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-indigo-600 text-white text-[11px] font-bold shadow-sm hover:bg-indigo-700 transition-colors active:scale-[0.98]"
                 >
-                  <span className="material-symbols-outlined text-sm">add</span>
+                  <AppIcon name="Plus" size={14} />
                   Add Question
                 </button>
               </div>
@@ -473,7 +474,7 @@ export function QuestionPaperCreatePage() {
 
             {questions.length === 0 ? (
               <div className="py-8 text-center border-2 border-dashed border-slate-200 rounded-xl">
-                <span className="material-symbols-outlined text-3xl text-slate-200 mb-2">quiz</span>
+                <AppIcon name="HelpCircle" size={30} className="text-slate-200 mb-2" />
                 <p className="text-xs text-slate-400 font-medium">No questions added yet</p>
                 <button
                   type="button"
@@ -507,13 +508,13 @@ export function QuestionPaperCreatePage() {
                     </div>
                     <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button onClick={() => moveQuestion(q.id, "up")} disabled={idx === 0} className="h-6 w-6 rounded flex items-center justify-center text-slate-400 hover:text-slate-700 disabled:opacity-30">
-                        <span className="material-symbols-outlined text-sm">arrow_upward</span>
+                        <AppIcon name="ArrowUp" size={14} />
                       </button>
                       <button onClick={() => moveQuestion(q.id, "down")} disabled={idx === questions.length - 1} className="h-6 w-6 rounded flex items-center justify-center text-slate-400 hover:text-slate-700 disabled:opacity-30">
-                        <span className="material-symbols-outlined text-sm">arrow_downward</span>
+                        <AppIcon name="ArrowDown" size={14} />
                       </button>
                       <button onClick={() => removeQuestion(q.id)} className="h-6 w-6 rounded flex items-center justify-center text-slate-400 hover:text-red-600">
-                        <span className="material-symbols-outlined text-sm">close</span>
+                        <AppIcon name="X" size={14} />
                       </button>
                     </div>
                   </div>
@@ -528,7 +529,7 @@ export function QuestionPaperCreatePage() {
               {saving ? "Saving..." : "Save Paper"}
             </Button>
             <Button variant="secondary" onClick={handlePrint}>
-              <span className="material-symbols-outlined text-sm mr-1">print</span>
+              <AppIcon name="Printer" size={14} className="mr-1" />
               Print
             </Button>
           </div>
@@ -791,7 +792,7 @@ function AddQuestionDrawer({
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
           <h2 className="text-base font-bold text-slate-900">Add Question</h2>
           <button onClick={onClose} className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-700">
-            <span className="material-symbols-outlined text-lg">close</span>
+            <AppIcon name="X" size={18} />
           </button>
         </div>
 
@@ -913,7 +914,7 @@ function AddQuestionDrawer({
 
               {/* Add Button */}
               <Button onClick={handleCreateAndAdd} disabled={!questionText.trim() || saving} className="w-full h-10">
-                <span className="material-symbols-outlined text-sm mr-1.5">{saving ? "hourglass_empty" : "add"}</span>
+                <AppIcon name={saving ? "hourglass_empty" : "add"} size={14} className="mr-1.5" />
                 {saving ? "Creating..." : "Create & Add to Paper"}
               </Button>
             </div>
@@ -922,7 +923,7 @@ function AddQuestionDrawer({
             <div className="space-y-3">
               {bankQuestions.length === 0 ? (
                 <div className="py-8 text-center">
-                  <span className="material-symbols-outlined text-3xl text-slate-200 mb-2">library_books</span>
+                  <AppIcon name="Library" size={30} className="text-slate-200 mb-2" />
                   <p className="text-xs text-slate-400 font-medium">No questions in repository yet</p>
                   <p className="text-[10px] text-slate-300 mt-1">Create questions to see them here</p>
                 </div>
@@ -1049,13 +1050,13 @@ function AutoGenerateDrawer({
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
           <div>
             <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <span className="material-symbols-outlined text-emerald-600">auto_awesome</span>
+              <AppIcon name="Sparkles" className="text-emerald-600" />
               Auto Generate Paper
             </h2>
             <p className="text-[10px] text-slate-400 mt-0.5">Balanced selection from the question bank</p>
           </div>
           <button onClick={onClose} className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-700">
-            <span className="material-symbols-outlined text-lg">close</span>
+            <AppIcon name="X" size={18} />
           </button>
         </div>
 
@@ -1103,7 +1104,7 @@ function AutoGenerateDrawer({
             disabled={generating || !ratioValid || (mcqCount + shortCount + longCount === 0)}
             className="w-full h-10 rounded-lg bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 disabled:opacity-50 transition-colors active:scale-[0.98] inline-flex items-center justify-center gap-2"
           >
-            <span className="material-symbols-outlined text-base">{generating ? "hourglass_empty" : "auto_awesome"}</span>
+            <AppIcon name={generating ? "hourglass_empty" : "auto_awesome"} size={16} />
             {generating ? "Generating..." : "Generate Paper"}
           </button>
         </div>
@@ -1301,13 +1302,13 @@ function QuestionBankBrowseDrawer({
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 bg-gradient-to-r from-violet-50 to-white">
           <div>
             <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <span className="material-symbols-outlined text-violet-600">library_books</span>
+              <AppIcon name="Library" className="text-violet-600" />
               Question Bank
             </h2>
             <p className="text-[10px] text-slate-400 mt-0.5">Browse and select questions to add to your paper</p>
           </div>
           <button onClick={onClose} className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-700">
-            <span className="material-symbols-outlined text-lg">close</span>
+            <AppIcon name="X" size={18} />
           </button>
         </div>
 
@@ -1315,7 +1316,7 @@ function QuestionBankBrowseDrawer({
         <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/50 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative flex-1 min-w-[180px]">
-              <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-slate-400">search</span>
+              <AppIcon name="Search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 value={filterSearch}
                 onChange={(e) => setFilterSearch(e.target.value)}
@@ -1361,7 +1362,7 @@ function QuestionBankBrowseDrawer({
 
           {!loading && filtered.length === 0 && (
             <div className="py-12 text-center">
-              <span className="material-symbols-outlined text-3xl text-slate-200 mb-2">quiz</span>
+              <AppIcon name="HelpCircle" size={30} className="text-slate-200 mb-2" />
               <p className="text-xs text-slate-400 font-medium">No questions found</p>
               <p className="text-[10px] text-slate-300 mt-1">Try different filters or add questions to the bank first</p>
             </div>
@@ -1433,7 +1434,7 @@ function QuestionBankBrowseDrawer({
               disabled={selectedIds.size === 0}
               className="h-9 px-5 rounded-lg bg-violet-600 text-white text-xs font-bold hover:bg-violet-700 disabled:opacity-50 transition-colors active:scale-[0.98] inline-flex items-center gap-1.5"
             >
-              <span className="material-symbols-outlined text-sm">add</span>
+              <AppIcon name="Plus" size={14} />
               Add {selectedIds.size > 0 ? `${selectedIds.size} Questions` : "Selected"}
             </button>
           </div>

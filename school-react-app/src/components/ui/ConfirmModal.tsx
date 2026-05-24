@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useEffect, useState } from "react";
 
 export type ConfirmVariant = "danger" | "primary" | "warning";
@@ -113,9 +114,7 @@ export function ConfirmModal({
           <div
             className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${tokens.iconBg}`}
           >
-            <span className={`material-symbols-outlined text-2xl ${tokens.iconColor}`}>
-              {tokens.iconName}
-            </span>
+            <AppIcon name={tokens.iconName} size={24} className={` ${tokens.iconColor} `} />
           </div>
           <div className="flex-1 min-w-0">
             <h3 id="confirm-modal-title" className="text-lg font-bold text-slate-900 leading-tight">
@@ -129,7 +128,7 @@ export function ConfirmModal({
             </p>
             {itemName && (
               <div className="mt-3 inline-flex max-w-full items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5">
-                <span className="material-symbols-outlined text-[15px] text-slate-400">label</span>
+                <AppIcon name="Label" size={15} className="text-slate-400" />
                 <span className="text-[13px] font-semibold text-slate-700 truncate">{itemName}</span>
               </div>
             )}

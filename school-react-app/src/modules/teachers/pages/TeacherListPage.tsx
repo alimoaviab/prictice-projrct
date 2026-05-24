@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -210,9 +211,7 @@ export function TeacherListPage() {
       <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md border-slate-200/60 shadow-sm rounded-xl">
         <div className="flex flex-1 items-center gap-2 max-w-2xl">
           <div className="relative flex-1">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">
-              search
-            </span>
+            <AppIcon name="Search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               value={searchQuery}
               onChange={(e) => {
@@ -253,7 +252,7 @@ export function TeacherListPage() {
                   : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              <span className="material-symbols-outlined text-base">grid_view</span>
+              <AppIcon name="LayoutGrid" size={16} />
               Grid
             </button>
             <button
@@ -267,7 +266,7 @@ export function TeacherListPage() {
                   : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              <span className="material-symbols-outlined text-base">view_list</span>
+              <AppIcon name="ViewList" size={16} />
               List
             </button>
           </div>
@@ -280,7 +279,7 @@ export function TeacherListPage() {
             to={withQuery("/admin/teachers/create")}
             className="inline-flex h-9 items-center gap-2 px-5 text-[11px] font-bold normal-case  text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
           >
-            <span className="material-symbols-outlined text-lg">person_add</span>
+            <AppIcon name="UserPlus" size={18} />
             Add teacher
           </Link>
         </div>
@@ -366,7 +365,7 @@ export function TeacherListPage() {
                     </div>
                   )}
                   <div className="flex items-center gap-1.5 pt-2.5 border-t border-slate-100 text-[11px] font-medium text-slate-500 truncate">
-                    <span className="material-symbols-outlined text-[13px] shrink-0">mail</span>
+                    <AppIcon name="Mail" size={13} className="shrink-0" />
                     <span className="truncate">{row.email || "—"}</span>
                   </div>
                 </EntityCard>
@@ -393,7 +392,7 @@ export function TeacherListPage() {
         </p>
         <div className="flex items-center gap-2">
           <button className="h-9 px-4 rounded-xl border border-slate-200 text-[10px] font-bold normal-case  text-slate-400 cursor-not-allowed flex items-center gap-2">
-            <span className="material-symbols-outlined text-base">chevron_left</span>
+            <AppIcon name="ChevronLeft" size={16} />
             Previous
           </button>
           <div className="flex items-center gap-1">
@@ -401,7 +400,7 @@ export function TeacherListPage() {
           </div>
           <button className="h-9 px-4 rounded-xl border border-slate-200 text-[10px] font-bold normal-case  text-slate-400 cursor-not-allowed flex items-center gap-2">
             Next
-            <span className="material-symbols-outlined text-base">chevron_right</span>
+            <AppIcon name="ChevronRight" size={16} />
           </button>
         </div>
       </div>

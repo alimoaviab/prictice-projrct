@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Student Fees — premium redesign with real Print actions.
  *
@@ -201,9 +202,7 @@ export function StudentFeesPage() {
                     : "bg-slate-50 text-slate-500 border-slate-100"
               }`}
             >
-              <span className="material-symbols-outlined text-[12px]">
-                {isPaidUp ? "check_circle" : "pending_actions"}
-              </span>
+              <AppIcon name={isPaidUp ? "check_circle" : "pending_actions"} size={12} />
               {isPaidUp ? "All paid" : summary.status}
             </span>
           </div>
@@ -212,21 +211,17 @@ export function StudentFeesPage() {
           </h2>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
             <div className="flex items-center gap-1.5 text-slate-500">
-              <span className="material-symbols-outlined text-[14px]">school</span>
+              <AppIcon name="GraduationCap" size={14} />
               <span className="text-[11px] font-bold">{report.class}</span>
             </div>
             {report.academic_year ? (
               <div className="flex items-center gap-1.5 text-slate-500">
-                <span className="material-symbols-outlined text-[14px]">
-                  calendar_today
-                </span>
+                <AppIcon name="Calendar" size={14} />
                 <span className="text-[11px] font-bold">{report.academic_year}</span>
               </div>
             ) : null}
             <div className="flex items-center gap-1.5 text-slate-500">
-              <span className="material-symbols-outlined text-[14px]">
-                receipt_long
-              </span>
+              <AppIcon name="Receipt" size={14} />
               <span className="text-[11px] font-bold">
                 {report.fee_details.length} component
                 {report.fee_details.length === 1 ? "" : "s"}
@@ -240,13 +235,11 @@ export function StudentFeesPage() {
           onClick={handlePrintStatement}
           className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-[11px] font-black uppercase tracking-wider hover:bg-blue-700 transition-colors shadow-sm no-print"
         >
-          <span className="material-symbols-outlined text-[16px]">print</span>
+          <AppIcon name="Printer" size={16} />
           Print Statement
         </button>
 
-        <span className="material-symbols-outlined absolute right-[-10px] bottom-[-20px] text-[120px] text-slate-50 opacity-50 select-none pointer-events-none">
-          payments
-        </span>
+        <AppIcon name="CreditCard" size={120} className="absolute right-[-10px] bottom-[-20px] text-slate-50 opacity-50 select-none pointer-events-none" />
       </div>
 
       {/* ── KPI strip ──────────────────────────────────────────────── */}
@@ -285,7 +278,7 @@ export function StudentFeesPage() {
       <div className="mb-4 flex items-center justify-between px-4 py-2.5 bg-blue-50/30 rounded-xl border border-blue-100/50">
         <div className="flex items-center gap-3 min-w-0">
           <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white shrink-0">
-            <span className="material-symbols-outlined text-[14px]">checklist</span>
+            <AppIcon name="ListTodo" size={14} />
           </div>
           <div className="min-w-0">
             <p className="text-[10px] font-bold text-slate-700">Ledger Pulse</p>
@@ -324,9 +317,7 @@ export function StudentFeesPage() {
                 Each invoice and its current status
               </p>
             </div>
-            <span className="material-symbols-outlined text-slate-300 text-base">
-              receipt_long
-            </span>
+            <AppIcon name="Receipt" size={16} className="text-slate-300" />
           </div>
 
           {report.fee_details.length > 0 ? (
@@ -342,13 +333,11 @@ export function StudentFeesPage() {
                       <div
                         className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${tone.bg} ${tone.text}`}
                       >
-                        <span className="material-symbols-outlined text-[18px]">
-                          {fee.status === "paid"
+                        <AppIcon name={fee.status === "paid"
                             ? "verified"
                             : fee.status === "partial"
                               ? "hourglass_top"
-                              : "schedule"}
-                        </span>
+                              : "schedule"} size={18} />
                       </div>
                       <div className="min-w-0">
                         <p className="text-[12px] font-black text-slate-900 truncate">
@@ -395,9 +384,7 @@ export function StudentFeesPage() {
                 Tap print to download a branded receipt
               </p>
             </div>
-            <span className="material-symbols-outlined text-slate-300 text-base">
-              history
-            </span>
+            <AppIcon name="History" size={16} className="text-slate-300" />
           </div>
 
           {report.payment_history.length > 0 ? (
@@ -410,9 +397,7 @@ export function StudentFeesPage() {
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className="h-8 w-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
-                        <span className="material-symbols-outlined text-[16px]">
-                          verified
-                        </span>
+                        <AppIcon name="CheckCircle" size={16} />
                       </div>
                       <div className="min-w-0">
                         <p className="text-[11px] font-black text-slate-800 truncate">
@@ -437,9 +422,7 @@ export function StudentFeesPage() {
                       onClick={() => handlePrintReceipt(p)}
                       className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider text-blue-600 border border-blue-100 hover:bg-blue-50 transition-colors no-print"
                     >
-                      <span className="material-symbols-outlined text-[12px]">
-                        print
-                      </span>
+                      <AppIcon name="Printer" size={12} />
                       Print
                     </button>
                   </div>
@@ -503,11 +486,7 @@ function PremiumEmpty({
       <div
         className={`${compact ? "h-10 w-10" : "h-12 w-12"} rounded-full bg-white shadow-sm flex items-center justify-center mb-3`}
       >
-        <span
-          className={`material-symbols-outlined text-slate-300 ${compact ? "text-[20px]" : "text-[24px]"}`}
-        >
-          {icon}
-        </span>
+        <AppIcon name={icon} className={` text-slate-300 ${compact ? "text-[20px]" : "text-[24px]"} `} />
       </div>
       <p
         className={`${compact ? "text-[12px]" : "text-[13px]"} font-black text-slate-700`}

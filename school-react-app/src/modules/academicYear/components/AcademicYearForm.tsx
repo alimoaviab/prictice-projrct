@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button, Input } from "@/components/ui";
@@ -67,7 +68,7 @@ export function AcademicYearForm({
                             onChange={(e) => setForm({ ...form, year: e.target.value })}
                             error={errors.year}
                             required
-                            leftIcon={<span className="material-symbols-outlined text-[18px]">badge</span>}
+                            leftIcon={<AppIcon name="Award" size={18} />}
                             className="bg-white border-slate-200 h-11 focus:border-blue-600 focus:ring-blue-600/5 transition-all text-[13px] font-medium"
                         />
                     </div>
@@ -99,7 +100,7 @@ export function AcademicYearForm({
                         onChange={(e) => setForm({ ...form, start_date: e.target.value })}
                         error={errors.start_date}
                         required
-                        leftIcon={<span className="material-symbols-outlined text-[18px]">calendar_today</span>}
+                        leftIcon={<AppIcon name="Calendar" size={18} />}
                         className="bg-white border-slate-200 h-11 focus:border-blue-600 focus:ring-blue-600/5 transition-all text-[13px] font-medium"
                     />
 
@@ -110,7 +111,7 @@ export function AcademicYearForm({
                         onChange={(e) => setForm({ ...form, end_date: e.target.value })}
                         error={errors.end_date}
                         required
-                        leftIcon={<span className="material-symbols-outlined text-[18px]">event_busy</span>}
+                        leftIcon={<AppIcon name="CalendarX" size={18} />}
                         className="bg-white border-slate-200 h-11 focus:border-blue-600 focus:ring-blue-600/5 transition-all text-[13px] font-medium"
                     />
                 </div>
@@ -121,7 +122,7 @@ export function AcademicYearForm({
                         Administrative Notes (Optional)
                     </label>
                     <div className="relative">
-                        <span className="material-symbols-outlined absolute left-3.5 top-3.5 text-[18px] text-slate-400">notes</span>
+                        <AppIcon name="StickyNote" size={18} className="absolute left-3.5 top-3.5 text-slate-400" />
                         <textarea
                             placeholder="Add details regarding academic holidays, term breaks, or specific cycle goals..."
                             value={form.description || ""}

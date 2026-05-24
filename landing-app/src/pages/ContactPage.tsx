@@ -3,11 +3,11 @@ import { Seo } from '@/components/Seo';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { motion } from 'framer-motion';
-import { MessageCircle, Mail, MapPin, Phone } from '@/components/icons';
+import { AppIcon } from "shared/ui/AppIcon";
 
 const contactMethods = [
   {
-    icon: MessageCircle,
+    icon: "MessageCircle",
     title: 'WhatsApp',
     description: 'Chat with us directly for quick responses and instant support.',
     action: 'Message on WhatsApp',
@@ -17,7 +17,7 @@ const contactMethods = [
     border: 'border-emerald-200',
   },
   {
-    icon: Mail,
+    icon: "Mail",
     title: 'Email',
     description: 'Send us a detailed message and we will respond within 24 hours.',
     action: 'Send Email',
@@ -27,7 +27,7 @@ const contactMethods = [
     border: 'border-blue-200',
   },
   {
-    icon: Phone,
+    icon: "Phone",
     title: 'Phone',
     description: 'Call us directly for urgent inquiries or immediate assistance.',
     action: '+92 306 4944326',
@@ -37,7 +37,7 @@ const contactMethods = [
     border: 'border-purple-200',
   },
   {
-    icon: MapPin,
+    icon: "MapPin",
     title: 'Location',
     description: 'Based in Pakistan, serving schools worldwide.',
     action: 'Pakistan (Remote-First)',
@@ -110,7 +110,7 @@ export function ContactPage() {
               className={`flex items-start gap-4 p-6 ${method.bg} ${method.border} border rounded-2xl hover:shadow-lg hover:-translate-y-1 transition-all duration-300`}
             >
               <div className={`w-12 h-12 rounded-xl ${method.color} flex items-center justify-center flex-shrink-0`}>
-                <method.icon className="w-6 h-6 text-white" />
+                <AppIcon name={method.icon} className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h2 className="text-lg font-bold text-slate-900 mb-1">{method.title}</h2>

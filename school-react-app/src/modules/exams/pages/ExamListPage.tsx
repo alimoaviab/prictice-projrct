@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * /admin/exams — Exam list page.
  *
@@ -191,9 +192,7 @@ export function ExamListPage({
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 px-3 py-2.5 shadow-[0_4px_18px_rgb(0,0,0,0.03)]">
         <div className="flex flex-1 items-center gap-2">
           <div className="relative flex-1 max-w-[220px]">
-            <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-base text-slate-400">
-              search
-            </span>
+            <AppIcon name="Search" size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               value={searchQuery}
               onChange={(e) => {
@@ -230,7 +229,7 @@ export function ExamListPage({
               }}
               className="h-7 inline-flex items-center gap-1 px-2 rounded-md text-[11px] font-bold text-slate-400 hover:text-slate-700 transition-colors"
             >
-              <span className="material-symbols-outlined text-sm">close</span>
+              <AppIcon name="X" size={14} />
               Clear
             </button>
           )}
@@ -248,7 +247,7 @@ export function ExamListPage({
                 viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500"
               }`}
             >
-              <span className="material-symbols-outlined text-sm">grid_view</span>
+              <AppIcon name="LayoutGrid" size={14} />
               Grid
             </button>
             <button
@@ -261,7 +260,7 @@ export function ExamListPage({
                 viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500"
               }`}
             >
-              <span className="material-symbols-outlined text-sm">view_list</span>
+              <AppIcon name="ViewList" size={14} />
               List
             </button>
           </div>
@@ -271,7 +270,7 @@ export function ExamListPage({
               to={withQuery(examsCreatePath)}
               className="h-9 inline-flex items-center gap-2 px-4 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm active:scale-95 transition-all"
             >
-              <span className="material-symbols-outlined text-[16px]">add</span>
+              <AppIcon name="Plus" size={16} />
               Add exam
             </Link>
           )}
@@ -328,7 +327,7 @@ function ExamCard({
     <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm hover:border-blue-200 transition-all flex flex-col">
       <div className="flex items-center justify-between mb-3">
         <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
-          <span className="material-symbols-outlined text-[18px]">description</span>
+          <AppIcon name="FileText" size={18} />
         </div>
         <Badge
           variant={exam.status === "completed" ? "success" : "primary"}
@@ -363,9 +362,7 @@ function ExamCard({
 
       <div className="flex items-center justify-between pt-3 border-t border-slate-50 text-[10px] font-bold">
         <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-slate-300 text-[14px]">
-            calendar_today
-          </span>
+          <AppIcon name="Calendar" size={14} className="text-slate-300" />
           <span className="text-slate-400">{exam.starts_at}</span>
         </div>
         <div className="flex items-center gap-2 text-slate-700">
@@ -380,7 +377,7 @@ function ExamCard({
           to={`${marksBase}?exam_id=${encodeURIComponent(exam._id)}`}
           className="mt-3 inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 active:scale-95 transition-all"
         >
-          <span className="material-symbols-outlined text-[14px]">edit_note</span>
+          <AppIcon name="FileText" size={14} />
           Add marks
         </Link>
       )}

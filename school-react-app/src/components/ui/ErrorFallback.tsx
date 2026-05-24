@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 interface ErrorFallbackProps {
   title?: string;
   message?: string;
@@ -33,7 +34,7 @@ export function ErrorFallback({
   const content = (
     <div className="flex flex-col items-center text-center max-w-md mx-auto p-6">
       <div className={`mb-4 flex h-16 w-16 items-center justify-center rounded-2xl ${accent.bg}`}>
-        <span className={`material-symbols-outlined text-3xl ${accent.icon}`}>{accent.iconName}</span>
+        <AppIcon name={accent.iconName} size={30} className={` ${accent.icon} `} />
       </div>
       <h3 className="text-lg font-bold text-slate-900 mb-2">{title}</h3>
       <p className="text-sm text-slate-500 mb-2 leading-relaxed">{message}</p>
@@ -45,7 +46,7 @@ export function ErrorFallback({
             onClick={onRetry}
             className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
           >
-            <span className="material-symbols-outlined text-[18px]">refresh</span>
+            <AppIcon name="RefreshCw" size={18} />
             Try again
           </button>
         )}
@@ -53,7 +54,7 @@ export function ErrorFallback({
           onClick={handleSecondary}
           className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:border-blue-300 hover:text-blue-700"
         >
-          <span className="material-symbols-outlined text-[18px]">restart_alt</span>
+          <AppIcon name="RotateCcw" size={18} />
           {secondaryLabel}
         </button>
       </div>

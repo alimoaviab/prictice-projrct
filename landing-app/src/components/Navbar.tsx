@@ -9,7 +9,7 @@
 
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X } from '@/components/icons';
+import { AppIcon } from "shared/ui/AppIcon";
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { LOGIN_URL } from '@/lib/config';
@@ -114,7 +114,7 @@ export const Navbar = () => {
           aria-label="Toggle Menu"
           aria-expanded={mobileMenuOpen}
         >
-          {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          {mobileMenuOpen ? <AppIcon name="X" className="w-6 h-6" /> : <AppIcon name="Menu" className="w-6 h-6" />}
         </button>
       </div>
 

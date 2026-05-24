@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Clock, Video, Users, CheckCircle, Calendar, Play, User, ExternalLink, XCircle } from "@/components/icons";
+import { AppIcon } from "shared/ui/AppIcon";
 
 interface LiveClassCardProps {
   id: string;
@@ -43,11 +43,11 @@ export const LiveClassCard: React.FC<LiveClassCardProps> = ({
   const displayStatus = isStartingSoon ? "STARTING SOON" : status;
 
   const statusConfig = {
-    SCHEDULED: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", icon: <Calendar className="w-3.5 h-3.5 mr-1" /> },
-    "STARTING SOON": { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", icon: <Clock className="w-3.5 h-3.5 mr-1" /> },
+    SCHEDULED: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", icon: <AppIcon name="Calendar" className="w-3.5 h-3.5 mr-1" /> },
+    "STARTING SOON": { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", icon: <AppIcon name="Clock" className="w-3.5 h-3.5 mr-1" /> },
     LIVE: { bg: "bg-red-50", text: "text-red-700", border: "border-red-200", icon: <span className="relative flex h-2 w-2 mr-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span></span> },
-    COMPLETED: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", icon: <CheckCircle className="w-3.5 h-3.5 mr-1" /> },
-    CANCELLED: { bg: "bg-slate-50", text: "text-slate-600", border: "border-slate-200", icon: <XCircle className="w-3.5 h-3.5 mr-1" /> },
+    COMPLETED: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", icon: <AppIcon name="CheckCircle" className="w-3.5 h-3.5 mr-1" /> },
+    CANCELLED: { bg: "bg-slate-50", text: "text-slate-600", border: "border-slate-200", icon: <AppIcon name="XCircle" className="w-3.5 h-3.5 mr-1" /> },
   };
 
   const currentConfig = statusConfig[displayStatus as keyof typeof statusConfig];
@@ -62,7 +62,7 @@ export const LiveClassCard: React.FC<LiveClassCardProps> = ({
       <div className="flex items-start justify-between mb-4">
         <div className="flex gap-3 items-center">
           <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-indigo-100 flex items-center justify-center border border-indigo-200">
-             <User className="h-5 w-5 text-indigo-600" />
+             <AppIcon name="User" className="h-5 w-5 text-indigo-600" />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -81,7 +81,7 @@ export const LiveClassCard: React.FC<LiveClassCardProps> = ({
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="space-y-1 text-sm">
           <div className="flex items-center text-slate-500">
-            <Clock className="mr-1.5 h-4 w-4 text-slate-400" />
+            <AppIcon name="Clock" className="mr-1.5 h-4 w-4 text-slate-400" />
             <span className="font-medium text-slate-900">{timeString}</span>
           </div>
           <div className="text-slate-500 pl-5.5 text-xs">{durationMinutes} min • {start.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric'})}</div>
@@ -89,12 +89,12 @@ export const LiveClassCard: React.FC<LiveClassCardProps> = ({
 
         <div className="space-y-1 text-sm">
           <div className="flex items-center text-slate-500">
-            <User className="mr-1.5 h-4 w-4 text-slate-400" />
+            <AppIcon name="User" className="mr-1.5 h-4 w-4 text-slate-400" />
             <span className="truncate max-w-[120px] font-medium text-slate-900" title={teacherName || "Teacher"}>{teacherName || "Teacher"}</span>
           </div>
           {displayStatus === 'LIVE' && (
             <div className="flex items-center text-slate-500 pl-5.5 text-xs">
-              <Users className="mr-1 h-3 w-3" />
+              <AppIcon name="Users" className="mr-1 h-3 w-3" />
               {mockAttendance} attending
             </div>
           )}
@@ -115,7 +115,7 @@ export const LiveClassCard: React.FC<LiveClassCardProps> = ({
                 : "bg-slate-100 text-slate-400 cursor-not-allowed"
             }`}
           >
-            {meetingLink ? <><Video className="w-4 h-4 mr-2" /> Join Session</> : "No Link"}
+            {meetingLink ? <><AppIcon name="Video" className="w-4 h-4 mr-2" /> Join Session</> : "No Link"}
           </button>
         ) : (
            <div className="flex-1 px-4 py-2 text-sm font-medium text-slate-500 text-center bg-slate-50 rounded-xl border border-slate-100">
@@ -128,7 +128,7 @@ export const LiveClassCard: React.FC<LiveClassCardProps> = ({
             onClick={() => onUpdateStatus(id, "LIVE")}
             className="inline-flex items-center justify-center rounded-xl bg-red-50 text-red-700 px-4 py-2 text-sm font-semibold hover:bg-red-100 border border-red-200 transition-colors"
           >
-            <Play className="w-4 h-4 mr-1.5" /> Start
+            <AppIcon name="Play" className="w-4 h-4 mr-1.5" /> Start
           </button>
         )}
 

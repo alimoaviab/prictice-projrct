@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Event creation as a dedicated full page.
  *
@@ -162,7 +163,7 @@ export function EventCreatePage() {
           <GuidanceSection title="Live Preview">
             <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-2">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-blue-600 text-[18px]">event</span>
+                <AppIcon name="Calendar" size={18} className="text-blue-600" />
                 <span className="text-[12px] font-bold text-slate-900 truncate">
                   {form.title || "Untitled event"}
                 </span>
@@ -209,7 +210,7 @@ export function EventCreatePage() {
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               error={errors.title}
               required
-              leftIcon={<span className="material-symbols-outlined text-[18px]">title</span>}
+              leftIcon={<AppIcon name="Title" size={18} />}
               className="bg-white border-slate-200 h-11 focus:border-blue-600 focus:ring-blue-600/5 transition-all text-[13px] font-medium"
             />
           </div>
@@ -236,7 +237,7 @@ export function EventCreatePage() {
             onChange={(e) => setForm({ ...form, start_date: e.target.value })}
             error={errors.start_date}
             required
-            leftIcon={<span className="material-symbols-outlined text-[18px]">calendar_today</span>}
+            leftIcon={<AppIcon name="Calendar" size={18} />}
             className="bg-white border-slate-200 h-11 focus:border-blue-600 focus:ring-blue-600/5 transition-all text-[13px] font-medium"
           />
 
@@ -246,7 +247,7 @@ export function EventCreatePage() {
             value={form.end_date || ""}
             onChange={(e) => setForm({ ...form, end_date: e.target.value })}
             error={errors.end_date}
-            leftIcon={<span className="material-symbols-outlined text-[18px]">event_busy</span>}
+            leftIcon={<AppIcon name="CalendarX" size={18} />}
             className="bg-white border-slate-200 h-11 focus:border-blue-600 focus:ring-blue-600/5 transition-all text-[13px] font-medium"
           />
         </div>
@@ -258,7 +259,7 @@ export function EventCreatePage() {
             type="time"
             value={form.start_time || ""}
             onChange={(e) => setForm({ ...form, start_time: e.target.value })}
-            leftIcon={<span className="material-symbols-outlined text-[18px]">schedule</span>}
+            leftIcon={<AppIcon name="Clock" size={18} />}
             className="bg-white border-slate-200 h-11 focus:border-blue-600 focus:ring-blue-600/5 transition-all text-[13px] font-medium"
           />
           <Input
@@ -267,7 +268,7 @@ export function EventCreatePage() {
             value={form.end_time || ""}
             onChange={(e) => setForm({ ...form, end_time: e.target.value })}
             error={errors.end_time}
-            leftIcon={<span className="material-symbols-outlined text-[18px]">schedule</span>}
+            leftIcon={<AppIcon name="Clock" size={18} />}
             className="bg-white border-slate-200 h-11 focus:border-blue-600 focus:ring-blue-600/5 transition-all text-[13px] font-medium"
           />
         </div>
@@ -279,7 +280,7 @@ export function EventCreatePage() {
             placeholder="Auditorium, Sports Field..."
             value={form.location || ""}
             onChange={(e) => setForm({ ...form, location: e.target.value })}
-            leftIcon={<span className="material-symbols-outlined text-[18px]">location_on</span>}
+            leftIcon={<AppIcon name="MapPin" size={18} />}
             className="bg-white border-slate-200 h-11 focus:border-blue-600 focus:ring-blue-600/5 transition-all text-[13px] font-medium"
           />
           <Input
@@ -287,7 +288,7 @@ export function EventCreatePage() {
             placeholder="Optional — e.g., Sports Committee"
             value={form.organizer || ""}
             onChange={(e) => setForm({ ...form, organizer: e.target.value })}
-            leftIcon={<span className="material-symbols-outlined text-[18px]">person</span>}
+            leftIcon={<AppIcon name="User" size={18} />}
             className="bg-white border-slate-200 h-11 focus:border-blue-600 focus:ring-blue-600/5 transition-all text-[13px] font-medium"
           />
         </div>
@@ -363,9 +364,7 @@ export function EventCreatePage() {
             Description (Optional)
           </label>
           <div className="relative">
-            <span className="material-symbols-outlined absolute left-3.5 top-3.5 text-[18px] text-slate-400">
-              notes
-            </span>
+            <AppIcon name="StickyNote" size={18} className="absolute left-3.5 top-3.5 text-slate-400" />
             <textarea
               placeholder="Brief notes — agenda, dress code, requirements..."
               value={form.description || ""}

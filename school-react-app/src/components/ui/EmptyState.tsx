@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Card } from "./Card";
@@ -40,13 +41,13 @@ export function EmptyState({
   const iconContent =
     typeof icon === "string" ? (
       <div className={`mb-5 flex h-16 w-16 items-center justify-center rounded-2xl ${accent}`}>
-        <span className="material-symbols-outlined text-3xl">{icon}</span>
+        <AppIcon name={icon} size={30} />
       </div>
     ) : icon ? (
       <div className={`mb-5 flex h-16 w-16 items-center justify-center rounded-2xl ${accent}`}>{icon}</div>
     ) : (
       <div className={`mb-5 flex h-16 w-16 items-center justify-center rounded-2xl ${accent}`}>
-        <span className="material-symbols-outlined text-3xl">inbox</span>
+        <AppIcon name="Inbox" size={30} />
       </div>
     );
 
@@ -65,12 +66,12 @@ export function EmptyState({
                 to={action.href}
                 className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-blue-600/15 transition-all hover:-translate-y-0.5 hover:shadow-md hover:shadow-blue-600/20 active:scale-[0.98]"
               >
-                <span className="material-symbols-outlined text-lg">{action.icon ?? "add"}</span>
+                <AppIcon name={action.icon ?? "add"} size={18} />
                 {action.label}
               </Link>
             ) : (
               <Button onClick={action.onClick} variant="primary">
-                <span className="material-symbols-outlined text-lg">{action.icon ?? "add"}</span>
+                <AppIcon name={action.icon ?? "add"} size={18} />
                 {action.label}
               </Button>
             ))}
@@ -82,7 +83,7 @@ export function EmptyState({
                 className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-blue-300 hover:text-blue-700"
               >
                 {secondaryAction.icon && (
-                  <span className="material-symbols-outlined text-base">{secondaryAction.icon}</span>
+                  <AppIcon name={secondaryAction.icon} size={16} />
                 )}
                 {secondaryAction.label}
               </Link>
@@ -93,7 +94,7 @@ export function EmptyState({
                 className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-blue-300 hover:text-blue-700"
               >
                 {secondaryAction.icon && (
-                  <span className="material-symbols-outlined text-base">{secondaryAction.icon}</span>
+                  <AppIcon name={secondaryAction.icon} size={16} />
                 )}
                 {secondaryAction.label}
               </button>

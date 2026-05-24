@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import React, { useMemo } from "react";
 import { DataTable, DataTableColumn, RowAction, Badge, DataState, Skeleton, TableSkeleton, Select, Card, StatCardGrid } from "@/components/ui";
 import { useSafeAsync } from "@/hooks/useSafeAsync";
@@ -114,7 +115,7 @@ export function AttendanceListPage({ filters: initialFilters }: { filters?: { cl
       label: "Marked Date",
       render: (row) => (
         <div className="flex items-center gap-2 text-gray-500">
-           <span className="material-symbols-outlined text-sm">calendar_today</span>
+           <AppIcon name="Calendar" size={14} />
            <span className="text-xs font-medium">{new Date(row.date).toLocaleDateString()}</span>
         </div>
       ),
@@ -172,7 +173,7 @@ export function AttendanceListPage({ filters: initialFilters }: { filters?: { cl
       <div className="premium-card p-3 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/90 backdrop-blur-md border-slate-200/60 shadow-sm rounded-2xl">
         <div className="flex flex-1 flex-wrap items-center gap-3 max-w-5xl">
           <div className="relative min-w-[200px] flex-1">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
+            <AppIcon name="Search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               value={activeFilters.search}
               onChange={(e) => {
@@ -240,7 +241,7 @@ export function AttendanceListPage({ filters: initialFilters }: { filters?: { cl
                 viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              <span className="material-symbols-outlined text-base">grid_view</span>
+              <AppIcon name="LayoutGrid" size={16} />
               Grid
             </button>
             <button
@@ -252,7 +253,7 @@ export function AttendanceListPage({ filters: initialFilters }: { filters?: { cl
                 viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              <span className="material-symbols-outlined text-base">view_list</span>
+              <AppIcon name="ViewList" size={16} />
               List
             </button>
           </div>
@@ -282,7 +283,7 @@ export function AttendanceListPage({ filters: initialFilters }: { filters?: { cl
         
         <div className="flex items-center gap-1.5 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
           <button className="h-10 px-4 rounded-xl text-[11px] font-black uppercase tracking-tight text-slate-400 cursor-not-allowed flex items-center gap-2 transition-all">
-            <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+            <AppIcon name="ChevronLeft" />
             Prev
           </button>
           <div className="h-6 w-px bg-slate-100" />
@@ -290,7 +291,7 @@ export function AttendanceListPage({ filters: initialFilters }: { filters?: { cl
           <div className="h-6 w-px bg-slate-100" />
           <button className="h-10 px-4 rounded-xl text-[11px] font-black uppercase tracking-tight text-slate-400 cursor-not-allowed flex items-center gap-2 transition-all">
             Next
-            <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+            <AppIcon name="ChevronRight" />
           </button>
         </div>
       </div>

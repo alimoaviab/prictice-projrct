@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useState, FormEvent } from "react";
 import { AcademicYearRow, AcademicYearUpdateInput } from "../types/academicYear.types";
 import { Button, Input } from "@/components/ui";
@@ -82,7 +83,7 @@ export function AcademicYearEditSidebar({
                         onClick={handleClose}
                         className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-900 transition-colors"
                     >
-                        <span className="material-symbols-outlined text-lg">close</span>
+                        <AppIcon name="X" size={18} />
                     </button>
                 </div>
 
@@ -123,7 +124,7 @@ export function AcademicYearEditSidebar({
                                     
                                     {currentForm.is_active && !academicYear.is_active && (
                                         <div className="flex items-start gap-2 p-2 rounded-lg bg-blue-50/50 border border-blue-100">
-                                            <span className="material-symbols-outlined text-blue-600 text-sm">info</span>
+                                            <AppIcon name="Info" size={14} className="text-blue-600" />
                                             <p className="text-[9px] font-bold text-blue-800 leading-snug">
                                                 Activating this session will automatically archive the currently active academic year.
                                             </p>

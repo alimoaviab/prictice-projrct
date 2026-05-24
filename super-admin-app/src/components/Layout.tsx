@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useEffect, useState } from 'react'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 
@@ -72,7 +73,7 @@ export function Layout() {
       <aside className="w-64 bg-white border-r border-slate-200 flex flex-col">
         <div className="h-14 flex items-center gap-2 px-5 border-b border-slate-100">
           <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-sm shadow-blue-600/20">
-            <span className="material-symbols-outlined text-white text-sm">shield_lock</span>
+            <AppIcon name="ShieldAlert" size={14} className="text-white" />
           </div>
           <div>
             <span className="text-sm font-bold text-slate-900 block leading-none">Eduplexo</span>
@@ -93,7 +94,7 @@ export function Layout() {
                     : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 }`}
               >
-                <span className="material-symbols-outlined text-lg">{item.icon}</span>
+                <AppIcon name={item.icon} size={18} />
                 {item.label}
               </Link>
             )
@@ -116,7 +117,7 @@ export function Layout() {
             onClick={handleLogout}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all w-full"
           >
-            <span className="material-symbols-outlined text-lg">logout</span>
+            <AppIcon name="LogOut" size={18} />
             Logout
           </button>
         </div>

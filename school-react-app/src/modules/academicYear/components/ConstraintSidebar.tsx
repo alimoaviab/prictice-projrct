@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ConstraintSidebarProps {
@@ -34,7 +35,7 @@ export function ConstraintSidebar({ isOpen, onClose, title, message, reason }: C
                         <div className="flex items-center justify-between px-6 py-5 border-b border-blue-50 bg-white">
                             <div className="flex items-center gap-3">
                                 <div className="h-9 w-9 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100">
-                                    <span className="material-symbols-outlined text-blue-600 text-[20px]">security</span>
+                                    <AppIcon name="Shield" className="text-blue-600" />
                                 </div>
                                 <div>
                                     <h2 className="text-[12px] font-bold text-slate-900 uppercase tracking-tight">System Constraint</h2>
@@ -45,7 +46,7 @@ export function ConstraintSidebar({ isOpen, onClose, title, message, reason }: C
                                 onClick={onClose}
                                 className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-slate-900 transition-all"
                             >
-                                <span className="material-symbols-outlined text-xl">close</span>
+                                <AppIcon name="X" />
                             </button>
                         </div>
 
@@ -65,7 +66,7 @@ export function ConstraintSidebar({ isOpen, onClose, title, message, reason }: C
                                 <div className="absolute top-0 right-0 -translate-y-2 translate-x-2 h-20 w-20 bg-white/10 rounded-full blur-2xl" />
                                 <div className="relative z-10 flex items-center gap-4">
                                     <div className="h-12 w-12 rounded-xl bg-white/15 flex items-center justify-center backdrop-blur-md border border-white/20 shrink-0">
-                                        <span className="material-symbols-outlined text-2xl text-white">info</span>
+                                        <AppIcon name="Info" size={24} className="text-white" />
                                     </div>
                                     <div className="space-y-0.5">
                                         <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-white" >Required Action</p>
@@ -77,7 +78,7 @@ export function ConstraintSidebar({ isOpen, onClose, title, message, reason }: C
                             {reason && (
                                 <div className="p-4 rounded-xl bg-blue-50/50 border border-blue-100/50">
                                     <div className="flex items-center gap-2 mb-1.5">
-                                        <span className="material-symbols-outlined text-blue-600 text-xs">terminal</span>
+                                        <AppIcon name="Terminal" size={12} className="text-blue-600" />
                                         <p className="text-[9px] font-bold uppercase tracking-wider text-blue-600/70">System Diagnostics</p>
                                     </div>
                                     <p className="text-xs font-semibold text-blue-900 leading-relaxed italic">"{reason}"</p>

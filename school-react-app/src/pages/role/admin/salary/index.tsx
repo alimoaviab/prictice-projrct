@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useMemo, useState } from "react";
 import { SchoolShell } from "@/layouts/SchoolShell";
 import { DataTable, DataTableColumn, Badge, DataState, RowAction } from "@/components/ui";
@@ -123,7 +124,7 @@ export function SalaryPage() {
                                 <h3 className="text-xl font-bold text-slate-900 tracking-tighter leading-none">{stat.value}</h3>
                             </div>
                             <div className={`h-8 w-8 rounded-lg ${stat.bg} ${stat.color} flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm`}>
-                                <span className="material-symbols-outlined text-lg font-bold">{stat.icon}</span>
+                                <AppIcon name={stat.icon} size={18} className="font-bold" />
                             </div>
                         </div>
                     ))}
@@ -133,7 +134,7 @@ export function SalaryPage() {
                 <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md border-slate-200/60 shadow-sm rounded-xl">
                     <div className="flex flex-1 items-center gap-2 max-w-2xl">
                         <div className="relative flex-1">
-                            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
+                            <AppIcon name="Search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                             <input
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -162,7 +163,7 @@ export function SalaryPage() {
                         <button
                             className="inline-flex h-9 items-center gap-2 px-5 text-[11px] font-bold normal-case  text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
                         >
-                            <span className="material-symbols-outlined text-lg">payments</span>
+                            <AppIcon name="CreditCard" size={18} />
                             Process Bulk
                         </button>
                     </div>

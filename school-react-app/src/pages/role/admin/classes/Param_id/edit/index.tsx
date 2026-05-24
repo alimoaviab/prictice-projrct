@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { SchoolShell } from "@/layouts/SchoolShell";
@@ -89,7 +90,7 @@ export function ClassEditPage() {
             onClick={() => navigate("/admin/classes")}
             className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-400 normal-case hover:text-slate-900 transition-all group"
           >
-            <span className="material-symbols-outlined text-[16px] group-hover:-translate-x-0.5 transition-transform">arrow_back</span>
+            <AppIcon name="ArrowLeft" size={16} className="group-hover:-translate-x-0.5 transition-transform" />
             Return to Classes
           </button>
           <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 normal-case ">

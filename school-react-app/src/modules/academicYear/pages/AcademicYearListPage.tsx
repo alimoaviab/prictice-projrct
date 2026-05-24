@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { Badge, Button, Card, DataState, LayoutCard, PageHeader, Skeleton, TableSkeleton } from "@/components/ui";
@@ -130,7 +131,7 @@ export function AcademicYearListPage() {
             <div key={stat.label} className="bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 px-3.5 py-3 shadow-[0_4px_18px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.05)] transition-all group">
               <div className="flex items-center gap-3">
                 <div className={`h-9 w-9 rounded-lg ${stat.bg} ${stat.color} flex items-center justify-center transition-transform group-hover:scale-105 shrink-0`}>
-                  <span className="material-symbols-outlined text-lg">{stat.icon}</span>
+                  <AppIcon name={stat.icon} size={18} />
                 </div>
                 <div className="min-w-0">
                   <p className="text-[10px] font-bold text-slate-400 normal-case truncate">{stat.label}</p>
@@ -144,7 +145,7 @@ export function AcademicYearListPage() {
             className={`bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 px-3.5 py-3 shadow-[0_4px_18px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.05)] hover:border-blue-300 transition-all group flex items-center gap-3 ${isDrawerOpen ? "hidden md:flex" : ""}`}
           >
             <div className="h-9 w-9 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center group-hover:bg-blue-50 group-hover:text-blue-600 group-hover:rotate-90 transition-all shrink-0">
-              <span className="material-symbols-outlined text-lg">add</span>
+              <AppIcon name="Plus" size={18} />
             </div>
             <div className="min-w-0">
               <p className="text-[10px] font-bold text-slate-400 normal-case truncate">Quick Action</p>
@@ -157,7 +158,7 @@ export function AcademicYearListPage() {
         <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md border-slate-200/60 shadow-sm rounded-xl">
           <div className="flex flex-1 items-center gap-2 max-w-2xl">
             <div className="relative flex-1">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
+              <AppIcon name="Search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
@@ -186,7 +187,7 @@ export function AcademicYearListPage() {
                   viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
                 }`}
               >
-                <span className="material-symbols-outlined text-base">grid_view</span>
+                <AppIcon name="LayoutGrid" size={16} />
                 Grid
               </button>
               <button
@@ -195,7 +196,7 @@ export function AcademicYearListPage() {
                   viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
                 }`}
               >
-                <span className="material-symbols-outlined text-base">view_list</span>
+                <AppIcon name="ViewList" size={16} />
                 List
               </button>
             </div>
@@ -204,7 +205,7 @@ export function AcademicYearListPage() {
               to="/admin/academic-years/create"
               className="flex h-9 items-center gap-2 rounded-lg bg-blue-600 px-4 text-[11px] font-bold text-white shadow-lg shadow-blue-600/10 transition-all hover:bg-blue-700 active:scale-95"
             >
-              <span className="material-symbols-outlined text-base">add</span>
+              <AppIcon name="Plus" size={16} />
               New Session
             </Link>
           </div>
@@ -241,14 +242,14 @@ export function AcademicYearListPage() {
                           isEditing={isEditing}
                           title={row.year}
                           subtitle={isActive ? "Primary Session" : "Archived Session"}
-                          icon={<span className="material-symbols-outlined text-2xl">calendar_month</span>}
+                          icon={<AppIcon name="Calendar" size={24} />}
                           badge={isActive && <div className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-ping" />}
                           actions={
                             <Link 
                               to={`/admin/academic-years/${row._id}/edit`}
                               className="h-8 w-8 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-blue-600 hover:text-white hover:shadow-lg transition-all"
                             >
-                              <span className="material-symbols-outlined text-[18px]">edit_square</span>
+                              <AppIcon name="SquarePen" size={18} />
                             </Link>
                           }
                         >
@@ -335,7 +336,7 @@ export function AcademicYearListPage() {
                   onClick={() => setPage(page - 1)}
                   className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-slate-400 border border-slate-200 transition-all hover:text-blue-600 hover:border-blue-200 disabled:opacity-20 disabled:hover:text-slate-400 disabled:hover:border-slate-200 group shadow-sm"
                 >
-                  <span className="material-symbols-outlined text-[20px] group-active:scale-90 transition-transform">chevron_left</span>
+                  <AppIcon name="ChevronLeft" className="group-active:scale-90 transition-transform" />
                 </button>
                 
                 <div className="flex items-center gap-1 px-1">
@@ -363,7 +364,7 @@ export function AcademicYearListPage() {
                   onClick={() => setPage(page + 1)}
                   className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-slate-400 border border-slate-200 transition-all hover:text-blue-600 hover:border-blue-200 disabled:opacity-20 disabled:hover:text-slate-400 disabled:hover:border-slate-200 group shadow-sm"
                 >
-                  <span className="material-symbols-outlined text-[20px] group-active:scale-90 transition-transform">chevron_right</span>
+                  <AppIcon name="ChevronRight" className="group-active:scale-90 transition-transform" />
                 </button>
               </div>
             </div>

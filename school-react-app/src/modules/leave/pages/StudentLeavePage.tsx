@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Student "My leave requests" page.
  *
@@ -101,7 +102,7 @@ export default function StudentLeavePage() {
         description="View and submit your leave applications. Approval status appears here."
         actions={
           <Button onClick={() => setIsModalOpen(true)}>
-            <span className="material-symbols-outlined text-lg mr-2">add</span>
+            <AppIcon name="Plus" size={18} className="mr-2" />
             Submit leave
           </Button>
         }
@@ -142,7 +143,7 @@ export default function StudentLeavePage() {
                   className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 transition-colors"
                   aria-label="Close"
                 >
-                  <span className="material-symbols-outlined">close</span>
+                  <AppIcon name="X" />
                 </button>
               </div>
               <div className="p-5">

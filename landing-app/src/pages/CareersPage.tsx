@@ -4,7 +4,7 @@
  */
 
 import { Seo } from '@/components/Seo';
-import { Mail, MessageCircle } from '@/components/icons';
+import { AppIcon } from "shared/ui/AppIcon";
 
 import { PageShell } from '@/components/PageShell';
 
@@ -66,7 +66,7 @@ export function CareersPage() {
               href="mailto:plexotecnologies@gmail.com"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-blue-600 text-white font-semibold shadow-md hover:bg-blue-700 hover:shadow-lg transition-all"
             >
-              <Mail className="w-4 h-4" />
+              <AppIcon name="Mail" className="w-4 h-4" />
               Email the team
             </a>
             <a
@@ -75,7 +75,7 @@ export function CareersPage() {
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white border border-slate-200 text-slate-700 font-semibold hover:border-blue-200 hover:text-blue-600 transition-all"
             >
-              <MessageCircle className="w-4 h-4" />
+              <AppIcon name="MessageCircle" className="w-4 h-4" />
               Message on WhatsApp
             </a>
           </div>

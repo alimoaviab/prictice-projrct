@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useEffect, useState } from "react";
 import { SchoolShell } from "@/layouts/SchoolShell";
 import { DataState, Skeleton } from "@/components/ui";
@@ -100,7 +101,7 @@ export function ParentStudentProfilePage() {
                                 { label: "Date of Birth", value: data.student.date_of_birth || "—", icon: "cake" }
                             ].map(m => (
                                 <div key={m.label} className="p-3.5 rounded-xl border border-slate-50 bg-slate-50/30 flex items-center gap-3">
-                                   <span className="material-symbols-outlined text-[18px] text-blue-600 opacity-30">{m.icon}</span>
+                                   <AppIcon name={m.icon} size={18} className="text-blue-600 opacity-30" />
                                    <div>
                                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-0.5">{m.label}</p>
                                       <p className="text-[11px] font-bold text-slate-800 truncate">{m.value}</p>
@@ -127,7 +128,7 @@ export function ParentStudentProfilePage() {
                 <div className="space-y-6">
                     <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
                         <div className="flex items-center gap-2 mb-6">
-                           <span className="material-symbols-outlined text-blue-600 text-[18px]">family_restroom</span>
+                           <AppIcon name="Users" size={18} className="text-blue-600" />
                            <h3 className="text-[13px] font-black text-slate-900 tracking-tight uppercase tracking-widest">Guardian Info</h3>
                         </div>
                         
@@ -151,7 +152,7 @@ export function ParentStudentProfilePage() {
                           <p className="text-[9px] font-black uppercase tracking-widest text-blue-400 mb-2">Privacy & Security</p>
                           <p className="text-[11px] font-bold leading-relaxed opacity-80">This data is strictly isolated to your verified guardian account. Any discrepancy should be reported to the administration.</p>
                        </div>
-                       <span className="material-symbols-outlined absolute right-[-10px] bottom-[-10px] text-[60px] text-white opacity-5">security</span>
+                       <AppIcon name="Shield" size={60} className="absolute right-[-10px] bottom-[-10px] text-white opacity-5" />
                     </div>
                 </div>
             </div>

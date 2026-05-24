@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Star } from "@/components/icons";
+import { AppIcon } from "shared/ui/AppIcon";
 
 const testimonials = [
   {
@@ -61,7 +61,7 @@ export const TestimonialSection = () => {
               <div>
                 <div className="flex gap-1 mb-6" aria-label="5 out of 5 stars">
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <Star key={star} className="w-5 h-5 fill-amber-400 text-amber-400" />
+                    <AppIcon name="Star" key={star} className="w-5 h-5 fill-amber-400 text-amber-400" />
                   ))}
                 </div>
                 <p className="text-slate-700 text-lg leading-relaxed mb-8 font-medium">

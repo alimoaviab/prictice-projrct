@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Ported from old-app/school-app/layouts/SchoolShell.tsx.
  *
@@ -216,16 +217,16 @@ function AdminActions() {
           to={action.href}
           className={`flex items-center gap-1.5 px-3 py-1 rounded-full border bg-white transition-all hover:scale-[1.02] active:scale-[0.98] ${action.color} shadow-sm`}
         >
-          <span className="material-symbols-outlined text-[15px]">{action.icon}</span>
+          <AppIcon name={action.icon} size={15} />
           <span className="text-[10px] font-bold normal-case tracking-tight">{action.label}</span>
         </Link>
       ))}
       <div className="flex gap-1 ml-1">
         <Link to="/admin/results" className="p-1 rounded-full text-slate-400 hover:text-blue-600 hover:bg-slate-50 transition-all" title="Results">
-          <span className="material-symbols-outlined text-[18px]">leaderboard</span>
+          <AppIcon name="Leaderboard" size={18} />
         </Link>
         <Link to="/admin/timetable" className="p-1 rounded-full text-slate-400 hover:text-blue-600 hover:bg-slate-50 transition-all" title="Timetable">
-          <span className="material-symbols-outlined text-[18px]">calendar_view_week</span>
+          <AppIcon name="CalendarDays" size={18} />
         </Link>
       </div>
     </div>
@@ -432,9 +433,7 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
             className="rounded p-1 text-slate-300 transition-colors hover:bg-slate-50 hover:text-blue-600"
             aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            <span className="material-symbols-outlined text-[15px]">
-              {isCollapsed ? "chevron_right" : "chevron_left"}
-            </span>
+            <AppIcon name={isCollapsed ? "chevron_right" : "chevron_left"} size={15} />
           </button>
         </div>
 
@@ -449,9 +448,7 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
                       to={item.href}
                       className={`flex h-7 w-7 items-center justify-center rounded transition-all duration-200 ${isActive ? "bg-blue-600 !text-white shadow-sm" : "text-slate-400 hover:bg-blue-50 hover:text-blue-600"}`}
                     >
-                      <span className={`material-symbols-outlined text-[16px] ${isActive ? "font-bold" : ""}`}>
-                        {item.icon}
-                      </span>
+                      <AppIcon name={item.icon} size={16} className={` text-[16px] ${isActive ? "font-bold" : ""} `} />
                     </Link>
                   </Tooltip>
                 ) : (
@@ -460,9 +457,7 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
                     to={item.href}
                     className={`group flex h-7 items-center gap-2.5 px-2.5 py-1 text-[11px] font-bold transition-all duration-200 rounded-lg ${isActive ? "bg-blue-600 !text-white shadow-md shadow-blue-600/20" : "text-slate-500 hover:bg-blue-50/50 hover:text-blue-600"}`}
                   >
-                    <span className={`material-symbols-outlined text-[16px] transition-colors ${isActive ? "text-white" : "text-slate-400 group-hover:text-blue-600"}`}>
-                      {item.icon}
-                    </span>
+                    <AppIcon name={item.icon} size={16} className={` text-[16px] transition-colors ${isActive ? "text-white" : "text-slate-400 group-hover:text-blue-600"} `} />
                     <span className="truncate tracking-tight">{item.label}</span>
                     {isActive && !isCollapsed && <span className="ml-auto h-1 w-1 rounded-full bg-white/60" />}
                   </Link>
@@ -501,7 +496,7 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
                   onClick={logout}
                   className="rounded p-1 text-slate-300 transition-colors hover:bg-red-50 hover:text-red-500"
                 >
-                  <span className="material-symbols-outlined text-[18px]">logout</span>
+                  <AppIcon name="LogOut" size={18} />
                 </button>
               </>
             )}
@@ -517,10 +512,10 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
               onClick={() => setIsCollapsed(false)}
               className="rounded p-1 transition-colors hover:bg-blue-50 md:hidden"
             >
-              <span className="material-symbols-outlined text-slate-600 text-[18px]">menu</span>
+              <AppIcon name="Menu" size={18} className="text-slate-600" />
             </button>
             <div className="relative max-w-[420px] w-full hidden xl:block">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[14px] text-slate-400">search</span>
+              <AppIcon name="Search" size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 placeholder="Quick search..."
@@ -533,7 +528,7 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
             {user.role === "parent" && <ChildSwitcher />}
 
             <div className="hidden sm:flex items-center gap-2 rounded-md border border-slate-100 bg-white px-2 py-1">
-              <span className="material-symbols-outlined text-[14px] text-slate-400">calendar_today</span>
+              <AppIcon name="Calendar" size={14} className="text-slate-400" />
               <select
                 value={selectedAcademyYearId}
                 disabled={user.role === "student"}
@@ -578,7 +573,7 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
               {user.role === "admin" && <AdminActions />}
 
               <button className="relative flex h-8 w-8 items-center justify-center rounded-full border border-slate-100 bg-white text-slate-400 transition-all hover:border-blue-400 hover:text-blue-600 active:scale-95 shadow-sm">
-                <span className="material-symbols-outlined text-[19px]">notifications</span>
+                <AppIcon name="Bell" size={19} />
                 <span className="absolute top-1.5 right-1.5 flex h-1.5 w-1.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>

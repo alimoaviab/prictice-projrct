@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { Link } from "react-router-dom";
 import { SchoolShell } from "@/layouts/SchoolShell";
 import { useState, useEffect } from "react";
@@ -52,7 +53,7 @@ export function StudentLiveExamPage() {
                   <p className="text-[10px] font-bold normal-case tracking-[0.3em] text-slate-400">{item.title}</p>
                   <p className={`mt-3 text-3xl font-bold ${item.tone}`}>{item.value}</p>
                 </div>
-                <span className="material-symbols-outlined text-3xl text-slate-300">{item.icon}</span>
+                <AppIcon name={item.icon} size={30} className="text-slate-300" />
               </div>
               <p className="mt-4 text-sm text-slate-500">{item.detail}</p>
             </div>
@@ -122,7 +123,7 @@ export function StudentLiveExamPage() {
                     className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-4 text-sm font-semibold text-slate-900 transition hover:border-slate-300 hover:bg-slate-50"
                   >
                     <span>{label}</span>
-                    <span className="material-symbols-outlined text-slate-400">{icon}</span>
+                    <AppIcon name={icon} className="text-slate-400" />
                   </Link>
                 ))}
               </div>

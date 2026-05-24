@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { Badge, Card } from "@/components/ui";
 import { TestRow } from "../types/test.types";
 
@@ -45,7 +46,7 @@ export function TestTable({ rows }: { rows: TestRow[] }) {
                 View Details
              </button>
              <button className="px-3 py-2 rounded-lg border border-border hover:bg-gray-50 transition-colors">
-                <span className="material-symbols-outlined text-sm">more_horiz</span>
+                <AppIcon name="MoreHorizontal" size={14} />
              </button>
           </div>
         </Card>

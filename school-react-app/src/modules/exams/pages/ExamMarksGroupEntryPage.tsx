@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Group marks entry — one wide table for the whole exam (all subjects).
  *
@@ -363,7 +364,7 @@ export function ExamMarksGroupEntryPage({
             className="h-9 w-9 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-all"
             aria-label="Back to exams"
           >
-            <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+            <AppIcon name="ChevronLeft" size={18} />
           </Link>
           <div className="min-w-0 flex-1">
             <h2 className="text-[16px] font-black text-slate-900 truncate">{exam.title}</h2>
@@ -382,9 +383,7 @@ export function ExamMarksGroupEntryPage({
           </div>
           <div className="flex items-center gap-2">
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-base text-slate-400">
-                search
-              </span>
+              <AppIcon name="Search" size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -496,7 +495,7 @@ export function ExamMarksGroupEntryPage({
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${dirty ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'}`}>
-            <span className="material-symbols-outlined text-[20px]">{dirty ? "pending_actions" : "check_circle"}</span>
+            <AppIcon name={dirty ? "pending_actions" : "check_circle"} />
           </div>
           <div>
             <p className="text-[13px] font-black text-slate-900">
@@ -525,7 +524,7 @@ export function ExamMarksGroupEntryPage({
               </>
             ) : (
               <>
-                <span className="material-symbols-outlined text-[20px]">save</span>
+                <AppIcon name="Save" />
                 Save All Marks
               </>
             )}

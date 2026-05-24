@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown } from "@/components/icons";
+import { AppIcon } from "shared/ui/AppIcon";
 
 export const FaqSection = () => {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
@@ -99,7 +99,7 @@ export const FaqSection = () => {
                 >
                   <span className="text-lg font-bold text-slate-900 pr-4">{faq.question}</span>
                   <div className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full transition-colors duration-300 ${isExpanded ? 'bg-slate-900 text-white' : 'bg-white text-slate-400 border border-slate-200'}`}>
-                     <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                     <AppIcon name="ChevronDown" className={`w-5 h-5 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
                   </div>
                 </button>
                 <AnimatePresence initial={false}>

@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Universal entity card — the single card design used by every list page
  * (Classes, Teachers, Students, Tests, Exams, Homework, Events, Behavior,
@@ -170,7 +171,7 @@ export function EntityCard({
                 className={`h-10 w-10 shrink-0 rounded-lg ${accentTone.bg} text-white flex items-center justify-center shadow-sm`}
               >
                 {typeof icon === "string" ? (
-                  <span className="material-symbols-outlined text-lg">{icon}</span>
+                  <AppIcon name={icon} size={18} />
                 ) : (
                   icon
                 )}
@@ -224,7 +225,7 @@ export function EntityCard({
                             : "text-slate-500 hover:text-blue-600"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[14px]">{a.icon}</span>
+                  <AppIcon name={a.icon} size={14} />
                 </button>
               ))}
             </div>
@@ -345,7 +346,7 @@ function ActionButton({ action }: { action: EntityCardAction }) {
     : `bg-slate-50 border border-slate-200 ${accent.text} hover:bg-white hover:border-slate-300`;
 
   const iconNode = action.icon && (
-    <span className="material-symbols-outlined text-[13px]">{action.icon}</span>
+    <AppIcon name={action.icon} size={13} />
   );
 
   if (action.to && !action.disabled) {

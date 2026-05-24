@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DataState, Skeleton, Badge, Button } from "@/components/ui";
@@ -201,7 +202,7 @@ export function ClassFeesPage() {
                 <div className="flex items-center gap-6">
                     <div className="flex items-center gap-3">
                         <div className="h-8 w-8 flex items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm">
-                            <span className="material-symbols-outlined text-[18px]">class</span>
+                            <AppIcon name="BookOpen" size={18} />
                         </div>
                         <div>
                             <p className="text-[9px] font-black tracking-widest text-slate-400">Class</p>
@@ -243,7 +244,7 @@ export function ClassFeesPage() {
                         {data.fees.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-12 text-center">
                                 <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-50 text-slate-300">
-                                    <span className="material-symbols-outlined text-2xl">payments</span>
+                                    <AppIcon name="CreditCard" size={24} />
                                 </div>
                                 <h4 className="text-sm font-bold text-slate-900">No components yet</h4>
                                 <p className="text-xs text-slate-500">Configure your first billing rule.</p>
@@ -254,9 +255,7 @@ export function ClassFeesPage() {
                                     <div key={fee.id} className="group flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/50 p-3 transition-all hover:bg-white hover:shadow-md">
                                         <div className="flex items-center gap-3">
                                             <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${fee.type === "recurring" ? "bg-blue-50 text-blue-600" : "bg-amber-50 text-amber-600"}`}>
-                                                <span className="material-symbols-outlined text-[18px]">
-                                                    {fee.type === "recurring" ? "autorenew" : "event_repeat"}
-                                                </span>
+                                                <AppIcon name={fee.type === "recurring" ? "autorenew" : "event_repeat"} size={18} />
                                             </div>
                                             <div>
                                                 <h4 className="text-xs font-black text-slate-900">{fee.fee_type}</h4>
@@ -283,23 +282,21 @@ export function ClassFeesPage() {
                                                     className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all"
                                                     title={fee.status === 'active' ? 'Disable' : 'Enable'}
                                                 >
-                                                    <span className="material-symbols-outlined text-[16px]">
-                                                        {fee.status === 'active' ? 'block' : 'check_circle'}
-                                                    </span>
+                                                    <AppIcon name={fee.status === 'active' ? 'block' : 'check_circle'} size={16} />
                                                 </button>
                                                 <button 
                                                     onClick={() => handleDuplicate(fee.id)} 
                                                     className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all"
                                                     title="Duplicate"
                                                 >
-                                                    <span className="material-symbols-outlined text-[16px]">content_copy</span>
+                                                    <AppIcon name="Copy" size={16} />
                                                 </button>
                                                 <button 
                                                     onClick={() => setShowDeleteDrawer(fee)} 
                                                     className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all"
                                                     title="Delete"
                                                 >
-                                                    <span className="material-symbols-outlined text-[16px]">delete</span>
+                                                    <AppIcon name="Trash2" size={16} />
                                                 </button>
                                             </div>
                                         </div>
@@ -415,7 +412,7 @@ export function ClassFeesPage() {
                             <div className="p-6 border-b border-slate-100 flex items-center justify-between">
                                 <h3 className="text-lg font-black text-slate-900">Remove Component</h3>
                                 <button onClick={() => setShowDeleteDrawer(null)} className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors">
-                                    <span className="material-symbols-outlined text-slate-400">close</span>
+                                    <AppIcon name="X" className="text-slate-400" />
                                 </button>
                             </div>
                             
@@ -433,7 +430,7 @@ export function ClassFeesPage() {
 
                                 <div className="space-y-3">
                                     <div className="flex items-start gap-3 p-3 rounded-xl bg-red-50 text-red-600">
-                                        <span className="material-symbols-outlined text-[18px] mt-0.5">warning</span>
+                                        <AppIcon name="AlertTriangle" size={18} className="mt-0.5" />
                                         <p className="text-[11px] font-bold leading-relaxed">
                                             Removing this component will stop it from being applied to student records in future billing cycles. Existing invoices will not be affected.
                                         </p>
@@ -478,7 +475,7 @@ export function ClassFeesPage() {
 
                 {students.length === 0 ? (
                     <div className="py-12 text-center border-2 border-dashed border-slate-100 rounded-3xl bg-slate-50/30">
-                        <span className="material-symbols-outlined text-4xl text-slate-200 mb-2">person_off</span>
+                        <AppIcon name="UserMinus" size={36} className="text-slate-200 mb-2" />
                         <p className="text-xs font-bold text-slate-400 tracking-widest">No students enrolled in this class</p>
                     </div>
                 ) : (
@@ -509,7 +506,7 @@ function StatCard({ label, value, icon }: { label: string; value: string | numbe
                 <p className="text-xl font-black text-blue-600 tabular-nums">{value}</p>
             </div>
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400">
-                <span className="material-symbols-outlined text-[20px]">{icon}</span>
+                <AppIcon name={icon} />
             </div>
         </div>
     );

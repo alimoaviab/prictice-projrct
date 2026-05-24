@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Status-aware period card. Renders a single (day, period) cell on the
  * grid. Reuses the platform's compact card chrome — no new tokens.
@@ -153,7 +154,7 @@ function PeriodCardImpl({
               title="Edit"
               aria-label="Edit period"
             >
-              <span className="material-symbols-outlined text-[12px]">edit</span>
+              <AppIcon name="Pencil" size={12} />
             </button>
           )}
           {onDelete && (
@@ -167,7 +168,7 @@ function PeriodCardImpl({
               title="Delete"
               aria-label="Delete period"
             >
-              <span className="material-symbols-outlined text-[12px]">delete</span>
+              <AppIcon name="Trash2" size={12} />
             </button>
           )}
         </div>

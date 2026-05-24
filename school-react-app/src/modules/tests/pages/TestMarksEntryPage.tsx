@@ -10,16 +10,7 @@ import {
 import { useSafeAsync } from "@/hooks/useSafeAsync";
 import { showToast } from "@/utils/toast";
 import { serviceRequest } from "@/services/service-client";
-import { 
-  ChevronLeft,
-  Save,
-  Users,
-  CheckCircle2,
-  AlertCircle,
-  FileText,
-  Search,
-  ArrowRight
-} from "@/components/icons";
+import { AppIcon } from "shared/ui/AppIcon";
 import { Link, useSearchParams } from "react-router-dom";
 
 interface Student {
@@ -175,7 +166,7 @@ export function TestMarksEntryPage({ testId: testIdProp, role = "TEACHER" }: { t
       <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
         <div className="flex items-center gap-4 mb-6">
           <Link to={role === "ADMIN" ? "/admin/tests" : "/teacher/tests"} className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-all">
-            <ChevronLeft className="h-5 w-5" />
+            <AppIcon name="ChevronLeft" className="h-5 w-5" />
           </Link>
           <div>
             <h2 className="text-xl font-black text-slate-900">{test.title}</h2>
@@ -190,7 +181,7 @@ export function TestMarksEntryPage({ testId: testIdProp, role = "TEACHER" }: { t
 
         <div className="flex flex-wrap items-center gap-4 pt-6 border-t border-slate-50">
           <div className="relative flex-1 min-w-[300px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <AppIcon name="Search" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input 
               placeholder="Search student for evaluation..." 
               className="pl-10 h-11 bg-slate-50 border-0 focus:bg-white transition-all text-sm rounded-xl font-medium"
@@ -287,7 +278,7 @@ export function TestMarksEntryPage({ testId: testIdProp, role = "TEACHER" }: { t
         <div className="flex items-center gap-6 px-4 border-r border-white/10">
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-lg bg-blue-500 flex items-center justify-center">
-              <Users className="h-4 w-4" />
+              <AppIcon name="Users" className="h-4 w-4" />
             </div>
             <div>
               <p className="text-[8px] font-black uppercase tracking-widest text-blue-300 leading-none mb-1">Roster Count</p>
@@ -298,7 +289,7 @@ export function TestMarksEntryPage({ testId: testIdProp, role = "TEACHER" }: { t
 
         <div className="flex-1 px-8 flex items-center gap-10">
            <div className="flex items-center gap-3">
-             <AlertCircle className="h-4 w-4 text-amber-400" />
+             <AppIcon name="AlertCircle" className="h-4 w-4 text-amber-400" />
              <p className="text-[10px] font-bold text-slate-300">Ensure marks do not exceed max threshold (<span className="text-white">{test.max_marks}</span>).</p>
            </div>
         </div>
@@ -315,7 +306,7 @@ export function TestMarksEntryPage({ testId: testIdProp, role = "TEACHER" }: { t
             </>
           ) : (
             <>
-              <Save className="h-4 w-4" />
+              <AppIcon name="Save" className="h-4 w-4" />
               Commit Marks
             </>
           )}

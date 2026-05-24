@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { SchoolShell } from "@/layouts/SchoolShell";
@@ -71,7 +72,7 @@ export function ExamQuestionsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
             <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors">
-                <span className="material-symbols-outlined">arrow_back</span>
+                <AppIcon name="ArrowLeft" />
                 Back
             </button>
             <div className="flex gap-3">
@@ -79,7 +80,7 @@ export function ExamQuestionsPage() {
                     onClick={addQuestion}
                     className="flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
                 >
-                    <span className="material-symbols-outlined text-[20px]">add</span>
+                    <AppIcon name="Plus" />
                     Add Question
                 </button>
                 <button 
@@ -87,7 +88,7 @@ export function ExamQuestionsPage() {
                     disabled={saving}
                     className="flex items-center gap-2 rounded-xl bg-slate-900 px-6 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50 transition-colors"
                 >
-                    <span className="material-symbols-outlined text-[20px]">save</span>
+                    <AppIcon name="Save" />
                     {saving ? "Saving..." : "Save Questions"}
                 </button>
             </div>

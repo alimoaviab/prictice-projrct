@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { Badge, Button, Card, DataState, PageHeader, Skeleton, TableSkeleton } from "@/components/ui";
 import { AcademicYearForm } from "../components/AcademicYearForm";
 import { AcademicYearTable } from "../components/AcademicYearTable";
@@ -57,7 +58,7 @@ export function AcademicYearPage() {
                             <p className="mt-0.5 text-[11px] font-medium text-slate-500">Operational windows.</p>
                         </div>
                         <div className="rounded-lg bg-blue-50 px-2 py-1.5 text-blue-600">
-                            <span className="material-symbols-outlined text-[16px]">calendar_month</span>
+                            <AppIcon name="Calendar" size={16} />
                         </div>
                     </div>
                 </Card>
@@ -81,7 +82,7 @@ export function AcademicYearPage() {
                             <p className="mt-0.5 text-[11px] font-medium text-slate-500">Closed cycles.</p>
                         </div>
                         <div className="rounded-lg bg-emerald-50 px-2 py-1.5 text-emerald-600">
-                            <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                            <AppIcon name="CheckCircle2" size={16} />
                         </div>
                     </div>
                 </Card>

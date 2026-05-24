@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import type { ReactNode } from "react";
 
 export interface ToolbarFilterOption {
@@ -26,9 +27,7 @@ export function ListToolbar({
     <div className="card-compact premium-card border-slate-200">
       <div className="grid grid-cols-1 gap-2.5 md:grid-cols-12 md:items-center">
         <div className="relative md:col-span-6">
-          <span className="material-symbols-outlined pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[16px] text-slate-400">
-            search
-          </span>
+          <AppIcon name="Search" size={16} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             value={searchValue}
             onChange={(event) => onSearchChange(event.target.value)}

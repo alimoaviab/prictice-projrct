@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BrainCircuit, Sparkles, TrendingUp, AlertTriangle } from "@/components/icons";
+import { AppIcon } from "shared/ui/AppIcon";
 
 interface Message {
   id: string;
@@ -294,7 +294,7 @@ export const AISystemSection = () => {
               viewport={{ once: true, margin: "-50px" }}
               className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-semibold mb-6"
             >
-              <BrainCircuit className="w-4 h-4 animate-pulse" />
+              <AppIcon name="BrainCircuit" className="w-4 h-4 animate-pulse" />
               <span className="tracking-wide">Meet Plexa AI Agent</span>
             </motion.div>
 
@@ -324,21 +324,21 @@ export const AISystemSection = () => {
             <div className="space-y-5">
               {[
                 { 
-                  icon: TrendingUp, 
+                  icon: "TrendingUp", 
                   title: "Instant SQL-free Analytics", 
                   desc: "Plexa turns natural questions like 'how many students' or 'how many classes' into database-level queries instantly.", 
                   color: "text-emerald-400",
                   bgColor: "bg-emerald-500/5"
                 },
                 { 
-                  icon: AlertTriangle, 
+                  icon: "AlertTriangle", 
                   title: "Proactive Warning Triggers", 
                   desc: "Detects sudden attendance drops, payment delays, or grade deficits and suggests immediate actionable parent notifications.", 
                   color: "text-amber-400",
                   bgColor: "bg-amber-500/5"
                 },
                 { 
-                  icon: Sparkles, 
+                  icon: "Sparkles", 
                   title: "Role-Based Intelligence", 
                   desc: "Tailored to think like a Finance director, a Principal Admin, or an engaged Teacher, serving custom charts and summaries.", 
                   color: "text-purple-400",
@@ -354,7 +354,7 @@ export const AISystemSection = () => {
                   className="flex gap-4 p-4 rounded-2xl bg-slate-900/50 border border-slate-800/80 hover:bg-slate-900/90 hover:border-slate-700/50 transition-all duration-300"
                 >
                   <div className={`mt-1 p-2 rounded-xl ${item.bgColor} ${item.color} flex items-center justify-center h-10 w-10 shrink-0`}>
-                    <item.icon className="w-5 h-5" />
+                    <AppIcon name={item.icon} className="w-5 h-5" />
                   </div>
                   <div>
                     <h4 className="text-white font-semibold mb-1 text-base">{item.title}</h4>
@@ -387,7 +387,7 @@ export const AISystemSection = () => {
                   {/* Avatar */}
                   <div className="relative">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-                      <Sparkles className="w-5 h-5 text-sky-200" />
+                      <AppIcon name="Sparkles" className="w-5 h-5 text-sky-200" />
                     </div>
                     {/* Breathing dot */}
                     <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-slate-900 animate-pulse" />

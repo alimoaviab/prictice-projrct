@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useEffect, useState } from 'react'
 import { apiRequest } from '@/lib/api'
 
@@ -58,7 +59,7 @@ export function UsersPage() {
       {/* Filters */}
       <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200">
         <div className="relative flex-1 max-w-sm">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[16px]">search</span>
+          <AppIcon name="Search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -90,7 +91,7 @@ export function UsersPage() {
           <div className="p-12 text-center text-sm text-slate-400">Loading users...</div>
         ) : users.length === 0 ? (
           <div className="p-16 text-center">
-            <span className="material-symbols-outlined text-4xl text-slate-200 mb-3">group</span>
+            <AppIcon name="Users" size={36} className="text-slate-200 mb-3" />
             <p className="text-sm font-medium text-slate-500">No users found</p>
           </div>
         ) : (

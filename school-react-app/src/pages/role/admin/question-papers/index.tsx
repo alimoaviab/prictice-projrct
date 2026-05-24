@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useState } from "react";
 import { SchoolShell } from "@/layouts/SchoolShell";
 import { QuestionPaperListPage } from "@/modules/question-papers/pages/QuestionPaperListPage";
@@ -29,7 +30,7 @@ export function AdminQuestionPapersPage() {
                 : "text-slate-500 hover:text-slate-700"
             }`}
           >
-            <span className="material-symbols-outlined text-base">{t.icon}</span>
+            <AppIcon name={t.icon} size={16} />
             {t.label}
           </button>
         ))}

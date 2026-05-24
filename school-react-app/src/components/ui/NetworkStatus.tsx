@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useEffect, useState } from "react";
 
 /**
@@ -24,7 +25,7 @@ export function NetworkStatus() {
 
   return (
     <div className="fixed bottom-4 left-4 z-[9999] flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800 shadow-lg">
-      <span className="material-symbols-outlined text-base">wifi_off</span>
+      <AppIcon name="WifiOff" size={16} />
       You're offline. Changes will sync when you reconnect.
     </div>
   );

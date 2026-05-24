@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { FormEvent, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button, Input, Select } from "@/components/ui";
@@ -223,7 +224,7 @@ export function TestForm({
                         onChange={(e) => setForm({ ...form, title: e.target.value })}
                         error={errors.title}
                         required
-                        leftIcon={<span className="material-symbols-outlined text-[16px]">title</span>}
+                        leftIcon={<AppIcon name="Title" size={16} />}
                         className="bg-white border-slate-200 h-9.5 focus:border-slate-900 focus:ring-slate-900/5 transition-all text-sm"
                     />
                 </div>
@@ -237,7 +238,7 @@ export function TestForm({
                         onChange={(e) => setForm({ ...form, starts_at: e.target.value })}
                         error={errors.starts_at}
                         required
-                        leftIcon={<span className="material-symbols-outlined text-[18px]">calendar_today</span>}
+                        leftIcon={<AppIcon name="Calendar" size={18} />}
                         className="bg-white border-slate-200 h-9.5 focus:border-slate-900 focus:ring-slate-900/5 transition-all"
                     />
 
@@ -247,7 +248,7 @@ export function TestForm({
                         min="1"
                         value={form.max_marks}
                         onChange={(e) => setForm({ ...form, max_marks: parseInt(e.target.value) || 10 })}
-                        leftIcon={<span className="material-symbols-outlined text-[16px]">score</span>}
+                        leftIcon={<AppIcon name="Trophy" size={16} />}
                         className="bg-white border-slate-200 h-9.5 focus:border-slate-900 focus:ring-slate-900/5 transition-all text-sm"
                     />
                 </div>
@@ -289,7 +290,7 @@ export function TestForm({
                             </>
                         ) : (
                             <>
-                                <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                                <AppIcon name="CheckCircle2" size={16} />
                                 Commit Test Schedule
                             </>
                         )}

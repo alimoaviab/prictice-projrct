@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 import { useEffect, useState } from 'react'
 import { apiRequest } from '@/lib/api'
 
@@ -49,7 +50,7 @@ export function SettingsPage() {
           disabled={saving}
           className="h-8 px-4 rounded-lg bg-blue-600 text-white text-[11px] font-bold hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-1.5"
         >
-          <span className="material-symbols-outlined text-[14px]">{saved ? 'check_circle' : 'save'}</span>
+          <AppIcon name={saved ? 'check_circle' : 'save'} size={14} />
           {saving ? 'Saving...' : saved ? 'Saved' : 'Save Changes'}
         </button>
       </div>
@@ -58,7 +59,7 @@ export function SettingsPage() {
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100">
           <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <span className="material-symbols-outlined text-blue-600 text-[18px]">school</span>
+            <AppIcon name="GraduationCap" size={18} className="text-blue-600" />
             School Registration
           </h3>
         </div>
@@ -124,7 +125,7 @@ export function SettingsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-white rounded-xl border border-slate-200 p-5">
           <div className="flex items-center gap-2 mb-3">
-            <span className="material-symbols-outlined text-blue-600 text-[18px]">check_circle</span>
+            <AppIcon name="CheckCircle2" size={18} className="text-blue-600" />
             <h4 className="text-[12px] font-bold text-slate-900">Auto Approve = ON</h4>
           </div>
           <div className="space-y-2 text-[11px] text-slate-600">
@@ -136,7 +137,7 @@ export function SettingsPage() {
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-5">
           <div className="flex items-center gap-2 mb-3">
-            <span className="material-symbols-outlined text-slate-500 text-[18px]">pending</span>
+            <AppIcon name="Pending" size={18} className="text-slate-500" />
             <h4 className="text-[12px] font-bold text-slate-900">Auto Approve = OFF</h4>
           </div>
           <div className="space-y-2 text-[11px] text-slate-600">

@@ -1,3 +1,4 @@
+import { AppIcon } from "shared/ui/AppIcon";
 /**
  * /admin/tests — Test management dashboard.
  *
@@ -170,9 +171,7 @@ export function TestListPage({ filters }: { filters?: { class_id?: string; subje
         <div className="flex flex-1 items-center gap-2">
           {/* Search */}
           <div className="relative flex-1 max-w-[220px]">
-            <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-base text-slate-400">
-              search
-            </span>
+            <AppIcon name="Search" size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               value={searchQuery}
               onChange={(e) => {
@@ -216,7 +215,7 @@ export function TestListPage({ filters }: { filters?: { class_id?: string; subje
               className="h-7 inline-flex items-center gap-1 px-2 rounded-md text-[11px] font-bold text-slate-400 hover:text-slate-700 transition-colors"
               title="Clear filters"
             >
-              <span className="material-symbols-outlined text-sm">close</span>
+              <AppIcon name="X" size={14} />
               Clear
             </button>
           )}
@@ -232,7 +231,7 @@ export function TestListPage({ filters }: { filters?: { class_id?: string; subje
                 viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500"
               }`}
             >
-              <span className="material-symbols-outlined text-sm">grid_view</span>
+              <AppIcon name="LayoutGrid" size={14} />
               Grid
             </button>
             <button
@@ -242,7 +241,7 @@ export function TestListPage({ filters }: { filters?: { class_id?: string; subje
                 viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500"
               }`}
             >
-              <span className="material-symbols-outlined text-sm">view_list</span>
+              <AppIcon name="ViewList" size={14} />
               List
             </button>
           </div>
@@ -253,7 +252,7 @@ export function TestListPage({ filters }: { filters?: { class_id?: string; subje
               to={withQuery(testsCreatePath)}
               className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg bg-blue-600 text-white text-[12px] font-bold shadow-sm shadow-blue-600/15 hover:bg-blue-700 transition-colors active:scale-[0.98]"
             >
-              <span className="material-symbols-outlined text-base">add</span>
+              <AppIcon name="Plus" size={16} />
               New test
             </Link>
           )}
@@ -352,7 +351,7 @@ function EmptyState({
     <div className="bg-white rounded-xl border border-slate-200 ring-1 ring-slate-900/5 shadow-[0_4px_18px_rgb(0,0,0,0.03)] px-6 py-10 text-center">
       <div className="flex flex-col items-center justify-center gap-4 max-w-sm mx-auto">
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-          <span className="material-symbols-outlined text-2xl">quiz</span>
+          <AppIcon name="HelpCircle" size={24} />
         </div>
         <div className="space-y-1">
           <h3 className="text-base font-bold text-slate-900 tracking-tight">
@@ -371,7 +370,7 @@ function EmptyState({
               onClick={onClear}
               className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg border border-slate-200 bg-white text-[12px] font-bold text-slate-700 hover:border-blue-300 hover:text-blue-700 transition-colors"
             >
-              <span className="material-symbols-outlined text-base">filter_alt_off</span>
+              <AppIcon name="FilterX" size={16} />
               Clear filters
             </button>
           )}
@@ -380,7 +379,7 @@ function EmptyState({
               to={createPath}
               className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg bg-blue-600 text-white text-[12px] font-bold shadow-sm shadow-blue-600/15 hover:bg-blue-700 transition-colors active:scale-[0.98]"
             >
-              <span className="material-symbols-outlined text-base">add</span>
+              <AppIcon name="Plus" size={16} />
               Schedule first test
             </Link>
           )}

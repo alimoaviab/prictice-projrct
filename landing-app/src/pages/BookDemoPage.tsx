@@ -3,22 +3,22 @@ import { Seo } from '@/components/Seo';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { motion } from 'framer-motion';
-import { Calendar, Clock, Users, CheckCircle2, MessageCircle, Mail } from '@/components/icons';
+import { AppIcon } from "shared/ui/AppIcon";
 import { whatsappUrl, WhatsappMessages } from '@/lib/whatsapp';
 
 const benefits = [
   {
-    icon: Calendar,
+    icon: "Calendar",
     title: 'Personalized Walkthrough',
     description: 'See exactly how EduPlexo works for your specific school size, structure, and requirements.',
   },
   {
-    icon: Clock,
+    icon: "Clock",
     title: '30-Minute Session',
     description: 'Focused, efficient demo covering the features that matter most to your institution.',
   },
   {
-    icon: Users,
+    icon: "Users",
     title: 'Expert Guidance',
     description: 'Our education technology specialists will answer all your questions and address concerns.',
   },
@@ -90,7 +90,7 @@ export function BookDemoPage() {
                   className="flex gap-4 p-6 bg-white rounded-2xl border border-slate-200/60 shadow-sm"
                 >
                   <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-                    <benefit.icon className="w-6 h-6 text-blue-600" />
+                    <AppIcon name={benefit.icon} className="w-6 h-6 text-blue-600" />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-slate-900 mb-1">{benefit.title}</h3>
@@ -131,7 +131,7 @@ export function BookDemoPage() {
                   className="flex items-center gap-4 w-full p-5 bg-emerald-50 border border-emerald-200 rounded-xl hover:bg-emerald-100 transition-colors group"
                 >
                   <div className="w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center">
-                    <MessageCircle className="w-6 h-6 text-white" />
+                    <AppIcon name="MessageCircle" className="w-6 h-6 text-white" />
                   </div>
                   <div className="text-left">
                     <div className="font-bold text-slate-900">WhatsApp</div>
@@ -144,7 +144,7 @@ export function BookDemoPage() {
                   className="flex items-center gap-4 w-full p-5 bg-blue-50 border border-blue-200 rounded-xl hover:bg-blue-100 transition-colors group"
                 >
                   <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center">
-                    <Mail className="w-6 h-6 text-white" />
+                    <AppIcon name="Mail" className="w-6 h-6 text-white" />
                   </div>
                   <div className="text-left">
                     <div className="font-bold text-slate-900">Email</div>
@@ -155,15 +155,15 @@ export function BookDemoPage() {
 
               <div className="mt-8 pt-6 border-t border-slate-200">
                 <div className="flex items-center gap-2 text-sm text-slate-500 mb-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  <AppIcon name="CheckCircle2" className="w-4 h-4 text-emerald-500" />
                   Free 30-minute session
                 </div>
                 <div className="flex items-center gap-2 text-sm text-slate-500 mb-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  <AppIcon name="CheckCircle2" className="w-4 h-4 text-emerald-500" />
                   No obligation or commitment
                 </div>
                 <div className="flex items-center gap-2 text-sm text-slate-500">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  <AppIcon name="CheckCircle2" className="w-4 h-4 text-emerald-500" />
                   Free trial account included
                 </div>
               </div>
