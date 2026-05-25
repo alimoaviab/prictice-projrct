@@ -60,6 +60,8 @@ export function StudentFeeDashboard() {
     const [saving, setSaving] = useState(false);
     const [data, setData] = useState<DashboardData | null>(null);
     const [isPaying, setIsPaying] = useState<LedgerEntry | null>(null);
+    const [discountEntry, setDiscountEntry] = useState<LedgerEntry | null>(null);
+    const [discountForm, setDiscountForm] = useState({ type: 'percentage', value: '', apply_mode: 'this_month', notes: '' });
     
     // Filters
     const [filters, setFilters] = useState({
@@ -578,6 +580,13 @@ export function StudentFeeDashboard() {
                                     >
                                         Partial
                                     </button>
+                                    <button 
+                                        disabled={entry.status === "paid" || saving}
+                                        onClick={() => setDiscountEntry(entry)}
+                                        className="flex-1 h-7 rounded-lg bg-amber-50 border border-amber-200 text-[8px] font-black uppercase tracking-widest text-amber-700 transition-all hover:bg-amber-100 active:scale-95 disabled:opacity-10"
+                                    >
+                                        Discount
+                                    </button>
                                 </div>
                             </div>
                             );
@@ -700,6 +709,66 @@ export function StudentFeeDashboard() {
                                         Confirm Collection
                                     </>
                                 )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* DISCOUNT DRAWER */}
+            {discountEntry && (
+                <div className="fixed inset-0 z-[100] flex justify-end bg-slate-900/20 animate-in fade-in duration-300 no-print">
+                    <div className="h-full w-[340px] bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-500 border-l border-slate-100">
+                        <div className="p-5 border-b border-slate-100 bg-white">
+                            <div className="flex items-center justify-between mb-0.5">
+                                <h3 className="text-base font-black text-slate-900 tracking-tight">Student Discount</h3>
+                                <button onClick={() => setDiscountEntry(null)} className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-colors">
+                                    <AppIcon name="X" size={16} />
+                                </button>
+                            </div>
+                            <p className="text-[10px] text-slate-400 font-bold">{discountEntry.student.name} • {discountEntry.student.class_name}</p>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                            <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Current Fee</p>
+                                <p className="text-lg font-black text-slate-900">Rs {(discountEntry.current_fee?.amount || 0).toLocaleString()}</p>
+                            </div>
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Discount Type</label>
+                                    <select value={discountForm.type} onChange={(e) => setDiscountForm({...discountForm, type: e.target.value})} className="w-full h-10 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 outline-none focus:border-blue-500">
+                                        <option value="percentage">Percentage (%)</option>
+                                        <option value="fixed">Fixed Amount (Rs)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Value</label>
+                                    <input type="number" value={discountForm.value} onChange={(e) => setDiscountForm({...discountForm, value: e.target.value})} placeholder={discountForm.type === 'percentage' ? 'e.g. 20' : 'e.g. 1000'} className="w-full h-10 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 outline-none focus:border-blue-500" />
+                                </div>
+                                {discountForm.value && (
+                                    <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-100 space-y-1.5">
+                                        <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">Preview</p>
+                                        <div className="flex justify-between text-xs"><span className="text-slate-600">Current Fee</span><span className="font-bold text-slate-900">Rs {(discountEntry.current_fee?.amount || 0).toLocaleString()}</span></div>
+                                        <div className="flex justify-between text-xs"><span className="text-slate-600">Discount</span><span className="font-bold text-red-600">- Rs {(discountForm.type === 'percentage' ? Math.round((discountEntry.current_fee?.amount || 0) * Number(discountForm.value) / 100) : Number(discountForm.value)).toLocaleString()}</span></div>
+                                        <div className="flex justify-between text-xs pt-1.5 border-t border-emerald-200"><span className="font-bold text-slate-900">Remaining</span><span className="font-black text-emerald-700">Rs {((discountEntry.current_fee?.amount || 0) - (discountForm.type === 'percentage' ? Math.round((discountEntry.current_fee?.amount || 0) * Number(discountForm.value) / 100) : Number(discountForm.value))).toLocaleString()}</span></div>
+                                    </div>
+                                )}
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Apply Mode</label>
+                                    <select value={discountForm.apply_mode} onChange={(e) => setDiscountForm({...discountForm, apply_mode: e.target.value})} className="w-full h-10 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 outline-none focus:border-blue-500">
+                                        <option value="this_month">This Month Only</option>
+                                        <option value="recurring">Recurring (Every Month)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Notes</label>
+                                    <input type="text" value={discountForm.notes} onChange={(e) => setDiscountForm({...discountForm, notes: e.target.value})} placeholder="Reason for discount..." className="w-full h-10 px-3 rounded-xl border border-slate-200 text-xs font-medium text-slate-900 outline-none focus:border-blue-500" />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-5 border-t border-slate-100 bg-white">
+                            <button disabled={saving || !discountForm.value} onClick={async () => { setSaving(true); try { const now = new Date(); const res = await serviceRequest('/api/fee-discounts', { method: 'POST', body: JSON.stringify({ student_id: discountEntry.student.id, fee_id: discountEntry.current_fee?.id, type: discountForm.type, value: Number(discountForm.value), apply_mode: discountForm.apply_mode, month: now.toLocaleString('en', { month: 'long' }).toLowerCase(), year: now.getFullYear(), notes: discountForm.notes }) }); if (res.success) { showToast("Discount applied", "success"); setDiscountEntry(null); setDiscountForm({ type: 'percentage', value: '', apply_mode: 'this_month', notes: '' }); loadDashboard(); } else { showToast(res.message || "Failed", "error"); } } catch { showToast("Network error", "error"); } finally { setSaving(false); } }} className="w-full h-11 rounded-xl bg-amber-600 text-white font-black uppercase tracking-widest text-[9px] shadow-lg shadow-amber-100 hover:bg-amber-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                                {saving ? <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><AppIcon name="Tag" size={16} />Apply Discount</>}
                             </button>
                         </div>
                     </div>

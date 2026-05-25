@@ -490,6 +490,104 @@ export function StudentForm(props: StudentFormProps | LegacyStudentFormProps) {
         </div>
       </div>
 
+      {/* Section 5: Financial Aid / Scholarship */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-3 mb-2">
+            <div className="h-8 w-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100">
+                <AppIcon name="Award" />
+            </div>
+            <div>
+                <h3 className="text-[11px] font-black text-slate-900 normal-case tracking-tight">Financial Aid</h3>
+                <p className="text-[9px] font-bold text-slate-400 normal-case">Scholarship or fee concession settings</p>
+            </div>
+        </div>
+        <div className="p-5 rounded-[2rem] bg-slate-50/50 border border-slate-100 transition-all hover:bg-white hover:shadow-xl hover:shadow-slate-200/20 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold text-slate-900">Enable Scholarship</p>
+              <p className="text-[10px] text-slate-400">Toggle on to apply financial aid to this student's fees</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={(form as any).scholarship_enabled || false}
+                onChange={(e) => setForm({ ...form, scholarship_enabled: e.target.checked } as any)}
+                className="sr-only peer"
+              />
+              <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+
+          {(form as any).scholarship_enabled && (
+            <div className="space-y-4 pt-3 border-t border-slate-100">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Select
+                  label="Scholarship Type"
+                  value={(form as any).scholarship_type || "percentage"}
+                  onChange={(e) => setForm({ ...form, scholarship_type: e.target.value } as any)}
+                  options={[
+                    { label: "Percentage (%)", value: "percentage" },
+                    { label: "Fixed Amount (Rs)", value: "fixed" },
+                  ]}
+                  className="h-11 rounded-xl bg-white"
+                />
+                <Input
+                  label={(form as any).scholarship_type === "fixed" ? "Amount (Rs)" : "Percentage (%)"}
+                  type="number"
+                  placeholder={(form as any).scholarship_type === "fixed" ? "e.g. 2000" : "e.g. 50"}
+                  value={(form as any).scholarship_value || ""}
+                  onChange={(e) => setForm({ ...form, scholarship_value: e.target.value } as any)}
+                  className="h-11 rounded-xl bg-white"
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Start Date"
+                  type="date"
+                  value={(form as any).scholarship_start || ""}
+                  onChange={(e) => setForm({ ...form, scholarship_start: e.target.value } as any)}
+                  className="h-11 rounded-xl bg-white"
+                />
+                <Input
+                  label="End Date"
+                  type="date"
+                  value={(form as any).scholarship_end || ""}
+                  onChange={(e) => setForm({ ...form, scholarship_end: e.target.value } as any)}
+                  className="h-11 rounded-xl bg-white"
+                />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-500 mb-2">Apply On:</p>
+                <div className="flex flex-wrap gap-3">
+                  {[
+                    { key: "scholarship_apply_monthly", label: "Monthly Fee" },
+                    { key: "scholarship_apply_fine", label: "Fine" },
+                    { key: "scholarship_apply_onetime", label: "One-Time Charges" },
+                  ].map((opt) => (
+                    <label key={opt.key} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={(form as any)[opt.key] ?? (opt.key === "scholarship_apply_monthly")}
+                        onChange={(e) => setForm({ ...form, [opt.key]: e.target.checked } as any)}
+                        className="rounded border-slate-300 text-blue-600 h-4 w-4"
+                      />
+                      <span className="text-xs font-medium text-slate-700">{opt.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <Input
+                label="Notes (optional)"
+                placeholder="e.g. Merit scholarship, sibling discount..."
+                value={(form as any).scholarship_notes || ""}
+                onChange={(e) => setForm({ ...form, scholarship_notes: e.target.value } as any)}
+                className="h-11 rounded-xl bg-white"
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="flex justify-end pt-6 border-t border-slate-100 gap-4">
         <Button
           variant="secondary"
