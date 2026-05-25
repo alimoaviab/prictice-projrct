@@ -12,6 +12,7 @@ import { AppIcon } from "shared/ui/AppIcon";
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import DOMPurify from "dompurify"
 import { apiRequest } from '@/lib/api'
 
 // ─── Types ───────────────────────────────────────────────────────────────
@@ -306,7 +307,7 @@ function QuestionsTab({ questions, loading, onDelete, onEdit }: { questions: Que
         <div key={q._id} className="bg-white rounded-xl border border-slate-200 p-4 hover:border-slate-300 transition-colors">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <div className="text-sm text-slate-800 font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: q.question_html }} />
+              <div className="text-sm text-slate-800 font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(q.question_html) }} />
 
               {/* MCQ Options */}
               {q.type === 'mcq' && q.options && (() => {

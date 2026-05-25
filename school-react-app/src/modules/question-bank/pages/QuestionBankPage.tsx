@@ -9,6 +9,7 @@ import { AppIcon } from "shared/ui/AppIcon";
  */
 
 import { useState, useMemo, useEffect, useCallback } from "react";
+import DOMPurify from "dompurify";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Skeleton, DataState } from "@/components/ui";
 import { Drawer } from "@/components/ui/Drawer";
@@ -576,7 +577,7 @@ function QuestionCard({
         <div className="flex-1 min-w-0">
           <div
             className="text-sm text-slate-800 font-medium leading-relaxed line-clamp-3"
-            dangerouslySetInnerHTML={{ __html: q.question_html }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(q.question_html) }}
           />
           {q.type === "mcq" && opts.length > 0 && (
             <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-1">

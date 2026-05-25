@@ -10,6 +10,7 @@ import { AppIcon } from "shared/ui/AppIcon";
  */
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import DOMPurify from "dompurify";
 import { useNavigate, Link } from "react-router-dom";
 import { Card, Button, Skeleton } from "@/components/ui";
 import { Drawer } from "@/components/ui/Drawer";
@@ -934,7 +935,7 @@ function AddQuestionDrawer({
                       <div className="flex-1 min-w-0">
                         <div
                           className="text-xs font-medium text-slate-800 line-clamp-2"
-                          dangerouslySetInnerHTML={{ __html: q.question_html }}
+                          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(q.question_html) }}
                         />
                         <div className="flex items-center gap-2 mt-1">
                           <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">{q.type.toUpperCase()}</span>
@@ -1395,7 +1396,7 @@ function QuestionBankBrowseDrawer({
                     className="mt-1 rounded border-slate-300 text-violet-600 focus:ring-violet-500 disabled:opacity-50"
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs font-medium text-slate-800 leading-relaxed line-clamp-2" dangerouslySetInnerHTML={{ __html: q.question_html }} />
+                    <div className="text-xs font-medium text-slate-800 leading-relaxed line-clamp-2" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(q.question_html) }} />
                     {q.type === "mcq" && opts.length > 0 && (
                       <div className="mt-1.5 grid grid-cols-2 gap-1">
                         {opts.map((opt: any, i: number) => (

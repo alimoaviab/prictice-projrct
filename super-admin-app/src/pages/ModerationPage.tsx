@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react'
+import DOMPurify from "dompurify"
 import { apiRequest } from '@/lib/api'
 
 type ApprovalTab = 'pending' | 'approved' | 'rejected'
@@ -129,7 +130,7 @@ export function ModerationPage() {
                   {/* Question text */}
                   <div
                     className="text-sm text-slate-800 font-medium leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: q.question_html }}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(q.question_html) }}
                   />
 
                   {/* MCQ options */}
