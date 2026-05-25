@@ -428,6 +428,7 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Patch("/super-admin/schools/{id}/password", saH.UpdateAdminPassword)
 			r.Post("/super-admin/schools/{id}/approve", saH.ApproveSchool)
 			r.Post("/super-admin/schools/{id}/suspend", saH.SuspendSchool)
+			r.Delete("/super-admin/schools/{id}", saH.DeleteSchool)
 			r.Get("/super-admin/plans", saH.ListPlans)
 			r.Get("/super-admin/users", saH.ListUsers)
 			r.Get("/super-admin/activity", saH.RecentActivity)

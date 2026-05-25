@@ -55,6 +55,14 @@ export function SchoolDetailPage() {
     if (res.ok) loadDetails()
   }
 
+  const handleDelete = async () => {
+    if (!confirm(`Are you sure you want to permanently delete "${school?.name}"? This will remove ALL data (students, teachers, classes, fees, etc.) and cannot be undone.`)) return
+    const res = await apiRequest(`/api/super-admin/schools/${id}`, { method: 'DELETE' })
+    if (res.ok) {
+      navigate('/schools')
+    }
+  }
+
   if (loading) return (
     <div className="flex items-center justify-center h-64">
       <div className="text-center">
@@ -117,6 +125,9 @@ export function SchoolDetailPage() {
               Activate
             </button>
           )}
+          <button onClick={handleDelete} className="h-7 px-3 text-[10px] font-bold text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors">
+            Delete
+          </button>
         </div>
       </div>
 

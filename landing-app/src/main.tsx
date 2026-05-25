@@ -18,6 +18,7 @@ import { BookDemoPage } from './pages/BookDemoPage';
 import { ContactPage } from './pages/ContactPage';
 import { BlogIndexPage } from './pages/BlogIndexPage';
 import { BlogPostPage } from './pages/BlogPostPage';
+import { ChatWidget } from './components/ChatWidget';
 
 import './index.css';
 
@@ -42,6 +43,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Route path="/seo-engine" element={<SeoEnginePage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      <ChatWidget />
     </BrowserRouter>
   </React.StrictMode>,
 );

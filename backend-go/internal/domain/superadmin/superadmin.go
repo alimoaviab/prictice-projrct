@@ -814,6 +814,63 @@ func (h *Handler) SuspendSchool(w http.ResponseWriter, r *http.Request) {
 	api.WriteResult(w, api.Fail("NOT_FOUND", "School not found.", 404, nil))
 }
 
+// DeleteSchool permanently removes a school and all associated data.
+// DELETE /api/super-admin/schools/:id
+func (h *Handler) DeleteSchool(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	if ctx.Role != "super_admin" {
+		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin access required.", 403, nil))
+		return
+	}
+
+	id := chi.URLParam(r, "id")
+
+	h.Store.Lock()
+	defer h.Store.Unlock()
+
+	// Find the school
+	var targetSchoolID string
+	schoolIdx := -1
+	for i, s := range h.Store.Schools {
+		if s.ID == id || s.SchoolID == id {
+			targetSchoolID = s.SchoolID
+			schoolIdx = i
+			break
+		}
+	}
+	if schoolIdx == -1 {
+		api.WriteResult(w, api.Fail("NOT_FOUND", "School not found.", 404, nil))
+		return
+	}
+
+	// Remove all associated data
+	h.Store.Users = filterSlice(h.Store.Users, func(u *store.User) bool { return u.SchoolID != targetSchoolID })
+	h.Store.Students = filterSlice(h.Store.Students, func(s *store.Student) bool { return s.SchoolID != targetSchoolID })
+	h.Store.Teachers = filterSlice(h.Store.Teachers, func(t *store.Teacher) bool { return t.SchoolID != targetSchoolID })
+	h.Store.Classes = filterSlice(h.Store.Classes, func(c *store.Class) bool { return c.SchoolID != targetSchoolID })
+	h.Store.AcademicYears = filterSlice(h.Store.AcademicYears, func(a *store.AcademicYear) bool { return a.SchoolID != targetSchoolID })
+	h.Store.Subscriptions = filterSlice(h.Store.Subscriptions, func(s *store.Subscription) bool { return s.SchoolID != targetSchoolID })
+
+	// Remove the school itself
+	h.Store.Schools = append(h.Store.Schools[:schoolIdx], h.Store.Schools[schoolIdx+1:]...)
+
+	api.WriteResult(w, api.Ok(map[string]any{
+		"success": true,
+		"message": "School and all associated data permanently deleted.",
+	}))
+}
+
+// filterSlice is a generic helper to filter a slice in place.
+func filterSlice[T any](slice []*T, keep func(*T) bool) []*T {
+	result := make([]*T, 0, len(slice))
+	for _, item := range slice {
+		if keep(item) {
+			result = append(result, item)
+		}
+	}
+	return result
+}
+
 // UpdateSchool updates a school's profile information.
 // PATCH /api/super-admin/schools/:id
 func (h *Handler) UpdateSchool(w http.ResponseWriter, r *http.Request) {
@@ -1201,7 +1258,7 @@ type PlatformSettings struct {
 }
 
 var platformSettings = PlatformSettings{
-	AutoApproveSchools: false,
+	AutoApproveSchools: true,
 	DefaultPackageID:   "",
 	TrialDays:          14,
 }
