@@ -246,6 +246,8 @@ var tableOrder = []string{
 	"fee_adjustments", "fee_payments", "school_settings", "audit_logs",
 	"certificate_templates", "generated_certificates",
 	"chapters", "questions", "question_papers", "star_collections",
+	"student_scholarships", "student_fee_discounts", "student_wallets", "wallet_transactions",
+	"conversations", "conversation_participants", "chat_messages", "broadcasts",
 }
 
 func tableOrderIndex(table string) int {
