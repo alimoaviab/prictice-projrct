@@ -48,18 +48,17 @@ const adminNavGroups: NavGroup[] = [
     ],
   },
   {
-    label: "Academic",
+    label: "Academic Setup",
     items: [
       { label: "Academic years", href: "/admin/academic-years", icon: "calendar_month" },
       { label: "Classes", href: "/admin/classes", icon: "groups" },
-      { label: "Timetable", href: "/admin/timetable", icon: "schedule" },
-      { label: "Attendance", href: "/admin/attendance", icon: "fact_check" },
-      { label: "Exams", href: "/admin/exams", icon: "quiz" },
-      { label: "Tests", href: "/admin/tests", icon: "assignment_turned_in" },
-      { label: "Results", href: "/admin/results", icon: "leaderboard" },
-      { label: "Live classes", href: "/admin/live-class", icon: "videocam" },
-      { label: "Homework", href: "/admin/homework", icon: "assignment" },
-      { label: "Question Papers", href: "/admin/question-papers", icon: "description" },
+    ],
+  },
+  {
+    label: "Staff",
+    items: [
+      { label: "Teachers", href: "/admin/teachers", icon: "badge" },
+      { label: "Leave", href: "/admin/leave", icon: "event_available" },
     ],
   },
   {
@@ -70,10 +69,16 @@ const adminNavGroups: NavGroup[] = [
     ],
   },
   {
-    label: "Staff",
+    label: "Academics",
     items: [
-      { label: "Teachers", href: "/admin/teachers", icon: "badge" },
-      { label: "Leave", href: "/admin/leave", icon: "event_available" },
+      { label: "Timetable", href: "/admin/timetable", icon: "schedule" },
+      { label: "Attendance", href: "/admin/attendance", icon: "fact_check" },
+      { label: "Homework", href: "/admin/homework", icon: "assignment" },
+      { label: "Exams", href: "/admin/exams", icon: "quiz" },
+      { label: "Tests", href: "/admin/tests", icon: "assignment_turned_in" },
+      { label: "Results", href: "/admin/results", icon: "leaderboard" },
+      { label: "Question Papers", href: "/admin/question-papers", icon: "description" },
+      { label: "Live classes", href: "/admin/live-class", icon: "videocam" },
     ],
   },
   {
@@ -91,12 +96,6 @@ const adminNavGroups: NavGroup[] = [
     label: "Subscription",
     items: [{ label: "Subscription", href: "/admin/subscription", icon: "card_membership" }],
   },
-  /*
-  {
-    label: "Domain",
-    items: [{ label: "Connect Domain", href: "/admin/connect-domain", icon: "language" }],
-  },
-  */
   {
     label: "Settings",
     items: [
@@ -465,10 +464,10 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
                   <Link
                     key={item.href}
                     to={item.href}
-                    className={`group flex h-7 items-center gap-2.5 px-2.5 py-1 text-[11px] font-bold transition-all duration-200 rounded-lg ${isActive ? "bg-blue-600 !text-white shadow-md shadow-blue-600/20" : "text-slate-500 hover:bg-blue-50/50 hover:text-blue-600"}`}
+                    className={`group flex h-7 items-center gap-2.5 px-2.5 py-1 text-[10px] font-extrabold transition-all duration-200 rounded-lg ${isActive ? "bg-blue-600 !text-white shadow-md shadow-blue-600/20" : "text-slate-700 hover:bg-blue-50/50 hover:text-blue-600"}`}
                   >
-                    <AppIcon name={item.icon} size={16} className={` text-[16px] transition-colors ${isActive ? "text-white" : "text-slate-400 group-hover:text-blue-600"} `} />
-                    <span className="truncate tracking-tight">{item.label}</span>
+                    <AppIcon name={item.icon} size={16} className={` text-[16px] transition-colors ${isActive ? "text-white" : "text-slate-500 group-hover:text-blue-600"} `} />
+                    <span className="truncate tracking-tight font-extrabold">{item.label}</span>
                     {isActive && !isCollapsed && <span className="ml-auto h-1 w-1 rounded-full bg-white/60" />}
                   </Link>
                 );
