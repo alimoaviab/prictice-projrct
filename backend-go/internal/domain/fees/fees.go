@@ -896,6 +896,14 @@ func (h *Handler) feeRow(f *store.Fee) map[string]any {
 		}
 	}
 	effective := f.Amount + f.AdjustmentAmount
+
+	// Apply scholarship and discount deductions
+	feeType := "monthly" // default for recurring fees
+	scholarshipDiscount := h.CalculateScholarshipDiscount(f.SchoolID, f.StudentID, effective, feeType)
+	feeDiscount := h.CalculateFeeDiscount(f.SchoolID, f.StudentID, f.Month, f.Year, effective)
+	totalDiscount := scholarshipDiscount + feeDiscount
+	effective = maxF(0, effective-totalDiscount)
+
 	return map[string]any{
 		"_id":                f.ID,
 		"id":                 f.ID,
@@ -916,6 +924,7 @@ func (h *Handler) feeRow(f *store.Fee) map[string]any {
 		"status":             feeStatus(effective, f.PaidAmount),
 		"paid_amount":        f.PaidAmount,
 		"adjustment_amount":  f.AdjustmentAmount,
+		"discount_amount":    totalDiscount,
 		"effective_amount":   effective,
 		"outstanding_amount": maxF(0, effective-f.PaidAmount),
 		"fee_components":     f.FeeComponents,
@@ -1243,6 +1252,11 @@ func (h *Handler) DashboardStats(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			effective := f.Amount + f.AdjustmentAmount
+			// Apply scholarship and discount deductions
+			scholarshipDiscount := h.CalculateScholarshipDiscount(f.SchoolID, f.StudentID, effective, "monthly")
+			feeDiscount := h.CalculateFeeDiscount(f.SchoolID, f.StudentID, f.Month, f.Year, effective)
+			effective = maxF(0, effective-scholarshipDiscount-feeDiscount)
+
 			totalCollected += f.PaidAmount
 			out := effective - f.PaidAmount
 			if out > 0 {
@@ -1810,21 +1824,29 @@ func (h *Handler) StudentFees(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			eff := f.Amount + f.AdjustmentAmount
+
+			// Apply scholarship and discount deductions
+			scholarshipDiscount := h.CalculateScholarshipDiscount(f.SchoolID, f.StudentID, eff, "monthly")
+			feeDiscount := h.CalculateFeeDiscount(f.SchoolID, f.StudentID, f.Month, f.Year, eff)
+			totalDiscount := scholarshipDiscount + feeDiscount
+			eff = maxF(0, eff-totalDiscount)
+
 			out := maxF(0, eff-f.PaidAmount)
 			total += eff
 			paid += f.PaidAmount
 			pending += out
 			st := feeStatus(eff, f.PaidAmount)
 			row := map[string]any{
-				"id":         f.ID,
-				"month":      f.Month,
-				"year":       f.Year,
-				"total":      eff,
-				"paid":       f.PaidAmount,
-				"pending":    out,
-				"status":     st,
-				"due_date":   api.FormatDate(f.DueAt),
-				"invoice_no": f.InvoiceNo,
+				"id":              f.ID,
+				"month":           f.Month,
+				"year":            f.Year,
+				"total":           eff,
+				"paid":            f.PaidAmount,
+				"pending":         out,
+				"status":          st,
+				"due_date":        api.FormatDate(f.DueAt),
+				"invoice_no":      f.InvoiceNo,
+				"discount_amount": totalDiscount,
 			}
 			monthly = append(monthly, row)
 			if out > 0 && f.DueAt.Before(now) {

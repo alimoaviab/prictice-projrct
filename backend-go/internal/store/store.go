@@ -105,6 +105,10 @@ type MemStore struct {
 	ChatMessages  []*ChatMessage
 	Broadcasts    []*Broadcast
 
+	// ─── Schedule & Reminders ───────────────────────────────────────────
+	Schedules         []*Schedule
+	ScheduleReminders []*ScheduleReminder
+
 	// ─── Lookup indexes (perf phase 1) ──────────────────────────────────
 	//
 	// These are read-mostly maps maintained by RebuildIndexes() and

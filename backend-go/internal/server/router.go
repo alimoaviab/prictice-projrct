@@ -32,6 +32,7 @@ import (
 	"github.com/eduplexo/backend-go/internal/domain/parent"
 	"github.com/eduplexo/backend-go/internal/domain/questionpapers"
 	"github.com/eduplexo/backend-go/internal/domain/results"
+	"github.com/eduplexo/backend-go/internal/domain/schedule"
 	"github.com/eduplexo/backend-go/internal/domain/seo"
 	"github.com/eduplexo/backend-go/internal/domain/settings"
 	"github.com/eduplexo/backend-go/internal/domain/students"
@@ -517,6 +518,16 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Get("/messages/contacts", msgH.ListContacts)
 			r.Post("/messages/broadcast", msgH.SendBroadcast)
 			r.Get("/messages/broadcasts", msgH.ListBroadcasts)
+
+			// ─── Schedule & Reminders ────────────────────────────────────
+			schedH := schedule.New(s, saveFn, rdb, wsHub, rdb.Raw())
+			r.Get("/schedules", schedH.List)
+			r.Post("/schedules", schedH.Create)
+			r.Get("/schedules/{id}", schedH.Get)
+			r.Patch("/schedules/{id}", schedH.Update)
+			r.Put("/schedules/{id}", schedH.Update)
+			r.Delete("/schedules/{id}", schedH.Delete)
+			r.Post("/schedules/{id}/complete", schedH.MarkComplete)
 
 			r.Post("/dev/seed-academic-years", stubs.NotImplemented(""))
 			r.Get("/auth/google", authH.GoogleStatus)

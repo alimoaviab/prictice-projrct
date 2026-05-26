@@ -89,6 +89,10 @@ func upsertRow(ctx context.Context, tx pgx.Tx, table string, doc any) error {
 		return upsertChatMessage(ctx, tx, v)
 	case *store.Broadcast:
 		return upsertBroadcast(ctx, tx, v)
+	case *store.Schedule:
+		return upsertSchedule(ctx, tx, v)
+	case *store.ScheduleReminder:
+		return upsertScheduleReminder(ctx, tx, v)
 	}
 	return fmt.Errorf("upsert: unknown document type for table %s", table)
 }
@@ -976,5 +980,51 @@ func upsertBroadcast(ctx context.Context, tx pgx.Tx, v *store.Broadcast) error {
 		ON CONFLICT (id) DO UPDATE SET
 			message=EXCLUDED.message, type=EXCLUDED.type
 	`, v.ID, v.SchoolID, v.SenderID, v.TargetGroup, v.Message, defaultStr(v.Type, "text"), v.CreatedAt)
+	return err
+}
+
+// ─── Schedule UPSERTs ────────────────────────────────────────────────────
+
+func upsertSchedule(ctx context.Context, tx pgx.Tx, v *store.Schedule) error {
+	assignedTo := v.AssignedTo
+	if assignedTo == nil {
+		assignedTo = []string{}
+	}
+	attachments := v.Attachments
+	if attachments == nil {
+		attachments = []string{}
+	}
+	_, err := tx.Exec(ctx, `
+		INSERT INTO schedules (id, school_id, title, description, start_datetime, end_datetime,
+			all_day, event_type, priority, status, color, location, reminder_type,
+			reminder_sent_at, recurring_type, recurring_end, recurring_parent,
+			assigned_to, created_by, attachments, notes, created_at, updated_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)
+		ON CONFLICT (id) DO UPDATE SET
+			title=EXCLUDED.title, description=EXCLUDED.description,
+			start_datetime=EXCLUDED.start_datetime, end_datetime=EXCLUDED.end_datetime,
+			all_day=EXCLUDED.all_day, event_type=EXCLUDED.event_type,
+			priority=EXCLUDED.priority, status=EXCLUDED.status,
+			color=EXCLUDED.color, location=EXCLUDED.location,
+			reminder_type=EXCLUDED.reminder_type, reminder_sent_at=EXCLUDED.reminder_sent_at,
+			recurring_type=EXCLUDED.recurring_type, recurring_end=EXCLUDED.recurring_end,
+			assigned_to=EXCLUDED.assigned_to, notes=EXCLUDED.notes,
+			updated_at=EXCLUDED.updated_at
+	`, v.ID, v.SchoolID, v.Title, v.Description, v.StartDatetime, v.EndDatetime,
+		v.AllDay, v.EventType, v.Priority, v.Status, v.Color, v.Location,
+		v.ReminderType, v.ReminderSentAt, v.RecurringType,
+		v.RecurringEnd, v.RecurringParent,
+		assignedTo, v.CreatedBy, attachments, v.Notes, v.CreatedAt, v.UpdatedAt)
+	return err
+}
+
+func upsertScheduleReminder(ctx context.Context, tx pgx.Tx, v *store.ScheduleReminder) error {
+	_, err := tx.Exec(ctx, `
+		INSERT INTO schedule_reminders (id, school_id, schedule_id, user_id, trigger_at, status, notify_type, sent_at, created_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+		ON CONFLICT (id) DO UPDATE SET
+			status=EXCLUDED.status, sent_at=EXCLUDED.sent_at
+	`, v.ID, v.SchoolID, v.ScheduleID, v.UserID, v.TriggerAt, v.Status, v.NotifyType,
+		v.SentAt, v.CreatedAt)
 	return err
 }

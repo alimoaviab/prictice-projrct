@@ -100,6 +100,7 @@ const adminNavGroups: NavGroup[] = [
   {
     label: "Settings",
     items: [
+      { label: "Schedule", href: "/admin/schedule", icon: "calendar_month" },
       { label: "Messages", href: "/admin/messages", icon: "chat" },
       { label: "Settings", href: "/admin/settings", icon: "settings" },
     ],
@@ -135,6 +136,7 @@ const teacherNavGroups: NavGroup[] = [
   {
     label: "Communication",
     items: [
+      { label: "Schedule", href: "/teacher/schedule", icon: "calendar_month" },
       { label: "Messages", href: "/teacher/messages", icon: "chat" },
       { label: "Events", href: "/teacher/events", icon: "event" },
     ],

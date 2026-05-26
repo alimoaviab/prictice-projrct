@@ -248,6 +248,7 @@ var tableOrder = []string{
 	"chapters", "questions", "question_papers", "star_collections",
 	"student_scholarships", "student_fee_discounts", "student_wallets", "wallet_transactions",
 	"conversations", "conversation_participants", "chat_messages", "broadcasts",
+	"schedules", "schedule_reminders",
 }
 
 func tableOrderIndex(table string) int {
@@ -488,6 +489,12 @@ func (p *Persister) FullSnapshot(ctx context.Context, s *store.MemStore) error {
 	}
 	for _, v := range s.Broadcasts {
 		plan = append(plan, write{table: "broadcasts", doc: v})
+	}
+	for _, v := range s.Schedules {
+		plan = append(plan, write{table: "schedules", doc: v})
+	}
+	for _, v := range s.ScheduleReminders {
+		plan = append(plan, write{table: "schedule_reminders", doc: v})
 	}
 	for _, v := range s.FeeTypes {
 		plan = append(plan, write{table: "fee_types", doc: v})

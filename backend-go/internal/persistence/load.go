@@ -74,6 +74,8 @@ func (p *Persister) Load(ctx context.Context, s *store.MemStore) error {
 		{"conversations", p.loadConversations},
 		{"chat_messages", p.loadChatMessages},
 		{"broadcasts", p.loadBroadcasts},
+		{"schedules", p.loadSchedules},
+		{"schedule_reminders", p.loadScheduleReminders},
 	}
 
 	s.Lock()
@@ -119,6 +121,8 @@ func (p *Persister) Load(ctx context.Context, s *store.MemStore) error {
 	s.Conversations = nil
 	s.ChatMessages = nil
 	s.Broadcasts = nil
+	s.Schedules = nil
+	s.ScheduleReminders = nil
 
 	for _, l := range loaders {
 		if err := l.fn(ctx, s); err != nil {
@@ -1172,6 +1176,69 @@ func (p *Persister) loadBroadcasts(ctx context.Context, s *store.MemStore) error
 			return err
 		}
 		s.Broadcasts = append(s.Broadcasts, v)
+	}
+	return rows.Err()
+}
+
+// ─── Schedule Loaders ────────────────────────────────────────────────────
+
+func (p *Persister) loadSchedules(ctx context.Context, s *store.MemStore) error {
+	rows, err := p.pool.Query(ctx, `
+		SELECT id, school_id, title, description, start_datetime, end_datetime,
+			all_day, event_type, priority, status, color, location, reminder_type,
+			reminder_sent_at, recurring_type, recurring_end, recurring_parent,
+			assigned_to, created_by, attachments, notes, created_at, updated_at
+		FROM schedules ORDER BY start_datetime`)
+	if err != nil {
+		log.Printf("[persistence] loadSchedules: %v (table may not exist yet)", err)
+		return nil
+	}
+	defer rows.Close()
+	for rows.Next() {
+		v := &store.Schedule{}
+		var reminderSentAt, recurringEnd *time.Time
+		var assignedTo, attachments []string
+		if err := rows.Scan(&v.ID, &v.SchoolID, &v.Title, &v.Description,
+			&v.StartDatetime, &v.EndDatetime, &v.AllDay, &v.EventType,
+			&v.Priority, &v.Status, &v.Color, &v.Location, &v.ReminderType,
+			&reminderSentAt, &v.RecurringType, &recurringEnd, &v.RecurringParent,
+			&assignedTo, &v.CreatedBy, &attachments, &v.Notes,
+			&v.CreatedAt, &v.UpdatedAt); err != nil {
+			log.Printf("[persistence] loadSchedules row: %v", err)
+			continue
+		}
+		v.ReminderSentAt = reminderSentAt
+		v.RecurringEnd = recurringEnd
+		if assignedTo != nil {
+			v.AssignedTo = assignedTo
+		}
+		if attachments != nil {
+			v.Attachments = attachments
+		}
+		s.Schedules = append(s.Schedules, v)
+	}
+	return rows.Err()
+}
+
+func (p *Persister) loadScheduleReminders(ctx context.Context, s *store.MemStore) error {
+	rows, err := p.pool.Query(ctx, `
+		SELECT id, school_id, schedule_id, user_id, trigger_at, status, notify_type, sent_at, created_at
+		FROM schedule_reminders ORDER BY trigger_at`)
+	if err != nil {
+		log.Printf("[persistence] loadScheduleReminders: %v (table may not exist yet)", err)
+		return nil
+	}
+	defer rows.Close()
+	for rows.Next() {
+		v := &store.ScheduleReminder{}
+		var sentAt *time.Time
+		if err := rows.Scan(&v.ID, &v.SchoolID, &v.ScheduleID, &v.UserID,
+			&v.TriggerAt, &v.Status, &v.NotifyType, &sentAt, &v.CreatedAt); err != nil {
+			log.Printf("[persistence] loadScheduleReminders row: %v", err)
+			continue
+		}
+		v.SentAt = sentAt
+		s.ScheduleReminders = append(s.ScheduleReminders, v)
 	}
 	return rows.Err()
 }

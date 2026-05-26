@@ -180,6 +180,9 @@ export const adminRoutes: RouteObject[] = [
 
   // Messages
   { path: "/admin/messages", element: lazyPage(() => import("@/pages/role/shared/messages"), "MessagesPage") },
+
+  // Schedule
+  { path: "/admin/schedule", element: lazyPage(() => import("@/pages/role/shared/schedule")) },
 ];
 
 // ─── Teacher Routes (lazy-loaded) ────────────────────────────────────────
@@ -225,6 +228,9 @@ export const teacherRoutes: RouteObject[] = [
 
   // Messages
   { path: "/teacher/messages", element: lazyPage(() => import("@/pages/role/shared/messages"), "MessagesPage") },
+
+  // Schedule
+  { path: "/teacher/schedule", element: lazyPage(() => import("@/pages/role/shared/schedule")) },
 ];
 
 // ─── Parent Routes (lazy-loaded) ─────────────────────────────────────────
