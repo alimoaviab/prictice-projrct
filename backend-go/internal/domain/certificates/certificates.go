@@ -8,11 +8,11 @@
 package certificates
 
 import (
+	"crypto/rand"
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"sort"
 	"strings"
@@ -402,7 +402,12 @@ func certToMap(c *store.GeneratedCertificate) map[string]any {
 }
 
 func generateCertNo(schoolID, studentID string) string {
-	src := fmt.Sprintf("%s:%s:%d:%d", schoolID, studentID, time.Now().UnixNano(), rand.Int())
+	b := make([]byte, 8)
+	if _, err := rand.Read(b); err != nil {
+		// Fallback to timestamp if crypto/rand fails
+		b = []byte(fmt.Sprintf("%d", time.Now().UnixNano()))
+	}
+	src := fmt.Sprintf("%s:%s:%d:%x", schoolID, studentID, time.Now().UnixNano(), b)
 	h := sha1.Sum([]byte(src))
 	hash := strings.ToUpper(hex.EncodeToString(h[:])[:6])
 	return fmt.Sprintf("CERT-%d-%s", time.Now().Year(), hash)
@@ -410,7 +415,10 @@ func generateCertNo(schoolID, studentID string) string {
 
 func generateVerificationCode() string {
 	b := make([]byte, 12)
-	rand.Read(b)
+	if _, err := rand.Read(b); err != nil {
+		// Fallback to timestamp if crypto/rand fails
+		return strings.ToUpper(fmt.Sprintf("%X", time.Now().UnixNano()))[:16]
+	}
 	return strings.ToUpper(hex.EncodeToString(b)[:16])
 }
 
