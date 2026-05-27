@@ -53,8 +53,8 @@ ON subscription_history (school_id, created_at DESC);
 -- Existing schools get a starter plan with generous limit so they aren't blocked
 INSERT INTO subscriptions (id, school_id, plan_name, student_limit, price, start_date, end_date, status, is_trial, trial_used)
 SELECT 
-    'sub_' || id,
-    id,
+    'sub_' || school_id,
+    school_id,
     'growth',
     500,
     0,
@@ -64,5 +64,5 @@ SELECT
     false,
     false
 FROM schools
-WHERE id NOT IN (SELECT school_id FROM subscriptions)
+WHERE school_id NOT IN (SELECT school_id FROM subscriptions)
 ON CONFLICT DO NOTHING;

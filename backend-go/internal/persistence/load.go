@@ -39,6 +39,7 @@ func (p *Persister) Load(ctx context.Context, s *store.MemStore) error {
 	}{
 		{"schools", p.loadSchools},
 		{"packages", p.loadPackages},
+		{"subscriptions", p.loadSubscriptions},
 		{"users", p.loadUsers},
 		{"academic_years", p.loadAcademicYears},
 		{"subjects", p.loadSubjects},
@@ -143,7 +144,9 @@ func (p *Persister) Load(ctx context.Context, s *store.MemStore) error {
 
 func (p *Persister) loadSchools(ctx context.Context, s *store.MemStore) error {
 	rows, err := p.pool.Query(ctx, `
-		SELECT id, school_id, name, code, status, created_at, updated_at
+		SELECT id, school_id, name, code, logo_url, contact_email, contact_phone,
+			address, admin_name, admin_email, admin_phone, status, rejection_reason,
+			approved_by, approved_at, plan_key, created_at, updated_at
 		FROM schools ORDER BY created_at`)
 	if err != nil {
 		return err
@@ -151,8 +154,22 @@ func (p *Persister) loadSchools(ctx context.Context, s *store.MemStore) error {
 	defer rows.Close()
 	for rows.Next() {
 		v := &store.School{}
-		if err := rows.Scan(&v.ID, &v.SchoolID, &v.Name, &v.Code, &v.Status, &v.CreatedAt, &v.UpdatedAt); err != nil {
+		var adminEmail, adminPhone string
+		if err := rows.Scan(&v.ID, &v.SchoolID, &v.Name, &v.Code, &v.LogoURL, &v.Email, &v.Phone,
+			&v.Address, &v.PrincipalName, &adminEmail, &adminPhone, &v.Status, &v.RejectionReason,
+			&v.ApprovedBy, &v.ApprovedAt, &v.PackageID, &v.CreatedAt, &v.UpdatedAt); err != nil {
 			return err
+		}
+		if v.Email == "" {
+			v.Email = adminEmail
+		}
+		if v.Phone == "" {
+			v.Phone = adminPhone
+		}
+		if v.Status == "approved" || v.Status == "active" {
+			v.ApprovalStatus = "approved"
+		} else {
+			v.ApprovalStatus = v.Status
 		}
 		s.Schools = append(s.Schools, v)
 	}
@@ -191,6 +208,27 @@ func (p *Persister) loadPackages(ctx context.Context, s *store.MemStore) error {
 			json.Unmarshal(modules, &v.CustomModules)
 		}
 		s.Packages = append(s.Packages, v)
+	}
+	return rows.Err()
+}
+
+func (p *Persister) loadSubscriptions(ctx context.Context, s *store.MemStore) error {
+	rows, err := p.pool.Query(ctx, `
+		SELECT id, school_id, plan_name, status, end_date, created_at, updated_at
+		FROM subscriptions ORDER BY created_at`)
+	if err != nil {
+		log.Printf("[persistence] loadSubscriptions: %v (table may not exist yet)", err)
+		return nil
+	}
+	defer rows.Close()
+	for rows.Next() {
+		v := &store.Subscription{}
+		var planName string
+		if err := rows.Scan(&v.ID, &v.SchoolID, &planName, &v.Status, &v.NextRenewal, &v.CreatedAt, &v.UpdatedAt); err != nil {
+			return err
+		}
+		v.PackageID = planName
+		s.Subscriptions = append(s.Subscriptions, v)
 	}
 	return rows.Err()
 }
@@ -586,8 +624,8 @@ func (p *Persister) loadAnnouncements(ctx context.Context, s *store.MemStore) er
 func (p *Persister) loadBehaviors(ctx context.Context, s *store.MemStore) error {
 	rows, err := p.pool.Query(ctx, `
 		SELECT id, school_id, student_id, class_id, teacher_id,
-			incident_type, description, severity, action_taken, status,
-			warning_count, parent_notified, notes, created_at, updated_at
+			category, incident_type, description, severity, action_taken, status,
+			warning_count, parent_notified, notes, attachments, created_at, updated_at
 		FROM behaviors`)
 	if err != nil {
 		return err
@@ -596,9 +634,12 @@ func (p *Persister) loadBehaviors(ctx context.Context, s *store.MemStore) error 
 	for rows.Next() {
 		v := &store.Behavior{}
 		if err := rows.Scan(&v.ID, &v.SchoolID, &v.StudentID, &v.ClassID, &v.TeacherID,
-			&v.IncidentType, &v.Description, &v.Severity, &v.ActionTaken, &v.Status,
-			&v.WarningCount, &v.ParentNotified, &v.Notes, &v.CreatedAt, &v.UpdatedAt); err != nil {
+			&v.Category, &v.IncidentType, &v.Description, &v.Severity, &v.ActionTaken, &v.Status,
+			&v.WarningCount, &v.ParentNotified, &v.Notes, &v.Attachments, &v.CreatedAt, &v.UpdatedAt); err != nil {
 			return err
+		}
+		if v.Category == "" {
+			v.Category = v.IncidentType
 		}
 		s.Behaviors = append(s.Behaviors, v)
 	}
@@ -651,7 +692,7 @@ func (p *Persister) loadEvents(ctx context.Context, s *store.MemStore) error {
 func (p *Persister) loadLeaves(ctx context.Context, s *store.MemStore) error {
 	rows, err := p.pool.Query(ctx, `
 		SELECT id, school_id, requester_type, requester_id, requester_name,
-			leave_type, start_date, end_date, reason, status, attachments,
+			COALESCE(class_id,''), class_name, leave_type, start_date, end_date, reason, status, attachments,
 			COALESCE(approved_by,''), approved_at, rejection_reason, created_at, updated_at
 		FROM leaves`)
 	if err != nil {
@@ -662,7 +703,7 @@ func (p *Persister) loadLeaves(ctx context.Context, s *store.MemStore) error {
 		v := &store.Leave{}
 		var approvedAt *time.Time
 		if err := rows.Scan(&v.ID, &v.SchoolID, &v.RequesterType, &v.RequesterID, &v.RequesterName,
-			&v.LeaveType, &v.StartDate, &v.EndDate, &v.Reason, &v.Status, &v.Attachments,
+			&v.ClassID, &v.ClassName, &v.LeaveType, &v.StartDate, &v.EndDate, &v.Reason, &v.Status, &v.Attachments,
 			&v.ApprovedBy, &approvedAt, &v.RejectionReason, &v.CreatedAt, &v.UpdatedAt); err != nil {
 			return err
 		}
@@ -1093,9 +1134,6 @@ func (p *Persister) loadStarCollections(ctx context.Context, s *store.MemStore) 
 	}
 	return rows.Err()
 }
-
-
-
 
 // ─── Messaging Loaders ───────────────────────────────────────────────────
 

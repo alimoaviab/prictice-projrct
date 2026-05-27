@@ -24,6 +24,29 @@ function normalizeId(value: unknown): string {
   return String(value).trim();
 }
 
+function firstText(...values: unknown[]): string {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+    if (typeof value === "number") return String(value);
+  }
+  return "";
+}
+
+function displayStudentName(student: Record<string, unknown>): string {
+  const fullName = [
+    firstText(student.first_name, student.firstName),
+    firstText(student.last_name, student.lastName),
+  ].filter(Boolean).join(" ").trim();
+  return firstText(
+    student.name,
+    student.full_name,
+    student.student_name,
+    fullName,
+    student.admission_no,
+    student.roll_no
+  );
+}
+
 export default function BehaviorForm({ initial, onSubmit, onCancel, students, classes }: Props) {
   const [form, setForm] = useState<BehaviorFormInput>({
     student_id: initial?.student_id ?? "",
@@ -82,9 +105,9 @@ export default function BehaviorForm({ initial, onSubmit, onCancel, students, cl
 
         const rows = (result.data ?? []).map((student) => ({
           _id: String(student.id ?? student._id ?? ""),
-          name: String(student.name ?? "Unnamed Student").trim() || "Unnamed Student",
+          name: displayStudentName(student as Record<string, unknown>),
           class_id: form.class_id
-        })).filter((student) => Boolean(student._id));
+        })).filter((student) => Boolean(student._id) && Boolean(student.name));
 
         if (!cancelled) {
           setClassStudents(rows);
@@ -114,8 +137,7 @@ export default function BehaviorForm({ initial, onSubmit, onCancel, students, cl
     const selectedClassId = normalizeId(form.class_id);
     const matched = students.filter((student) => normalizeId(student.class_id) === selectedClassId);
     
-    // If we have direct matches, show them. Otherwise fallback to all students to avoid empty list.
-    return matched.length > 0 ? matched : students;
+    return matched;
   }, [form.class_id, students, classStudents]);
 
   return (

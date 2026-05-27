@@ -26,6 +26,7 @@ import (
 	"github.com/eduplexo/backend-go/internal/audit"
 	"github.com/eduplexo/backend-go/internal/auth"
 	"github.com/eduplexo/backend-go/internal/cache"
+	"github.com/eduplexo/backend-go/internal/domain/access"
 	"github.com/eduplexo/backend-go/internal/domain/tenant"
 	"github.com/eduplexo/backend-go/internal/store"
 	"github.com/go-chi/chi/v5"
@@ -252,9 +253,12 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	examID := q.Get("exam_id")
 	studentID := q.Get("student_id")
 	classID := q.Get("class_id")
+	subjectID := q.Get("subject_id")
+	subjectQ := q.Get("subject")
 
 	cacheKey := listCacheKey(ctx.SchoolID, yearID, examID, studentID, classID, q.Encode())
-	if h.Cache != nil && h.Cache.Available() {
+	cacheable := access.IsPrivileged(ctx)
+	if cacheable && h.Cache != nil && h.Cache.Available() {
 		if b, err := h.Cache.Get(r.Context(), cacheKey); err == nil && b != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.Header().Set("X-Cache", "HIT")
@@ -265,6 +269,31 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 
 	result := api.ServiceTry(func() (any, error) {
 		h.Store.RLock()
+		teacherClassIDs := map[string]bool{}
+		parentStudentIDs := map[string]bool{}
+		if ctx.Role == "teacher" {
+			teacherClassIDs = access.TeacherClassIDsLocked(h.Store, ctx)
+			if classID != "" && !teacherClassIDs[classID] {
+				h.Store.RUnlock()
+				return []any{}, nil
+			}
+		}
+		if ctx.Role == "student" {
+			self := access.StudentProfileLocked(h.Store, ctx)
+			if self == nil {
+				h.Store.RUnlock()
+				return []any{}, nil
+			}
+			studentID = self.ID
+			classID = self.ClassID
+		}
+		if ctx.Role == "parent" {
+			parentStudentIDs = access.ParentStudentIDsLocked(h.Store, ctx)
+			if studentID != "" && !parentStudentIDs[studentID] {
+				h.Store.RUnlock()
+				return []any{}, nil
+			}
+		}
 		rows := make([]*store.Result, 0)
 		for _, r := range h.Store.Results {
 			if r.SchoolID != ctx.SchoolID {
@@ -281,6 +310,28 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 			}
 			if classID != "" && r.ClassID != classID {
 				continue
+			}
+			if ctx.Role == "teacher" && !teacherClassIDs[r.ClassID] {
+				continue
+			}
+			if ctx.Role == "parent" && !parentStudentIDs[r.StudentID] {
+				continue
+			}
+			if subjectID != "" || subjectQ != "" {
+				matched := false
+				for _, sub := range r.Subjects {
+					if subjectID != "" && sub.SubjectID == subjectID {
+						matched = true
+						break
+					}
+					if subjectQ != "" && sub.SubjectName == subjectQ {
+						matched = true
+						break
+					}
+				}
+				if !matched {
+					continue
+				}
 			}
 			rows = append(rows, r)
 		}
@@ -317,7 +368,7 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	}
 	_, _ = w.Write(bytes)
 
-	if h.Cache != nil && h.Cache.Available() {
+	if cacheable && h.Cache != nil && h.Cache.Available() {
 		_ = h.Cache.Set(r.Context(), cacheKey, bytes, resultsListCacheTTL)
 	}
 }
@@ -446,11 +497,17 @@ func (h *Handler) Save(w http.ResponseWriter, r *http.Request) {
 		if exam == nil {
 			return nil, api.NewControlledError("NOT_FOUND", "Exam not found.", 404, nil)
 		}
+		if ctx.Role == "teacher" && !access.CanAccessClassLocked(h.Store, ctx, exam.ClassID) {
+			return nil, api.NewControlledError("FORBIDDEN", "You can only save results for assigned classes.", 403, nil)
+		}
 
 		saved := 0
 		now := time.Now()
 		for _, item := range batch {
 			if item.StudentID == "" {
+				continue
+			}
+			if !access.CanAccessStudentLocked(h.Store, ctx, item.StudentID) {
 				continue
 			}
 			subjects, total := normaliseStudentSubjects(item, exam)
@@ -513,26 +570,8 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		defer h.Store.RUnlock()
 		for _, res := range h.Store.Results {
 			if res.ID == id && res.SchoolID == ctx.SchoolID {
-				if ctx.Role == "parent" {
-					allowed := false
-					for _, link := range h.Store.StudentParents {
-						if link.SchoolID == ctx.SchoolID && link.ParentUserID == ctx.UserID && link.StudentID == res.StudentID {
-							allowed = true
-							break
-						}
-					}
-					if !allowed {
-						// Fallback for dev-seed flow: parent can view any student in same tenant
-						for _, s := range h.Store.Students {
-							if s.SchoolID == ctx.SchoolID && s.ID == res.StudentID {
-								allowed = true
-								break
-							}
-						}
-					}
-					if !allowed {
-						return nil, api.NewControlledError("FORBIDDEN", "Access denied.", 403, nil)
-					}
+				if !access.CanAccessStudentLocked(h.Store, ctx, res.StudentID) {
+					return nil, api.NewControlledError("FORBIDDEN", "Access denied.", 403, nil)
 				}
 				return h.hydrate([]*store.Result{res})[0], nil
 			}

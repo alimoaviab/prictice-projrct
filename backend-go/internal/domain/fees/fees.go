@@ -17,8 +17,8 @@
 //   - Effective amount = invoice amount + sum(active adjustments at due_at)
 //     where penalty is added and discount/waiver/scholarship are subtracted.
 //   - Status:  paid_amount <= 0           → "unpaid"
-//              paid_amount >= effective    → "paid"
-//              otherwise                  → "partial"
+//     paid_amount >= effective    → "paid"
+//     otherwise                  → "partial"
 //   - Receipt/invoice generation uses the same prefix and date layout.
 package fees
 
@@ -38,6 +38,7 @@ import (
 	"github.com/eduplexo/backend-go/internal/audit"
 	"github.com/eduplexo/backend-go/internal/auth"
 	"github.com/eduplexo/backend-go/internal/cache"
+	"github.com/eduplexo/backend-go/internal/domain/access"
 	"github.com/eduplexo/backend-go/internal/domain/tenant"
 	"github.com/eduplexo/backend-go/internal/store"
 	"github.com/go-chi/chi/v5"
@@ -205,6 +206,24 @@ func feeStatus(total, paid float64) string {
 		return "paid"
 	}
 	return "partial"
+}
+
+func (h *Handler) effectiveFeeAmount(f *store.Fee) (effective, scholarshipDiscount, feeDiscount, totalDiscount float64) {
+	if f == nil {
+		return 0, 0, 0, 0
+	}
+	base := f.Amount + f.AdjustmentAmount
+	if base < 0 {
+		base = 0
+	}
+	scholarshipDiscount = h.CalculateScholarshipDiscount(f.SchoolID, f.StudentID, base, "monthly")
+	feeDiscount = h.CalculateFeeDiscount(f.SchoolID, f.StudentID, f.Month, f.Year, base)
+	totalDiscount = scholarshipDiscount + feeDiscount
+	if totalDiscount > base {
+		totalDiscount = base
+	}
+	effective = maxF(0, base-totalDiscount)
+	return effective, scholarshipDiscount, feeDiscount, totalDiscount
 }
 
 // effectiveAdjustmentAmount is the SAME as the Node helper: penalties add,
@@ -671,9 +690,9 @@ func (h *Handler) DuplicateClassFee(w http.ResponseWriter, r *http.Request) {
 // ─── Generate monthly invoices ───────────────────────────────────────────
 
 type generateInput struct {
-	ClassID    string `json:"class_id"`
-	Month      string `json:"month"`
-	Year       int    `json:"year"`
+	ClassID    string   `json:"class_id"`
+	Month      string   `json:"month"`
+	Year       int      `json:"year"`
 	StudentIDs []string `json:"student_ids,omitempty"`
 }
 
@@ -698,7 +717,7 @@ func (h *Handler) Generate(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			return nil, api.NewControlledError("VALIDATION_ERROR", "Invalid month.", 400, nil)
 		}
-		
+
 		// Find the academic year that contains this month/year.
 		targetDate := time.Date(body.Year, time.Month(mn), 15, 0, 0, 0, 0, time.UTC)
 		var yearID string
@@ -895,40 +914,35 @@ func (h *Handler) feeRow(f *store.Fee) map[string]any {
 			break
 		}
 	}
-	effective := f.Amount + f.AdjustmentAmount
-
-	// Apply scholarship and discount deductions
-	feeType := "monthly" // default for recurring fees
-	scholarshipDiscount := h.CalculateScholarshipDiscount(f.SchoolID, f.StudentID, effective, feeType)
-	feeDiscount := h.CalculateFeeDiscount(f.SchoolID, f.StudentID, f.Month, f.Year, effective)
-	totalDiscount := scholarshipDiscount + feeDiscount
-	effective = maxF(0, effective-totalDiscount)
+	effective, scholarshipDiscount, feeDiscount, totalDiscount := h.effectiveFeeAmount(f)
 
 	return map[string]any{
-		"_id":                f.ID,
-		"id":                 f.ID,
-		"school_id":          f.SchoolID,
-		"student_id":         f.StudentID,
-		"student_name":       studentName,
-		"admission_no":       admission,
-		"class_id":           f.ClassID,
-		"class_name":         className,
-		"academic_year_id":   f.AcademicYearID,
-		"invoice_no":         f.InvoiceNo,
-		"title":              f.Title,
-		"amount":             f.Amount,
-		"currency":           f.Currency,
-		"month":              f.Month,
-		"year":               f.Year,
-		"due_at":             f.DueAt,
-		"status":             feeStatus(effective, f.PaidAmount),
-		"paid_amount":        f.PaidAmount,
-		"adjustment_amount":  f.AdjustmentAmount,
-		"discount_amount":    totalDiscount,
-		"effective_amount":   effective,
-		"outstanding_amount": maxF(0, effective-f.PaidAmount),
-		"fee_components":     f.FeeComponents,
-		"generated_at":       f.GeneratedAt,
+		"_id":                  f.ID,
+		"id":                   f.ID,
+		"school_id":            f.SchoolID,
+		"student_id":           f.StudentID,
+		"student_name":         studentName,
+		"admission_no":         admission,
+		"class_id":             f.ClassID,
+		"class_name":           className,
+		"academic_year_id":     f.AcademicYearID,
+		"invoice_no":           f.InvoiceNo,
+		"title":                f.Title,
+		"amount":               f.Amount,
+		"currency":             f.Currency,
+		"month":                f.Month,
+		"year":                 f.Year,
+		"due_at":               f.DueAt,
+		"status":               feeStatus(effective, f.PaidAmount),
+		"paid_amount":          f.PaidAmount,
+		"adjustment_amount":    f.AdjustmentAmount,
+		"discount_amount":      totalDiscount,
+		"scholarship_discount": scholarshipDiscount,
+		"fee_discount":         feeDiscount,
+		"effective_amount":     effective,
+		"outstanding_amount":   maxF(0, effective-f.PaidAmount),
+		"fee_components":       f.FeeComponents,
+		"generated_at":         f.GeneratedAt,
 	}
 }
 
@@ -1056,10 +1070,14 @@ type paymentInput struct {
 	StudentID     string  `json:"student_id"`
 	Amount        float64 `json:"amount"`
 	PaymentMethod string  `json:"payment_method"`
+	Method        string  `json:"method"`
 	ReferenceNo   string  `json:"reference_no"`
+	Reference     string  `json:"reference"`
 	Notes         string  `json:"notes"`
 	PaymentDate   string  `json:"payment_date"`
 	FeeID         string  `json:"fee_id"`
+	UseCredit     bool    `json:"use_credit"`
+	CreditAmount  float64 `json:"credit_amount"`
 }
 
 // RecordPayment implements POST /api/fees/{feeId}/pay AND POST /api/fees/payments.
@@ -1077,8 +1095,11 @@ func (h *Handler) RecordPayment(w http.ResponseWriter, r *http.Request) {
 		if err := auth.AssertPermission(ctx, "fees", auth.ActionCreate); err != nil {
 			return nil, err
 		}
-		if body.Amount <= 0 {
-			return nil, api.NewControlledError("VALIDATION_ERROR", "amount must be positive.", 400, nil)
+		if body.Amount < 0 || body.CreditAmount < 0 {
+			return nil, api.NewControlledError("VALIDATION_ERROR", "amount and credit_amount must be non-negative.", 400, nil)
+		}
+		if body.Amount <= 0 && body.CreditAmount <= 0 && !body.UseCredit {
+			return nil, api.NewControlledError("VALIDATION_ERROR", "amount or credit_amount must be positive.", 400, nil)
 		}
 		feeID := body.FeeID
 		if feeID == "" {
@@ -1112,16 +1133,34 @@ func (h *Handler) RecordPayment(w http.ResponseWriter, r *http.Request) {
 			return nil, api.NewControlledError("VALIDATION_ERROR", "student_id mismatches the invoice.", 400, nil)
 		}
 
-		effective := fee.Amount + fee.AdjustmentAmount
+		effective, _, _, _ := h.effectiveFeeAmount(fee)
 		outstanding := effective - fee.PaidAmount
 		if outstanding <= 0 {
 			return nil, api.NewControlledError("INVALID_STATE", "Invoice already paid.", 400, nil)
 		}
-		applied := body.Amount
+
+		creditRequested := body.CreditAmount
+		if body.UseCredit && creditRequested <= 0 {
+			creditRequested = outstanding
+		}
+		if creditRequested > outstanding {
+			creditRequested = outstanding
+		}
+		creditApplied := 0.0
+		if creditRequested > 0 {
+			creditApplied = h.debitCredit(ctx.SchoolID, fee.StudentID, fee.ID, "Credit applied to fee payment", ctx.UserID, creditRequested)
+		}
+
+		remainingAfterCredit := maxF(0, outstanding-creditApplied)
+		cashApplied := body.Amount
 		overpayment := 0.0
-		if applied > outstanding {
-			overpayment = applied - outstanding
-			applied = outstanding
+		if cashApplied > remainingAfterCredit {
+			overpayment = cashApplied - remainingAfterCredit
+			cashApplied = remainingAfterCredit
+		}
+		applied := creditApplied + cashApplied
+		if applied <= 0 {
+			return nil, api.NewControlledError("INVALID_STATE", "No payable amount could be applied. Check the student's credit balance.", 400, nil)
 		}
 
 		// FIFO across components: fill from the first under-paid component onward.
@@ -1148,6 +1187,22 @@ func (h *Handler) RecordPayment(w http.ResponseWriter, r *http.Request) {
 		fee.UpdatedAt = time.Now()
 
 		now := time.Now()
+		paymentMethod := strings.ToLower(firstNonEmpty(body.PaymentMethod, body.Method, "cash"))
+		if creditApplied > 0 && cashApplied <= 0 {
+			paymentMethod = "credit"
+		} else if creditApplied > 0 && cashApplied > 0 {
+			paymentMethod = "mixed"
+		}
+		referenceNo := firstNonEmpty(body.ReferenceNo, body.Reference)
+		notes := body.Notes
+		if creditApplied > 0 {
+			creditNote := fmt.Sprintf("Credit applied: %.2f", creditApplied)
+			if strings.TrimSpace(notes) == "" {
+				notes = creditNote
+			} else {
+				notes = strings.TrimSpace(notes) + "; " + creditNote
+			}
+		}
 		pay := &store.FeePayment{
 			ID:             store.NewID("pay"),
 			SchoolID:       ctx.SchoolID,
@@ -1157,9 +1212,9 @@ func (h *Handler) RecordPayment(w http.ResponseWriter, r *http.Request) {
 			AcademicYearID: fee.AcademicYearID,
 			Amount:         applied,
 			PaymentDate:    paymentDate,
-			PaymentMethod:  orDefault(body.PaymentMethod, "cash"),
-			ReferenceNo:    body.ReferenceNo,
-			Notes:          body.Notes,
+			PaymentMethod:  paymentMethod,
+			ReferenceNo:    referenceNo,
+			Notes:          notes,
 			Status:         "completed",
 			Allocations: []store.FeePaymentAllocation{{
 				FeeID: fee.ID, Month: fee.Month, Amount: applied,
@@ -1251,12 +1306,7 @@ func (h *Handler) DashboardStats(w http.ResponseWriter, r *http.Request) {
 			if yearID != "" && f.AcademicYearID != "" && f.AcademicYearID != yearID {
 				continue
 			}
-			effective := f.Amount + f.AdjustmentAmount
-			// Apply scholarship and discount deductions
-			scholarshipDiscount := h.CalculateScholarshipDiscount(f.SchoolID, f.StudentID, effective, "monthly")
-			feeDiscount := h.CalculateFeeDiscount(f.SchoolID, f.StudentID, f.Month, f.Year, effective)
-			effective = maxF(0, effective-scholarshipDiscount-feeDiscount)
-
+			effective, _, _, _ := h.effectiveFeeAmount(f)
 			totalCollected += f.PaidAmount
 			out := effective - f.PaidAmount
 			if out > 0 {
@@ -1296,13 +1346,13 @@ func (h *Handler) ClassesSummary(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			byClass[c.ID] = map[string]any{
-				"_id":          c.ID,
-				"id":           c.ID,
-				"name":         c.Name,
-				"section":      c.Section,
-				"total":        0.0,
-				"collected":    0.0,
-				"pending":      0.0,
+				"_id":           c.ID,
+				"id":            c.ID,
+				"name":          c.Name,
+				"section":       c.Section,
+				"total":         0.0,
+				"collected":     0.0,
+				"pending":       0.0,
 				"student_count": 0,
 				"invoice_count": 0,
 			}
@@ -1320,7 +1370,7 @@ func (h *Handler) ClassesSummary(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			if c, ok := byClass[f.ClassID]; ok {
-				eff := f.Amount + f.AdjustmentAmount
+				eff, _, _, _ := h.effectiveFeeAmount(f)
 				c["total"] = c["total"].(float64) + eff
 				c["collected"] = c["collected"].(float64) + f.PaidAmount
 				c["pending"] = c["pending"].(float64) + maxF(0, eff-f.PaidAmount)
@@ -1339,13 +1389,14 @@ func (h *Handler) ClassesSummary(w http.ResponseWriter, r *http.Request) {
 // LedgerDashboard implements GET /api/fees/ledger.
 //
 // Returns the shape the React fee page expects:
-//   {
-//     stats:       { monthly_total, monthly_collection, pending_amount,
-//                    paid_count, partial_count, unpaid_count, collection_rate },
-//     students:    [ { student, current_fee, carry_forward, total_payable,
-//                      paid_total, remaining, status }, ... ],
-//     pagination:  { total, page, limit, pages }
-//   }
+//
+//	{
+//	  stats:       { monthly_total, monthly_collection, pending_amount,
+//	                 paid_count, partial_count, unpaid_count, collection_rate },
+//	  students:    [ { student, current_fee, carry_forward, total_payable,
+//	                   paid_total, remaining, status }, ... ],
+//	  pagination:  { total, page, limit, pages }
+//	}
 //
 // Filters: status (all|paid|partial|unpaid), class_id, month, year, search,
 // page, limit.
@@ -1490,13 +1541,13 @@ func (h *Handler) LedgerDashboard(w http.ResponseWriter, r *http.Request) {
 		}
 
 		type ledgerEntry struct {
-			Student       map[string]any `json:"student"`
-			CurrentFee    map[string]any `json:"current_fee"`
-			CarryForward  float64        `json:"carry_forward"`
-			TotalPayable  float64        `json:"total_payable"`
-			PaidTotal     float64        `json:"paid_total"`
-			Remaining     float64        `json:"remaining"`
-			Status        string         `json:"status"`
+			Student      map[string]any `json:"student"`
+			CurrentFee   map[string]any `json:"current_fee"`
+			CarryForward float64        `json:"carry_forward"`
+			TotalPayable float64        `json:"total_payable"`
+			PaidTotal    float64        `json:"paid_total"`
+			Remaining    float64        `json:"remaining"`
+			Status       string         `json:"status"`
 		}
 
 		entries := make([]ledgerEntry, 0, len(studentByID))
@@ -1534,14 +1585,14 @@ func (h *Handler) LedgerDashboard(w http.ResponseWriter, r *http.Request) {
 			invoicedMonths := map[string]bool{} // "month:year" → true
 
 			for _, f := range fees {
-				eff := f.Amount + f.AdjustmentAmount
+				eff, _, _, _ := h.effectiveFeeAmount(f)
 				outstanding := eff - f.PaidAmount
 				if outstanding < 0 {
 					outstanding = 0
 				}
 
 				isCurrent := monthQ == "" || (strings.EqualFold(f.Month, monthQ) && (yearQ == "" || strconv.Itoa(f.Year) == yearQ))
-				
+
 				isPrevious := false
 				if monthQ != "" && yearQ != "" {
 					isPrevious = isEarlier(f.Month, f.Year, monthQ, yearNum)
@@ -1629,7 +1680,10 @@ func (h *Handler) LedgerDashboard(w http.ResponseWriter, r *http.Request) {
 						key := fmt.Sprintf("%s:%d", monthName, curY)
 						if !invoicedMonths[key] {
 							// This month has no invoice — the recurring fee is owed.
-							carry += recurringAmount
+							virtualRecurring := recurringAmount
+							virtualDiscount := h.CalculateScholarshipDiscount(ctx.SchoolID, student.ID, virtualRecurring, "monthly") +
+								h.CalculateFeeDiscount(ctx.SchoolID, student.ID, monthName, curY, virtualRecurring)
+							carry += maxF(0, virtualRecurring-maxF(0, virtualDiscount))
 
 							// Also check for one-time fees due in this uninvoiced month.
 							for _, cf := range h.Store.ClassFees {
@@ -1659,14 +1713,21 @@ func (h *Handler) LedgerDashboard(w http.ResponseWriter, r *http.Request) {
 			var virtualCurrent map[string]any
 			if current == nil && monthQ != "" {
 				exp := expectedByClass[student.ClassID]
-				totalPayable += exp.amount
-				remaining += exp.amount
+				virtualDiscount := h.CalculateScholarshipDiscount(ctx.SchoolID, student.ID, exp.amount, "monthly") +
+					h.CalculateFeeDiscount(ctx.SchoolID, student.ID, monthQ, yearNum, exp.amount)
+				if virtualDiscount > exp.amount {
+					virtualDiscount = exp.amount
+				}
+				virtualAmount := maxF(0, exp.amount-virtualDiscount)
+				totalPayable += virtualAmount
+				remaining += virtualAmount
 				virtualCurrent = map[string]any{
-					"id":         "virtual_" + student.ID,
-					"amount":     exp.amount,
-					"paid":       0.0,
-					"status":     "unpaid",
-					"components": exp.components,
+					"id":              "virtual_" + student.ID,
+					"amount":          virtualAmount,
+					"paid":            0.0,
+					"status":          "unpaid",
+					"discount_amount": virtualDiscount,
+					"components":      exp.components,
 				}
 			}
 
@@ -1688,6 +1749,13 @@ func (h *Handler) LedgerDashboard(w http.ResponseWriter, r *http.Request) {
 			if displayName == "" {
 				displayName = student.AdmissionNo
 			}
+			creditBalance := 0.0
+			for _, wallet := range h.Store.StudentWallets {
+				if wallet.SchoolID == ctx.SchoolID && wallet.StudentID == student.ID {
+					creditBalance = wallet.CreditBalance
+					break
+				}
+			}
 
 			// Search filter.
 			if search != "" {
@@ -1699,11 +1767,12 @@ func (h *Handler) LedgerDashboard(w http.ResponseWriter, r *http.Request) {
 
 			entry := ledgerEntry{
 				Student: map[string]any{
-					"id":           student.ID,
-					"name":         displayName,
-					"admission_no": student.AdmissionNo,
-					"class_name":   className,
-					"avatar":       "",
+					"id":             student.ID,
+					"name":           displayName,
+					"admission_no":   student.AdmissionNo,
+					"class_name":     className,
+					"avatar":         "",
+					"credit_balance": creditBalance,
 				},
 				CurrentFee:   virtualCurrent,
 				CarryForward: carry,
@@ -1713,13 +1782,14 @@ func (h *Handler) LedgerDashboard(w http.ResponseWriter, r *http.Request) {
 				Status:       status,
 			}
 			if current != nil {
-				eff := current.Amount + current.AdjustmentAmount
+				eff, _, _, discount := h.effectiveFeeAmount(current)
 				entry.CurrentFee = map[string]any{
-					"id":         current.ID,
-					"amount":     eff,
-					"paid":       current.PaidAmount,
-					"status":     feeStatus(eff, current.PaidAmount),
-					"components": current.FeeComponents,
+					"id":              current.ID,
+					"amount":          eff,
+					"paid":            current.PaidAmount,
+					"status":          feeStatus(eff, current.PaidAmount),
+					"discount_amount": discount,
+					"components":      current.FeeComponents,
 				}
 			}
 			entries = append(entries, entry)
@@ -1799,13 +1869,34 @@ func (h *Handler) StudentFees(w http.ResponseWriter, r *http.Request) {
 		h.Store.RLock()
 		defer h.Store.RUnlock()
 		var stu *store.Student
-		for _, s := range h.Store.Students {
-			if s.SchoolID == ctx.SchoolID && (s.ID == studentID || (studentID == "" && (s.UserID == ctx.UserID || ctx.Role == "parent"))) {
-				stu = s
-				if studentID == "" {
-					studentID = s.ID
+		switch ctx.Role {
+		case "student":
+			self := access.StudentProfileLocked(h.Store, ctx)
+			if self != nil && (studentID == "" || studentID == self.ID) {
+				stu = self
+				studentID = self.ID
+			}
+		case "parent":
+			children := access.ParentStudentIDsLocked(h.Store, ctx)
+			for _, s := range h.Store.Students {
+				if s.SchoolID != ctx.SchoolID || !children[s.ID] {
+					continue
 				}
-				break
+				if studentID == "" || studentID == s.ID {
+					stu = s
+					studentID = s.ID
+					break
+				}
+			}
+		default:
+			for _, s := range h.Store.Students {
+				if s.SchoolID == ctx.SchoolID && (studentID == "" || s.ID == studentID) {
+					stu = s
+					if studentID == "" {
+						studentID = s.ID
+					}
+					break
+				}
 			}
 		}
 		if stu == nil {
@@ -1823,13 +1914,7 @@ func (h *Handler) StudentFees(w http.ResponseWriter, r *http.Request) {
 			if f.SchoolID != ctx.SchoolID || f.StudentID != stu.ID {
 				continue
 			}
-			eff := f.Amount + f.AdjustmentAmount
-
-			// Apply scholarship and discount deductions
-			scholarshipDiscount := h.CalculateScholarshipDiscount(f.SchoolID, f.StudentID, eff, "monthly")
-			feeDiscount := h.CalculateFeeDiscount(f.SchoolID, f.StudentID, f.Month, f.Year, eff)
-			totalDiscount := scholarshipDiscount + feeDiscount
-			eff = maxF(0, eff-totalDiscount)
+			eff, _, _, totalDiscount := h.effectiveFeeAmount(f)
 
 			out := maxF(0, eff-f.PaidAmount)
 			total += eff
@@ -1940,6 +2025,15 @@ func orDefault(v, d string) string {
 		return d
 	}
 	return v
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if strings.TrimSpace(v) != "" {
+			return strings.TrimSpace(v)
+		}
+	}
+	return ""
 }
 
 func maxF(a, b float64) float64 {

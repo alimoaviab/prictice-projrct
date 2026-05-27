@@ -15,6 +15,7 @@ import (
 	"github.com/eduplexo/backend-go/internal/audit"
 	"github.com/eduplexo/backend-go/internal/auth"
 	"github.com/eduplexo/backend-go/internal/cache"
+	"github.com/eduplexo/backend-go/internal/domain/access"
 	"github.com/eduplexo/backend-go/internal/domain/tenant"
 	"github.com/eduplexo/backend-go/internal/store"
 	"github.com/go-chi/chi/v5"
@@ -175,19 +176,19 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		h.Store.RLock()
 		var studentProfile *store.Student
 		var teacherProfile *store.Teacher
+		teacherClassIDs := map[string]bool{}
+		parentClassIDs := map[string]bool{}
 
 		if ctx.Role == "student" {
-			for _, s := range h.Store.Students {
-				if s.SchoolID == ctx.SchoolID && s.UserID == ctx.UserID {
-					studentProfile = s
-					break
-				}
-			}
+			studentProfile = access.StudentProfileLocked(h.Store, ctx)
 		} else if ctx.Role == "teacher" {
-			for _, t := range h.Store.Teachers {
-				if t.SchoolID == ctx.SchoolID && t.UserID == ctx.UserID {
-					teacherProfile = t
-					break
+			teacherProfile = access.TeacherProfileLocked(h.Store, ctx)
+			teacherClassIDs = access.TeacherClassIDsLocked(h.Store, ctx)
+		} else if ctx.Role == "parent" {
+			children := access.ParentStudentIDsLocked(h.Store, ctx)
+			for _, s := range h.Store.Students {
+				if s.SchoolID == ctx.SchoolID && children[s.ID] {
+					parentClassIDs[s.ClassID] = true
 				}
 			}
 		}
@@ -207,9 +208,12 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 			if teacherProfile == nil {
 				return []any{}, nil
 			}
-			// If no explicit filter, teachers see what they created or are assigned to
-			if teacherID == "" && classID == "" {
-				teacherID = teacherProfile.ID
+			if classID != "" && !teacherClassIDs[classID] {
+				return []any{}, nil
+			}
+		} else if ctx.Role == "parent" {
+			if classID != "" && !parentClassIDs[classID] {
+				return []any{}, nil
 			}
 		}
 
@@ -239,7 +243,11 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 				}
 			} else if ctx.Role == "teacher" {
 				// Teachers see homework they created OR were assigned as teacher
-				if teacherID != "" && hw.TeacherID != teacherID && hw.CreatedBy != ctx.UserID {
+				if !teacherClassIDs[hw.ClassID] && hw.TeacherID != teacherProfile.ID && hw.CreatedBy != ctx.UserID {
+					continue
+				}
+			} else if ctx.Role == "parent" {
+				if hw.Status == "draft" || !parentClassIDs[hw.ClassID] {
 					continue
 				}
 			} else if ctx.Role == "admin" {
@@ -300,14 +308,25 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		defer h.Store.RUnlock()
 		for _, hw := range h.Store.Homework {
 			if hw.ID == id && hw.SchoolID == ctx.SchoolID {
+				if !access.CanAccessClassLocked(h.Store, ctx, hw.ClassID) {
+					return nil, api.NewControlledError("FORBIDDEN", "You can only access assigned homework.", 403, nil)
+				}
+				if (ctx.Role == "student" || ctx.Role == "parent") && hw.Status == "draft" {
+					return nil, api.NewControlledError("NOT_FOUND", "Homework not found.", 404, nil)
+				}
 				row := h.hydrate([]*store.Homework{hw})[0]
 				// Student privacy: collapse `submissions` to my_submission only.
-				if ctx.Role == "student" {
+				if ctx.Role == "student" || ctx.Role == "parent" {
 					var self *store.Student
-					for _, s := range h.Store.Students {
-						if s.SchoolID == ctx.SchoolID && s.UserID == ctx.UserID {
-							self = s
-							break
+					if ctx.Role == "student" {
+						self = access.StudentProfileLocked(h.Store, ctx)
+					} else {
+						children := access.ParentStudentIDsLocked(h.Store, ctx)
+						for _, s := range h.Store.Students {
+							if s.SchoolID == ctx.SchoolID && children[s.ID] && s.ClassID == hw.ClassID {
+								self = s
+								break
+							}
 						}
 					}
 					if self != nil {
@@ -357,6 +376,14 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		if body.ClassID == "" || body.Title == "" {
 			return nil, api.NewControlledError("VALIDATION_ERROR", "class_id and title are required.", 400, nil)
 		}
+		if ctx.Role == "teacher" {
+			h.Store.RLock()
+			allowed := access.CanAccessClassLocked(h.Store, ctx, body.ClassID)
+			h.Store.RUnlock()
+			if !allowed {
+				return nil, api.NewControlledError("FORBIDDEN", "You can only create homework for assigned classes.", 403, nil)
+			}
+		}
 		dueAt, ok := api.ParseDate(body.DueAt)
 		if !ok {
 			return nil, api.NewControlledError("VALIDATION_ERROR", "Invalid due_at date.", 400, nil)
@@ -365,7 +392,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		dueAt = time.Date(dueAt.Year(), dueAt.Month(), dueAt.Day(), 23, 59, 0, 0, time.UTC)
 
 		h.Store.Lock()
-		
+
 		var class *store.Class
 		for _, c := range h.Store.Classes {
 			if c.ID == body.ClassID && c.SchoolID == ctx.SchoolID {
@@ -489,11 +516,17 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		if err := auth.AssertPermission(ctx, "homework", auth.ActionUpdate); err != nil {
 			return nil, err
 		}
+		var updated store.Homework
+		var before store.Homework
+		found := false
 		h.Store.Lock()
-		defer h.Store.Unlock()
 		for _, hw := range h.Store.Homework {
 			if hw.ID == id && hw.SchoolID == ctx.SchoolID {
-				before := *hw
+				if ctx.Role == "teacher" && !access.CanAccessClassLocked(h.Store, ctx, hw.ClassID) && hw.CreatedBy != ctx.UserID {
+					h.Store.Unlock()
+					return nil, api.NewControlledError("FORBIDDEN", "You can only update homework for assigned classes.", 403, nil)
+				}
+				before = *hw
 				if v, ok := body["title"]; ok {
 					_ = json.Unmarshal(v, &hw.Title)
 				}
@@ -504,7 +537,13 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 					_ = json.Unmarshal(v, &hw.Status)
 				}
 				if v, ok := body["class_id"]; ok {
-					_ = json.Unmarshal(v, &hw.ClassID)
+					var nextClassID string
+					_ = json.Unmarshal(v, &nextClassID)
+					if ctx.Role == "teacher" && !access.CanAccessClassLocked(h.Store, ctx, nextClassID) {
+						h.Store.Unlock()
+						return nil, api.NewControlledError("FORBIDDEN", "You can only move homework to assigned classes.", 403, nil)
+					}
+					hw.ClassID = nextClassID
 				}
 				if v, ok := body["section"]; ok {
 					_ = json.Unmarshal(v, &hw.Section)
@@ -526,15 +565,24 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 					_ = json.Unmarshal(v, &hw.Visibility)
 				}
 				hw.UpdatedAt = time.Now()
-				h.Persist("homework", hw)
-				audit.Write(h.Store, ctx, audit.Input{
-					Action: "update", EntityType: "homework", EntityID: id, Before: before, After: *hw,
-				})
-				h.invalidateList(r, ctx.SchoolID)
-				return h.hydrate([]*store.Homework{hw})[0], nil
+				updated = *hw
+				found = true
+				break
 			}
 		}
-		return nil, api.NewControlledError("NOT_FOUND", "Homework not found.", 404, nil)
+		h.Store.Unlock()
+		if !found {
+			return nil, api.NewControlledError("NOT_FOUND", "Homework not found.", 404, nil)
+		}
+		h.Persist("homework", &updated)
+		audit.Write(h.Store, ctx, audit.Input{
+			Action: "update", EntityType: "homework", EntityID: id, Before: before, After: updated,
+		})
+		h.invalidateList(r, ctx.SchoolID)
+		h.Store.RLock()
+		row := h.hydrate([]*store.Homework{&updated})[0]
+		h.Store.RUnlock()
+		return row, nil
 	}))
 }
 
@@ -550,8 +598,12 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		defer h.Store.Unlock()
 		for i, hw := range h.Store.Homework {
 			if hw.ID == id && hw.SchoolID == ctx.SchoolID {
+				if ctx.Role == "teacher" && !access.CanAccessClassLocked(h.Store, ctx, hw.ClassID) && hw.CreatedBy != ctx.UserID {
+					return nil, api.NewControlledError("FORBIDDEN", "You can only delete homework for assigned classes.", 403, nil)
+				}
 				before := *hw
 				h.Store.Homework = append(h.Store.Homework[:i], h.Store.Homework[i+1:]...)
+				h.Persist("homework:delete", before.ID)
 				audit.Write(h.Store, ctx, audit.Input{
 					Action: "delete", EntityType: "homework", EntityID: id, Before: before,
 				})

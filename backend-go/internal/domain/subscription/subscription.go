@@ -434,7 +434,7 @@ func (h *Handler) CheckStudentLimit(ctx context.Context, schoolID string) error 
 
 func (h *Handler) getActiveSubscription(ctx context.Context, schoolID string) (*Subscription, error) {
 	if h.Pool == nil {
-		return nil, nil
+		return h.activeSubscriptionFromStore(schoolID), nil
 	}
 
 	var sub Subscription
@@ -452,14 +452,85 @@ func (h *Handler) getActiveSubscription(ctx context.Context, schoolID string) (*
 		&trialStart, &trialEnd, &sub.CreatedAt, &sub.UpdatedAt,
 	)
 	if err == pgx.ErrNoRows {
-		return nil, nil
+		return h.activeSubscriptionFromStore(schoolID), nil
 	}
 	if err != nil {
+		if sub := h.activeSubscriptionFromStore(schoolID); sub != nil {
+			return sub, nil
+		}
 		return nil, err
 	}
 	sub.TrialStartDate = trialStart
 	sub.TrialEndDate = trialEnd
 	return &sub, nil
+}
+
+func (h *Handler) activeSubscriptionFromStore(schoolID string) *Subscription {
+	if h.Store == nil {
+		return nil
+	}
+	h.Store.RLock()
+	defer h.Store.RUnlock()
+	var latest *store.Subscription
+	for _, s := range h.Store.Subscriptions {
+		if s.SchoolID != schoolID || (s.Status != "active" && s.Status != "trial") {
+			continue
+		}
+		if latest == nil || s.CreatedAt.After(latest.CreatedAt) {
+			latest = s
+		}
+	}
+	if latest == nil {
+		return nil
+	}
+	planName := latest.PackageID
+	if planName == "" || planName == "trial" {
+		planName = "growth"
+	}
+	studentLimit := 500
+	price := 0
+	switch planName {
+	case "starter":
+		studentLimit = 200
+		price = 4000
+	case "growth":
+		studentLimit = 500
+		price = 9000
+	case "custom", "enterprise":
+		studentLimit = 800
+	}
+	start := latest.CreatedAt
+	if start.IsZero() {
+		start = time.Now()
+	}
+	end := latest.NextRenewal
+	if end.IsZero() {
+		end = start.AddDate(0, 0, 14)
+	}
+	isTrial := latest.PackageID == "trial" || latest.Status == "trial"
+	var trialStart, trialEnd *time.Time
+	if isTrial {
+		trialStart = &start
+		trialEnd = &end
+		price = 0
+	}
+	return &Subscription{
+		ID:             latest.ID,
+		SchoolID:       latest.SchoolID,
+		PlanName:       planName,
+		StudentLimit:   studentLimit,
+		Price:          price,
+		Currency:       "PKR",
+		StartDate:      start,
+		EndDate:        end,
+		Status:         latest.Status,
+		IsTrial:        isTrial,
+		TrialUsed:      isTrial,
+		TrialStartDate: trialStart,
+		TrialEndDate:   trialEnd,
+		CreatedAt:      latest.CreatedAt,
+		UpdatedAt:      latest.UpdatedAt,
+	}
 }
 
 func (h *Handler) countActiveStudents(schoolID string) int {

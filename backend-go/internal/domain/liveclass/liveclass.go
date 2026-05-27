@@ -22,6 +22,7 @@ import (
 	"github.com/eduplexo/backend-go/internal/audit"
 	"github.com/eduplexo/backend-go/internal/auth"
 	"github.com/eduplexo/backend-go/internal/cache"
+	"github.com/eduplexo/backend-go/internal/domain/access"
 	"github.com/eduplexo/backend-go/internal/domain/tenant"
 	"github.com/eduplexo/backend-go/internal/store"
 	"github.com/go-chi/chi/v5"
@@ -162,12 +163,20 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	// Resolve student profile id outside the cache-key calc so students
 	// from different classes don't share a cache entry.
 	var profileID string
-	if ctx.Role == "student" {
+	if ctx.Role == "student" || ctx.Role == "teacher" || ctx.Role == "parent" {
 		h.Store.RLock()
-		for _, s := range h.Store.Students {
-			if s.SchoolID == ctx.SchoolID && s.UserID == ctx.UserID {
+		switch ctx.Role {
+		case "student":
+			if s := access.StudentProfileLocked(h.Store, ctx); s != nil {
 				profileID = s.ID
-				break
+			}
+		case "teacher":
+			if t := access.TeacherProfileLocked(h.Store, ctx); t != nil {
+				profileID = t.ID
+			}
+		case "parent":
+			for id := range access.ParentStudentIDsLocked(h.Store, ctx) {
+				profileID += id + ","
 			}
 		}
 		h.Store.RUnlock()
@@ -191,16 +200,34 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		// Student scoping: only their class.
 		if ctx.Role == "student" {
 			h.Store.RLock()
-			for _, s := range h.Store.Students {
-				if s.SchoolID == ctx.SchoolID && s.UserID == ctx.UserID {
-					classID = s.ClassID
-					break
-				}
+			if s := access.StudentProfileLocked(h.Store, ctx); s != nil {
+				classID = s.ClassID
 			}
 			h.Store.RUnlock()
 		}
 
 		h.Store.RLock()
+		teacherClassIDs := map[string]bool{}
+		parentClassIDs := map[string]bool{}
+		if ctx.Role == "teacher" {
+			teacherClassIDs = access.TeacherClassIDsLocked(h.Store, ctx)
+			if classID != "" && !teacherClassIDs[classID] {
+				h.Store.RUnlock()
+				return []any{}, nil
+			}
+		}
+		if ctx.Role == "parent" {
+			children := access.ParentStudentIDsLocked(h.Store, ctx)
+			for _, s := range h.Store.Students {
+				if s.SchoolID == ctx.SchoolID && children[s.ID] {
+					parentClassIDs[s.ClassID] = true
+				}
+			}
+			if classID != "" && !parentClassIDs[classID] {
+				h.Store.RUnlock()
+				return []any{}, nil
+			}
+		}
 		rows := make([]*store.LiveClass, 0)
 		for _, l := range h.Store.LiveClasses {
 			if l.SchoolID != ctx.SchoolID {
@@ -210,6 +237,12 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			if classID != "" && l.ClassID != classID {
+				continue
+			}
+			if ctx.Role == "teacher" && !teacherClassIDs[l.ClassID] {
+				continue
+			}
+			if ctx.Role == "parent" && !parentClassIDs[l.ClassID] {
 				continue
 			}
 			if statusQ != "" && l.Status != statusQ {
@@ -299,40 +332,8 @@ func (h *Handler) Schedule(w http.ResponseWriter, r *http.Request) {
 		// TEACHER PERMISSION CHECK: Teachers can only create sessions for assigned classes
 		if ctx.Role == "teacher" {
 			h.Store.RLock()
-			defer h.Store.RUnlock()
-
-			var teacher *store.Teacher
-			for _, t := range h.Store.Teachers {
-				if t.UserID == ctx.UserID && t.SchoolID == ctx.SchoolID {
-					teacher = t
-					break
-				}
-			}
-
-			found := false
-			if teacher != nil {
-				for _, c := range h.Store.Classes {
-					if c.ID == body.ClassID && c.SchoolID == ctx.SchoolID {
-						if c.ClassTeacherID == teacher.ID {
-							found = true
-							break
-						}
-						for _, tID := range c.TeacherIDs {
-							if tID == teacher.ID {
-								found = true
-								break
-							}
-						}
-						for _, tcID := range teacher.ClassIDs {
-							if tcID == body.ClassID {
-								found = true
-								break
-							}
-						}
-					}
-				}
-			}
-
+			found := access.CanAccessClassLocked(h.Store, ctx, body.ClassID)
+			h.Store.RUnlock()
 			if !found {
 				return nil, api.NewControlledError("FORBIDDEN", "You are not assigned to this class. Only assigned teachers can create sessions.", 403, nil)
 			}
@@ -418,6 +419,9 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		defer h.Store.RUnlock()
 		for _, l := range h.Store.LiveClasses {
 			if l.ID == id && l.SchoolID == ctx.SchoolID {
+				if !access.CanAccessClassLocked(h.Store, ctx, l.ClassID) {
+					return nil, api.NewControlledError("FORBIDDEN", "Access denied.", 403, nil)
+				}
 				return h.hydrate([]*store.LiveClass{l})[0], nil
 			}
 		}
@@ -451,6 +455,10 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		if found == nil {
 			h.Store.Unlock()
 			return nil, api.NewControlledError("NOT_FOUND", "Live class not found.", 404, nil)
+		}
+		if ctx.Role == "teacher" && !access.CanAccessClassLocked(h.Store, ctx, found.ClassID) {
+			h.Store.Unlock()
+			return nil, api.NewControlledError("FORBIDDEN", "You can only update live classes for assigned classes.", 403, nil)
 		}
 		before := *found
 		if v, ok := body["title"]; ok {
@@ -498,6 +506,10 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		var removed *store.LiveClass
 		for i, l := range h.Store.LiveClasses {
 			if l.ID == id && l.SchoolID == ctx.SchoolID {
+				if ctx.Role == "teacher" && !access.CanAccessClassLocked(h.Store, ctx, l.ClassID) {
+					h.Store.Unlock()
+					return nil, api.NewControlledError("FORBIDDEN", "You can only delete live classes for assigned classes.", 403, nil)
+				}
 				removed = l
 				h.Store.LiveClasses = append(h.Store.LiveClasses[:i], h.Store.LiveClasses[i+1:]...)
 				break

@@ -3,10 +3,12 @@ package fees
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/eduplexo/backend-go/internal/api"
 	"github.com/eduplexo/backend-go/internal/auth"
+	"github.com/eduplexo/backend-go/internal/domain/access"
 	"github.com/eduplexo/backend-go/internal/store"
 	"github.com/go-chi/chi/v5"
 )
@@ -16,12 +18,12 @@ import (
 type scholarshipInput struct {
 	StudentID    string  `json:"student_id"`
 	Enabled      bool    `json:"enabled"`
-	Type         string  `json:"type"`          // percentage | fixed
+	Type         string  `json:"type"` // percentage | fixed
 	Value        float64 `json:"value"`
 	ApplyMonthly bool    `json:"apply_monthly"`
 	ApplyFine    bool    `json:"apply_fine"`
 	ApplyOnetime bool    `json:"apply_onetime"`
-	Year         int     `json:"year"`          // Academic year (e.g., 2024, 2025)
+	Year         int     `json:"year"` // Academic year (e.g., 2024, 2025)
 	Notes        string  `json:"notes"`
 }
 
@@ -36,12 +38,23 @@ func (h *Handler) GetScholarship(w http.ResponseWriter, r *http.Request) {
 
 	studentID := r.URL.Query().Get("student_id")
 	if studentID == "" {
-		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "student_id is required.", 400, nil))
-		return
+		h.Store.RLock()
+		if student := access.StudentProfileLocked(h.Store, ctx); student != nil {
+			studentID = student.ID
+		}
+		h.Store.RUnlock()
+		if studentID == "" {
+			api.WriteResult(w, api.Fail("VALIDATION_ERROR", "student_id is required.", 400, nil))
+			return
+		}
 	}
 
 	h.Store.RLock()
 	defer h.Store.RUnlock()
+	if !access.CanAccessStudentLocked(h.Store, ctx, studentID) {
+		api.WriteResult(w, api.Fail("FORBIDDEN", "You can only access scholarships for assigned students.", 403, nil))
+		return
+	}
 
 	for _, s := range h.Store.StudentScholarships {
 		if s.SchoolID == ctx.SchoolID && s.StudentID == studentID {
@@ -58,8 +71,10 @@ func (h *Handler) GetScholarship(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) SaveScholarship(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	if err := auth.AssertPermission(ctx, "fees", auth.ActionCreate); err != nil {
-		api.WriteResult(w, api.Fail("FORBIDDEN", err.Error(), 403, nil))
-		return
+		if ctx.Role != "student" {
+			api.WriteResult(w, api.Fail("FORBIDDEN", err.Error(), 403, nil))
+			return
+		}
 	}
 
 	var body scholarshipInput
@@ -69,8 +84,18 @@ func (h *Handler) SaveScholarship(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if body.StudentID == "" {
-		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "student_id is required.", 400, nil))
-		return
+		h.Store.RLock()
+		if student := access.StudentProfileLocked(h.Store, ctx); student != nil {
+			body.StudentID = student.ID
+		}
+		h.Store.RUnlock()
+		if body.StudentID == "" {
+			api.WriteResult(w, api.Fail("VALIDATION_ERROR", "student_id is required.", 400, nil))
+			return
+		}
+	}
+	if body.Type == "" {
+		body.Type = "percentage"
 	}
 	if body.Type != "percentage" && body.Type != "fixed" {
 		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "type must be 'percentage' or 'fixed'.", 400, nil))
@@ -85,9 +110,20 @@ func (h *Handler) SaveScholarship(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if body.Year <= 0 {
-		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "year is required and must be positive.", 400, nil))
+		body.Year = time.Now().Year()
+	}
+	if ctx.Role == "student" {
+		body.Enabled = false
+		body.ApplyMonthly = true
+	}
+
+	h.Store.RLock()
+	if !access.CanAccessStudentLocked(h.Store, ctx, body.StudentID) {
+		h.Store.RUnlock()
+		api.WriteResult(w, api.Fail("FORBIDDEN", "You can only submit scholarship details for your own student profile.", 403, nil))
 		return
 	}
+	h.Store.RUnlock()
 
 	now := time.Now()
 	// Set start date to Jan 1 of the given year and end date to Dec 31 of the same year
@@ -144,7 +180,7 @@ func (h *Handler) SaveScholarship(w http.ResponseWriter, r *http.Request) {
 type discountInput struct {
 	StudentID string  `json:"student_id"`
 	FeeID     string  `json:"fee_id"`
-	Type      string  `json:"type"`       // percentage | fixed
+	Type      string  `json:"type"` // percentage | fixed
 	Value     float64 `json:"value"`
 	ApplyMode string  `json:"apply_mode"` // this_month | recurring
 	Month     string  `json:"month"`
@@ -206,8 +242,51 @@ func (h *Handler) CreateDiscount(w http.ResponseWriter, r *http.Request) {
 		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "value must be positive.", 400, nil))
 		return
 	}
+	if body.Type == "percentage" && body.Value > 100 {
+		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "percentage discount cannot exceed 100.", 400, nil))
+		return
+	}
 	if body.ApplyMode != "this_month" && body.ApplyMode != "recurring" {
 		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "apply_mode must be 'this_month' or 'recurring'.", 400, nil))
+		return
+	}
+	body.Month = strings.ToLower(strings.TrimSpace(body.Month))
+
+	h.Store.RLock()
+	studentExists := false
+	feeFound := body.FeeID == ""
+	for _, s := range h.Store.Students {
+		if s.SchoolID == ctx.SchoolID && s.ID == body.StudentID {
+			studentExists = true
+			break
+		}
+	}
+	if body.FeeID != "" {
+		for _, f := range h.Store.Fees {
+			if f.SchoolID == ctx.SchoolID && f.ID == body.FeeID {
+				feeFound = true
+				if f.StudentID != body.StudentID {
+					h.Store.RUnlock()
+					api.WriteResult(w, api.Fail("VALIDATION_ERROR", "fee_id does not belong to this student.", 400, nil))
+					return
+				}
+				body.Month = strings.ToLower(f.Month)
+				body.Year = f.Year
+				break
+			}
+		}
+	}
+	h.Store.RUnlock()
+	if !studentExists {
+		api.WriteResult(w, api.Fail("NOT_FOUND", "Student not found.", 404, nil))
+		return
+	}
+	if !feeFound {
+		api.WriteResult(w, api.Fail("NOT_FOUND", "Fee invoice not found.", 404, nil))
+		return
+	}
+	if body.ApplyMode == "this_month" && (body.Month == "" || body.Year == 0) {
+		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "month and year are required for this_month discounts.", 400, nil))
 		return
 	}
 

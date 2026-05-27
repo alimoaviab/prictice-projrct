@@ -38,6 +38,7 @@ import (
 	"github.com/eduplexo/backend-go/internal/audit"
 	"github.com/eduplexo/backend-go/internal/auth"
 	"github.com/eduplexo/backend-go/internal/cache"
+	"github.com/eduplexo/backend-go/internal/domain/access"
 	"github.com/eduplexo/backend-go/internal/domain/tenant"
 	"github.com/eduplexo/backend-go/internal/store"
 	"github.com/go-chi/chi/v5"
@@ -216,7 +217,8 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	typeQ := q.Get("type")
 
 	cacheKey := listCacheKey(ctx.SchoolID, yearID, classID, statusQ, typeQ, q.Encode())
-	if h.Cache != nil && h.Cache.Available() {
+	cacheable := access.IsPrivileged(ctx)
+	if cacheable && h.Cache != nil && h.Cache.Available() {
 		if b, err := h.Cache.Get(r.Context(), cacheKey); err == nil && b != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.Header().Set("X-Cache", "HIT")
@@ -227,6 +229,35 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 
 	result := api.ServiceTry(func() (any, error) {
 		h.Store.RLock()
+		teacherClassIDs := map[string]bool{}
+		parentClassIDs := map[string]bool{}
+		if ctx.Role == "teacher" {
+			teacherClassIDs = access.TeacherClassIDsLocked(h.Store, ctx)
+			if classID != "" && !teacherClassIDs[classID] {
+				h.Store.RUnlock()
+				return []any{}, nil
+			}
+		}
+		if ctx.Role == "student" {
+			self := access.StudentProfileLocked(h.Store, ctx)
+			if self == nil {
+				h.Store.RUnlock()
+				return []any{}, nil
+			}
+			classID = self.ClassID
+		}
+		if ctx.Role == "parent" {
+			children := access.ParentStudentIDsLocked(h.Store, ctx)
+			for _, s := range h.Store.Students {
+				if s.SchoolID == ctx.SchoolID && children[s.ID] {
+					parentClassIDs[s.ClassID] = true
+				}
+			}
+			if classID != "" && !parentClassIDs[classID] {
+				h.Store.RUnlock()
+				return []any{}, nil
+			}
+		}
 		rows := make([]*store.Exam, 0)
 		for _, e := range h.Store.Exams {
 			if e.SchoolID != ctx.SchoolID {
@@ -239,6 +270,12 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			if classID != "" && e.ClassID != classID {
+				continue
+			}
+			if ctx.Role == "teacher" && !teacherClassIDs[e.ClassID] {
+				continue
+			}
+			if ctx.Role == "parent" && !parentClassIDs[e.ClassID] {
 				continue
 			}
 			if statusQ != "" && e.Status != statusQ {
@@ -280,7 +317,7 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	}
 	_, _ = w.Write(bytes)
 
-	if h.Cache != nil && h.Cache.Available() {
+	if cacheable && h.Cache != nil && h.Cache.Available() {
 		_ = h.Cache.Set(r.Context(), cacheKey, bytes, examsListCacheTTL)
 	}
 }
@@ -300,6 +337,9 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		defer h.Store.RUnlock()
 		for _, e := range h.Store.Exams {
 			if e.ID == id && e.SchoolID == ctx.SchoolID {
+				if !access.CanAccessClassLocked(h.Store, ctx, e.ClassID) {
+					return nil, api.NewControlledError("FORBIDDEN", "Access denied.", 403, nil)
+				}
 				return h.hydrate([]*store.Exam{e})[0], nil
 			}
 		}
@@ -340,12 +380,12 @@ func (s *subjectInput) UnmarshalJSON(b []byte) error {
 }
 
 type createInput struct {
-	ClassID  string         `json:"class_id"`
-	Title    string         `json:"title"`
-	Type     string         `json:"type,omitempty"` // exam | test
-	StartsAt string         `json:"starts_at"`
-	Status   string         `json:"status,omitempty"`
-	Description string      `json:"description,omitempty"`
+	ClassID     string `json:"class_id"`
+	Title       string `json:"title"`
+	Type        string `json:"type,omitempty"` // exam | test
+	StartsAt    string `json:"starts_at"`
+	Status      string `json:"status,omitempty"`
+	Description string `json:"description,omitempty"`
 
 	// New shape — preferred.
 	Subjects []subjectInput `json:"subjects,omitempty"`
@@ -434,6 +474,15 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
 		h.Store.Lock()
 		defer h.Store.Unlock()
+		if ctx.Role == "teacher" && !access.CanAccessClassLocked(h.Store, ctx, body.ClassID) {
+			return nil, api.NewControlledError("FORBIDDEN", "You can only create exams for assigned classes.", 403, nil)
+		}
+		teacherID := ""
+		if ctx.Role == "teacher" {
+			if t := access.TeacherProfileLocked(h.Store, ctx); t != nil {
+				teacherID = t.ID
+			}
+		}
 
 		now := time.Now()
 		examType := orDefault(body.Type, "exam")
@@ -443,7 +492,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 			SchoolID:       ctx.SchoolID,
 			AcademicYearID: ctx.ActiveAcademicYearID,
 			ClassID:        body.ClassID,
-			TeacherID:      ifTeacherID(ctx),
+			TeacherID:      teacherID,
 			// Legacy mirror so old readers still get something useful.
 			Subject:     subjects[0].SubjectName,
 			Subjects:    subjects,
@@ -467,13 +516,6 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	}))
 }
 
-func ifTeacherID(ctx *api.RequestContext) string {
-	if ctx.Role == "teacher" {
-		return ctx.UserID
-	}
-	return ""
-}
-
 // ─── Update ─────────────────────────────────────────────────────────
 
 func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
@@ -488,11 +530,17 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		if err := auth.AssertPermission(ctx, "exams", auth.ActionUpdate); err != nil {
 			return nil, err
 		}
+		var updated store.Exam
+		var before store.Exam
+		found := false
 		h.Store.Lock()
-		defer h.Store.Unlock()
 		for _, e := range h.Store.Exams {
 			if e.ID == id && e.SchoolID == ctx.SchoolID {
-				before := *e
+				if ctx.Role == "teacher" && !access.CanAccessClassLocked(h.Store, ctx, e.ClassID) {
+					h.Store.Unlock()
+					return nil, api.NewControlledError("FORBIDDEN", "You can only update exams for assigned classes.", 403, nil)
+				}
+				before = *e
 				if v, ok := body["title"]; ok {
 					_ = json.Unmarshal(v, &e.Title)
 				}
@@ -503,7 +551,13 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 					_ = json.Unmarshal(v, &e.Description)
 				}
 				if v, ok := body["class_id"]; ok {
-					_ = json.Unmarshal(v, &e.ClassID)
+					var nextClassID string
+					_ = json.Unmarshal(v, &nextClassID)
+					if ctx.Role == "teacher" && !access.CanAccessClassLocked(h.Store, ctx, nextClassID) {
+						h.Store.Unlock()
+						return nil, api.NewControlledError("FORBIDDEN", "You can only move exams to assigned classes.", 403, nil)
+					}
+					e.ClassID = nextClassID
 				}
 				if v, ok := body["type"]; ok {
 					_ = json.Unmarshal(v, &e.Type)
@@ -536,15 +590,24 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 				e.UpdatedAt = time.Now()
-				h.Persist("exams", e)
-				audit.Write(h.Store, ctx, audit.Input{
-					Action: "update", EntityType: "exam", EntityID: id, Before: before, After: *e,
-				})
-				h.invalidateList(r, ctx.SchoolID)
-				return h.hydrate([]*store.Exam{e})[0], nil
+				updated = *e
+				found = true
+				break
 			}
 		}
-		return nil, api.NewControlledError("NOT_FOUND", "Exam not found.", 404, nil)
+		h.Store.Unlock()
+		if !found {
+			return nil, api.NewControlledError("NOT_FOUND", "Exam not found.", 404, nil)
+		}
+		h.Persist("exams", &updated)
+		audit.Write(h.Store, ctx, audit.Input{
+			Action: "update", EntityType: "exam", EntityID: id, Before: before, After: updated,
+		})
+		h.invalidateList(r, ctx.SchoolID)
+		h.Store.RLock()
+		row := h.hydrate([]*store.Exam{&updated})[0]
+		h.Store.RUnlock()
+		return row, nil
 	}))
 }
 
@@ -561,6 +624,9 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		defer h.Store.Unlock()
 		for i, e := range h.Store.Exams {
 			if e.ID == id && e.SchoolID == ctx.SchoolID {
+				if ctx.Role == "teacher" && !access.CanAccessClassLocked(h.Store, ctx, e.ClassID) {
+					return nil, api.NewControlledError("FORBIDDEN", "You can only delete exams for assigned classes.", 403, nil)
+				}
 				before := *e
 				h.Store.Exams = append(h.Store.Exams[:i], h.Store.Exams[i+1:]...)
 				h.Persist("exams:delete", id)

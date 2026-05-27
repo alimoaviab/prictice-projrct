@@ -76,14 +76,14 @@ func (h *Handler) GetTemplate(w http.ResponseWriter, r *http.Request) {
 }
 
 type templateInput struct {
-	Name          string `json:"name"`
-	Type          string `json:"type"`
-	Orientation   string `json:"orientation"`
-	BackgroundURL string `json:"background_url"`
-	WatermarkURL  string `json:"watermark_url"`
-	BorderStyle   string `json:"border_style"`
-	BodyText      string `json:"body_text"`
-	IsDefault     bool   `json:"is_default"`
+	Name          string          `json:"name"`
+	Type          string          `json:"type"`
+	Orientation   string          `json:"orientation"`
+	BackgroundURL string          `json:"background_url"`
+	WatermarkURL  string          `json:"watermark_url"`
+	BorderStyle   string          `json:"border_style"`
+	BodyText      string          `json:"body_text"`
+	IsDefault     bool            `json:"is_default"`
 	Elements      json.RawMessage `json:"elements"`
 }
 
@@ -138,12 +138,24 @@ func (h *Handler) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
 	defer h.Store.Unlock()
 	for _, t := range h.Store.CertificateTemplates {
 		if t.ID == id && t.SchoolID == ctx.SchoolID {
-			if body.Name != "" { t.Name = body.Name }
-			if body.Type != "" { t.Type = body.Type }
-			if body.Orientation != "" { t.Orientation = body.Orientation }
-			if body.BodyText != "" { t.BodyText = body.BodyText }
-			if body.BackgroundURL != "" { t.BackgroundURL = body.BackgroundURL }
-			if len(body.Elements) > 0 { t.Elements = string(body.Elements) }
+			if body.Name != "" {
+				t.Name = body.Name
+			}
+			if body.Type != "" {
+				t.Type = body.Type
+			}
+			if body.Orientation != "" {
+				t.Orientation = body.Orientation
+			}
+			if body.BodyText != "" {
+				t.BodyText = body.BodyText
+			}
+			if body.BackgroundURL != "" {
+				t.BackgroundURL = body.BackgroundURL
+			}
+			if len(body.Elements) > 0 {
+				t.Elements = string(body.Elements)
+			}
 			t.UpdatedAt = time.Now()
 			h.Save("certificate_templates", t)
 			api.WriteResult(w, api.Ok(templateToMap(t)))
@@ -281,7 +293,7 @@ func (h *Handler) Generate(w http.ResponseWriter, r *http.Request) {
 
 		h.Store.GeneratedCertificates = append(h.Store.GeneratedCertificates, cert)
 		h.Save("generated_certificates", cert)
-		generated = append(generated, certToMap(cert))
+		generated = append(generated, h.certToMap(cert))
 	}
 
 	api.WriteResult(w, api.Ok(generated))
@@ -301,9 +313,15 @@ func (h *Handler) ListCertificates(w http.ResponseWriter, r *http.Request) {
 
 	out := make([]map[string]any, 0)
 	for _, c := range h.Store.GeneratedCertificates {
-		if c.SchoolID != ctx.SchoolID { continue }
-		if studentID != "" && c.StudentID != studentID { continue }
-		if certType != "" && c.CertificateType != certType { continue }
+		if c.SchoolID != ctx.SchoolID {
+			continue
+		}
+		if studentID != "" && c.StudentID != studentID {
+			continue
+		}
+		if certType != "" && c.CertificateType != certType {
+			continue
+		}
 		if classID != "" {
 			// Check student's class
 			for _, s := range h.Store.Students {
@@ -312,7 +330,7 @@ func (h *Handler) ListCertificates(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-		out = append(out, certToMap(c))
+		out = append(out, h.certToMap(c))
 	}
 	sort.Slice(out, func(i, j int) bool {
 		return out[i]["created_at"].(time.Time).After(out[j]["created_at"].(time.Time))
@@ -332,7 +350,7 @@ func (h *Handler) Revoke(w http.ResponseWriter, r *http.Request) {
 		if c.ID == id && c.SchoolID == ctx.SchoolID {
 			c.Status = "revoked"
 			h.Save("generated_certificates", c)
-			api.WriteResult(w, api.Ok(certToMap(c)))
+			api.WriteResult(w, api.Ok(h.certToMap(c)))
 			return
 		}
 	}
@@ -384,7 +402,8 @@ func templateToMap(t *store.CertificateTemplate) map[string]any {
 	}
 }
 
-func certToMap(c *store.GeneratedCertificate) map[string]any {
+func (h *Handler) certToMap(c *store.GeneratedCertificate) map[string]any {
+	metadata, bodyText := h.certificateMetadata(c)
 	return map[string]any{
 		"_id":               c.ID,
 		"school_id":         c.SchoolID,
@@ -397,8 +416,83 @@ func certToMap(c *store.GeneratedCertificate) map[string]any {
 		"verification_code": c.VerificationCode,
 		"issue_date":        c.IssueDate,
 		"status":            c.Status,
+		"metadata":          metadata,
+		"body_text":         bodyText,
 		"created_at":        c.CreatedAt,
 	}
+}
+
+func (h *Handler) certificateMetadata(c *store.GeneratedCertificate) (map[string]string, string) {
+	meta := map[string]string{
+		"student_name":      c.StudentName,
+		"class":             c.ClassName,
+		"class_name":        c.ClassName,
+		"certificate_no":    c.CertificateNo,
+		"verification_code": c.VerificationCode,
+		"issue_date":        c.IssueDate.Format("January 2, 2006"),
+		"year":              fmt.Sprintf("%d", c.IssueDate.Year()),
+	}
+
+	var template *store.CertificateTemplate
+	for _, t := range h.Store.CertificateTemplates {
+		if t.ID == c.TemplateID && t.SchoolID == c.SchoolID {
+			template = t
+			break
+		}
+	}
+	for _, school := range h.Store.Schools {
+		if school.SchoolID == c.SchoolID {
+			meta["school_name"] = school.Name
+			meta["school_address"] = school.Address
+			meta["school_phone"] = school.Phone
+			break
+		}
+	}
+	for _, st := range h.Store.Students {
+		if st.ID != c.StudentID || st.SchoolID != c.SchoolID {
+			continue
+		}
+		meta["student_name"] = strings.TrimSpace(st.FirstName + " " + st.LastName)
+		meta["father_name"] = st.Guardian.Name
+		meta["roll_no"] = st.RollNo
+		meta["registration_no"] = st.AdmissionNo
+		meta["admission_no"] = st.AdmissionNo
+		meta["section"] = st.Section
+		for _, cls := range h.Store.Classes {
+			if cls.ID == st.ClassID {
+				meta["class"] = cls.Name
+				meta["class_name"] = cls.Name
+				break
+			}
+		}
+		break
+	}
+	for _, ay := range h.Store.AcademicYears {
+		if ay.SchoolID == c.SchoolID && ay.IsActive {
+			meta["session"] = ay.Year
+			meta["academic_year"] = ay.Year
+			break
+		}
+	}
+	for _, res := range h.Store.Results {
+		if res.SchoolID == c.SchoolID && res.StudentID == c.StudentID {
+			meta["marks"] = fmt.Sprintf("%.0f", res.ObtainedMarks)
+			meta["grade"] = "N/A"
+			break
+		}
+	}
+
+	body := ""
+	if template != nil {
+		body = template.BodyText
+	}
+	if strings.TrimSpace(body) == "" {
+		body = "This is to certify that {{student_name}} of Class {{class}} has been a student of {{school_name}}. This certificate is issued on {{issue_date}}."
+	}
+	for k, v := range meta {
+		body = strings.ReplaceAll(body, "{{"+k+"}}", v)
+	}
+	return meta, body
 }
 
 func generateCertNo(schoolID, studentID string) string {
@@ -415,6 +509,8 @@ func generateVerificationCode() string {
 }
 
 func orDefault(val, def string) string {
-	if val == "" { return def }
+	if val == "" {
+		return def
+	}
 	return val
 }

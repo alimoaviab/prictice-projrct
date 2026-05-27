@@ -34,6 +34,7 @@ import (
 	"github.com/eduplexo/backend-go/internal/audit"
 	"github.com/eduplexo/backend-go/internal/auth"
 	"github.com/eduplexo/backend-go/internal/cache"
+	"github.com/eduplexo/backend-go/internal/domain/access"
 	"github.com/eduplexo/backend-go/internal/domain/tenant"
 	"github.com/eduplexo/backend-go/internal/store"
 	"github.com/go-chi/chi/v5"
@@ -269,6 +270,9 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		defer h.Store.RUnlock()
 		for _, c := range h.Store.Classes {
 			if c.ID == id && c.SchoolID == ctx.SchoolID {
+				if !access.CanAccessClassLocked(h.Store, ctx, c.ID) {
+					return nil, api.NewControlledError("FORBIDDEN", "You can only access assigned classes.", 403, nil)
+				}
 				h.enrichClass(c)
 				return c, nil
 			}
@@ -311,6 +315,9 @@ func (h *Handler) GetSubjects(w http.ResponseWriter, r *http.Request) {
 
 		for _, c := range h.Store.Classes {
 			if c.ID == id && c.SchoolID == ctx.SchoolID {
+				if !access.CanAccessClassLocked(h.Store, ctx, c.ID) {
+					return nil, api.NewControlledError("FORBIDDEN", "You can only access assigned classes.", 403, nil)
+				}
 				out := make([]map[string]any, 0)
 
 				// First, use SubjectIDs (from database) if available
@@ -360,14 +367,14 @@ func (h *Handler) GetSubjects(w http.ResponseWriter, r *http.Request) {
 }
 
 type createInput struct {
-	Name              string   `json:"name"`
-	Code              string   `json:"code"`
-	Grade             string   `json:"grade"`
-	Section           string   `json:"section"`
-	Capacity          int      `json:"capacity"`
-	PassingPercentage int      `json:"passing_percentage"`
-	ClassTeacherID    string   `json:"class_teacher_id,omitempty"`
-	TeacherIDs        []string `json:"teacher_ids,omitempty"`
+	Name              string                 `json:"name"`
+	Code              string                 `json:"code"`
+	Grade             string                 `json:"grade"`
+	Section           string                 `json:"section"`
+	Capacity          int                    `json:"capacity"`
+	PassingPercentage int                    `json:"passing_percentage"`
+	ClassTeacherID    string                 `json:"class_teacher_id,omitempty"`
+	TeacherIDs        []string               `json:"teacher_ids,omitempty"`
 	SubjectIDs        []string               `json:"subject_ids,omitempty"`
 	Subjects          []store.ClassSubject   `json:"subjects,omitempty"`
 	GradeThresholds   []store.GradeThreshold `json:"grade_thresholds,omitempty"`
@@ -397,6 +404,16 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		}
 		if yearID == "" {
 			return nil, api.NewControlledError("VALIDATION_ERROR", "No active academic year found for this school.", 400, nil)
+		}
+		if ctx.Role == "teacher" {
+			h.Store.RLock()
+			teacher := access.TeacherProfileLocked(h.Store, ctx)
+			h.Store.RUnlock()
+			if teacher == nil {
+				return nil, api.NewControlledError("FORBIDDEN", "Teacher profile not found for this user.", 403, nil)
+			}
+			body.ClassTeacherID = teacher.ID
+			body.TeacherIDs = appendUniqueString(body.TeacherIDs, teacher.ID)
 		}
 		now := time.Now()
 		newClass := &store.Class{
@@ -450,6 +467,10 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		defer h.Store.Unlock()
 		for _, c := range h.Store.Classes {
 			if c.ID == id && c.SchoolID == ctx.SchoolID {
+				if ctx.Role == "teacher" && !access.CanAccessClassLocked(h.Store, ctx, c.ID) {
+					return nil, api.NewControlledError("FORBIDDEN", "You can only update assigned classes.", 403, nil)
+				}
+				allowRosterAssignment := access.IsPrivileged(ctx)
 				before := *c
 				if v, ok := body["name"]; ok {
 					_ = json.Unmarshal(v, &c.Name)
@@ -469,10 +490,10 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 				if v, ok := body["passing_percentage"]; ok {
 					_ = json.Unmarshal(v, &c.PassingPercentage)
 				}
-				if v, ok := body["class_teacher_id"]; ok {
+				if v, ok := body["class_teacher_id"]; ok && allowRosterAssignment {
 					_ = json.Unmarshal(v, &c.ClassTeacherID)
 				}
-				if v, ok := body["teacher_ids"]; ok {
+				if v, ok := body["teacher_ids"]; ok && allowRosterAssignment {
 					_ = json.Unmarshal(v, &c.TeacherIDs)
 				}
 				if v, ok := body["subject_ids"]; ok {
@@ -614,4 +635,17 @@ func (h *Handler) enrichClass(c *store.Class) {
 	} else {
 		c.FeeStatus = 0
 	}
+}
+
+func appendUniqueString(values []string, value string) []string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return values
+	}
+	for _, existing := range values {
+		if existing == value {
+			return values
+		}
+	}
+	return append(values, value)
 }

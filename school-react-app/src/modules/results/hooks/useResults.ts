@@ -23,7 +23,7 @@ function normalizeResultRows(payload: unknown): ResultRow[] {
   return [];
 }
 
-export function useResults(filters?: { exam_id?: string; student_id?: string }) {
+export function useResults(filters?: { exam_id?: string; student_id?: string; class_id?: string; subject_id?: string }) {
   const { state, run } = useSafeAsync<ResultRow[]>();
 
   const filterKey = JSON.stringify(filters);

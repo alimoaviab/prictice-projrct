@@ -22,14 +22,20 @@ import (
 const leaveListCacheTTL = 60 * time.Second
 
 type Handler struct {
-	Store *store.MemStore
-	Cache *cache.Client
+	Store   *store.MemStore
+	Cache   *cache.Client
+	Persist func(table string, doc any)
 }
 
-func New(s *store.MemStore) *Handler { return &Handler{Store: s} }
+func New(s *store.MemStore) *Handler {
+	return &Handler{Store: s, Persist: func(string, any) {}}
+}
 
-func NewWithCache(s *store.MemStore, c *cache.Client) *Handler {
-	return &Handler{Store: s, Cache: c}
+func NewWithCache(s *store.MemStore, save func(string, any), c *cache.Client) *Handler {
+	if save == nil {
+		save = func(string, any) {}
+	}
+	return &Handler{Store: s, Cache: c, Persist: save}
 }
 
 // listCacheKey hashes (school, role, requesterID, query). Role +
@@ -111,12 +117,6 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	// fold it into the cache key so two parents with different
 	// linked children never share a cached payload.
 	//
-	// Dev-seed compatibility: same fallback as the create handler —
-	// when the StudentParents table hasn't been populated, the rest
-	// of the parent portal treats every student in the tenant as a
-	// child (see parent.resolveStudent). We mirror that here so the
-	// list isn't empty when the dashboard / attendance pages happily
-	// resolve a child.
 	var parentChildIDs []string
 	if ctx.Role == "parent" {
 		h.Store.RLock()
@@ -125,14 +125,6 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 			if link.SchoolID == ctx.SchoolID && link.ParentUserID == ctx.UserID && !seen[link.StudentID] {
 				parentChildIDs = append(parentChildIDs, link.StudentID)
 				seen[link.StudentID] = true
-			}
-		}
-		if len(parentChildIDs) == 0 {
-			for _, s := range h.Store.Students {
-				if s.SchoolID == ctx.SchoolID && !seen[s.ID] {
-					parentChildIDs = append(parentChildIDs, s.ID)
-					seen[s.ID] = true
-				}
 			}
 		}
 		h.Store.RUnlock()
@@ -397,35 +389,16 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		// validate it against the StudentParents links; if missing we
 		// fall back to the first linked child.
 		//
-		// Dev-seed compatibility: when no StudentParents links exist
-		// for this parent, the rest of the parent portal
-		// (dashboard / attendance / homework) already falls back to
-		// "any student in the same tenant" via parent.resolveStudent.
-		// We mirror that here so the parent portal's "viewable child"
-		// set matches the "fileable-leave" set — otherwise the UI
-		// shows the child everywhere but rejects the submission.
 		if ctx.Role == "parent" {
 			body.RequesterType = "student"
 			h.Store.RLock()
 			allowed := map[string]bool{}
 			var firstChildID string
-			hasLinks := false
 			for _, link := range h.Store.StudentParents {
 				if link.SchoolID == ctx.SchoolID && link.ParentUserID == ctx.UserID {
-					hasLinks = true
 					allowed[link.StudentID] = true
 					if firstChildID == "" {
 						firstChildID = link.StudentID
-					}
-				}
-			}
-			if !hasLinks {
-				for _, s := range h.Store.Students {
-					if s.SchoolID == ctx.SchoolID {
-						allowed[s.ID] = true
-						if firstChildID == "" {
-							firstChildID = s.ID
-						}
 					}
 				}
 			}
@@ -525,6 +498,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		h.Store.Lock()
 		h.Store.Leaves = append(h.Store.Leaves, row)
 		h.Store.Unlock()
+		h.Persist("leaves", row)
 		audit.Write(h.Store, ctx, audit.Input{Action: "create", EntityType: "leave", EntityID: row.ID, After: row})
 		h.invalidateList(r, ctx.SchoolID)
 		return h.hydrate([]*store.Leave{row})[0], nil
@@ -560,8 +534,10 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 			h.Store.RUnlock()
 		}
 
+		var updated store.Leave
+		var before store.Leave
+		found := false
 		h.Store.Lock()
-		defer h.Store.Unlock()
 		for _, l := range h.Store.Leaves {
 			if l.ID == id && l.SchoolID == ctx.SchoolID {
 				// Teacher permission check: can only update student leaves for their assigned classes
@@ -577,6 +553,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 					}()
 					isStudentLeaveForTheirClass := l.RequesterType == "student" && teacherClassIDs[l.ClassID]
 					if !isOwnTeacherLeave && !isStudentLeaveForTheirClass {
+						h.Store.Unlock()
 						return nil, api.NewControlledError("FORBIDDEN", "You can only update leaves for your assigned classes.", 403, nil)
 					}
 				}
@@ -587,9 +564,10 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 					_ = json.Unmarshal(v, &newStatus)
 				}
 				if l.Status != "pending" && newStatus != "cancelled" {
+					h.Store.Unlock()
 					return nil, api.NewControlledError("INVALID_STATE", "Only pending requests can be updated.", 400, nil)
 				}
-				before := *l
+				before = *l
 				if newStatus != l.Status {
 					l.Status = newStatus
 					if newStatus == "approved" {
@@ -623,17 +601,25 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 				if l.EndDate.Before(l.StartDate) {
+					h.Store.Unlock()
 					return nil, api.NewControlledError("VALIDATION_ERROR", "End date must be after start date.", 400, nil)
 				}
 				l.UpdatedAt = time.Now()
-				audit.Write(h.Store, ctx, audit.Input{
-					Action: "update", EntityType: "leave", EntityID: id, Before: before, After: *l,
-				})
-				h.invalidateList(r, ctx.SchoolID)
-				return h.hydrate([]*store.Leave{l})[0], nil
+				updated = *l
+				found = true
+				break
 			}
 		}
-		return nil, api.NewControlledError("NOT_FOUND", "Leave request not found.", 404, nil)
+		h.Store.Unlock()
+		if !found {
+			return nil, api.NewControlledError("NOT_FOUND", "Leave request not found.", 404, nil)
+		}
+		audit.Write(h.Store, ctx, audit.Input{
+			Action: "update", EntityType: "leave", EntityID: id, Before: before, After: updated,
+		})
+		h.Persist("leaves", &updated)
+		h.invalidateList(r, ctx.SchoolID)
+		return h.hydrate([]*store.Leave{&updated})[0], nil
 	}))
 }
 
@@ -656,6 +642,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 				audit.Write(h.Store, ctx, audit.Input{
 					Action: "delete", EntityType: "leave", EntityID: id, Before: before,
 				})
+				h.Persist("leaves:delete", before.ID)
 				h.invalidateList(r, ctx.SchoolID)
 				return map[string]any{"success": true, "id": id}, nil
 			}

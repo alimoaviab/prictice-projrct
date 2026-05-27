@@ -28,6 +28,7 @@ import (
 	"github.com/eduplexo/backend-go/internal/audit"
 	"github.com/eduplexo/backend-go/internal/auth"
 	"github.com/eduplexo/backend-go/internal/cache"
+	"github.com/eduplexo/backend-go/internal/domain/access"
 	"github.com/eduplexo/backend-go/internal/domain/tenant"
 	"github.com/eduplexo/backend-go/internal/repo"
 	"github.com/eduplexo/backend-go/internal/store"
@@ -47,7 +48,7 @@ type Handler struct {
 	Cache            *cache.Client
 	repo             *repo.StudentRepo
 	LimitChecker     func(ctx context.Context, schoolID string) error // Subscription limit check
-	OnStudentCreated func(ctx *api.RequestContext, s *store.Student) // Callback hook when student is created
+	OnStudentCreated func(ctx *api.RequestContext, s *store.Student)  // Callback hook when student is created
 }
 
 func New(s *store.MemStore, save func(string, any)) *Handler {
@@ -101,12 +102,24 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	// Resolve teacher profile id outside the cache key so different
 	// teachers don't share a cache entry once row-level scoping is added.
 	var profileID string
-	if ctx.Role == "teacher" {
+	if ctx.Role == "teacher" || ctx.Role == "student" || ctx.Role == "parent" {
 		h.Store.RLock()
-		for _, t := range h.Store.Teachers {
-			if t.SchoolID == ctx.SchoolID && t.UserID == ctx.UserID {
+		switch ctx.Role {
+		case "teacher":
+			if t := access.TeacherProfileLocked(h.Store, ctx); t != nil {
 				profileID = t.ID
-				break
+			}
+		case "student":
+			if s := access.StudentProfileLocked(h.Store, ctx); s != nil {
+				profileID = s.ID
+			}
+		case "parent":
+			for id := range access.ParentStudentIDsLocked(h.Store, ctx) {
+				if profileID == "" {
+					profileID = id
+				} else {
+					profileID += "," + id
+				}
 			}
 		}
 		h.Store.RUnlock()
@@ -128,7 +141,7 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		search := strings.TrimSpace(q.Get("search"))
 		pagination := api.ParsePagination(q)
 
-		if h.repo != nil && pagination.Enabled {
+		if h.repo != nil && pagination.Enabled && access.IsPrivileged(ctx) {
 			items, total, err := h.repo.List(r.Context(), ctx.SchoolID, yearID, repo.ListOpts{
 				Page:    pagination.Page,
 				PerPage: pagination.Limit,
@@ -149,9 +162,29 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		}
 
 		h.Store.RLock()
+		teacherClassIDs := map[string]bool{}
+		parentStudentIDs := map[string]bool{}
+		var selfStudent *store.Student
+		switch ctx.Role {
+		case "teacher":
+			teacherClassIDs = access.TeacherClassIDsLocked(h.Store, ctx)
+		case "student":
+			selfStudent = access.StudentProfileLocked(h.Store, ctx)
+		case "parent":
+			parentStudentIDs = access.ParentStudentIDsLocked(h.Store, ctx)
+		}
 		rows := make([]*store.Student, 0)
 		for _, s := range h.Store.Students {
 			if s.SchoolID != ctx.SchoolID {
+				continue
+			}
+			if ctx.Role == "teacher" && !teacherClassIDs[s.ClassID] {
+				continue
+			}
+			if ctx.Role == "student" && (selfStudent == nil || s.ID != selfStudent.ID) {
+				continue
+			}
+			if ctx.Role == "parent" && !parentStudentIDs[s.ID] {
 				continue
 			}
 			if yearID != "" && s.AcademicYearID != yearID {
@@ -247,6 +280,12 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 
 		if h.repo != nil {
 			if found, err := h.repo.GetByID(r.Context(), targetID, ctx.SchoolID); err == nil && found != nil {
+				h.Store.RLock()
+				allowed := access.CanAccessStudentLocked(h.Store, ctx, found.ID)
+				h.Store.RUnlock()
+				if !allowed {
+					return nil, api.NewControlledError("FORBIDDEN", "You can only access assigned student records.", 403, nil)
+				}
 				return found, nil
 			}
 		}
@@ -255,6 +294,9 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		defer h.Store.RUnlock()
 		for _, s := range h.Store.Students {
 			if s.ID == targetID && s.SchoolID == ctx.SchoolID {
+				if !access.CanAccessStudentLocked(h.Store, ctx, s.ID) {
+					return nil, api.NewControlledError("FORBIDDEN", "You can only access assigned student records.", 403, nil)
+				}
 				return s, nil
 			}
 		}
@@ -263,28 +305,28 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 type createInput struct {
-	AdmissionNo string          `json:"admission_no"`
-	FirstName   string          `json:"first_name"`
-	LastName    string          `json:"last_name"`
-	ClassID     string          `json:"class_id"`
-	Section     string          `json:"section"`
-	Subjects    []string        `json:"subjects,omitempty"`
-	Guardian    store.Guardian  `json:"guardian"`
-	Email       string          `json:"email,omitempty"`
-	Password    string          `json:"password,omitempty"`
+	AdmissionNo string         `json:"admission_no"`
+	FirstName   string         `json:"first_name"`
+	LastName    string         `json:"last_name"`
+	ClassID     string         `json:"class_id"`
+	Section     string         `json:"section"`
+	Subjects    []string       `json:"subjects,omitempty"`
+	Guardian    store.Guardian `json:"guardian"`
+	Email       string         `json:"email,omitempty"`
+	Password    string         `json:"password,omitempty"`
 	// When the admin clicks "Link Student to this Parent" on the form,
 	// the frontend sends the existing parent's user_id here. We then
 	// skip the duplicate-email error and write a StudentParents link
 	// against the existing user instead of creating a new one.
 	LinkParentUserID string     `json:"link_parent_user_id,omitempty"`
-	Status      string          `json:"status,omitempty"`
-	RollNo      string          `json:"roll_no,omitempty"`
-	DateOfBirth *time.Time      `json:"date_of_birth,omitempty"`
-	Gender      string          `json:"gender,omitempty"`
+	Status           string     `json:"status,omitempty"`
+	RollNo           string     `json:"roll_no,omitempty"`
+	DateOfBirth      *time.Time `json:"date_of_birth,omitempty"`
+	Gender           string     `json:"gender,omitempty"`
 
 	// Scholarship fields (applied during student creation)
 	ScholarshipEnabled      bool    `json:"scholarship_enabled,omitempty"`
-	ScholarshipType         string  `json:"scholarship_type,omitempty"`         // percentage | fixed
+	ScholarshipType         string  `json:"scholarship_type,omitempty"` // percentage | fixed
 	ScholarshipValue        float64 `json:"scholarship_value,omitempty"`
 	ScholarshipApplyMonthly bool    `json:"scholarship_apply_monthly,omitempty"`
 	ScholarshipApplyFine    bool    `json:"scholarship_apply_fine,omitempty"`

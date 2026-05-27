@@ -15,6 +15,7 @@ interface Student {
     admission_no: string;
     class_name: string;
     avatar: string;
+    credit_balance?: number;
 }
 
 interface Fee {
@@ -22,6 +23,7 @@ interface Fee {
     amount: number;
     paid: number;
     status: string;
+    discount_amount?: number;
     components: any[];
 }
 
@@ -77,7 +79,8 @@ export function StudentFeeDashboard() {
     const [paymentForm, setPaymentForm] = useState({
         amount: '',
         method: 'Cash',
-        reference: ''
+        reference: '',
+        credit_amount: ''
     });
 
     // Selection state for the bulk PDF export. The admin can tick rows on
@@ -267,7 +270,7 @@ export function StudentFeeDashboard() {
     };
 
     const handlePartialPayment = async () => {
-        if (!isPaying || !paymentForm.amount) return;
+        if (!isPaying || (!paymentForm.amount && !paymentForm.credit_amount)) return;
         
         setSaving(true);
         try {
@@ -275,6 +278,7 @@ export function StudentFeeDashboard() {
                 method: "POST",
                 body: JSON.stringify({
                     amount: Number(paymentForm.amount),
+                    credit_amount: Number(paymentForm.credit_amount || 0),
                     method: paymentForm.method.toLowerCase(),
                     reference: paymentForm.reference
                 })
@@ -282,7 +286,7 @@ export function StudentFeeDashboard() {
             if (res.success) {
                 showToast("Payment recorded successfully", "success");
                 setIsPaying(null);
-                setPaymentForm({ amount: '', method: 'Cash', reference: '' });
+                setPaymentForm({ amount: '', method: 'Cash', reference: '', credit_amount: '' });
                 loadDashboard();
             } else {
                 showToast(res.message || "Payment could not be processed. Please verify the amount and try again.", "error");
@@ -497,7 +501,7 @@ export function StudentFeeDashboard() {
                                                 <td className="px-3 py-2.5">
                                                     <div className="flex items-center gap-1">
                                                         <button disabled={entry.status === "paid" || saving} onClick={() => handleFullPayment(entry)} className="h-6 px-2 rounded-md bg-blue-600 text-[7px] font-bold text-white hover:bg-blue-700 disabled:opacity-20">Full</button>
-                                                        <button disabled={entry.status === "paid" || saving} onClick={() => { setIsPaying(entry); setPaymentForm({...paymentForm, amount: String(entry.remaining)}); }} className="h-6 px-2 rounded-md border border-slate-200 text-[7px] font-bold text-slate-500 hover:bg-slate-50">Partial</button>
+                                                        <button disabled={entry.status === "paid" || saving} onClick={() => { setIsPaying(entry); setPaymentForm({...paymentForm, amount: String(entry.remaining), credit_amount: ''}); }} className="h-6 px-2 rounded-md border border-slate-200 text-[7px] font-bold text-slate-500 hover:bg-slate-50">Partial</button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -574,7 +578,7 @@ export function StudentFeeDashboard() {
                                         disabled={entry.status === "paid" || saving}
                                         onClick={() => {
                                             setIsPaying(entry);
-                                            setPaymentForm({...paymentForm, amount: String(entry.remaining)});
+                                            setPaymentForm({...paymentForm, amount: String(entry.remaining), credit_amount: ''});
                                         }}
                                         className="flex-1 h-7 rounded-lg bg-white border border-slate-200 text-[8px] font-black uppercase tracking-widest text-slate-500 transition-all hover:bg-slate-50 active:scale-95"
                                     >
@@ -666,6 +670,36 @@ export function StudentFeeDashboard() {
                                     </div>
                                 </div>
 
+                                {(isPaying.student.credit_balance || 0) > 0 && (
+                                    <div className="space-y-1">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest ml-1">Apply Credit</label>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const usable = Math.min(isPaying.remaining, isPaying.student.credit_balance || 0);
+                                                    setPaymentForm({
+                                                        ...paymentForm,
+                                                        credit_amount: String(usable),
+                                                        amount: String(Math.max(0, isPaying.remaining - usable))
+                                                    });
+                                                }}
+                                                className="text-[8px] font-black uppercase tracking-widest text-emerald-600 hover:text-emerald-700"
+                                            >
+                                                Use Rs {(isPaying.student.credit_balance || 0).toLocaleString()}
+                                            </button>
+                                        </div>
+                                        <input
+                                            type="number"
+                                            value={paymentForm.credit_amount}
+                                            onChange={(e) => setPaymentForm({...paymentForm, credit_amount: e.target.value})}
+                                            className="w-full h-10 px-4 rounded-xl bg-emerald-50 border-2 border-transparent text-emerald-700 text-sm font-black focus:bg-white focus:border-emerald-500 transition-all outline-none"
+                                            placeholder="0"
+                                            max={Math.min(isPaying.remaining, isPaying.student.credit_balance || 0)}
+                                        />
+                                    </div>
+                                )}
+
                                 <div className="space-y-1">
                                     <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest ml-1">Payment Mode</label>
                                     <div className="grid grid-cols-3 gap-1.5">
@@ -697,7 +731,7 @@ export function StudentFeeDashboard() {
                         {/* FOOTER */}
                         <div className="p-5 border-t border-slate-100 bg-white">
                             <button 
-                                disabled={saving || !paymentForm.amount}
+                                disabled={saving || (!paymentForm.amount && !paymentForm.credit_amount)}
                                 onClick={handlePartialPayment}
                                 className="w-full h-11 rounded-xl bg-blue-600 text-white font-black uppercase tracking-widest text-[9px] shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                             >
@@ -767,7 +801,7 @@ export function StudentFeeDashboard() {
                             </div>
                         </div>
                         <div className="p-5 border-t border-slate-100 bg-white">
-                            <button disabled={saving || !discountForm.value} onClick={async () => { setSaving(true); try { const now = new Date(); const res = await serviceRequest('/api/fee-discounts', { method: 'POST', body: JSON.stringify({ student_id: discountEntry.student.id, fee_id: discountEntry.current_fee?.id, type: discountForm.type, value: Number(discountForm.value), apply_mode: discountForm.apply_mode, month: now.toLocaleString('en', { month: 'long' }).toLowerCase(), year: now.getFullYear(), notes: discountForm.notes }) }); if (res.success) { showToast("Discount applied", "success"); setDiscountEntry(null); setDiscountForm({ type: 'percentage', value: '', apply_mode: 'this_month', notes: '' }); loadDashboard(); } else { showToast(res.message || "Failed", "error"); } } catch { showToast("Network error", "error"); } finally { setSaving(false); } }} className="w-full h-11 rounded-xl bg-amber-600 text-white font-black uppercase tracking-widest text-[9px] shadow-lg shadow-amber-100 hover:bg-amber-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                            <button disabled={saving || !discountForm.value} onClick={async () => { setSaving(true); try { const res = await serviceRequest('/api/fee-discounts', { method: 'POST', body: JSON.stringify({ student_id: discountEntry.student.id, fee_id: discountEntry.current_fee?.id, type: discountForm.type, value: Number(discountForm.value), apply_mode: discountForm.apply_mode, month: filters.month, year: Number(filters.year), notes: discountForm.notes }) }); if (res.success) { showToast("Discount applied", "success"); setDiscountEntry(null); setDiscountForm({ type: 'percentage', value: '', apply_mode: 'this_month', notes: '' }); loadDashboard(); } else { showToast(res.message || "Failed", "error"); } } catch { showToast("Network error", "error"); } finally { setSaving(false); } }} className="w-full h-11 rounded-xl bg-amber-600 text-white font-black uppercase tracking-widest text-[9px] shadow-lg shadow-amber-100 hover:bg-amber-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
                                 {saving ? <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><AppIcon name="Tag" size={16} />Apply Discount</>}
                             </button>
                         </div>

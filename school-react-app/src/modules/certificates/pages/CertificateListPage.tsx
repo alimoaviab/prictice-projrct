@@ -7,7 +7,7 @@ import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { StatCardCompact, Skeleton, DataState, EntityCard, EntityGrid, ConfirmModal } from "@/components/ui";
 import { useCertificateTemplates, useGeneratedCertificates } from "../hooks/useCertificates";
-import { CERTIFICATE_TYPE_LABELS, type CertificateType } from "../types/certificate.types";
+import { CERTIFICATE_TYPE_LABELS, type CertificateType, type GeneratedCertificate } from "../types/certificate.types";
 
 type TabView = "templates" | "generated";
 
@@ -240,15 +240,7 @@ export function CertificateListPage() {
                     {
                       label: "Print",
                       icon: "print",
-                      onClick: () => {
-                        // Direct print without opening view page
-                        const printWin = window.open("", "_blank");
-                        if (!printWin) return;
-                        const schoolName = document.querySelector("[data-school-name]")?.textContent || "School";
-                        printWin.document.write(`<!DOCTYPE html><html><head><title>Certificate - ${cert.student_name}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Georgia,serif;padding:60px;display:flex;align-items:center;justify-content:center;min-height:100vh}.cert{width:100%;max-width:800px;border:3px solid #d4a853;padding:60px;position:relative;text-align:center}.cert::before{content:'';position:absolute;inset:8px;border:1px solid #d4a85380;border-radius:4px}.school{font-size:28px;font-weight:bold;margin-bottom:4px}.title{font-size:22px;color:#1e40af;text-transform:uppercase;letter-spacing:3px;margin:20px 0;font-weight:bold}.divider{width:80px;height:2px;background:#d4a853;margin:10px auto}.body{font-size:14px;line-height:1.8;margin:30px auto;max-width:500px;color:#333}.footer{display:flex;justify-content:space-between;margin-top:50px;padding-top:20px;border-top:1px solid #eee}.sig{text-align:center}.sig-line{width:120px;height:1px;background:#666;margin-bottom:4px}.sig-label{font-size:10px;color:#666;text-transform:uppercase}.meta{font-size:9px;color:#999;margin-top:4px}@media print{body{padding:0}.cert{border:3px solid #d4a853}}</style></head><body><div class="cert"><p class="school">${schoolName}</p><div class="divider"></div><h1 class="title">${cert.certificate_type.replace("_", " ")}</h1><div class="divider"></div><p class="body">This is to certify that <strong>${cert.student_name}</strong> of Class <strong>${cert.class_name}</strong> has been a student of this institution.<br><br>This certificate is issued on ${new Date(cert.issue_date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}.</p><div class="footer"><div class="sig"><div class="sig-line"></div><span class="sig-label">Principal</span></div><div><p class="meta">${cert.certificate_no}</p><p class="meta">${cert.verification_code}</p></div><div class="sig"><div class="sig-line"></div><span class="sig-label">Class Teacher</span></div></div></div></body></html>`);
-                        printWin.document.close();
-                        setTimeout(() => printWin.print(), 300);
-                      },
+                      onClick: () => printGeneratedCertificate(cert),
                       accent: "blue",
                     },
                     ...(cert.status === "issued"
@@ -281,4 +273,27 @@ export function CertificateListPage() {
       />
     </div>
   );
+}
+
+function escapeHtml(value: unknown): string {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function printGeneratedCertificate(cert: GeneratedCertificate) {
+  const printWin = window.open("", "_blank");
+  if (!printWin) return;
+  const metadata = cert.metadata || {};
+  const schoolName = metadata.school_name || "School";
+  const body = cert.body_text || "";
+  const title = CERTIFICATE_TYPE_LABELS[cert.certificate_type] || cert.certificate_type.replace("_", " ");
+  const safeBody = escapeHtml(body).replace(/\n/g, "<br>");
+  const issueDate = metadata.issue_date || new Date(cert.issue_date).toLocaleDateString();
+  printWin.document.write(`<!DOCTYPE html><html><head><title>${escapeHtml(title)} - ${escapeHtml(cert.student_name)}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Georgia,serif;padding:48px;display:flex;align-items:center;justify-content:center;min-height:100vh;color:#172033}.cert{width:100%;max-width:860px;border:3px solid #d4a853;padding:56px;position:relative;text-align:center}.cert:before{content:'';position:absolute;inset:9px;border:1px solid #d4a85380}.school{font-size:28px;font-weight:bold}.school-meta{font-size:12px;color:#64748b;margin-top:4px}.title{font-size:22px;color:#1e40af;text-transform:uppercase;letter-spacing:3px;margin:22px 0;font-weight:bold}.divider{width:86px;height:2px;background:#d4a853;margin:12px auto}.body{font-size:15px;line-height:1.9;margin:30px auto;max-width:620px;color:#273449}.footer{display:flex;justify-content:space-between;gap:24px;margin-top:50px;padding-top:20px;border-top:1px solid #e5e7eb}.sig{text-align:center}.sig-line{width:132px;height:1px;background:#64748b;margin-bottom:5px}.sig-label{font-size:10px;color:#64748b;text-transform:uppercase;font-family:Arial,sans-serif}.meta{font-size:10px;color:#64748b;margin-top:4px;font-family:Arial,sans-serif}@media print{body{padding:0}.cert{min-height:100vh;border:3px solid #d4a853}}</style></head><body><div class="cert"><p class="school">${escapeHtml(schoolName)}</p><p class="school-meta">${escapeHtml(metadata.school_address || "")}${metadata.school_phone ? " | " + escapeHtml(metadata.school_phone) : ""}</p><div class="divider"></div><h1 class="title">${escapeHtml(title)}</h1><div class="divider"></div><p class="body">${safeBody}</p><div class="footer"><div class="sig"><div class="sig-line"></div><span class="sig-label">Principal</span></div><div><p class="meta">${escapeHtml(cert.certificate_no)}</p><p class="meta">${escapeHtml(cert.verification_code)}</p><p class="meta">${escapeHtml(issueDate)}</p></div><div class="sig"><div class="sig-line"></div><span class="sig-label">Class Teacher</span></div></div></div></body></html>`);
+  printWin.document.close();
+  setTimeout(() => printWin.print(), 300);
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/eduplexo/backend-go/internal/audit"
 	"github.com/eduplexo/backend-go/internal/auth"
 	"github.com/eduplexo/backend-go/internal/cache"
+	"github.com/eduplexo/backend-go/internal/domain/access"
 	"github.com/eduplexo/backend-go/internal/store"
 	"github.com/go-chi/chi/v5"
 )
@@ -22,15 +23,21 @@ import (
 const behaviorListCacheTTL = 60 * time.Second
 
 type Handler struct {
-	Store *store.MemStore
-	Cache *cache.Client
+	Store   *store.MemStore
+	Cache   *cache.Client
+	Persist func(table string, doc any)
 }
 
-func New(s *store.MemStore) *Handler { return &Handler{Store: s} }
+func New(s *store.MemStore) *Handler {
+	return &Handler{Store: s, Persist: func(string, any) {}}
+}
 
 // NewWithCache attaches a Redis client. Pass nil to opt out.
-func NewWithCache(s *store.MemStore, c *cache.Client) *Handler {
-	return &Handler{Store: s, Cache: c}
+func NewWithCache(s *store.MemStore, save func(string, any), c *cache.Client) *Handler {
+	if save == nil {
+		save = func(string, any) {}
+	}
+	return &Handler{Store: s, Cache: c, Persist: save}
 }
 
 // listCacheKey hashes (school, role, query) — role matters because
@@ -119,7 +126,8 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cacheKey := listCacheKey(ctx.SchoolID, ctx.Role, q.Encode())
-	if h.Cache != nil && h.Cache.Available() {
+	cacheable := access.IsPrivileged(ctx)
+	if cacheable && h.Cache != nil && h.Cache.Available() {
 		if b, err := h.Cache.Get(r.Context(), cacheKey); err == nil && b != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.Header().Set("X-Cache", "HIT")
@@ -137,6 +145,17 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		category := q.Get("category")
 
 		h.Store.RLock()
+		teacherClassIDs := map[string]bool{}
+		parentStudentIDs := map[string]bool{}
+		var selfStudent *store.Student
+		switch ctx.Role {
+		case "teacher":
+			teacherClassIDs = access.TeacherClassIDsLocked(h.Store, ctx)
+		case "student":
+			selfStudent = access.StudentProfileLocked(h.Store, ctx)
+		case "parent":
+			parentStudentIDs = access.ParentStudentIDsLocked(h.Store, ctx)
+		}
 		rows := make([]*store.Behavior, 0)
 		for _, b := range h.Store.Behaviors {
 			if b.SchoolID != ctx.SchoolID {
@@ -158,6 +177,15 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			if category != "" && b.Category != category {
+				continue
+			}
+			if ctx.Role == "teacher" && !teacherClassIDs[b.ClassID] {
+				continue
+			}
+			if ctx.Role == "student" && (selfStudent == nil || b.StudentID != selfStudent.ID) {
+				continue
+			}
+			if ctx.Role == "parent" && !parentStudentIDs[b.StudentID] {
 				continue
 			}
 
@@ -208,7 +236,7 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	}
 	_, _ = w.Write(bytes)
 
-	if h.Cache != nil && h.Cache.Available() {
+	if cacheable && h.Cache != nil && h.Cache.Available() {
 		_ = h.Cache.Set(r.Context(), cacheKey, bytes, behaviorListCacheTTL)
 	}
 }
@@ -224,6 +252,9 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		defer h.Store.RUnlock()
 		for _, b := range h.Store.Behaviors {
 			if b.ID == id && b.SchoolID == ctx.SchoolID {
+				if !access.CanAccessStudentLocked(h.Store, ctx, b.StudentID) {
+					return nil, api.NewControlledError("FORBIDDEN", "Access denied.", 403, nil)
+				}
 				return h.hydrate([]*store.Behavior{b})[0], nil
 			}
 		}
@@ -280,6 +311,12 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		if stu == nil {
 			return nil, api.NewControlledError("STUDENT_NOT_FOUND", "Student not found in this school context.", 404, nil)
 		}
+		if stu.ClassID != body.ClassID {
+			return nil, api.NewControlledError("VALIDATION_ERROR", "class_id does not match the selected student.", 400, nil)
+		}
+		if ctx.Role == "teacher" && !access.CanAccessClassLocked(h.Store, ctx, body.ClassID) {
+			return nil, api.NewControlledError("FORBIDDEN", "You can only create behavior records for assigned classes.", 403, nil)
+		}
 
 		teacherID := ctx.UserID
 		if ctx.Role == "teacher" {
@@ -323,6 +360,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		audit.Write(h.Store, ctx, audit.Input{
 			Action: "create", EntityType: "behavior", EntityID: row.ID, After: row,
 		})
+		h.Persist("behaviors", row)
 		h.invalidateList(r, ctx.SchoolID)
 		// Build response inline (we hold the write lock, so we cannot call
 		// hydrate which would try to acquire a read lock — that deadlocks).
@@ -379,11 +417,17 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		if err := auth.AssertPermission(ctx, "behavior", auth.ActionUpdate); err != nil {
 			return nil, err
 		}
+		var updated store.Behavior
+		var before store.Behavior
+		found := false
 		h.Store.Lock()
-		defer h.Store.Unlock()
 		for _, b := range h.Store.Behaviors {
 			if b.ID == id && b.SchoolID == ctx.SchoolID {
-				before := *b
+				if ctx.Role == "teacher" && !access.CanAccessClassLocked(h.Store, ctx, b.ClassID) {
+					h.Store.Unlock()
+					return nil, api.NewControlledError("FORBIDDEN", "You can only update behavior records for assigned classes.", 403, nil)
+				}
+				before = *b
 				if v, ok := body["category"]; ok {
 					_ = json.Unmarshal(v, &b.Category)
 					b.IncidentType = b.Category
@@ -416,14 +460,21 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 					_ = json.Unmarshal(v, &b.Attachments)
 				}
 				b.UpdatedAt = time.Now()
-				audit.Write(h.Store, ctx, audit.Input{
-					Action: "update", EntityType: "behavior", EntityID: id, Before: before, After: *b,
-				})
-				h.invalidateList(r, ctx.SchoolID)
-				return h.hydrate([]*store.Behavior{b})[0], nil
+				updated = *b
+				found = true
+				break
 			}
 		}
-		return nil, api.NewControlledError("NOT_FOUND", "Behavior record not found.", 404, nil)
+		h.Store.Unlock()
+		if !found {
+			return nil, api.NewControlledError("NOT_FOUND", "Behavior record not found.", 404, nil)
+		}
+		audit.Write(h.Store, ctx, audit.Input{
+			Action: "update", EntityType: "behavior", EntityID: id, Before: before, After: updated,
+		})
+		h.Persist("behaviors", &updated)
+		h.invalidateList(r, ctx.SchoolID)
+		return h.hydrate([]*store.Behavior{&updated})[0], nil
 	}))
 }
 
@@ -438,11 +489,15 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		defer h.Store.Unlock()
 		for i, b := range h.Store.Behaviors {
 			if b.ID == id && b.SchoolID == ctx.SchoolID {
+				if ctx.Role == "teacher" && !access.CanAccessClassLocked(h.Store, ctx, b.ClassID) {
+					return nil, api.NewControlledError("FORBIDDEN", "You can only delete behavior records for assigned classes.", 403, nil)
+				}
 				before := *b
 				h.Store.Behaviors = append(h.Store.Behaviors[:i], h.Store.Behaviors[i+1:]...)
 				audit.Write(h.Store, ctx, audit.Input{
-					Action: "delete", EntityType: "user", EntityID: id, Before: before,
+					Action: "delete", EntityType: "behavior", EntityID: id, Before: before,
 				})
+				h.Persist("behaviors:delete", before.ID)
 				h.invalidateList(r, ctx.SchoolID)
 				return map[string]any{"success": true, "id": id}, nil
 			}

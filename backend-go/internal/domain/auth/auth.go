@@ -154,10 +154,10 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 						suggestedTabFor(user.Role),
 					),
 					"error": map[string]any{
-						"code":             "ROLE_MISMATCH",
-						"actual_role":      user.Role,
-						"requested_tab":    requestedRole,
-						"suggested_tab":    suggestedTabFor(user.Role),
+						"code":          "ROLE_MISMATCH",
+						"actual_role":   user.Role,
+						"requested_tab": requestedRole,
+						"suggested_tab": suggestedTabFor(user.Role),
 					},
 				})
 				return
@@ -398,16 +398,18 @@ func (h *Handler) Signup(w http.ResponseWriter, r *http.Request) {
 		}
 
 		newSchool := &store.School{
-			ID:               store.NewID("sch"),
-			SchoolID:         schoolID,
-			Name:             schoolName,
-			Code:             uniqueCode,
-			Status:           schoolStatus,
-			ApprovalStatus:   approvalStatus,
-			ApprovedAt:       approvedAt,
-			ApprovedBy:       approvedBy,
-			CreatedAt:        now,
-			UpdatedAt:        now,
+			ID:             store.NewID("sch"),
+			SchoolID:       schoolID,
+			Name:           schoolName,
+			Code:           uniqueCode,
+			Email:          email,
+			PrincipalName:  fullName,
+			Status:         schoolStatus,
+			ApprovalStatus: approvalStatus,
+			ApprovedAt:     approvedAt,
+			ApprovedBy:     approvedBy,
+			CreatedAt:      now,
+			UpdatedAt:      now,
 		}
 		newYear := &store.AcademicYear{
 			ID:          yearID,
@@ -436,11 +438,23 @@ func (h *Handler) Signup(w http.ResponseWriter, r *http.Request) {
 			CreatedAt: now,
 			UpdatedAt: now,
 		}
+		newSettings := &store.SchoolSettings{
+			SchoolID: schoolID,
+			Profile: map[string]any{
+				"schoolName":    schoolName,
+				"email":         email,
+				"principalName": fullName,
+			},
+			Branding:  map[string]any{},
+			Academic:  map[string]any{"institutionalLevel": "K-12"},
+			UpdatedAt: now,
+		}
 
 		h.Store.Lock()
 		h.Store.Schools = append(h.Store.Schools, newSchool)
 		h.Store.AcademicYears = append(h.Store.AcademicYears, newYear)
 		h.Store.Users = append(h.Store.Users, newUser)
+		h.Store.SchoolSettings = append(h.Store.SchoolSettings, newSettings)
 
 		// ─── Auto 14-day free trial subscription ─────────────────────────
 		trialSub := &store.Subscription{
@@ -465,6 +479,7 @@ func (h *Handler) Signup(w http.ResponseWriter, r *http.Request) {
 		h.Persist("schools", newSchool)
 		h.Persist("academic_years", newYear)
 		h.Persist("users", newUser)
+		h.Persist("school_settings", newSettings)
 		h.Persist("subscriptions", trialSub)
 
 		// Bypassing Super Admin approval for now: status is "active", token is still omitted (user goes to /auth/login)

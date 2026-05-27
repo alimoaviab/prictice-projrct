@@ -137,6 +137,48 @@ func TestCreate_DetectsTeacherConflict(t *testing.T) {
 	assert.Equal(t, "CONFLICT", got.Error.Code)
 }
 
+func TestCreate_AllowsMultipleSubjectsOnSameDayWhenTimesDoNotOverlap(t *testing.T) {
+	h, s := newHandler(t)
+	s.Subjects = append(s.Subjects, &store.Subject{ID: "sub_eng", SchoolID: "school_1", Name: "English"})
+	body := `{
+		"class_id":"cls_1",
+		"sessions":[
+			{"subject_id":"sub_math","teacher_id":"tch_1","day_of_week":1,"period":1,"start_time":"08:00","end_time":"08:45","room":"R-1"},
+			{"subject_id":"sub_eng","teacher_id":"tch_1","day_of_week":1,"period":2,"start_time":"09:00","end_time":"09:45","room":"R-1"}
+		]
+	}`
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("POST", "/api/timetable", strings.NewReader(body))
+	h.Create(w, adminCtx(r))
+
+	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+	var got api.ServiceResult
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.True(t, got.Ok)
+	require.Len(t, s.Timetables, 1)
+	require.Len(t, s.Timetables[0].Sessions, 2)
+}
+
+func TestCreate_RejectsSameDayDuplicateTimeSlot(t *testing.T) {
+	h, _ := newHandler(t)
+	body := `{
+		"class_id":"cls_1",
+		"sessions":[
+			{"subject_id":"sub_math","teacher_id":"tch_1","day_of_week":1,"period":1,"start_time":"08:00","end_time":"08:45"},
+			{"subject_id":"sub_math","teacher_id":"tch_1","day_of_week":1,"period":1,"start_time":"09:00","end_time":"09:45"}
+		]
+	}`
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("POST", "/api/timetable", strings.NewReader(body))
+	h.Create(w, adminCtx(r))
+
+	require.Equal(t, http.StatusConflict, w.Code, w.Body.String())
+	var got api.ServiceResult
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	require.False(t, got.Ok)
+	assert.Equal(t, "CONFLICT", got.Error.Code)
+}
+
 func TestUpdate_BySyntheticID(t *testing.T) {
 	h, s := newHandler(t)
 	s.Timetables = append(s.Timetables, &store.Timetable{

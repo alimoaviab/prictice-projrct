@@ -11,8 +11,8 @@ import (
 	"github.com/eduplexo/backend-go/internal/cache"
 	"github.com/eduplexo/backend-go/internal/config"
 	"github.com/eduplexo/backend-go/internal/domain/academicyear"
-	"github.com/eduplexo/backend-go/internal/domain/announcements"
 	"github.com/eduplexo/backend-go/internal/domain/analytics"
+	"github.com/eduplexo/backend-go/internal/domain/announcements"
 	"github.com/eduplexo/backend-go/internal/domain/attendance"
 	authdomain "github.com/eduplexo/backend-go/internal/domain/auth"
 	"github.com/eduplexo/backend-go/internal/domain/behavior"
@@ -92,16 +92,16 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 	})
 
 	saveFn := func(table string, doc any) {
-			switch {
-			case len(table) > 7 && table[len(table)-7:] == ":delete":
-				if s, ok := doc.(string); ok {
-					pg.Delete(table[:len(table)-7], s)
-				} else {
-					pg.DeleteWithDoc(table[:len(table)-7], doc)
-				}
-			default:
-				pg.Save(table, doc)
+		switch {
+		case len(table) > 7 && table[len(table)-7:] == ":delete":
+			if s, ok := doc.(string); ok {
+				pg.Delete(table[:len(table)-7], s)
+			} else {
+				pg.DeleteWithDoc(table[:len(table)-7], doc)
 			}
+		default:
+			pg.Save(table, doc)
+		}
 	}
 
 	authH := authdomain.NewWithPersist(cfg, s, saveFn)
@@ -191,7 +191,7 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Put("/attendance/{id}", atH.Update)
 			r.Delete("/attendance/{id}", atH.Delete)
 			r.Post("/attendance/mark", atPG.MarkBulkPG) // Direct PG batch insert
-			r.Get("/attendance/sheet", atPG.Sheet)       // Direct PG JOIN query
+			r.Get("/attendance/sheet", atPG.Sheet)      // Direct PG JOIN query
 
 			exH := exams.NewWithCache(s, saveFn, rdb)
 			r.Get("/exams", exH.List)
@@ -226,7 +226,7 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Put("/homework/{id}", hwH.Update)
 			r.Delete("/homework/{id}", hwH.Delete)
 
-			bhH := behavior.NewWithCache(s, rdb)
+			bhH := behavior.NewWithCache(s, saveFn, rdb)
 			r.Get("/behavior", bhH.List)
 			r.Post("/behavior", bhH.Create)
 			r.Get("/behavior/{id}", bhH.Get)
@@ -242,7 +242,7 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Put("/events/{id}", evH.Update)
 			r.Delete("/events/{id}", evH.Delete)
 
-			lvH := leave.NewWithCache(s, rdb)
+			lvH := leave.NewWithCache(s, saveFn, rdb)
 			r.Get("/leave", lvH.List)
 			r.Post("/leave", lvH.Create)
 			r.Get("/leave/{id}", lvH.Get)
@@ -589,9 +589,9 @@ func buildHealthHandler(pg *persistence.Persister, rdb *cache.Client) http.Handl
 		}
 
 		api.WriteJSON(w, status, map[string]any{
-			"ok":       healthy,
-			"status":   statusText(healthy),
-			"checks":   checks,
+			"ok":        healthy,
+			"status":    statusText(healthy),
+			"checks":    checks,
 			"memory_mb": int(mem.Alloc / 1024 / 1024),
 		})
 	}

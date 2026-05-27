@@ -18,6 +18,7 @@ import (
 	"github.com/eduplexo/backend-go/internal/audit"
 	"github.com/eduplexo/backend-go/internal/auth"
 	"github.com/eduplexo/backend-go/internal/cache"
+	"github.com/eduplexo/backend-go/internal/domain/access"
 	"github.com/eduplexo/backend-go/internal/domain/tenant"
 	"github.com/eduplexo/backend-go/internal/store"
 	"github.com/go-chi/chi/v5"
@@ -121,10 +122,10 @@ func (h *Handler) hydrate(rows []*store.Attendance) []map[string]any {
 // List implements GET /api/attendance.
 //
 // Supports two pagination modes:
-//   1. Offset pagination: ?page=1&limit=50 (legacy, for backward compat)
-//   2. Date-cursor pagination: ?before_date=2026-05-14&limit=50
-//      Returns records older than before_date, with next_before_date for
-//      fetching the next page of older records.
+//  1. Offset pagination: ?page=1&limit=50 (legacy, for backward compat)
+//  2. Date-cursor pagination: ?before_date=2026-05-14&limit=50
+//     Returns records older than before_date, with next_before_date for
+//     fetching the next page of older records.
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	q := r.URL.Query()
@@ -137,12 +138,20 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	// Resolve student profile id outside the cache key calc — students
 	// from different classes must NOT share a cache entry.
 	var profileID string
-	if ctx.Role == "student" {
+	if ctx.Role == "student" || ctx.Role == "teacher" || ctx.Role == "parent" {
 		h.Store.RLock()
-		for _, s := range h.Store.Students {
-			if s.SchoolID == ctx.SchoolID && s.UserID == ctx.UserID {
+		switch ctx.Role {
+		case "student":
+			if s := access.StudentProfileLocked(h.Store, ctx); s != nil {
 				profileID = s.ID
-				break
+			}
+		case "teacher":
+			if t := access.TeacherProfileLocked(h.Store, ctx); t != nil {
+				profileID = t.ID
+			}
+		case "parent":
+			for id := range access.ParentStudentIDsLocked(h.Store, ctx) {
+				profileID += id + ","
 			}
 		}
 		h.Store.RUnlock()
@@ -171,13 +180,7 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		// must pass student_id, teachers see only their assigned classes.
 		if ctx.Role == "student" {
 			h.Store.RLock()
-			var self *store.Student
-			for _, s := range h.Store.Students {
-				if s.SchoolID == ctx.SchoolID && s.UserID == ctx.UserID {
-					self = s
-					break
-				}
-			}
+			self := access.StudentProfileLocked(h.Store, ctx)
 			h.Store.RUnlock()
 			if self == nil {
 				return []any{}, nil
@@ -204,6 +207,22 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		}
 
 		h.Store.RLock()
+		teacherClassIDs := map[string]bool{}
+		parentStudentIDs := map[string]bool{}
+		if ctx.Role == "teacher" {
+			teacherClassIDs = access.TeacherClassIDsLocked(h.Store, ctx)
+			if classID != "" && !teacherClassIDs[classID] {
+				h.Store.RUnlock()
+				return []any{}, nil
+			}
+		}
+		if ctx.Role == "parent" {
+			parentStudentIDs = access.ParentStudentIDsLocked(h.Store, ctx)
+			if studentID != "" && !parentStudentIDs[studentID] {
+				h.Store.RUnlock()
+				return []any{}, nil
+			}
+		}
 		rows := make([]*store.Attendance, 0)
 		for _, a := range h.Store.Attendance {
 			if a.SchoolID != ctx.SchoolID {
@@ -216,6 +235,12 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			if studentID != "" && a.StudentID != studentID {
+				continue
+			}
+			if ctx.Role == "teacher" && !teacherClassIDs[a.ClassID] {
+				continue
+			}
+			if ctx.Role == "parent" && !parentStudentIDs[a.StudentID] {
 				continue
 			}
 			if statusQ != "" && a.Status != statusQ {
@@ -364,6 +389,9 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		if student.ClassID != body.ClassID {
 			return nil, api.NewControlledError("VALIDATION_ERROR", "Selected student does not belong to the selected class.", 400, nil)
 		}
+		if ctx.Role == "teacher" && !access.CanAccessClassLocked(h.Store, ctx, body.ClassID) {
+			return nil, api.NewControlledError("FORBIDDEN", "You can only mark attendance for assigned classes.", 403, nil)
+		}
 
 		// Duplicate guard (student × date).
 		for _, a := range h.Store.Attendance {
@@ -445,6 +473,9 @@ func (h *Handler) MarkBulk(w http.ResponseWriter, r *http.Request) {
 
 		h.Store.Lock()
 		defer h.Store.Unlock()
+		if ctx.Role == "teacher" && !access.CanAccessClassLocked(h.Store, ctx, body.ClassID) {
+			return nil, api.NewControlledError("FORBIDDEN", "You can only mark attendance for assigned classes.", 403, nil)
+		}
 
 		studentByID := map[string]*store.Student{}
 		for _, s := range h.Store.Students {
@@ -458,6 +489,9 @@ func (h *Handler) MarkBulk(w http.ResponseWriter, r *http.Request) {
 		for studentID, status := range body.Records {
 			stu := studentByID[studentID]
 			if stu == nil {
+				continue
+			}
+			if ctx.Role == "teacher" && !access.CanAccessStudentLocked(h.Store, ctx, studentID) {
 				continue
 			}
 			classID := stu.ClassID
@@ -507,7 +541,7 @@ func (h *Handler) MarkBulk(w http.ResponseWriter, r *http.Request) {
 			saved++
 		}
 		audit.Write(h.Store, ctx, audit.Input{
-			Action:   "create",
+			Action:     "create",
 			EntityType: "attendance",
 			EntityID:   body.ClassID,
 			Metadata:   map[string]any{"saved": saved, "date": api.FormatDate(date), "period": period},
@@ -529,6 +563,9 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		defer h.Store.RUnlock()
 		for _, a := range h.Store.Attendance {
 			if a.ID == id && a.SchoolID == ctx.SchoolID {
+				if !access.CanAccessStudentLocked(h.Store, ctx, a.StudentID) {
+					return nil, api.NewControlledError("FORBIDDEN", "Access denied.", 403, nil)
+				}
 				return h.hydrate([]*store.Attendance{a})[0], nil
 			}
 		}
@@ -559,6 +596,9 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		defer h.Store.Unlock()
 		for _, a := range h.Store.Attendance {
 			if a.ID == id && a.SchoolID == ctx.SchoolID {
+				if ctx.Role == "teacher" && !access.CanAccessClassLocked(h.Store, ctx, a.ClassID) {
+					return nil, api.NewControlledError("FORBIDDEN", "You can only update attendance for assigned classes.", 403, nil)
+				}
 				before := *a
 				if body.Status != nil {
 					a.Status = *body.Status
@@ -596,6 +636,9 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		defer h.Store.Unlock()
 		for i, a := range h.Store.Attendance {
 			if a.ID == id && a.SchoolID == ctx.SchoolID {
+				if ctx.Role == "teacher" && !access.CanAccessClassLocked(h.Store, ctx, a.ClassID) {
+					return nil, api.NewControlledError("FORBIDDEN", "You can only delete attendance for assigned classes.", 403, nil)
+				}
 				before := *a
 				h.Store.Attendance = append(h.Store.Attendance[:i], h.Store.Attendance[i+1:]...)
 				h.Persist("attendance:delete", before.ID)

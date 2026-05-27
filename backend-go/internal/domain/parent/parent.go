@@ -122,33 +122,24 @@ func parentCacheKey(scope, schoolID, studentID string) string {
 	return fmt.Sprintf("parent:%s:%s:%s", scope, schoolID, studentID)
 }
 
-// resolveStudent returns the active student for the parent flow. When the
-// caller passes ?student_id, that one is preferred; otherwise we use the
-// first student linked to the requesting parent. For Phase 2 the
-// student↔parent linkage isn't fully populated, so as a safe fallback we
-// return any student in the same tenant.
+// resolveStudent returns only a student explicitly linked to this parent.
 func (h *Handler) resolveStudent(ctx *api.RequestContext, requested string) *store.Student {
 	h.Store.RLock()
 	defer h.Store.RUnlock()
-	if requested != "" {
-		for _, s := range h.Store.Students {
-			if s.SchoolID == ctx.SchoolID && s.ID == requested {
-				return s
-			}
-		}
-	}
-	// Linked parent records.
+	allowed := map[string]bool{}
 	for _, link := range h.Store.StudentParents {
 		if link.SchoolID == ctx.SchoolID && link.ParentUserID == ctx.UserID {
-			for _, s := range h.Store.Students {
-				if s.ID == link.StudentID {
-					return s
-				}
-			}
+			allowed[link.StudentID] = true
 		}
 	}
+	if requested != "" && !allowed[requested] {
+		return nil
+	}
 	for _, s := range h.Store.Students {
-		if s.SchoolID == ctx.SchoolID {
+		if s.SchoolID != ctx.SchoolID || !allowed[s.ID] {
+			continue
+		}
+		if requested == "" || s.ID == requested {
 			return s
 		}
 	}
@@ -278,189 +269,189 @@ func (h *Handler) DashboardStats(w http.ResponseWriter, r *http.Request) {
 		return api.ServiceTry(func() (any, error) {
 			s := resolved
 			attendance := map[string]any{"present": 0, "total": 0, "percentage": 0}
-		exams := []map[string]any{}
-		results := []map[string]any{}
-		feeDue := map[string]any{"amount": 0, "due_date": nil}
+			exams := []map[string]any{}
+			results := []map[string]any{}
+			feeDue := map[string]any{"amount": 0, "due_date": nil}
 
-		emptyOverview := map[string]any{
-			"student_id":            "",
-			"name":                  "",
-			"class":                 "",
-			"current_grade":         "—",
-			"attendance_percentage": 0,
-			"pending_fees":          0,
-			"pending_assignments":   0,
-		}
-		if s == nil {
+			emptyOverview := map[string]any{
+				"student_id":            "",
+				"name":                  "",
+				"class":                 "",
+				"current_grade":         "—",
+				"attendance_percentage": 0,
+				"pending_fees":          0,
+				"pending_assignments":   0,
+			}
+			if s == nil {
+				return map[string]any{
+					"dashboard": map[string]any{
+						"children_overview": []map[string]any{emptyOverview},
+					},
+					"attendance":    attendance,
+					"upcomingExams": exams,
+					"recentResults": results,
+					"feeDue":        feeDue,
+				}, nil
+			}
+
+			h.Store.RLock()
+			// Attendance percentage for the active year.
+			var present, total int
+			for _, a := range h.Store.Attendance {
+				if a.SchoolID == ctx.SchoolID && a.StudentID == s.ID {
+					total++
+					if a.Status == "present" {
+						present++
+					}
+				}
+			}
+			// Upcoming exams (next 5).
+			exRows := make([]*store.Exam, 0)
+			for _, e := range h.Store.Exams {
+				if e.SchoolID == ctx.SchoolID && e.ClassID == s.ClassID {
+					exRows = append(exRows, e)
+				}
+			}
+			// Recent results (last 5 graded).
+			resRows := make([]*store.Result, 0)
+			for _, r := range h.Store.Results {
+				if r.SchoolID == ctx.SchoolID && r.StudentID == s.ID {
+					resRows = append(resRows, r)
+				}
+			}
+			// Outstanding fees for the student.
+			var pendingFees float64
+			for _, f := range h.Store.Fees {
+				if f.SchoolID != ctx.SchoolID || f.StudentID != s.ID {
+					continue
+				}
+				eff := f.Amount + f.AdjustmentAmount
+				out := eff - f.PaidAmount
+				if out > 0 {
+					pendingFees += out
+				}
+			}
+			// Pending homework: assigned to the student's class & section
+			// and not in draft.
+			pendingHomework := 0
+			for _, hw := range h.Store.Homework {
+				if hw.SchoolID != ctx.SchoolID || hw.ClassID != s.ClassID {
+					continue
+				}
+				if hw.Section != "" && hw.Section != s.Section {
+					continue
+				}
+				if hw.Status == "draft" {
+					continue
+				}
+				// Count if the student hasn't submitted yet.
+				submitted := false
+				for _, sub := range hw.Submissions {
+					if sub.StudentID == s.ID && (sub.Status == "submitted" || sub.Status == "graded") {
+						submitted = true
+						break
+					}
+				}
+				if !submitted {
+					pendingHomework++
+				}
+			}
+			// Class name for the overview card.
+			className := ""
+			for _, c := range h.Store.Classes {
+				if c.ID == s.ClassID {
+					className = c.Name
+					if s.Section != "" {
+						className += " - " + s.Section
+					}
+					break
+				}
+			}
+			h.Store.RUnlock()
+
+			sort.SliceStable(exRows, func(i, j int) bool { return exRows[i].StartsAt.Before(exRows[j].StartsAt) })
+			if len(exRows) > 5 {
+				exRows = exRows[:5]
+			}
+			for _, e := range exRows {
+				exams = append(exams, map[string]any{
+					"_id": e.ID, "title": e.Title, "subject": e.Subject,
+					"starts_at": api.FormatDate(e.StartsAt), "max_marks": e.MaxMarks,
+				})
+			}
+			sort.SliceStable(resRows, func(i, j int) bool { return resRows[i].GradedAt.After(resRows[j].GradedAt) })
+			if len(resRows) > 5 {
+				resRows = resRows[:5]
+			}
+			// Most recent grade letter from the latest result, derived from
+			// the per-exam max-marks. Falls back to "—" when the student
+			// has no graded results yet.
+			currentGrade := "—"
+			if len(resRows) > 0 {
+				latest := resRows[0]
+				max := 0
+				for _, e := range h.Store.Exams {
+					if e.ID == latest.ExamID {
+						if len(e.Subjects) > 0 {
+							for _, sub := range e.Subjects {
+								max += sub.MaxMarks
+							}
+						} else {
+							max = e.MaxMarks
+						}
+						break
+					}
+				}
+				if max > 0 {
+					pct := (latest.ObtainedMarks / float64(max)) * 100
+					switch {
+					case pct >= 90:
+						currentGrade = "A+"
+					case pct >= 80:
+						currentGrade = "A"
+					case pct >= 70:
+						currentGrade = "B"
+					case pct >= 60:
+						currentGrade = "C"
+					case pct >= 50:
+						currentGrade = "D"
+					default:
+						currentGrade = "F"
+					}
+				}
+			}
+			for _, r := range resRows {
+				results = append(results, map[string]any{
+					"_id": r.ID, "exam_id": r.ExamID, "obtained_marks": r.ObtainedMarks,
+					"graded_at": r.GradedAt, "remarks": r.Remarks,
+				})
+			}
+			percentage := 0
+			if total > 0 {
+				percentage = (present * 100) / total
+			}
+			attendance = map[string]any{"present": present, "total": total, "percentage": percentage}
+			feeDue = map[string]any{"amount": pendingFees, "due_date": nil}
+
+			overview := map[string]any{
+				"student_id":            s.ID,
+				"name":                  s.FirstName + " " + s.LastName,
+				"class":                 className,
+				"current_grade":         currentGrade,
+				"attendance_percentage": percentage,
+				"pending_fees":          pendingFees,
+				"pending_assignments":   pendingHomework,
+			}
+
 			return map[string]any{
 				"dashboard": map[string]any{
-					"children_overview": []map[string]any{emptyOverview},
+					"children_overview": []map[string]any{overview},
 				},
 				"attendance":    attendance,
 				"upcomingExams": exams,
 				"recentResults": results,
 				"feeDue":        feeDue,
 			}, nil
-		}
-
-		h.Store.RLock()
-		// Attendance percentage for the active year.
-		var present, total int
-		for _, a := range h.Store.Attendance {
-			if a.SchoolID == ctx.SchoolID && a.StudentID == s.ID {
-				total++
-				if a.Status == "present" {
-					present++
-				}
-			}
-		}
-		// Upcoming exams (next 5).
-		exRows := make([]*store.Exam, 0)
-		for _, e := range h.Store.Exams {
-			if e.SchoolID == ctx.SchoolID && e.ClassID == s.ClassID {
-				exRows = append(exRows, e)
-			}
-		}
-		// Recent results (last 5 graded).
-		resRows := make([]*store.Result, 0)
-		for _, r := range h.Store.Results {
-			if r.SchoolID == ctx.SchoolID && r.StudentID == s.ID {
-				resRows = append(resRows, r)
-			}
-		}
-		// Outstanding fees for the student.
-		var pendingFees float64
-		for _, f := range h.Store.Fees {
-			if f.SchoolID != ctx.SchoolID || f.StudentID != s.ID {
-				continue
-			}
-			eff := f.Amount + f.AdjustmentAmount
-			out := eff - f.PaidAmount
-			if out > 0 {
-				pendingFees += out
-			}
-		}
-		// Pending homework: assigned to the student's class & section
-		// and not in draft.
-		pendingHomework := 0
-		for _, hw := range h.Store.Homework {
-			if hw.SchoolID != ctx.SchoolID || hw.ClassID != s.ClassID {
-				continue
-			}
-			if hw.Section != "" && hw.Section != s.Section {
-				continue
-			}
-			if hw.Status == "draft" {
-				continue
-			}
-			// Count if the student hasn't submitted yet.
-			submitted := false
-			for _, sub := range hw.Submissions {
-				if sub.StudentID == s.ID && (sub.Status == "submitted" || sub.Status == "graded") {
-					submitted = true
-					break
-				}
-			}
-			if !submitted {
-				pendingHomework++
-			}
-		}
-		// Class name for the overview card.
-		className := ""
-		for _, c := range h.Store.Classes {
-			if c.ID == s.ClassID {
-				className = c.Name
-				if s.Section != "" {
-					className += " - " + s.Section
-				}
-				break
-			}
-		}
-		h.Store.RUnlock()
-
-		sort.SliceStable(exRows, func(i, j int) bool { return exRows[i].StartsAt.Before(exRows[j].StartsAt) })
-		if len(exRows) > 5 {
-			exRows = exRows[:5]
-		}
-		for _, e := range exRows {
-			exams = append(exams, map[string]any{
-				"_id": e.ID, "title": e.Title, "subject": e.Subject,
-				"starts_at": api.FormatDate(e.StartsAt), "max_marks": e.MaxMarks,
-			})
-		}
-		sort.SliceStable(resRows, func(i, j int) bool { return resRows[i].GradedAt.After(resRows[j].GradedAt) })
-		if len(resRows) > 5 {
-			resRows = resRows[:5]
-		}
-		// Most recent grade letter from the latest result, derived from
-		// the per-exam max-marks. Falls back to "—" when the student
-		// has no graded results yet.
-		currentGrade := "—"
-		if len(resRows) > 0 {
-			latest := resRows[0]
-			max := 0
-			for _, e := range h.Store.Exams {
-				if e.ID == latest.ExamID {
-					if len(e.Subjects) > 0 {
-						for _, sub := range e.Subjects {
-							max += sub.MaxMarks
-						}
-					} else {
-						max = e.MaxMarks
-					}
-					break
-				}
-			}
-			if max > 0 {
-				pct := (latest.ObtainedMarks / float64(max)) * 100
-				switch {
-				case pct >= 90:
-					currentGrade = "A+"
-				case pct >= 80:
-					currentGrade = "A"
-				case pct >= 70:
-					currentGrade = "B"
-				case pct >= 60:
-					currentGrade = "C"
-				case pct >= 50:
-					currentGrade = "D"
-				default:
-					currentGrade = "F"
-				}
-			}
-		}
-		for _, r := range resRows {
-			results = append(results, map[string]any{
-				"_id": r.ID, "exam_id": r.ExamID, "obtained_marks": r.ObtainedMarks,
-				"graded_at": r.GradedAt, "remarks": r.Remarks,
-			})
-		}
-		percentage := 0
-		if total > 0 {
-			percentage = (present * 100) / total
-		}
-		attendance = map[string]any{"present": present, "total": total, "percentage": percentage}
-		feeDue = map[string]any{"amount": pendingFees, "due_date": nil}
-
-		overview := map[string]any{
-			"student_id":            s.ID,
-			"name":                  s.FirstName + " " + s.LastName,
-			"class":                 className,
-			"current_grade":         currentGrade,
-			"attendance_percentage": percentage,
-			"pending_fees":          pendingFees,
-			"pending_assignments":   pendingHomework,
-		}
-
-		return map[string]any{
-			"dashboard": map[string]any{
-				"children_overview": []map[string]any{overview},
-			},
-			"attendance":    attendance,
-			"upcomingExams": exams,
-			"recentResults": results,
-			"feeDue":        feeDue,
-		}, nil
 		})
 	})
 }

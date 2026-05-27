@@ -53,7 +53,8 @@ export type Feature =
   | "timetable"
   | "behavior"
   | "leave"
-  | "events";
+  | "events"
+  | "schedules";
 
 export interface RequestContext {
   school_id: string;

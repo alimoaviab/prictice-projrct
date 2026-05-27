@@ -46,6 +46,7 @@ export function CertificateViewPage() {
 
   const cert = state.data!;
   const typeLabel = CERTIFICATE_TYPE_LABELS[cert.certificate_type as keyof typeof CERTIFICATE_TYPE_LABELS] || cert.certificate_type;
+  const bodyText = cert.body_text || `This is to certify that ${cert.student_name} of Class ${cert.class_name} has been a student of ${resolvedSchoolName}. This certificate is issued on ${new Date(cert.issue_date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}.`;
 
   return (
     <div className="max-w-4xl mx-auto space-y-5">
@@ -89,12 +90,7 @@ export function CertificateViewPage() {
 
           <div className="flex-1 relative z-10 flex items-center justify-center">
             <div className="text-center max-w-lg">
-              <p className="text-sm text-slate-700 leading-relaxed">
-                This is to certify that <strong>{cert.student_name}</strong> of Class <strong>{cert.class_name}</strong> has been a student of this institution.
-              </p>
-              <p className="text-sm text-slate-700 leading-relaxed mt-3">
-                This certificate is issued on {new Date(cert.issue_date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}.
-              </p>
+              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{bodyText}</p>
             </div>
           </div>
 

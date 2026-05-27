@@ -83,7 +83,8 @@ export interface GeneratedCertificate {
   issue_date: string;
   expiry_date?: string;
   status: "issued" | "revoked" | "expired";
-  metadata: Record<string, string>; // All resolved variables
+  metadata?: Record<string, string>; // All resolved variables
+  body_text?: string;
   created_at: string;
 }
 

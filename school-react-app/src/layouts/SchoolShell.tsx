@@ -537,11 +537,11 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
           <div className="flex items-center gap-3 relative z-[100] overflow-visible">
             {user.role === "parent" && <ChildSwitcher />}
 
+            {user.role === "admin" && (
             <div className="hidden sm:flex items-center gap-2 rounded-md border border-slate-100 bg-white px-2 py-1">
               <AppIcon name="Calendar" size={14} className="text-slate-400" />
               <select
                 value={selectedAcademyYearId}
-                disabled={user.role === "student"}
                 onChange={async (event) => {
                   const nextId = event.target.value;
                   setSelectedAcademicYearIdState(nextId);
@@ -567,7 +567,7 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
                   }
                   window.location.reload();
                 }}
-                className={`bg-transparent text-[10px] font-black tracking-widest text-slate-500 focus:outline-none ${user.role === "student" ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+                className="bg-transparent text-[10px] font-black tracking-widest text-slate-500 focus:outline-none cursor-pointer"
               >
                 {academyYears.map((row) => (
                   <option key={row._id} value={row._id}>
@@ -576,6 +576,7 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
                 ))}
               </select>
             </div>
+            )}
 
             <div className="mx-0.5 hidden h-3 w-px bg-slate-200/40 sm:block" />
 

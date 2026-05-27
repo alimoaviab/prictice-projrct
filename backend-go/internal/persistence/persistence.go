@@ -4,13 +4,13 @@
 // entity has its own table with proper FKs, CHECK constraints, and unique
 // indexes — no JSONB-blob fallback. This package handles three things:
 //
-//   1. Load: on boot, hydrate the MemStore from PostgreSQL so every domain
-//      handler reads from a warm cache.
-//   2. Save: on every mutation, the active handler appends to the queue;
-//      a background goroutine commits batched UPSERTs in a single
-//      transaction.
-//   3. FullSnapshot: periodic write-through of the entire MemStore as a
-//      safety net. Idempotent — relies on UPSERT semantics.
+//  1. Load: on boot, hydrate the MemStore from PostgreSQL so every domain
+//     handler reads from a warm cache.
+//  2. Save: on every mutation, the active handler appends to the queue;
+//     a background goroutine commits batched UPSERTs in a single
+//     transaction.
+//  3. FullSnapshot: periodic write-through of the entire MemStore as a
+//     safety net. Idempotent — relies on UPSERT semantics.
 //
 // The map of "collection name → SQL table + UPSERT statement" lives in
 // upsert.go. There is one statement per entity, hand-written to match the
@@ -118,6 +118,24 @@ func extractSchoolID(doc any) string {
 	case *store.QuestionPaper:
 		return v.SchoolID
 	case *store.StarCollection:
+		return v.SchoolID
+	case *store.Subscription:
+		return v.SchoolID
+	case *store.StudentScholarship:
+		return v.SchoolID
+	case *store.StudentFeeDiscount:
+		return v.SchoolID
+	case *store.StudentWallet:
+		return v.SchoolID
+	case *store.WalletTransaction:
+		return v.SchoolID
+	case *store.Conversation:
+		return v.SchoolID
+	case *store.Broadcast:
+		return v.SchoolID
+	case *store.Schedule:
+		return v.SchoolID
+	case *store.ScheduleReminder:
 		return v.SchoolID
 	default:
 		return ""
@@ -237,7 +255,7 @@ func (p *Persister) drainQueue() []write {
 // tableOrder defines the FK-safe insertion order. Parent tables first,
 // child tables after. This prevents FK violations during flush.
 var tableOrder = []string{
-	"schools", "packages", "users", "academic_years", "subjects",
+	"schools", "packages", "subscriptions", "users", "academic_years", "subjects",
 	"teachers", "classes",
 	"students", "parents", "student_parents",
 	"attendance", "exams", "results", "homework", "announcements",
@@ -422,6 +440,9 @@ func (p *Persister) FullSnapshot(ctx context.Context, s *store.MemStore) error {
 	}
 	for _, v := range s.Packages {
 		plan = append(plan, write{table: "packages", doc: v})
+	}
+	for _, v := range s.Subscriptions {
+		plan = append(plan, write{table: "subscriptions", doc: v})
 	}
 	for _, v := range s.Users {
 		plan = append(plan, write{table: "users", doc: v})

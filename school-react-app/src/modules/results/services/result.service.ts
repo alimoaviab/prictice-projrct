@@ -2,13 +2,15 @@ import { serviceRequest } from "@/services/service-client";
 import { getSelectedAcademicYearId } from "@/services/academic-year-context";
 import { ResultFormInput, ResultRow } from "../types/result.types";
 
-export function listResults(filters?: { exam_id?: string; student_id?: string }) {
+export function listResults(filters?: { exam_id?: string; student_id?: string; class_id?: string; subject_id?: string }) {
   const params = new URLSearchParams();
   const academicYearId = getSelectedAcademicYearId();
   if (academicYearId) params.append("academic_year_id", academicYearId);
   
   if (filters?.exam_id) params.append("exam_id", filters.exam_id);
   if (filters?.student_id) params.append("student_id", filters.student_id);
+  if (filters?.class_id) params.append("class_id", filters.class_id);
+  if (filters?.subject_id) params.append("subject_id", filters.subject_id);
   
   const query = params.toString();
   

@@ -50,6 +50,7 @@ func New(s *store.MemStore, persist func(string, any), c *cache.Client, hub *rt.
 		Persist: persist,
 		rdb:     rdb,
 	}
+	h.restorePendingReminders()
 	// Start the reminder dispatcher goroutine
 	go h.reminderDispatcher()
 	return h
@@ -158,6 +159,9 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		defer h.Store.RUnlock()
 		for _, s := range h.Store.Schedules {
 			if s.ID == id && s.SchoolID == ctx.SchoolID {
+				if !canAccessSchedule(ctx, s, false) {
+					return nil, api.NewControlledError("FORBIDDEN", "You can only access your own or assigned schedules.", 403, nil)
+				}
 				return s, nil
 			}
 		}
@@ -300,8 +304,6 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		}
 
 		h.Store.Lock()
-		defer h.Store.Unlock()
-
 		var target *store.Schedule
 		for _, s := range h.Store.Schedules {
 			if s.ID == id && s.SchoolID == ctx.SchoolID {
@@ -310,11 +312,12 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if target == nil {
+			h.Store.Unlock()
 			return nil, api.NewControlledError("NOT_FOUND", "Schedule not found.", 404, nil)
 		}
 
-		// Permission check: teachers can only edit own schedules
-		if ctx.Role == "teacher" && target.CreatedBy != ctx.UserID {
+		if !canAccessSchedule(ctx, target, true) {
+			h.Store.Unlock()
 			return nil, api.NewControlledError("FORBIDDEN", "You can only edit your own schedules.", 403, nil)
 		}
 
@@ -367,9 +370,21 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		}
 
 		target.UpdatedAt = time.Now()
-		h.Persist("schedules", target)
+		saved := *target
+		h.Store.Unlock()
 
-		return target, nil
+		h.Persist("schedules", &saved)
+		h.cancelReminders(id)
+		if saved.ReminderType != "none" && saved.ReminderType != "" {
+			h.scheduleReminder(&saved, saved.CreatedBy)
+			for _, uid := range saved.AssignedTo {
+				if uid != saved.CreatedBy {
+					h.scheduleReminder(&saved, uid)
+				}
+			}
+		}
+
+		return &saved, nil
 	}))
 }
 
@@ -385,13 +400,11 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		}
 
 		h.Store.Lock()
-		defer h.Store.Unlock()
-
 		idx := -1
 		for i, s := range h.Store.Schedules {
 			if s.ID == id && s.SchoolID == ctx.SchoolID {
-				// Teachers can only delete own
-				if ctx.Role == "teacher" && s.CreatedBy != ctx.UserID {
+				if !canAccessSchedule(ctx, s, true) {
+					h.Store.Unlock()
 					return nil, api.NewControlledError("FORBIDDEN", "You can only delete your own schedules.", 403, nil)
 				}
 				idx = i
@@ -399,10 +412,12 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if idx == -1 {
+			h.Store.Unlock()
 			return nil, api.NewControlledError("NOT_FOUND", "Schedule not found.", 404, nil)
 		}
 
 		h.Store.Schedules = append(h.Store.Schedules[:idx], h.Store.Schedules[idx+1:]...)
+		h.Store.Unlock()
 		h.Persist("schedules:delete", id)
 
 		// Remove pending reminders for this schedule
@@ -458,6 +473,46 @@ func (h *Handler) scheduleReminder(sched *store.Schedule, userID string) {
 	}
 }
 
+func (h *Handler) restorePendingReminders() {
+	if h.rdb == nil {
+		return
+	}
+	now := time.Now()
+	type reminderPayload struct {
+		id, scheduleID, schoolID, userID, title string
+		triggerAt                               time.Time
+	}
+	h.Store.RLock()
+	titles := make(map[string]string, len(h.Store.Schedules))
+	for _, sched := range h.Store.Schedules {
+		titles[sched.ID] = sched.Title
+	}
+	items := make([]reminderPayload, 0)
+	for _, reminder := range h.Store.ScheduleReminders {
+		if reminder.Status != "pending" || reminder.TriggerAt.Before(now) {
+			continue
+		}
+		items = append(items, reminderPayload{
+			id: reminder.ID, scheduleID: reminder.ScheduleID, schoolID: reminder.SchoolID,
+			userID: reminder.UserID, title: titles[reminder.ScheduleID], triggerAt: reminder.TriggerAt,
+		})
+	}
+	h.Store.RUnlock()
+	for _, item := range items {
+		payload, _ := json.Marshal(map[string]string{
+			"id":          item.id,
+			"schedule_id": item.scheduleID,
+			"school_id":   item.schoolID,
+			"user_id":     item.userID,
+			"title":       item.title,
+		})
+		h.rdb.ZAdd(context.Background(), reminderZSetKey, redis.Z{
+			Score:  float64(item.triggerAt.Unix()),
+			Member: string(payload),
+		})
+	}
+}
+
 // calculateReminderTime returns when the reminder should fire.
 func (h *Handler) calculateReminderTime(sched *store.Schedule) time.Time {
 	switch sched.ReminderType {
@@ -476,17 +531,26 @@ func (h *Handler) calculateReminderTime(sched *store.Schedule) time.Time {
 
 // cancelReminders removes all pending reminders for a schedule from Redis.
 func (h *Handler) cancelReminders(scheduleID string) {
-	if h.rdb == nil {
-		return
-	}
 	// Remove from in-memory store
+	h.Store.Lock()
 	var kept []*store.ScheduleReminder
+	var removedIDs []string
 	for _, r := range h.Store.ScheduleReminders {
 		if r.ScheduleID != scheduleID {
 			kept = append(kept, r)
+		} else {
+			removedIDs = append(removedIDs, r.ID)
 		}
 	}
 	h.Store.ScheduleReminders = kept
+	h.Store.Unlock()
+	for _, id := range removedIDs {
+		h.Persist("schedule_reminders:delete", id)
+	}
+
+	if h.rdb == nil {
+		return
+	}
 
 	// Remove from Redis ZSET (scan and remove matching entries)
 	ctx := context.Background()
@@ -541,9 +605,9 @@ func (h *Handler) processDueReminders() {
 			h.Hub.SendToUser(data["school_id"], data["user_id"], rt.Message{
 				Type: "schedule_reminder",
 				Payload: map[string]any{
-					"schedule_id": data["schedule_id"],
-					"title":       data["title"],
-					"message":     fmt.Sprintf("Reminder: %s", data["title"]),
+					"schedule_id":  data["schedule_id"],
+					"title":        data["title"],
+					"message":      fmt.Sprintf("Reminder: %s", data["title"]),
 					"triggered_at": time.Now(),
 				},
 			})
@@ -695,6 +759,10 @@ func (h *Handler) MarkComplete(w http.ResponseWriter, r *http.Request) {
 			h.Store.Unlock()
 			return nil, api.NewControlledError("NOT_FOUND", "Schedule not found.", 404, nil)
 		}
+		if !canAccessSchedule(ctx, target, true) {
+			h.Store.Unlock()
+			return nil, api.NewControlledError("FORBIDDEN", "You can only complete your own schedules.", 403, nil)
+		}
 
 		target.Status = "completed"
 		target.UpdatedAt = time.Now()
@@ -708,4 +776,28 @@ func (h *Handler) MarkComplete(w http.ResponseWriter, r *http.Request) {
 
 		return target, nil
 	}))
+}
+
+func canAccessSchedule(ctx *api.RequestContext, sched *store.Schedule, write bool) bool {
+	if ctx == nil || sched == nil {
+		return false
+	}
+	if ctx.Role == "admin" || ctx.Role == "super_admin" {
+		return true
+	}
+	if ctx.Role != "teacher" {
+		return false
+	}
+	if sched.CreatedBy == ctx.UserID {
+		return true
+	}
+	if write {
+		return false
+	}
+	for _, userID := range sched.AssignedTo {
+		if userID == ctx.UserID {
+			return true
+		}
+	}
+	return false
 }

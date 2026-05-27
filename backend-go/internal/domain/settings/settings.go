@@ -65,6 +65,38 @@ func (h *Handler) findSettings(schoolID string) *store.SchoolSettings {
 	return nil
 }
 
+func (h *Handler) schoolProfileDefaultsLocked(schoolID string) map[string]any {
+	out := map[string]any{}
+	for _, sch := range h.Store.Schools {
+		if sch.SchoolID != schoolID {
+			continue
+		}
+		out["schoolName"] = sch.Name
+		out["email"] = sch.Email
+		out["phone"] = sch.Phone
+		out["address"] = sch.Address
+		out["principalName"] = sch.PrincipalName
+		out["website"] = sch.Website
+		break
+	}
+	return out
+}
+
+func mergeSettingsProfile(defaults map[string]any, profile map[string]any) map[string]any {
+	out := map[string]any{}
+	for k, v := range defaults {
+		if v != nil && v != "" {
+			out[k] = v
+		}
+	}
+	for k, v := range profile {
+		if v != nil && v != "" {
+			out[k] = v
+		}
+	}
+	return out
+}
+
 func cacheKey(schoolID string) string {
 	return fmt.Sprintf("settings:%s", schoolID)
 }
@@ -116,29 +148,24 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		h.Store.RLock()
 		defer h.Store.RUnlock()
 		s := h.findSettings(ctx.SchoolID)
+		defaultProfile := h.schoolProfileDefaultsLocked(ctx.SchoolID)
 		if s == nil {
 			// No settings record yet — seed from the school's signup data
 			// so the admin sees their school name pre-filled.
-			var schoolName string
-			var schoolEmail string
-			for _, sch := range h.Store.Schools {
-				if sch.SchoolID == ctx.SchoolID {
-					schoolName = sch.Name
-					schoolEmail = sch.Email
-					break
-				}
-			}
 			return map[string]any{
 				"school_id": ctx.SchoolID,
-				"profile": map[string]any{
-					"schoolName": schoolName,
-					"email":      schoolEmail,
-				},
-				"branding": nil,
-				"academic":  nil,
+				"profile":   defaultProfile,
+				"branding":  map[string]any{},
+				"academic":  map[string]any{},
 			}, nil
 		}
-		return s, nil
+		return &store.SchoolSettings{
+			SchoolID:  s.SchoolID,
+			Profile:   mergeSettingsProfile(defaultProfile, s.Profile),
+			Branding:  s.Branding,
+			Academic:  s.Academic,
+			UpdatedAt: s.UpdatedAt,
+		}, nil
 	})
 
 	// Marshal once, write the bytes, then push the same bytes into
@@ -235,6 +262,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 			s.Academic = body.Academic
 		}
 		s.UpdatedAt = now
+		h.Persist("school_settings", s)
 		audit.Write(h.Store, ctx, audit.Input{
 			Action: "update", EntityType: "school", EntityID: ctx.SchoolID,
 			After:    s,

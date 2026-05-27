@@ -26,6 +26,14 @@ function toId(value: unknown): string {
   return "";
 }
 
+function firstText(...values: unknown[]): string {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+    if (typeof value === "number") return String(value);
+  }
+  return "";
+}
+
 export function BehaviorCreatePage() {
   const navigate = useNavigate();
   const pathname = useLocation().pathname;
@@ -44,15 +52,26 @@ export function BehaviorCreatePage() {
         const students = Array.isArray(rawData) ? rawData : (rawData?.data ?? []);
 
         return students.map((student: any) => {
-          const fullName = [student.first_name, student.last_name].filter(Boolean).join(" ").trim();
+          const fullName = [
+            firstText(student.first_name, student.firstName),
+            firstText(student.last_name, student.lastName)
+          ].filter(Boolean).join(" ").trim();
+          const displayName = firstText(
+            student.name,
+            student.full_name,
+            student.student_name,
+            fullName,
+            student.admission_no,
+            student.roll_no
+          );
           const classId = toId(student.class_id);
 
           return {
             _id: toId(student._id) || toId(student.id),
-            name: student.name?.trim() || fullName || "Unnamed Student",
+            name: displayName,
             class_id: classId
           };
-        }).filter((student: any) => Boolean(student._id));
+        }).filter((student: any) => Boolean(student._id) && Boolean(student.name));
       }),
       runClasses(async () => {
         const result = await serviceRequest<any>("/api/classes");

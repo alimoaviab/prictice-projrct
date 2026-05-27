@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/eduplexo/backend-go/internal/store"
 	"github.com/jackc/pgx/v5"
@@ -83,6 +84,8 @@ func upsertRow(ctx context.Context, tx pgx.Tx, table string, doc any) error {
 		return upsertStarCollection(ctx, tx, v)
 	case *store.Package:
 		return upsertPackage(ctx, tx, v)
+	case *store.Subscription:
+		return upsertStoreSubscription(ctx, tx, v)
 	case *store.Conversation:
 		return upsertConversation(ctx, tx, v)
 	case *store.ChatMessage:
@@ -125,13 +128,29 @@ func deleteRow(ctx context.Context, tx pgx.Tx, table, id string) error {
 // in-memory state is the authoritative source after a mutation.
 
 func upsertSchool(ctx context.Context, tx pgx.Tx, v *store.School) error {
+	planKey := v.PackageID
+	switch planKey {
+	case "free", "basic", "premium", "enterprise":
+	default:
+		planKey = "free"
+	}
 	_, err := tx.Exec(ctx, `
-		INSERT INTO schools (id, school_id, name, code, status, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7)
+		INSERT INTO schools (id, school_id, name, code, logo_url, contact_email,
+			contact_phone, address, admin_name, admin_email, admin_phone, status,
+			rejection_reason, approved_by, approved_at, plan_key, created_at, updated_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
 		ON CONFLICT (id) DO UPDATE SET
 			school_id=EXCLUDED.school_id, name=EXCLUDED.name, code=EXCLUDED.code,
-			status=EXCLUDED.status, updated_at=EXCLUDED.updated_at
-	`, v.ID, v.SchoolID, v.Name, v.Code, v.Status, v.CreatedAt, v.UpdatedAt)
+			logo_url=EXCLUDED.logo_url, contact_email=EXCLUDED.contact_email,
+			contact_phone=EXCLUDED.contact_phone, address=EXCLUDED.address,
+			admin_name=EXCLUDED.admin_name, admin_email=EXCLUDED.admin_email,
+			admin_phone=EXCLUDED.admin_phone, status=EXCLUDED.status,
+			rejection_reason=EXCLUDED.rejection_reason, approved_by=EXCLUDED.approved_by,
+			approved_at=EXCLUDED.approved_at, updated_at=EXCLUDED.updated_at
+	`, v.ID, v.SchoolID, v.Name, v.Code, v.LogoURL, v.Email,
+		v.Phone, v.Address, v.PrincipalName, v.Email, v.Phone,
+		defaultStr(v.Status, "pending"), v.RejectionReason, v.ApprovedBy, v.ApprovedAt,
+		planKey, v.CreatedAt, v.UpdatedAt)
 	return err
 }
 
@@ -476,18 +495,19 @@ func upsertAnnouncement(ctx context.Context, tx pgx.Tx, v *store.Announcement) e
 func upsertBehavior(ctx context.Context, tx pgx.Tx, v *store.Behavior) error {
 	_, err := tx.Exec(ctx, `
 		INSERT INTO behaviors (id, school_id, student_id, class_id, teacher_id,
-			incident_type, description, severity, action_taken, status,
-			warning_count, parent_notified, notes, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+			category, incident_type, description, severity, action_taken, status,
+			warning_count, parent_notified, notes, attachments, created_at, updated_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
 		ON CONFLICT (id) DO UPDATE SET
-			incident_type=EXCLUDED.incident_type, description=EXCLUDED.description,
+			category=EXCLUDED.category, incident_type=EXCLUDED.incident_type, description=EXCLUDED.description,
 			severity=EXCLUDED.severity, action_taken=EXCLUDED.action_taken,
 			status=EXCLUDED.status, warning_count=EXCLUDED.warning_count,
 			parent_notified=EXCLUDED.parent_notified, notes=EXCLUDED.notes,
+			attachments=EXCLUDED.attachments,
 			updated_at=EXCLUDED.updated_at
 	`, v.ID, v.SchoolID, v.StudentID, v.ClassID, v.TeacherID,
-		v.IncidentType, v.Description, v.Severity, v.ActionTaken, v.Status,
-		v.WarningCount, v.ParentNotified, v.Notes, v.CreatedAt, v.UpdatedAt)
+		defaultStr(v.Category, v.IncidentType), v.IncidentType, v.Description, v.Severity, v.ActionTaken, v.Status,
+		v.WarningCount, v.ParentNotified, v.Notes, v.Attachments, v.CreatedAt, v.UpdatedAt)
 	return err
 }
 
@@ -531,17 +551,18 @@ func upsertEvent(ctx context.Context, tx pgx.Tx, v *store.Event) error {
 func upsertLeave(ctx context.Context, tx pgx.Tx, v *store.Leave) error {
 	_, err := tx.Exec(ctx, `
 		INSERT INTO leaves (id, school_id, requester_type, requester_id, requester_name,
-			leave_type, start_date, end_date, reason, status, attachments,
+			class_id, class_name, leave_type, start_date, end_date, reason, status, attachments,
 			approved_by, approved_at, rejection_reason, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
 		ON CONFLICT (id) DO UPDATE SET
-			leave_type=EXCLUDED.leave_type, start_date=EXCLUDED.start_date,
+			requester_name=EXCLUDED.requester_name, class_id=EXCLUDED.class_id,
+			class_name=EXCLUDED.class_name, leave_type=EXCLUDED.leave_type, start_date=EXCLUDED.start_date,
 			end_date=EXCLUDED.end_date, reason=EXCLUDED.reason, status=EXCLUDED.status,
 			attachments=EXCLUDED.attachments, approved_by=EXCLUDED.approved_by,
 			approved_at=EXCLUDED.approved_at, rejection_reason=EXCLUDED.rejection_reason,
 			updated_at=EXCLUDED.updated_at
 	`, v.ID, v.SchoolID, v.RequesterType, v.RequesterID, v.RequesterName,
-		v.LeaveType, v.StartDate, v.EndDate, v.Reason, v.Status, v.Attachments,
+		nullableString(v.ClassID), v.ClassName, v.LeaveType, v.StartDate, v.EndDate, v.Reason, v.Status, v.Attachments,
 		nullableString(v.ApprovedBy), v.ApprovedAt, v.RejectionReason, v.CreatedAt, v.UpdatedAt)
 	return err
 }
@@ -937,6 +958,79 @@ func upsertPackage(ctx context.Context, tx pgx.Tx, v *store.Package) error {
 	return err
 }
 
+func upsertStoreSubscription(ctx context.Context, tx pgx.Tx, v *store.Subscription) error {
+	start := v.CreatedAt
+	if start.IsZero() {
+		start = time.Now()
+	}
+	end := v.NextRenewal
+	if end.IsZero() {
+		end = start.AddDate(0, 0, 14)
+	}
+	updated := v.UpdatedAt
+	if updated.IsZero() {
+		updated = start
+	}
+	planName := strings.TrimPrefix(strings.ToLower(strings.TrimSpace(v.PackageID)), "plan_")
+	if planName == "" || planName == "trial" {
+		planName = "growth"
+	}
+	status := defaultStr(v.Status, "active")
+	studentLimit := 500
+	price := 0
+	switch planName {
+	case "starter":
+		studentLimit = 200
+		price = 4000
+	case "growth":
+		studentLimit = 500
+		price = 9000
+	case "custom", "enterprise":
+		studentLimit = 800
+		price = 0
+	}
+	isTrial := strings.EqualFold(v.PackageID, "trial") || strings.EqualFold(status, "trial")
+	trialStart := (*time.Time)(nil)
+	trialEnd := (*time.Time)(nil)
+	if isTrial {
+		trialStart = &start
+		trialEnd = &end
+		price = 0
+	}
+
+	if _, err := tx.Exec(ctx, `
+		UPDATE subscriptions
+		SET status='cancelled', updated_at=NOW()
+		WHERE school_id=$1 AND status IN ('active','trial') AND id<>$2
+	`, v.SchoolID, v.ID); err != nil {
+		return err
+	}
+
+	_, err := tx.Exec(ctx, `
+		INSERT INTO subscriptions (id, school_id, plan_name, student_limit, price, currency,
+			start_date, end_date, status, is_trial, trial_used, trial_start_date, trial_end_date,
+			created_at, updated_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+		ON CONFLICT (id) DO UPDATE SET
+			plan_name=EXCLUDED.plan_name, student_limit=EXCLUDED.student_limit,
+			price=EXCLUDED.price, currency=EXCLUDED.currency, start_date=EXCLUDED.start_date,
+			end_date=EXCLUDED.end_date, status=EXCLUDED.status, is_trial=EXCLUDED.is_trial,
+			trial_used=EXCLUDED.trial_used, trial_start_date=EXCLUDED.trial_start_date,
+			trial_end_date=EXCLUDED.trial_end_date, updated_at=EXCLUDED.updated_at
+	`, v.ID, v.SchoolID, planName, studentLimit, price, "PKR", start, end, status,
+		isTrial, isTrial, trialStart, trialEnd, start, updated)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(ctx, `
+		INSERT INTO subscription_history (id, school_id, plan_name, student_limit, amount,
+			payment_status, start_date, end_date, action, created_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+		ON CONFLICT (id) DO NOTHING
+	`, store.NewID("sh"), v.SchoolID, planName, studentLimit, price, "paid", start, end,
+		map[bool]string{true: "trial", false: "subscribe"}[isTrial], start)
+	return err
+}
 
 // ─── Messaging UPSERTs ───────────────────────────────────────────────────
 
@@ -1016,7 +1110,8 @@ func upsertSchedule(ctx context.Context, tx pgx.Tx, v *store.Schedule) error {
 			color=EXCLUDED.color, location=EXCLUDED.location,
 			reminder_type=EXCLUDED.reminder_type, reminder_sent_at=EXCLUDED.reminder_sent_at,
 			recurring_type=EXCLUDED.recurring_type, recurring_end=EXCLUDED.recurring_end,
-			assigned_to=EXCLUDED.assigned_to, notes=EXCLUDED.notes,
+			recurring_parent=EXCLUDED.recurring_parent, assigned_to=EXCLUDED.assigned_to,
+			attachments=EXCLUDED.attachments, notes=EXCLUDED.notes,
 			updated_at=EXCLUDED.updated_at
 	`, v.ID, v.SchoolID, v.Title, v.Description, v.StartDatetime, v.EndDatetime,
 		v.AllDay, v.EventType, v.Priority, v.Status, v.Color, v.Location,

@@ -351,12 +351,19 @@ export function HomeworkPage({ role, studentId }: HomeworkPageProps) {
                 subtitle={hw.subject_name || hw.subject}
                 status={{ label: statusLabel, accent }}
                 hoverActions={[
-                  {
-                    label: "View submissions",
-                    icon: "visibility",
-                    onClick: () => navigate(`${basePath}/${id}/review`),
-                    accent: "blue",
-                  },
+                  ...(canCreate
+                    ? [{
+                        label: "View submissions",
+                        icon: "visibility",
+                        onClick: () => navigate(`${basePath}/${id}/review`),
+                        accent: "blue" as const,
+                      }]
+                    : [{
+                        label: "Open",
+                        icon: "visibility",
+                        onClick: () => navigate(`${basePath}/${id}`),
+                        accent: "blue" as const,
+                      }]),
                   ...(canCreate
                     ? ([
                         {

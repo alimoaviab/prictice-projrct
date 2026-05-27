@@ -39,6 +39,7 @@ import (
 	"github.com/eduplexo/backend-go/internal/audit"
 	"github.com/eduplexo/backend-go/internal/auth"
 	"github.com/eduplexo/backend-go/internal/cache"
+	"github.com/eduplexo/backend-go/internal/domain/access"
 	"github.com/eduplexo/backend-go/internal/domain/tenant"
 	"github.com/eduplexo/backend-go/internal/store"
 	"github.com/go-chi/chi/v5"
@@ -303,12 +304,12 @@ func (h *Handler) hydrate(rows []*store.Timetable) []map[string]any {
 				"teacher_id":       session.TeacherID,
 				"teacher_name":     teacherName,
 				"day_of_week":      storeToISO(session.Day),
-				"period_number":   session.Period,
-				"start_time":      session.StartsAt,
-				"end_time":        session.EndsAt,
-				"room":            session.Room,
-				"created_at":      t.CreatedAt,
-				"updated_at":      t.UpdatedAt,
+				"period_number":    session.Period,
+				"start_time":       session.StartsAt,
+				"end_time":         session.EndsAt,
+				"room":             session.Room,
+				"created_at":       t.CreatedAt,
+				"updated_at":       t.UpdatedAt,
 				"academic_year_id": t.AcademicYearID,
 			})
 		}
@@ -347,33 +348,52 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		}
 		yearID := tenant.ResolveAcademicYearID(h.Store, ctx, q.Get("academic_year_id"))
 
+		allowedClassIDs := map[string]bool{}
+
 		// Student scoping.
 		if ctx.Role == "student" {
 			h.Store.RLock()
-			for _, s := range h.Store.Students {
-				if s.SchoolID == ctx.SchoolID && s.UserID == ctx.UserID {
-					classFilter = s.ClassID
-					break
+			if student := access.StudentProfileLocked(h.Store, ctx); student != nil {
+				classFilter = student.ClassID
+				allowedClassIDs[student.ClassID] = true
+			}
+			h.Store.RUnlock()
+		}
+
+		if ctx.Role == "parent" {
+			h.Store.RLock()
+			for studentID := range access.ParentStudentIDsLocked(h.Store, ctx) {
+				for _, student := range h.Store.Students {
+					if student.ID == studentID && student.SchoolID == ctx.SchoolID && student.ClassID != "" {
+						allowedClassIDs[student.ClassID] = true
+					}
 				}
 			}
 			h.Store.RUnlock()
+			if classFilter != "" && !allowedClassIDs[classFilter] {
+				return []map[string]any{}, nil
+			}
 		}
 
 		// Teacher scoping: resolve teacher profile for post-query filtering.
 		var teacherProfileID string
 		if ctx.Role == "teacher" {
 			h.Store.RLock()
-			for _, t := range h.Store.Teachers {
-				if t.SchoolID == ctx.SchoolID && t.UserID == ctx.UserID {
-					teacherProfileID = t.ID
-					break
+			if teacher := access.TeacherProfileLocked(h.Store, ctx); teacher != nil {
+				teacherProfileID = teacher.ID
+				for classID := range access.TeacherClassIDsLocked(h.Store, ctx) {
+					allowedClassIDs[classID] = true
 				}
 			}
 			h.Store.RUnlock()
+			if classFilter != "" && !allowedClassIDs[classFilter] {
+				return []map[string]any{}, nil
+			}
 		}
 
 		cacheKey := h.listKey(ctx.SchoolID, yearID, classFilter)
-		if h.Cache != nil && h.Cache.Available() && !api.ParsePagination(q).Enabled {
+		cacheable := h.Cache != nil && h.Cache.Available() && !api.ParsePagination(q).Enabled && access.IsPrivileged(ctx)
+		if cacheable {
 			if b, err := h.Cache.Get(r.Context(), cacheKey); err == nil && b != nil {
 				w.Header().Set("X-Cache", "HIT")
 				var cached []map[string]any
@@ -385,18 +405,30 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 
 		hydrated := h.queryAndHydrate(ctx.SchoolID, yearID, classFilter)
 
-		// Teacher scoping: filter to only periods assigned to this teacher.
-		if teacherProfileID != "" {
+		if ctx.Role == "teacher" {
 			filtered := make([]map[string]any, 0, len(hydrated))
 			for _, rec := range hydrated {
-				if tid, _ := rec["teacher_id"].(string); tid == teacherProfileID {
+				recClassID, _ := rec["class_id"].(string)
+				recTeacherID, _ := rec["teacher_id"].(string)
+				if recTeacherID == teacherProfileID || allowedClassIDs[recClassID] {
 					filtered = append(filtered, rec)
 				}
 			}
 			hydrated = filtered
 		}
 
-		if h.Cache != nil && h.Cache.Available() && !api.ParsePagination(q).Enabled && teacherProfileID == "" {
+		if ctx.Role == "parent" || ctx.Role == "student" {
+			filtered := make([]map[string]any, 0, len(hydrated))
+			for _, rec := range hydrated {
+				recClassID, _ := rec["class_id"].(string)
+				if allowedClassIDs[recClassID] {
+					filtered = append(filtered, rec)
+				}
+			}
+			hydrated = filtered
+		}
+
+		if cacheable {
 			if b, err := json.Marshal(hydrated); err == nil {
 				_ = h.Cache.Set(r.Context(), cacheKey, b, listCacheTTL)
 			}
@@ -466,6 +498,9 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 			if t.ID != ttID && t.ID != id {
 				continue
 			}
+			if !access.CanAccessClassLocked(h.Store, ctx, t.ClassID) {
+				return nil, api.NewControlledError("FORBIDDEN", "You can only access assigned timetables.", 403, nil)
+			}
 			if !isSynth {
 				return h.hydrate([]*store.Timetable{t})[0], nil
 			}
@@ -515,11 +550,29 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 					fmt.Sprintf("session #%d: end_time must be after start_time.", i+1), 400, nil)
 			}
 		}
+		if ctx.Role == "teacher" {
+			h.Store.RLock()
+			teacher := access.TeacherProfileLocked(h.Store, ctx)
+			canAccessClass := teacher != nil && access.CanAccessClassLocked(h.Store, ctx, body.ClassID)
+			h.Store.RUnlock()
+			if teacher == nil {
+				return nil, api.NewControlledError("FORBIDDEN", "Teacher profile not found for this user.", 403, nil)
+			}
+			if !canAccessClass {
+				return nil, api.NewControlledError("FORBIDDEN", "You can only manage timetables for assigned classes.", 403, nil)
+			}
+			for i := range sessions {
+				sessions[i].TeacherID = teacher.ID
+			}
+		}
 
 		yearID := tenant.ResolveAcademicYearID(h.Store, ctx, "")
 		now := time.Now()
 
 		// Conflict detection (server-side, authoritative).
+		if conflicts := detectCandidateConflicts(body.ClassID, sessions); len(conflicts) > 0 {
+			return nil, api.NewControlledError("CONFLICT", "Schedule conflict detected.", 409, map[string]any{"conflicts": conflicts})
+		}
 		if conflicts := h.detectConflicts(ctx.SchoolID, yearID, body.ClassID, sessions, ""); len(conflicts) > 0 {
 			return nil, api.NewControlledError("CONFLICT", "Schedule conflict detected.", 409, map[string]any{"conflicts": conflicts})
 		}
@@ -621,6 +674,21 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		}
 		ttID, day, period, isSynth := parseSyntheticID(id)
 		yearID := tenant.ResolveAcademicYearID(h.Store, ctx, "")
+		patch := body.sessions(h)
+
+		var teacherProfileID string
+		if ctx.Role == "teacher" {
+			h.Store.RLock()
+			teacher := access.TeacherProfileLocked(h.Store, ctx)
+			h.Store.RUnlock()
+			if teacher == nil {
+				return nil, api.NewControlledError("FORBIDDEN", "Teacher profile not found for this user.", 403, nil)
+			}
+			teacherProfileID = teacher.ID
+			for i := range patch {
+				patch[i].TeacherID = teacherProfileID
+			}
+		}
 
 		h.Store.Lock()
 		var target *store.Timetable
@@ -637,9 +705,12 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 			h.Store.Unlock()
 			return nil, api.NewControlledError("NOT_FOUND", "Timetable entry not found.", 404, nil)
 		}
+		if ctx.Role == "teacher" && !access.CanAccessClassLocked(h.Store, ctx, target.ClassID) {
+			h.Store.Unlock()
+			return nil, api.NewControlledError("FORBIDDEN", "You can only manage timetables for assigned classes.", 403, nil)
+		}
 		before := *target
 
-		patch := body.sessions(h)
 		if isSynth {
 			// Mutate the single session matching {day, period}; if patch is
 			// empty or doesn't contain a session, treat body as a partial
@@ -657,6 +728,9 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 						break
 					}
 				}
+			}
+			if teacherProfileID != "" {
+				newSess.TeacherID = teacherProfileID
 			}
 			if newSess.StartsAt != "" && newSess.EndsAt != "" && !isValidTimeRange(newSess.StartsAt, newSess.EndsAt) {
 				h.Store.Unlock()
@@ -684,12 +758,20 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		} else {
 			// Whole-row update (rare path).
 			if body.ClassID != "" {
+				if ctx.Role == "teacher" && !access.CanAccessClassLocked(h.Store, ctx, body.ClassID) {
+					h.Store.Unlock()
+					return nil, api.NewControlledError("FORBIDDEN", "You can only move timetables to assigned classes.", 403, nil)
+				}
 				target.ClassID = body.ClassID
 			}
 			if body.Status != "" {
 				target.Status = body.Status
 			}
 			if len(patch) > 0 {
+				if conflicts := detectCandidateConflicts(target.ClassID, patch); len(conflicts) > 0 {
+					h.Store.Unlock()
+					return nil, api.NewControlledError("CONFLICT", "Schedule conflict detected.", 409, map[string]any{"conflicts": conflicts})
+				}
 				target.Sessions = patch
 			}
 		}
@@ -788,21 +870,21 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 
 // SummaryResponse is the lightweight DTO consumed by the admin dashboard.
 type SummaryResponse struct {
-	TotalClasses           int              `json:"totalClasses"`
-	ClassesScheduled       int              `json:"classesScheduled"`
-	ClassesUnscheduled     int              `json:"classesUnscheduled"`
-	TotalPeriodsToday      int              `json:"totalPeriodsToday"`
-	CompletedPeriodsToday  int              `json:"completedPeriodsToday"`
-	UpcomingPeriodsToday   int              `json:"upcomingPeriodsToday"`
-	ActivePeriodsNow       int              `json:"activePeriodsNow"`
-	TotalTeachers          int              `json:"totalTeachers"`
-	TeachersTeachingNow    int              `json:"teachersTeachingNow"`
-	FreeTeachersNow        int              `json:"freeTeachersNow"`
-	ConflictsCount         int              `json:"conflictsCount"`
-	CurrentPeriod          *map[string]any  `json:"currentPeriod,omitempty"`
-	NextPeriod             *map[string]any  `json:"nextPeriod,omitempty"`
-	UnscheduledClasses     []map[string]any `json:"unscheduledClasses"`
-	GeneratedAt            time.Time        `json:"generatedAt"`
+	TotalClasses          int              `json:"totalClasses"`
+	ClassesScheduled      int              `json:"classesScheduled"`
+	ClassesUnscheduled    int              `json:"classesUnscheduled"`
+	TotalPeriodsToday     int              `json:"totalPeriodsToday"`
+	CompletedPeriodsToday int              `json:"completedPeriodsToday"`
+	UpcomingPeriodsToday  int              `json:"upcomingPeriodsToday"`
+	ActivePeriodsNow      int              `json:"activePeriodsNow"`
+	TotalTeachers         int              `json:"totalTeachers"`
+	TeachersTeachingNow   int              `json:"teachersTeachingNow"`
+	FreeTeachersNow       int              `json:"freeTeachersNow"`
+	ConflictsCount        int              `json:"conflictsCount"`
+	CurrentPeriod         *map[string]any  `json:"currentPeriod,omitempty"`
+	NextPeriod            *map[string]any  `json:"nextPeriod,omitempty"`
+	UnscheduledClasses    []map[string]any `json:"unscheduledClasses"`
+	GeneratedAt           time.Time        `json:"generatedAt"`
 }
 
 func (h *Handler) Summary(w http.ResponseWriter, r *http.Request) {
@@ -1015,17 +1097,66 @@ func jsToISO(jsDay int) int {
 
 // Conflict is one detected scheduling collision.
 type Conflict struct {
-	Type           string `json:"type"` // "teacher" | "room" | "class"
-	Day            int    `json:"day_of_week"`
-	Period         int    `json:"period_number"`
-	StartTime      string `json:"start_time"`
-	EndTime        string `json:"end_time"`
-	ClassID        string `json:"class_id,omitempty"`
-	ClassName      string `json:"class_name,omitempty"`
-	TeacherID      string `json:"teacher_id,omitempty"`
-	Room           string `json:"room,omitempty"`
+	Type                string `json:"type"` // "teacher" | "room" | "class"
+	Day                 int    `json:"day_of_week"`
+	Period              int    `json:"period_number"`
+	StartTime           string `json:"start_time"`
+	EndTime             string `json:"end_time"`
+	ClassID             string `json:"class_id,omitempty"`
+	ClassName           string `json:"class_name,omitempty"`
+	TeacherID           string `json:"teacher_id,omitempty"`
+	Room                string `json:"room,omitempty"`
 	ExistingTimetableID string `json:"existing_timetable_id,omitempty"`
-	Message        string `json:"message"`
+	Message             string `json:"message"`
+}
+
+func detectCandidateConflicts(classID string, candidates []store.TimetableSession) []Conflict {
+	out := make([]Conflict, 0)
+	for i := 0; i < len(candidates); i++ {
+		a := candidates[i]
+		aStart, aStartOK := parseTimeMinutes(a.StartsAt)
+		aEnd, aEndOK := parseTimeMinutes(a.EndsAt)
+		if !aStartOK || !aEndOK || aEnd <= aStart {
+			continue
+		}
+		for j := i + 1; j < len(candidates); j++ {
+			b := candidates[j]
+			if a.Day != b.Day {
+				continue
+			}
+			bStart, bStartOK := parseTimeMinutes(b.StartsAt)
+			bEnd, bEndOK := parseTimeMinutes(b.EndsAt)
+			if !bStartOK || !bEndOK || bEnd <= bStart {
+				continue
+			}
+			overlaps := aStart < bEnd && aEnd > bStart
+			samePeriod := a.Period != 0 && a.Period == b.Period
+			if !overlaps && !samePeriod {
+				continue
+			}
+			iso := storeToISO(a.Day)
+			out = append(out, Conflict{
+				Type: "class", Day: iso, Period: a.Period,
+				StartTime: a.StartsAt, EndTime: a.EndsAt, ClassID: classID,
+				Message: "This request contains overlapping periods for the same class.",
+			})
+			if a.TeacherID != "" && a.TeacherID == b.TeacherID {
+				out = append(out, Conflict{
+					Type: "teacher", Day: iso, Period: a.Period,
+					StartTime: a.StartsAt, EndTime: a.EndsAt, ClassID: classID, TeacherID: a.TeacherID,
+					Message: "This request assigns the same teacher to overlapping periods.",
+				})
+			}
+			if a.Room != "" && a.Room == b.Room {
+				out = append(out, Conflict{
+					Type: "room", Day: iso, Period: a.Period,
+					StartTime: a.StartsAt, EndTime: a.EndsAt, ClassID: classID, Room: a.Room,
+					Message: "This request assigns the same room to overlapping periods.",
+				})
+			}
+		}
+	}
+	return out
 }
 
 // detectConflicts checks each candidate session against the rest of the
@@ -1079,7 +1210,7 @@ func (h *Handler) detectConflicts(schoolID, yearID, classID string, candidates [
 							StartTime: c.StartsAt, EndTime: c.EndsAt,
 							ClassID: t.ClassID, ClassName: classByID[t.ClassID],
 							ExistingTimetableID: t.ID,
-							Message: fmt.Sprintf("This class already has a period at %s–%s.", s.StartsAt, s.EndsAt),
+							Message:             fmt.Sprintf("This class already has a period at %s–%s.", s.StartsAt, s.EndsAt),
 						})
 					}
 					if c.TeacherID != "" && c.TeacherID == s.TeacherID {
@@ -1108,7 +1239,10 @@ func (h *Handler) detectConflicts(schoolID, yearID, classID string, candidates [
 }
 
 func (h *Handler) countConflicts(schoolID, yearID string) int {
-	type cell struct{ tt *store.Timetable; s store.TimetableSession }
+	type cell struct {
+		tt *store.Timetable
+		s  store.TimetableSession
+	}
 	h.Store.RLock()
 	defer h.Store.RUnlock()
 	cells := make([]cell, 0)

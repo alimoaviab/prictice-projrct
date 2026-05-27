@@ -10,7 +10,7 @@ import { ResultRow } from "../types/result.types";
 import { useClasses } from "../../classes/hooks/useClasses";
 import { useExams } from "../../exams/hooks/useExams";
 import { useQueryParams } from "@/hooks/useQueryParams";
-import { exportMarksheet } from "@/utils/marksheet";
+import { exportMarksheet, exportExamMarksheet } from "@/utils/marksheet";
 import { showToast } from "@/utils/toast";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -21,8 +21,9 @@ export function ResultPage() {
     const { currentParams, updateQuery } = useQueryParams();
     const exam_id = currentParams.get("exam_id") || "all";
     const class_id = currentParams.get("class_id") || "all";
-    const today = new Date().toISOString().split('T')[0];
-    const date_filter = currentParams.get("date") || today;
+    const student_id = currentParams.get("student_id") || "all";
+    const subject_id = currentParams.get("subject_id") || "all";
+    const date_filter = currentParams.get("date") || "";
     
     const { user } = useAuth();
     const schoolName = (user as any)?.schoolName || (user as any)?.school_name || "School";
@@ -31,7 +32,10 @@ export function ResultPage() {
     const { state: examListState } = useExams(class_id !== "all" ? { class_id } : {});
 
     const { state, addResult } = useResults({ 
-        exam_id: exam_id !== "all" ? exam_id : undefined 
+        exam_id: exam_id !== "all" ? exam_id : undefined,
+        class_id: class_id !== "all" ? class_id : undefined,
+        student_id: student_id !== "all" ? student_id : undefined,
+        subject_id: subject_id !== "all" ? subject_id : undefined,
     });
     const [searchQuery, setSearchQuery] = useState(currentParams.get("search") || "");
     const [viewMode, setViewMode] = useState<"grid" | "list">("list");
@@ -39,12 +43,16 @@ export function ResultPage() {
     
     const [classFilter, setClassFilter] = useState(class_id);
     const [examFilter, setExamFilter] = useState(exam_id);
+    const [studentFilter, setStudentFilter] = useState(student_id);
+    const [subjectFilter, setSubjectFilter] = useState(subject_id);
     const [dateFilter, setDateFilter] = useState(date_filter);
 
     useEffect(() => {
         setSearchQuery(currentParams.get("search") || "");
         setClassFilter(currentParams.get("class_id") || "all");
         setExamFilter(currentParams.get("exam_id") || "all");
+        setStudentFilter(currentParams.get("student_id") || "all");
+        setSubjectFilter(currentParams.get("subject_id") || "all");
         setDateFilter(currentParams.get("date") || "");
     }, [currentParams.toString()]);
 
@@ -99,11 +107,13 @@ export function ResultPage() {
                 (row.class_name || "").toLowerCase().includes(q);
             
             const classMatch = classFilter === "all" ? true : row.class_id === classFilter;
+            const studentMatch = studentFilter === "all" ? true : row.student_id === studentFilter;
+            const subjectMatch = subjectFilter === "all" ? true : (row.subjects || []).some((s: any) => s.subject_id === subjectFilter);
             const dateMatch = dateFilter === "" ? true : row.graded_at?.split('T')[0] === dateFilter;
 
-            return queryMatch && classMatch && dateMatch;
+            return queryMatch && classMatch && studentMatch && subjectMatch && dateMatch;
         });
-    }, [state.data, searchQuery, classFilter, dateFilter]);
+    }, [state.data, searchQuery, classFilter, studentFilter, subjectFilter, dateFilter]);
 
     const columns: DataTableColumn<ResultRow>[] = [
         {
@@ -205,6 +215,17 @@ export function ResultPage() {
         class_id: item.class_id,
         label: `${item.admission_no} - ${item.first_name} ${item.last_name}`.trim()
     }));
+    const subjectOptions = useMemo(() => {
+        const seen = new Map<string, string>();
+        (state.data || []).forEach((row) => {
+            (row.subjects || []).forEach((subject: any) => {
+                if (subject.subject_id && !seen.has(subject.subject_id)) {
+                    seen.set(subject.subject_id, subject.subject_name || subject.subject_id);
+                }
+            });
+        });
+        return Array.from(seen.entries()).map(([id, label]) => ({ id, label }));
+    }, [state.data]);
 
     return (
         <div className="space-y-6 relative min-h-[80vh] pb-10">
@@ -250,7 +271,9 @@ export function ResultPage() {
                             const val = e.target.value;
                             setClassFilter(val);
                             setExamFilter("all");
-                            updateQuery({ class_id: val, exam_id: "all" });
+                            setStudentFilter("all");
+                            setSubjectFilter("all");
+                            updateQuery({ class_id: val, exam_id: "all", student_id: "all", subject_id: "all" });
                         }}
                         className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-[10px] font-bold text-slate-600 outline-none cursor-pointer transition-all hover:border-slate-300 focus:border-blue-400"
                     >
@@ -276,6 +299,38 @@ export function ResultPage() {
                         ))}
                     </select>
 
+                    <select
+                        value={studentFilter}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            setStudentFilter(val);
+                            updateQuery({ student_id: val });
+                        }}
+                        className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-[10px] font-bold text-slate-600 outline-none cursor-pointer transition-all hover:border-slate-300 focus:border-blue-400"
+                    >
+                        <option value="all">All Students</option>
+                        {studentOptions
+                            .filter((s) => classFilter === "all" || s.class_id === classFilter)
+                            .map((s) => (
+                                <option key={s.id} value={s.id}>{s.label}</option>
+                            ))}
+                    </select>
+
+                    <select
+                        value={subjectFilter}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            setSubjectFilter(val);
+                            updateQuery({ subject_id: val });
+                        }}
+                        className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-[10px] font-bold text-slate-600 outline-none cursor-pointer transition-all hover:border-slate-300 focus:border-blue-400"
+                    >
+                        <option value="all">All Subjects</option>
+                        {subjectOptions.map((s) => (
+                            <option key={s.id} value={s.id}>{s.label}</option>
+                        ))}
+                    </select>
+
                     <input 
                         type="date"
                         value={dateFilter}
@@ -290,7 +345,10 @@ export function ResultPage() {
 
                 <div className="flex items-center gap-3">
                     <button
-                        onClick={() => window.print()}
+                        onClick={() => {
+                            exportExamMarksheet(filteredRows, { schoolName });
+                            showToast("Generating printable report…", "info");
+                        }}
                         className="h-9 px-4 rounded-xl border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all flex items-center gap-2 no-print"
                     >
                         <AppIcon name="Printer" size={16} />

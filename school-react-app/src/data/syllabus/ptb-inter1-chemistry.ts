@@ -1,0 +1,223 @@
+/**
+ * PTB Inter Part-I Chemistry Syllabus
+ * 14 chapters — "(SMART)" preserved exactly
+ * Note: some topic numbers are non-sequential (skipped as per source)
+ */
+
+export interface Chapter { id: string; code: string; title: string; type: "chapter"; }
+export interface Unit { id: string; title: string; type: "unit"; chapters: Chapter[]; }
+
+export const PTB_INTER1_CHEMISTRY: Unit[] = [
+  {
+    id: "chap-1",
+    title: "CHAP 1: Periodic Table and Periodic Properties",
+    type: "unit",
+    chapters: [
+      { id: "1.3",  code: "1.3",  title: "METALS, NON METALS AND METALLOIDS (SMART)",                              type: "chapter" },
+      { id: "1.6",  code: "1.6",  title: "PERIODIC ARRANGEMENT AND ELECTRONIC CONFIGURATION (SMART)",             type: "chapter" },
+      { id: "1.7",  code: "1.7",  title: "PERIODICITY OF PROPERTIES (SMART)",                                     type: "chapter" },
+      { id: "1.8",  code: "1.8",  title: "REACTIONS OF SODIUM AND MAGNESIUM (SMART)",                             type: "chapter" },
+      { id: "1.9",  code: "1.9",  title: "TRENDS IN BONDING IN OXIDES AND CHLORIDES OF PERIOD 3 (SMART)",        type: "chapter" },
+      { id: "1.10", code: "1.10", title: "VARIATION IN OXIDATION NUMBER IN OXIDES AND CHLORIDES (SMART)",        type: "chapter" },
+    ],
+  },
+  {
+    id: "chap-2",
+    title: "CHAP 2: Atomic Structure",
+    type: "unit",
+    chapters: [
+      { id: "2.1", code: "2.1", title: "ATOMIC NUMBER, PROTON NUMBER AND NUCLEON NUMBER; IDENTITY OF AN ELEMENT (SMART)", type: "chapter" },
+      { id: "2.2", code: "2.2", title: "EFFECT OF ELECTRIC FIELD AND FUNDAMENTAL PARTICLES (SMART)",                      type: "chapter" },
+      { id: "2.3", code: "2.3", title: "EXPERIMENTAL EVIDENCES FOR THE ELECTRONIC CONFIGURATION (SMART)",                type: "chapter" },
+      { id: "2.4", code: "2.4", title: "QUANTUM NUMBERS (SMART)",                                                         type: "chapter" },
+      { id: "2.5", code: "2.5", title: "SHAPES OF ATOMIC ORBITALS (SMART)",                                               type: "chapter" },
+      { id: "2.6", code: "2.6", title: "ELECTRONIC CONFIGURATION (SMART)",                                                type: "chapter" },
+    ],
+  },
+  {
+    id: "chap-3",
+    title: "CHAP 3: Chemical Bonding",
+    type: "unit",
+    chapters: [
+      { id: "3.6", code: "3.6", title: "VALENCE BOND THEORY (VBT) (SMART)",                                 type: "chapter" },
+      { id: "3.7", code: "3.7", title: "ATOMIC ORBITAL HYBRIDIZATION (SMART)",                              type: "chapter" },
+      { id: "3.8", code: "3.8", title: "VALENCE SHELL ELECTRON PAIR REPULSION MODEL (VSEPR) (SMART)",      type: "chapter" },
+      { id: "3.9", code: "3.9", title: "MOLECULAR ORBITAL THEORY (MOT) (SMART)",                           type: "chapter" },
+    ],
+  },
+  {
+    id: "chap-4",
+    title: "CHAP 4: Stoichiometry",
+    type: "unit",
+    chapters: [
+      { id: "4.1", code: "4.1", title: "CONCEPT OF MOLE (SMART)",                                                          type: "chapter" },
+      { id: "4.2", code: "4.2", title: "RELATIONSHIP BETWEEN MOLE, MOLAR MASS AND AVOGADRO'S NUMBER (SMART)",             type: "chapter" },
+      { id: "4.3", code: "4.3", title: "MOLAR VOLUME (SMART)",                                                             type: "chapter" },
+      { id: "4.4", code: "4.4", title: "MOLAR MASS AND DENSITY OF GASES (SMART)",                                          type: "chapter" },
+      { id: "4.5", code: "4.5", title: "MOLAR CONCENTRATION (SMART)",                                                      type: "chapter" },
+      { id: "4.6", code: "4.6", title: "STOICHIOMETRIC RELATIONSHIPS (SMART)",                                             type: "chapter" },
+      { id: "4.8", code: "4.8", title: "THEORETICAL YIELD AND ACTUAL YIELD (SMART)",                                       type: "chapter" },
+    ],
+  },
+  {
+    id: "chap-5",
+    title: "CHAP 5: States and Phases of Matter",
+    type: "unit",
+    chapters: [
+      { id: "5.1",  code: "5.1",  title: "PROPERTIES OF GASES (SMART)",         type: "chapter" },
+      { id: "5.2",  code: "5.2",  title: "IDEAL GAS EQUATION (SMART)",          type: "chapter" },
+      { id: "5.3",  code: "5.3",  title: "PROPERTIES OF LIQUIDS (SMART)",       type: "chapter" },
+      { id: "5.4",  code: "5.4",  title: "INTERMOLECULAR FORCES (SMART)",       type: "chapter" },
+      { id: "5.5",  code: "5.5",  title: "SURFACE TENSION OF LIQUIDS (SMART)",  type: "chapter" },
+      { id: "5.6",  code: "5.6",  title: "VISCOSITY OF LIQUIDS (SMART)",        type: "chapter" },
+      { id: "5.7",  code: "5.7",  title: "EVAPORATION (SMART)",                 type: "chapter" },
+      { id: "5.8",  code: "5.8",  title: "VAPOUR PRESSURE (SMART)",             type: "chapter" },
+      { id: "5.9",  code: "5.9",  title: "BOILING POINT (SMART)",               type: "chapter" },
+      { id: "5.12", code: "5.12", title: "TYPES OF SOLIDS (SMART)",             type: "chapter" },
+      { id: "5.13", code: "5.13", title: "LIQUID CRYSTALS (SMART)",             type: "chapter" },
+    ],
+  },
+  {
+    id: "chap-6",
+    title: "CHAP 6: Chemical Energetics",
+    type: "unit",
+    chapters: [
+      { id: "6.1",  code: "6.1",  title: "ENTHALPY CHANGE (SMART)",                                           type: "chapter" },
+      { id: "6.2",  code: "6.2",  title: "ENERGY PROFILE DIAGRAM (SMART)",                                    type: "chapter" },
+      { id: "6.3",  code: "6.3",  title: "STANDING ENTHALPY CHANGES (SMART)",                                 type: "chapter" },
+      { id: "6.4",  code: "6.4",  title: "BOND ENERGY (BOND DISSOCIATION ENERGY) AND ENTHALPY CHANGES (SMART)", type: "chapter" },
+      { id: "6.5",  code: "6.5",  title: "ENTHALPY CHANGE OF REACTIONS, AND CHEMICAL BONDS (SMART)",         type: "chapter" },
+      { id: "6.6",  code: "6.6",  title: "MEASUREMENT OF ENTHALPY CHANGE OF A REACTION (SMART)",             type: "chapter" },
+      { id: "6.7",  code: "6.7",  title: "ENTHALPY CHANGE AND CALORIE CONTENT OF FOOD (SMART)",              type: "chapter" },
+      { id: "6.8",  code: "6.8",  title: "HESS' LAW OF HEAT SUMMATION (SMART)",                              type: "chapter" },
+      { id: "6.9",  code: "6.9",  title: "ENERGETICS OF SOLUTION (SMART)",                                    type: "chapter" },
+      { id: "6.10", code: "6.10", title: "BORN-HABER CYCLE (SMART)",                                         type: "chapter" },
+    ],
+  },
+  {
+    id: "chap-7",
+    title: "CHAP 7: Reaction Kinetics",
+    type: "unit",
+    chapters: [
+      { id: "7.1", code: "7.1", title: "COLLISION THEORY (SMART)",                                   type: "chapter" },
+      { id: "7.2", code: "7.2", title: "RATE OF REACTION (SMART)",                                   type: "chapter" },
+      { id: "7.3", code: "7.3", title: "FACTORS AFFECTING RATE OF CHEMICAL REACTION (SMART)",       type: "chapter" },
+      { id: "7.4", code: "7.4", title: "RATE LAW, RATE CONSTANT AND ORDER OF REACTION (SMART)",     type: "chapter" },
+    ],
+  },
+  {
+    id: "chap-8",
+    title: "CHAP 8: Chemical Equilibrium",
+    type: "unit",
+    chapters: [
+      { id: "8.1",  code: "8.1",  title: "MACROSCOPIC EVENTS AND MICROSCOPIC EVENTS (SMART)",                            type: "chapter" },
+      { id: "8.2",  code: "8.2",  title: "REVERSIBLE REACTIONS, MICROSCOPIC EVENTS AND DYNAMIC EQUILIBRIUM (SMART)",    type: "chapter" },
+      { id: "8.6",  code: "8.6",  title: "CHARACTERISTICS OF CHEMICAL EQUILIBRIUM (SMART)",                             type: "chapter" },
+      { id: "8.7",  code: "8.7",  title: "TYPES OF EQUILIBRIUM (SMART)",                                                type: "chapter" },
+      { id: "8.8",  code: "8.8",  title: "EQUILIBRIUM CONSTANT AND POSITION OF EQUILIBRIUM (SMART)",                   type: "chapter" },
+      { id: "8.10", code: "8.10", title: "POSITION OF EQUILIBRIUM AND REACTION CONDITIONS (SMART)",                     type: "chapter" },
+      { id: "8.11", code: "8.11", title: "LE-CHATELIER'S PRINCIPLE (SMART)",                                            type: "chapter" },
+      { id: "8.12", code: "8.12", title: "THE EFFECT OF CHANGE OF CONCENTRATIONS (SMART)",                              type: "chapter" },
+      { id: "8.13", code: "8.13", title: "THE EFFECT OF CHANGE IN PRESSURE OR VOLUME (SMART)",                         type: "chapter" },
+      { id: "8.14", code: "8.14", title: "THE EFFECT OF CHANGE IN TEMPERATURE (SMART)",                                type: "chapter" },
+      { id: "8.15", code: "8.15", title: "EFFECT OF CATALYST ON EQUILIBRIUM (SMART)",                                  type: "chapter" },
+    ],
+  },
+  {
+    id: "chap-9",
+    title: "CHAP 9: Acid-Base Chemistry",
+    type: "unit",
+    chapters: [
+      { id: "9.3", code: "9.3", title: "IONIC PRODUCT WATER (SMART)",                  type: "chapter" },
+      { id: "9.4", code: "9.4", title: "PH AND POH (SMART)",                           type: "chapter" },
+      { id: "9.5", code: "9.5", title: "IONIZATION CONSTANT OF A ACIDS (KA) (SMART)", type: "chapter" },
+      { id: "9.6", code: "9.6", title: "COMMON ION EFFECT (SMART)",                   type: "chapter" },
+      { id: "9.7", code: "9.7", title: "BUFFER SOLUTIONS (SMART)",                    type: "chapter" },
+      { id: "9.8", code: "9.8", title: "SOLUBILITY PRODUCT (SMART)",                  type: "chapter" },
+    ],
+  },
+  {
+    id: "chap-10",
+    title: "CHAP 10: Electrochemistry",
+    type: "unit",
+    chapters: [
+      { id: "10.1",  code: "10.1",  title: "OXIDATION, REDUCTION, AND REDOX REACTIONS (SMART)",                                  type: "chapter" },
+      { id: "10.2",  code: "10.2",  title: "OXIDATION NUMBER AND ITS SIGNIFICANCE (SMART)",                                      type: "chapter" },
+      { id: "10.3",  code: "10.3",  title: "DISPROPORTIONATION REACTION (SMART)",                                                type: "chapter" },
+      { id: "10.4",  code: "10.4",  title: "OXIDIZING AGENT (OXIDANT) AND REDUCING AGENT (REDUCTANT) (SMART)",                  type: "chapter" },
+      { id: "10.5",  code: "10.5",  title: "BALANCING OF REDOX EQUATIONS BY OXIDATION NUMBER METHOD (SMART)",                   type: "chapter" },
+      { id: "10.6",  code: "10.6",  title: "ELECTROLYTIC CELL (SMART)",                                                          type: "chapter" },
+      { id: "10.7",  code: "10.7",  title: "REDOX REACTIONS IN ELECTROLYSIS (SMART)",                                            type: "chapter" },
+      { id: "10.11", code: "10.11", title: "ELECTRODE POTENTIALS (SMART)",                                                       type: "chapter" },
+      { id: "10.12", code: "10.12", title: "STANDARD HYDROGEN ELECTRODE (SHE) (SMART)",                                         type: "chapter" },
+      { id: "10.13", code: "10.13", title: "STANDARD ELECTRODE POTENTIAL (E) (SMART)",                                          type: "chapter" },
+      { id: "10.14", code: "10.14", title: "MEASURING STANDARD ELECTRODE POTENTIALS (SMART)",                                   type: "chapter" },
+      { id: "10.15", code: "10.15", title: "ELECTROCHEMICAL CELL (GALVANIC CELL) (SMART)",                                      type: "chapter" },
+      { id: "10.21", code: "10.21", title: "PHOTOVOLTAIC CELLS (SMART)",                                                        type: "chapter" },
+    ],
+  },
+  {
+    id: "chap-11",
+    title: "CHAP 11: Hydrocarbons",
+    type: "unit",
+    chapters: [
+      { id: "11.1", code: "11.1", title: "ALIPHATIC AND AROMATIC HYDROCARBONS (SMART)",                    type: "chapter" },
+      { id: "11.2", code: "11.2", title: "NOMENCLATURE (SMART)",                                           type: "chapter" },
+      { id: "11.3", code: "11.3", title: "REACTION MACHANISM AND MODES OF BOND BREAKING (SMART)",         type: "chapter" },
+      { id: "11.4", code: "11.4", title: "UNREACTIVE NATURE OF ALKANES TOWARDS POLAR REGENTS (SMART)",    type: "chapter" },
+      { id: "11.5", code: "11.5", title: "REACTIONS OF ALKANES (SMART)",                                  type: "chapter" },
+      { id: "11.6", code: "11.6", title: "ALKENES (SMART)",                                               type: "chapter" },
+      { id: "11.7", code: "11.7", title: "STRUCTURE AND REACTIVITY OF ALKENES (SMART)",                   type: "chapter" },
+      { id: "11.8", code: "11.8", title: "REACTION OF ALKENES (SMART)",                                   type: "chapter" },
+    ],
+  },
+  {
+    id: "chap-12",
+    title: "CHAP 12: Nitrogen and Sulfur",
+    type: "unit",
+    chapters: [
+      { id: "12.1",  code: "12.1",  title: "REACTIVITY OF NITROGEN (N) (SMART)",              type: "chapter" },
+      { id: "12.2",  code: "12.2",  title: "AMMONIA (NH) (SMART)",                            type: "chapter" },
+      { id: "12.3",  code: "12.3",  title: "OXIDES OF NITROGEN (SMART)",                      type: "chapter" },
+      { id: "12.4",  code: "12.4",  title: "SOURCES OF OXIDES OF NITROGEN (SMART)",           type: "chapter" },
+      { id: "12.5",  code: "12.5",  title: "ROLE OF NO & NO2 IN SMOG & PAN FORMATION (SMART)", type: "chapter" },
+      { id: "12.6",  code: "12.6",  title: "CATALYTIC CONVERTER (SMART)",                     type: "chapter" },
+      { id: "12.7",  code: "12.7",  title: "NITRIFICATION AND DENITRIFICATION (SMART)",       type: "chapter" },
+      { id: "12.8",  code: "12.8",  title: "SULFUR (SMART)",                                  type: "chapter" },
+      { id: "12.9",  code: "12.9",  title: "STABILITY OF OXIDATION STATES OF SULFUR (SMART)", type: "chapter" },
+      { id: "12.10", code: "12.10", title: "REACTIONS OF SULFUR (SMART)",                     type: "chapter" },
+      { id: "12.11", code: "12.11", title: "USES OF SULFUR AND ITS COMPOUNDS (SMART)",        type: "chapter" },
+    ],
+  },
+  {
+    id: "chap-13",
+    title: "CHAP 13: Halogens",
+    type: "unit",
+    chapters: [
+      { id: "13.1",  code: "13.1",  title: "VOLATILITY OF CHLORINE, BROMINE AND IODINE (SMART)",               type: "chapter" },
+      { id: "13.2",  code: "13.2",  title: "TREND IN VOLATILITY OF THE HALOGENS (SMART)",                      type: "chapter" },
+      { id: "13.3",  code: "13.3",  title: "THE BOND STRENGTH OF HALOGEN MOLECULES (SMART)",                   type: "chapter" },
+      { id: "13.4",  code: "13.4",  title: "RELATIVE REACTIVITIES OF THE HALOGENS AS OXIDIZING AGENTS (SMART)", type: "chapter" },
+      { id: "13.5",  code: "13.5",  title: "REACTIONS OF THE HALOGENS WITH HYDROGEN (SMART)",                  type: "chapter" },
+      { id: "13.11", code: "13.11", title: "USE OF CHLORINE IN WATER PURIFICATION (SMART)",                    type: "chapter" },
+    ],
+  },
+  {
+    id: "chap-14",
+    title: "CHAP 14: Atmosphere",
+    type: "unit",
+    chapters: [
+      { id: "14.1", code: "14.1", title: "LAYERS OF THE ATMOSPHERES (SMART)",             type: "chapter" },
+      { id: "14.2", code: "14.2", title: "AIR POLLUTANTS (SMART)",                        type: "chapter" },
+      { id: "14.3", code: "14.3", title: "SOURCES OF AIR POLLUTION (SMART)",              type: "chapter" },
+      { id: "14.4", code: "14.4", title: "SOURCES OF AIR POLLUTANTS (SMART)",             type: "chapter" },
+      { id: "14.5", code: "14.5", title: "IMPACT OF HUMAN ACTIVITIES ON ATMOSPHERE (SMART)", type: "chapter" },
+      { id: "14.6", code: "14.6", title: "EFFECTS OF AIR POLLUTANTS (SMART)",             type: "chapter" },
+      { id: "14.7", code: "14.7", title: "GREENHOUSE EFFECT AND GLOBAL WARMING (SMART)",  type: "chapter" },
+    ],
+  },
+];
+
+export function getAllChapters(): Chapter[] { return PTB_INTER1_CHEMISTRY.flatMap((u) => u.chapters); }
+export function getChaptersByUnit(unitId: string): Chapter[] { return PTB_INTER1_CHEMISTRY.find((u) => u.id === unitId)?.chapters || []; }
+export function getUnitByChapterId(chapterId: string): Unit | undefined { return PTB_INTER1_CHEMISTRY.find((u) => u.chapters.some((ch) => ch.id === chapterId)); }
