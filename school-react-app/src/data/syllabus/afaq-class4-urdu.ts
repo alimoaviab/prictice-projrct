@@ -1,0 +1,27 @@
+import type { BaseUnit } from "@/components/syllabus/ChapterSelector";
+
+export const AFAQ_CLASS4_URDU: BaseUnit[] = [
+  { id: "sabq-1", title: "سبق نمبر 1: خُدا کی قدرت (نظم)", type: "unit", chapters: [{ id: "1", code: "1", title: "خُدا کی قدرت (نظم)", type: "chapter" }] },
+  { id: "sabq-2", title: "سبق نمبر 2: نعتِ رسولِ مقبول ﷺ (نظم)", type: "unit", chapters: [{ id: "2", code: "2", title: "نعتِ رسولِ مقبول ﷺ (نظم)", type: "chapter" }] },
+  { id: "sabq-3", title: "سبق نمبر 3: تحفہ میٹھے پانی کا", type: "unit", chapters: [{ id: "3", code: "3", title: "تحفہ میٹھے پانی کا", type: "chapter" }] },
+  { id: "sabq-4", title: "سبق نمبر 4: آج کے دن آزاد ہوئے ہم", type: "unit", chapters: [{ id: "4", code: "4", title: "آج کے دن آزاد ہوئے ہم", type: "chapter" }] },
+  { id: "sabq-5", title: "سبق نمبر 5: اچھا شہری", type: "unit", chapters: [{ id: "5", code: "5", title: "اچھا شہری", type: "chapter" }] },
+  { id: "sabq-6", title: "سبق نمبر 6: بہترین معلم", type: "unit", chapters: [{ id: "6", code: "6", title: "بہترین معلم", type: "chapter" }] },
+  { id: "sabq-7", title: "سبق نمبر 7: ہم پاکستانی بچے ہیں (نظم)", type: "unit", chapters: [{ id: "7", code: "7", title: "ہم پاکستانی بچے ہیں (نظم)", type: "chapter" }] },
+  { id: "sabq-8", title: "سبق نمبر 8: پھر یوں ہوا", type: "unit", chapters: [{ id: "8", code: "8", title: "پھر یوں ہوا", type: "chapter" }] },
+  { id: "sabq-9", title: "سبق نمبر 9: ہماری پہچان ہیں یہ", type: "unit", chapters: [{ id: "9", code: "9", title: "ہماری پہچان ہیں یہ", type: "chapter" }] },
+  { id: "sabq-10", title: "سبق نمبر 10: صبح کی سیر (نظم)", type: "unit", chapters: [{ id: "10", code: "10", title: "صبح کی سیر (نظم)", type: "chapter" }] },
+  { id: "sabq-11", title: "سبق نمبر 11: رازِ سچی خوشی کا", type: "unit", chapters: [{ id: "11", code: "11", title: "رازِ سچی خوشی کا", type: "chapter" }] },
+  { id: "sabq-12", title: "سبق نمبر 12: کارگل کا شیر", type: "unit", chapters: [{ id: "12", code: "12", title: "کارگل کا شیر", type: "chapter" }] },
+  { id: "sabq-13", title: "سبق نمبر 13: میں کیا بنوں گا (نظم)", type: "unit", chapters: [{ id: "13", code: "13", title: "میں کیا بنوں گا (نظم)", type: "chapter" }] },
+  { id: "sabq-14", title: "سبق نمبر 14: یادگار عمارتیں", type: "unit", chapters: [{ id: "14", code: "14", title: "یادگار عمارتیں", type: "chapter" }] },
+  { id: "sabq-15", title: "سبق نمبر 15: حکایاتِ سعدی رحمۃ اللہ علیہ", type: "unit", chapters: [{ id: "15", code: "15", title: "حکایاتِ سعدی رحمۃ اللہ علیہ", type: "chapter" }] },
+  { id: "sabq-16", title: "سبق نمبر 16: شوربے کی کہانی", type: "unit", chapters: [{ id: "16", code: "16", title: "شوربے کی کہانی", type: "chapter" }] },
+  { id: "sabq-17", title: "سبق نمبر 17: ایک گائے اور بکری (نظم)", type: "unit", chapters: [{ id: "17", code: "17", title: "ایک گائے اور بکری (نظم)", type: "chapter" }] },
+  { id: "sabq-18", title: "سبق نمبر 18: بزمِ ادب کا الیکشن", type: "unit", chapters: [{ id: "18", code: "18", title: "بزمِ ادب کا الیکشن", type: "chapter" }] },
+  { id: "sabq-19", title: "سبق نمبر 19: پھر یوں بچائی جان", type: "unit", chapters: [{ id: "19", code: "19", title: "پھر یوں بچائی جان", type: "chapter" }] },
+  { id: "sabq-20", title: "سبق نمبر 20: یہ بات سمجھ میں آئی نہیں (نظم)", type: "unit", chapters: [{ id: "20", code: "20", title: "یہ بات سمجھ میں آئی نہیں (نظم)", type: "chapter" }] },
+  { id: "sabq-21", title: "سبق نمبر 21: جادوئی ڈبہ", type: "unit", chapters: [{ id: "21", code: "21", title: "جادوئی ڈبہ", type: "chapter" }] },
+  { id: "sabq-22", title: "سبق نمبر 22: انصاف ہو تو ایسا", type: "unit", chapters: [{ id: "22", code: "22", title: "انصاف ہو تو ایسا", type: "chapter" }] },
+  { id: "sabq-23", title: "سبق نمبر 23: بچوں کا سبق (نظم)", type: "unit", chapters: [{ id: "23", code: "23", title: "بچوں کا سبق (نظم)", type: "chapter" }] },
+];

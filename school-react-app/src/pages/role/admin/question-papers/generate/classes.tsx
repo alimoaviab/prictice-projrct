@@ -7,10 +7,14 @@ import { SchoolShell } from "@/layouts/SchoolShell";
  * Clean white EduPlexo design - NO gradients
  */
 
-const classOptions = [
+const defaultClassOptions = [
   "ONE", "TWO", "THREE", "FOUR", "5TH", "6TH", "7TH", "8TH",
   "9TH", "10TH", "INTER-I", "INTER-II", "OLD BOOKS",
 ];
+
+const afaqClassOptions = ["ONE", "TWO", "THREE", "FOUR", "5TH", "6TH", "7TH"];
+
+const limitedSyllabi = new Set(["afaq-snc", "oxford-snc", "gohar-snc"]);
 
 export function ClassesSelectionPage() {
   const navigate = useNavigate();
@@ -50,7 +54,7 @@ export function ClassesSelectionPage() {
 
         {/* Class Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {classOptions.map((cls) => (
+          {(limitedSyllabi.has(syllabus) ? afaqClassOptions : defaultClassOptions).map((cls) => (
             <button
               key={cls}
               onClick={() => navigate(`/admin/question-papers/generate/subjects?syllabus=${syllabus}&class=${encodeURIComponent(cls)}`)}

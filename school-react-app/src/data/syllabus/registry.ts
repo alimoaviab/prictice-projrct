@@ -14,6 +14,65 @@ import { PTB_CLASS1_ISLAMIAT } from "./ptb-class1-islamiat";
 import { PTB_CLASS1_GENERAL_KNOWLEDGE_URDU } from "./ptb-class1-general-knowledge-urdu";
 import { PTB_CLASS1_ISLAMIAT_URDU } from "./ptb-class1-islamiat-urdu";
 import { PTB_CLASS1_URDU } from "./ptb-class1-urdu";
+import { AFAQ_CLASS1_ENGLISH } from "./afaq-class1-english";
+import { AFAQ_CLASS1_COMPUTER } from "./afaq-class1-computer";
+import { AFAQ_CLASS5_COMPUTER_NEW } from "./afaq-class5-computer-new";
+import { AFAQ_CLASS1_COMPUTER_NEW } from "./afaq-class1-computer-new";
+import { AFAQ_CLASS1_GENERAL_KNOWLEDGE } from "./afaq-class1-general-knowledge";
+import { AFAQ_CLASS1_MATHEMATICS } from "./afaq-class1-mathematics";
+import { AFAQ_CLASS1_ISLAMIAT } from "./afaq-class1-islamiat";
+import { AFAQ_CLASS5_URDU } from "./afaq-class5-urdu";
+import { AFAQ_CLASS6_ENGLISH } from "./afaq-class6-english";
+import { AFAQ_CLASS6_COMPUTER } from "./afaq-class6-computer";
+import { AFAQ_CLASS6_GENERAL_SCIENCE } from "./afaq-class6-general-science";
+import { AFAQ_CLASS6_MATHEMATICS } from "./afaq-class6-mathematics";
+import { AFAQ_CLASS6_ISLAMIAT } from "./afaq-class6-islamiat";
+import { AFAQ_CLASS6_URDU } from "./afaq-class6-urdu";
+import { AFAQ_CLASS6_GEOGRAPHY } from "./afaq-class6-geography";
+import { AFAQ_CLASS6_HISTORY } from "./afaq-class6-history";
+import { AFAQ_CLASS6_CIVICS } from "./afaq-class6-civics";
+import { AFAQ_CLASS7_ENGLISH } from "./afaq-class7-english";
+import { AFAQ_CLASS7_COMPUTER } from "./afaq-class7-computer";
+import { AFAQ_CLASS7_GENERAL_SCIENCE } from "./afaq-class7-general-science";
+import { AFAQ_CLASS7_MATHEMATICS } from "./afaq-class7-mathematics";
+import { AFAQ_CLASS7_ISLAMIAT } from "./afaq-class7-islamiat";
+import { AFAQ_CLASS7_URDU } from "./afaq-class7-urdu";
+import { AFAQ_CLASS7_GEOGRAPHY } from "./afaq-class7-geography";
+import { AFAQ_CLASS7_HISTORY } from "./afaq-class7-history";
+import { AFAQ_CLASS1_URDU } from "./afaq-class1-urdu";
+import { AFAQ_CLASS4_COMPUTER_NEW } from "./afaq-class4-computer-new";
+import { AFAQ_CLASS5_ENGLISH } from "./afaq-class5-english";
+import { AFAQ_CLASS5_COMPUTER } from "./afaq-class5-computer";
+import { AFAQ_CLASS5_GENERAL_SCIENCE } from "./afaq-class5-general-science";
+import { AFAQ_CLASS5_SOCIAL_STUDIES } from "./afaq-class5-social-studies";
+import { AFAQ_CLASS5_MATHEMATICS } from "./afaq-class5-mathematics";
+import { AFAQ_CLASS5_ISLAMIAT } from "./afaq-class5-islamiat";
+
+import { AFAQ_CLASS1_SCIENCE } from "./afaq-class1-science";
+import { AFAQ_CLASS2_ENGLISH } from "./afaq-class2-english";
+import { AFAQ_CLASS2_COMPUTER } from "./afaq-class2-computer";
+import { AFAQ_CLASS2_GENERAL_KNOWLEDGE } from "./afaq-class2-general-knowledge";
+import { AFAQ_CLASS2_MATHEMATICS } from "./afaq-class2-mathematics";
+import { AFAQ_CLASS2_URDU } from "./afaq-class2-urdu";
+import { AFAQ_CLASS2_ISLAMIAT } from "./afaq-class2-islamiat";
+import { AFAQ_CLASS2_COMPUTER_NEW } from "./afaq-class2-computer-new";
+import { AFAQ_CLASS2_SCIENCE } from "./afaq-class2-science";
+import { AFAQ_CLASS3_ENGLISH } from "./afaq-class3-english";
+import { AFAQ_CLASS3_COMPUTER } from "./afaq-class3-computer";
+import { AFAQ_CLASS3_GENERAL_KNOWLEDGE } from "./afaq-class3-general-knowledge";
+import { AFAQ_CLASS3_MATHEMATICS } from "./afaq-class3-mathematics";
+import { AFAQ_CLASS3_ISLAMIAT } from "./afaq-class3-islamiat";
+import { AFAQ_CLASS3_URDU } from "./afaq-class3-urdu";
+import { AFAQ_CLASS3_COMPUTER_NEW } from "./afaq-class3-computer-new";
+import { AFAQ_CLASS3_SCIENCE } from "./afaq-class3-science";
+import { AFAQ_CLASS4_ENGLISH } from "./afaq-class4-english";
+import { AFAQ_CLASS4_COMPUTER } from "./afaq-class4-computer";
+import { AFAQ_CLASS4_GENERAL_SCIENCE } from "./afaq-class4-general-science";
+import { AFAQ_CLASS4_SOCIAL_STUDIES } from "./afaq-class4-social-studies";
+import { AFAQ_CLASS4_MATHEMATICS } from "./afaq-class4-mathematics";
+import { AFAQ_CLASS4_MATHEMATICS_IQBAL } from "./afaq-class4-mathematics-iqbal";
+import { AFAQ_CLASS4_ISLAMIAT } from "./afaq-class4-islamiat";
+import { AFAQ_CLASS4_URDU } from "./afaq-class4-urdu";
 
 // ─── PTB Class 2 ───────────────────────────────────────────────────────────
 import { PTB_CLASS2_ENGLISH } from "./ptb-class2-english";
@@ -212,6 +271,168 @@ const REGISTRY: Record<string, BaseUnit[]> = {
   "ptb|ONE|Islamiat Urdu":      PTB_CLASS1_ISLAMIAT_URDU as BaseUnit[],
   "ptb|ONE|Urdu":               PTB_CLASS1_URDU as BaseUnit[],
   "ptb|ONE|اُردو":              PTB_CLASS1_URDU as BaseUnit[],
+  "afaq-snc|ONE|English (Sun Series)": AFAQ_CLASS1_ENGLISH as BaseUnit[],
+  "afaq-snc|ONE|English":       AFAQ_CLASS1_ENGLISH as BaseUnit[],
+  "afaq-snc|ONE|ENGLISH (IQBAL SERIES)": AFAQ_CLASS1_ENGLISH as BaseUnit[],
+  "afaq-snc|ONE|Computer (Sun Series)": AFAQ_CLASS1_COMPUTER as BaseUnit[],
+  "afaq-snc|ONE|Computer": AFAQ_CLASS1_COMPUTER as BaseUnit[],
+  "afaq-snc|ONE|COMPUTER (IQBAL SERIES)": AFAQ_CLASS1_COMPUTER as BaseUnit[],
+  "afaq-snc|ONE|COMPUTER (NEW) (SUN SERIES)": AFAQ_CLASS1_COMPUTER_NEW as BaseUnit[],
+  "afaq-snc|ONE|Computer (New)": AFAQ_CLASS1_COMPUTER_NEW as BaseUnit[],
+  "afaq-snc|ONE|Computer New": AFAQ_CLASS1_COMPUTER_NEW as BaseUnit[],
+  "afaq-snc|ONE|مطالعہِ اسلام (Sun Series)": AFAQ_CLASS1_ISLAMIAT as BaseUnit[],
+  "afaq-snc|ONE|اسلامیات (IQBAL SERIES)": AFAQ_CLASS1_ISLAMIAT as BaseUnit[],
+  "afaq-snc|ONE|اُردو (IQBAL SERIES)": AFAQ_CLASS1_URDU as BaseUnit[],
+  "afaq-snc|ONE|معلوماتِ عامہ (Sun Series)": AFAQ_CLASS1_GENERAL_KNOWLEDGE as BaseUnit[],
+  "afaq-snc|ONE|معلوماتِ عامہ": AFAQ_CLASS1_GENERAL_KNOWLEDGE as BaseUnit[],
+  "afaq-snc|ONE|واقفیتِ عامہ (IQBAL SERIES)": AFAQ_CLASS1_GENERAL_KNOWLEDGE as BaseUnit[],
+  "afaq-snc|ONE|Mathematics (Sun Series)": AFAQ_CLASS1_MATHEMATICS as BaseUnit[],
+  "afaq-snc|ONE|Mathematics": AFAQ_CLASS1_MATHEMATICS as BaseUnit[],
+  "afaq-snc|ONE|MATHEMATICS (IQBAL SERIES)": AFAQ_CLASS1_MATHEMATICS as BaseUnit[],
+  "afaq-snc|ONE|Science": AFAQ_CLASS1_SCIENCE as BaseUnit[],
+  "afaq-snc|ONE|SCIENCE": AFAQ_CLASS1_SCIENCE as BaseUnit[],
+  "afaq-snc|ONE|اسلامیات (SNC)": AFAQ_CLASS1_ISLAMIAT as BaseUnit[],
+  "afaq-snc|ONE|Islamiat": AFAQ_CLASS1_ISLAMIAT as BaseUnit[],
+  "afaq-snc|ONE|Islamiat (SNC)": AFAQ_CLASS1_ISLAMIAT as BaseUnit[],
+  "afaq-snc|ONE|اُردو (Sun Series)": AFAQ_CLASS1_URDU as BaseUnit[],
+  "afaq-snc|ONE|اُردو": AFAQ_CLASS1_URDU as BaseUnit[],
+  "afaq-snc|ONE|Urdu": AFAQ_CLASS1_URDU as BaseUnit[],
+
+  "afaq-snc|TWO|English (Sun Series)": AFAQ_CLASS2_ENGLISH as BaseUnit[],
+  "afaq-snc|TWO|Computer (Sun Series)": AFAQ_CLASS2_COMPUTER as BaseUnit[],
+  "afaq-snc|TWO|معلوماتِ عامہ (Sun Series)": AFAQ_CLASS2_GENERAL_KNOWLEDGE as BaseUnit[],
+  "afaq-snc|TWO|Mathematics (Sun Series)": AFAQ_CLASS2_MATHEMATICS as BaseUnit[],
+  "afaq-snc|TWO|مطالعہِ اسلام (Sun Series)": AFAQ_CLASS2_ISLAMIAT as BaseUnit[],
+  "afaq-snc|TWO|Islamiat": AFAQ_CLASS2_ISLAMIAT as BaseUnit[],
+  "afaq-snc|TWO|اسلامیات (SNC)": AFAQ_CLASS2_ISLAMIAT as BaseUnit[],
+  "afaq-snc|TWO|اُردو (Sun Series)": AFAQ_CLASS2_URDU as BaseUnit[],
+  "afaq-snc|TWO|اُردو": AFAQ_CLASS2_URDU as BaseUnit[],
+  "afaq-snc|TWO|Urdu": AFAQ_CLASS2_URDU as BaseUnit[],
+  "afaq-snc|TWO|COMPUTER (NEW) (SUN SERIES)": AFAQ_CLASS2_COMPUTER_NEW as BaseUnit[],
+  "afaq-snc|TWO|Computer (New)": AFAQ_CLASS2_COMPUTER_NEW as BaseUnit[],
+  "afaq-snc|TWO|Computer New": AFAQ_CLASS2_COMPUTER_NEW as BaseUnit[],
+  // IQBAL / alternate aliases for class TWO
+  "afaq-snc|TWO|ENGLISH (IQBAL SERIES)": AFAQ_CLASS2_ENGLISH as BaseUnit[],
+  "afaq-snc|TWO|COMPUTER (IQBAL SERIES)": AFAQ_CLASS2_COMPUTER as BaseUnit[],
+  "afaq-snc|TWO|واقفیتِ عامہ (IQBAL SERIES)": AFAQ_CLASS2_GENERAL_KNOWLEDGE as BaseUnit[],
+  "afaq-snc|TWO|MATHEMATICS (IQBAL SERIES)": AFAQ_CLASS2_MATHEMATICS as BaseUnit[],
+  "afaq-snc|TWO|اسلامیات (IQBAL SERIES)": AFAQ_CLASS2_ISLAMIAT as BaseUnit[],
+  "afaq-snc|TWO|اُردو (IQBAL SERIES)": AFAQ_CLASS2_URDU as BaseUnit[],
+  "afaq-snc|TWO|Science": AFAQ_CLASS2_SCIENCE as BaseUnit[],
+
+  "afaq-snc|THREE|English (Sun Series)": AFAQ_CLASS3_ENGLISH as BaseUnit[],
+  "afaq-snc|THREE|English": AFAQ_CLASS3_ENGLISH as BaseUnit[],
+  "afaq-snc|THREE|ENGLISH (IQBAL SERIES)": AFAQ_CLASS3_ENGLISH as BaseUnit[],
+
+  "afaq-snc|THREE|Computer (Sun Series)": AFAQ_CLASS3_COMPUTER as BaseUnit[],
+  "afaq-snc|THREE|Computer": AFAQ_CLASS3_COMPUTER as BaseUnit[],
+
+  "afaq-snc|THREE|COMPUTER (NEW) (SUN SERIES)": AFAQ_CLASS3_COMPUTER_NEW as BaseUnit[],
+  "afaq-snc|THREE|Computer (New)": AFAQ_CLASS3_COMPUTER_NEW as BaseUnit[],
+  "afaq-snc|THREE|Computer New": AFAQ_CLASS3_COMPUTER_NEW as BaseUnit[],
+  "afaq-snc|THREE|مطالعہِ اسلام (Sun Series)": AFAQ_CLASS3_ISLAMIAT as BaseUnit[],
+  "afaq-snc|THREE|COMPUTER (IQBAL SERIES)": AFAQ_CLASS3_COMPUTER as BaseUnit[],
+  "afaq-snc|THREE|واقفیتِ عامہ (IQBAL SERIES)": AFAQ_CLASS3_GENERAL_KNOWLEDGE as BaseUnit[],
+  "afaq-snc|THREE|MATHEMATICS (IQBAL SERIES)": AFAQ_CLASS3_MATHEMATICS as BaseUnit[],
+  "afaq-snc|THREE|اسلامیات (IQBAL SERIES)": AFAQ_CLASS3_ISLAMIAT as BaseUnit[],
+  "afaq-snc|THREE|اُردو (IQBAL SERIES)": AFAQ_CLASS3_URDU as BaseUnit[],
+
+  "afaq-snc|THREE|اسلامیات (SNC)": AFAQ_CLASS3_ISLAMIAT as BaseUnit[],
+  "afaq-snc|THREE|Islamiat": AFAQ_CLASS3_ISLAMIAT as BaseUnit[],
+
+  "afaq-snc|THREE|اُردو (Sun Series)": AFAQ_CLASS3_URDU as BaseUnit[],
+  "afaq-snc|THREE|اُردو": AFAQ_CLASS3_URDU as BaseUnit[],
+  "afaq-snc|THREE|Urdu": AFAQ_CLASS3_URDU as BaseUnit[],
+
+  "afaq-snc|THREE|Science": AFAQ_CLASS3_SCIENCE as BaseUnit[],
+
+  "afaq-snc|THREE|معلوماتِ عامہ (Sun Series)": AFAQ_CLASS3_GENERAL_KNOWLEDGE as BaseUnit[],
+  "afaq-snc|THREE|معلوماتِ عامہ": AFAQ_CLASS3_GENERAL_KNOWLEDGE as BaseUnit[],
+  "afaq-snc|THREE|General Knowledge": AFAQ_CLASS3_GENERAL_KNOWLEDGE as BaseUnit[],
+
+  "afaq-snc|THREE|Mathematics (Sun Series)": AFAQ_CLASS3_MATHEMATICS as BaseUnit[],
+  "afaq-snc|THREE|Mathematics": AFAQ_CLASS3_MATHEMATICS as BaseUnit[],
+
+  // AFAQ Class FOUR
+  "afaq-snc|FOUR|English (Sun Series)": AFAQ_CLASS4_ENGLISH as BaseUnit[],
+  "afaq-snc|FOUR|English": AFAQ_CLASS4_ENGLISH as BaseUnit[],
+  "afaq-snc|FOUR|ENGLISH (IQBAL SERIES)": AFAQ_CLASS4_ENGLISH as BaseUnit[],
+  "afaq-snc|FOUR|Computer (Sun Series)": AFAQ_CLASS4_COMPUTER as BaseUnit[],
+  "afaq-snc|FOUR|Computer": AFAQ_CLASS4_COMPUTER as BaseUnit[],
+  "afaq-snc|FOUR|COMPUTER (IQBAL SERIES)": AFAQ_CLASS4_COMPUTER as BaseUnit[],
+  "afaq-snc|FOUR|COMPUTER (NEW) (SUN SERIES)": AFAQ_CLASS4_COMPUTER_NEW as BaseUnit[],
+  "afaq-snc|FOUR|Computer (New)": AFAQ_CLASS4_COMPUTER_NEW as BaseUnit[],
+  "afaq-snc|FOUR|General Science (Sun Series)": AFAQ_CLASS4_GENERAL_SCIENCE as BaseUnit[],
+  "afaq-snc|FOUR|General Science": AFAQ_CLASS4_GENERAL_SCIENCE as BaseUnit[],
+  "afaq-snc|FOUR|GENERAL SCIENCE (IQBAL SERIES)": AFAQ_CLASS4_GENERAL_SCIENCE as BaseUnit[],
+  "afaq-snc|FOUR|Social Studies (Sun Series)": AFAQ_CLASS4_SOCIAL_STUDIES as BaseUnit[],
+  "afaq-snc|FOUR|Social Studies": AFAQ_CLASS4_SOCIAL_STUDIES as BaseUnit[],
+  "afaq-snc|FOUR|SOCIAL STUDIES (IQBAL SERIES)": AFAQ_CLASS4_SOCIAL_STUDIES as BaseUnit[],
+  // Mathematics
+  "afaq-snc|FOUR|Mathematics (Sun Series)": AFAQ_CLASS4_MATHEMATICS as BaseUnit[],
+  "afaq-snc|FOUR|Mathematics": AFAQ_CLASS4_MATHEMATICS as BaseUnit[],
+  "afaq-snc|FOUR|MATHEMATICS (IQBAL SERIES)": AFAQ_CLASS4_MATHEMATICS_IQBAL as BaseUnit[],
+  // Islamiat / مطالعہِ اسلام
+  "afaq-snc|FOUR|مطالعہِ اسلام (Sun Series)": AFAQ_CLASS4_ISLAMIAT as BaseUnit[],
+  "afaq-snc|FOUR|مطالعہِ اسلام": AFAQ_CLASS4_ISLAMIAT as BaseUnit[],
+  "afaq-snc|FOUR|Islamiat": AFAQ_CLASS4_ISLAMIAT as BaseUnit[],
+  // Urdu
+  "afaq-snc|FOUR|اُردو (Sun Series)": AFAQ_CLASS4_URDU as BaseUnit[],
+  "afaq-snc|FOUR|اُردو": AFAQ_CLASS4_URDU as BaseUnit[],
+  "afaq-snc|FOUR|Urdu": AFAQ_CLASS4_URDU as BaseUnit[],
+  // AFAQ Class FIVE
+  "afaq-snc|FIVE|English (Sun Series)": AFAQ_CLASS5_ENGLISH as BaseUnit[],
+  "afaq-snc|FIVE|English": AFAQ_CLASS5_ENGLISH as BaseUnit[],
+  "afaq-snc|FIVE|ENGLISH (IQBAL SERIES)": AFAQ_CLASS5_ENGLISH as BaseUnit[],
+  "afaq-snc|FIVE|Computer (Sun Series)": AFAQ_CLASS5_COMPUTER as BaseUnit[],
+  "afaq-snc|FIVE|Computer": AFAQ_CLASS5_COMPUTER as BaseUnit[],
+  "afaq-snc|FIVE|COMPUTER (NEW) (SUN SERIES)": AFAQ_CLASS5_COMPUTER_NEW as BaseUnit[],
+  "afaq-snc|FIVE|Computer (New)": AFAQ_CLASS5_COMPUTER_NEW as BaseUnit[],
+  "afaq-snc|FIVE|Computer New": AFAQ_CLASS5_COMPUTER_NEW as BaseUnit[],
+  "afaq-snc|FIVE|COMPUTER (IQBAL SERIES)": AFAQ_CLASS5_COMPUTER as BaseUnit[],
+  "afaq-snc|FIVE|General Science (Sun Series)": AFAQ_CLASS5_GENERAL_SCIENCE as BaseUnit[],
+  "afaq-snc|FIVE|General Science": AFAQ_CLASS5_GENERAL_SCIENCE as BaseUnit[],
+  "afaq-snc|FIVE|Science": AFAQ_CLASS5_GENERAL_SCIENCE as BaseUnit[],
+  "afaq-snc|FIVE|SOCIAL STUDIES (IQBAL SERIES)": AFAQ_CLASS5_SOCIAL_STUDIES as BaseUnit[],
+  "afaq-snc|FIVE|Social Studies (Sun Series)": AFAQ_CLASS5_SOCIAL_STUDIES as BaseUnit[],
+  "afaq-snc|FIVE|Social Studies": AFAQ_CLASS5_SOCIAL_STUDIES as BaseUnit[],
+  "afaq-snc|FIVE|Mathematics (Sun Series)": AFAQ_CLASS5_MATHEMATICS as BaseUnit[],
+  "afaq-snc|FIVE|Mathematics": AFAQ_CLASS5_MATHEMATICS as BaseUnit[],
+  "afaq-snc|FIVE|Islamiat": AFAQ_CLASS5_ISLAMIAT as BaseUnit[],
+  "afaq-snc|FIVE|مطالعہِ اسلام (Sun Series)": AFAQ_CLASS5_ISLAMIAT as BaseUnit[],
+  "afaq-snc|FIVE|اُردو": AFAQ_CLASS5_URDU as BaseUnit[],
+  "afaq-snc|FIVE|اُردو (Sun Series)": AFAQ_CLASS5_URDU as BaseUnit[],
+  "afaq-snc|FIVE|Urdu": AFAQ_CLASS5_URDU as BaseUnit[],
+
+  // AFAQ Class SIX
+  "afaq-snc|SIX|English (Sun Series)": AFAQ_CLASS6_ENGLISH as BaseUnit[],
+  "afaq-snc|SIX|English": AFAQ_CLASS6_ENGLISH as BaseUnit[],
+  "afaq-snc|SIX|Computer (Sun Series)": AFAQ_CLASS6_COMPUTER as BaseUnit[],
+  "afaq-snc|SIX|Computer": AFAQ_CLASS6_COMPUTER as BaseUnit[],
+  "afaq-snc|SIX|General Science (Sun Series)": AFAQ_CLASS6_GENERAL_SCIENCE as BaseUnit[],
+  "afaq-snc|SIX|General Science": AFAQ_CLASS6_GENERAL_SCIENCE as BaseUnit[],
+  "afaq-snc|SIX|Mathematics (Sun Series)": AFAQ_CLASS6_MATHEMATICS as BaseUnit[],
+  "afaq-snc|SIX|Mathematics": AFAQ_CLASS6_MATHEMATICS as BaseUnit[],
+  "afaq-snc|SIX|Islamiat": AFAQ_CLASS6_ISLAMIAT as BaseUnit[],
+  "afaq-snc|SIX|اسلامیات": AFAQ_CLASS6_ISLAMIAT as BaseUnit[],
+  "afaq-snc|SIX|Urdu": AFAQ_CLASS6_URDU as BaseUnit[],
+  "afaq-snc|SIX|اُردو": AFAQ_CLASS6_URDU as BaseUnit[],
+  "afaq-snc|SIX|Geography": AFAQ_CLASS6_GEOGRAPHY as BaseUnit[],
+  "afaq-snc|SIX|History": AFAQ_CLASS6_HISTORY as BaseUnit[],
+  "afaq-snc|SIX|Civics": AFAQ_CLASS6_CIVICS as BaseUnit[],
+
+  // AFAQ Class SEVEN
+  "afaq-snc|7TH|English": AFAQ_CLASS7_ENGLISH as BaseUnit[],
+  "afaq-snc|7TH|Computer": AFAQ_CLASS7_COMPUTER as BaseUnit[],
+  "afaq-snc|7TH|Computer Science": AFAQ_CLASS7_COMPUTER as BaseUnit[],
+  "afaq-snc|7TH|General Science": AFAQ_CLASS7_GENERAL_SCIENCE as BaseUnit[],
+  "afaq-snc|7TH|Mathematics": AFAQ_CLASS7_MATHEMATICS as BaseUnit[],
+  "afaq-snc|7TH|Islamiat": AFAQ_CLASS7_ISLAMIAT as BaseUnit[],
+  "afaq-snc|7TH|اسلامیات": AFAQ_CLASS7_ISLAMIAT as BaseUnit[],
+  "afaq-snc|7TH|Urdu": AFAQ_CLASS7_URDU as BaseUnit[],
+  "afaq-snc|7TH|اُردو": AFAQ_CLASS7_URDU as BaseUnit[],
+  "afaq-snc|7TH|Geography": AFAQ_CLASS7_GEOGRAPHY as BaseUnit[],
+  "afaq-snc|7TH|History": AFAQ_CLASS7_HISTORY as BaseUnit[],
 
   // Class TWO
   "ptb|TWO|English":            PTB_CLASS2_ENGLISH as BaseUnit[],

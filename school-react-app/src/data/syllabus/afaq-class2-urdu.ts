@@ -1,0 +1,45 @@
+import type { BaseUnit } from "@/components/syllabus/ChapterSelector";
+
+export const AFAQ_CLASS2_URDU: BaseUnit[] = [
+  { id: "sabq-1", title: "سبق نمبر 1: حمد (نظم)", type: "unit", chapters: [{ id: "1", code: "1", title: "حمد (نظم)", type: "chapter" }] },
+  { id: "sabq-2", title: "سبق نمبر 2: نعت رسول مقبول ﷺ", type: "unit", chapters: [{ id: "2", code: "2", title: "نعت رسول مقبول ﷺ", type: "chapter" }] },
+  { id: "sabq-3", title: "سبق نمبر 3: رہ گئیں خالی ہاتھ", type: "unit", chapters: [{ id: "3", code: "3", title: "رہ گئیں خالی ہاتھ", type: "chapter" }] },
+  { id: "sabq-4", title: "سبق نمبر 4: ثَمَن کا طوطا", type: "unit", chapters: [{ id: "4", code: "4", title: "ثَمَن کا طوطا", type: "chapter" }] },
+  { id: "sabq-5", title: "سبق نمبر 5: سب خاص ہیں", type: "unit", chapters: [{ id: "5", code: "5", title: "سب خاص ہیں", type: "chapter" }] },
+  { id: "sabq-6", title: "سبق نمبر 6: تارے (نظم)", type: "unit", chapters: [{ id: "6", code: "6", title: "تارے (نظم)", type: "chapter" }] },
+  { id: "sabq-7", title: "سبق نمبر 7: پیارے نبی ﷺ", type: "unit", chapters: [{ id: "7", code: "7", title: "پیارے نبی ﷺ", type: "chapter" }] },
+  { id: "sabq-8", title: "سبق نمبر 8: اونچا رہے پرچم ہمارا", type: "unit", chapters: [{ id: "8", code: "8", title: "اونچا رہے پرچم ہمارا", type: "chapter" }] },
+  { id: "sabq-9", title: "سبق نمبر 9: یہی تو دوستی ہے", type: "unit", chapters: [{ id: "9", code: "9", title: "یہی تو دوستی ہے", type: "chapter" }] },
+  { id: "sabq-10", title: "سبق نمبر 10: پڑھ لکھ کر ہم نام کریں گے (نظم)", type: "unit", chapters: [{ id: "10", code: "10", title: "پڑھ لکھ کر ہم نام کریں گے (نظم)", type: "chapter" }] },
+  { id: "sabq-11", title: "سبق نمبر 11: وہ محنتی لڑکا کون تھا؟", type: "unit", chapters: [{ id: "11", code: "11", title: "وہ محنتی لڑکا کون تھا؟", type: "chapter" }] },
+  { id: "sabq-12", title: "سبق نمبر 12: بچت کرنا سیکھیں", type: "unit", chapters: [{ id: "12", code: "12", title: "بچت کرنا سیکھیں", type: "chapter" }] },
+  { id: "sabq-13", title: "سبق نمبر 13: آؤ بچائیں ماحول کو", type: "unit", chapters: [{ id: "13", code: "13", title: "آؤ بچائیں ماحول کو", type: "chapter" }] },
+  { id: "sabq-14", title: "سبق نمبر 14: ٹوٹ بٹوٹ کی موٹر (نظم)", type: "unit", chapters: [{ id: "14", code: "14", title: "ٹوٹ بٹوٹ کی موٹر (نظم)", type: "chapter" }] },
+  { id: "sabq-15", title: "سبق نمبر 15: پھول میرا وطن", type: "unit", chapters: [{ id: "15", code: "15", title: "پھول میرا وطن", type: "chapter" }] },
+  { id: "sabq-16", title: "سبق نمبر 16: میں نے ڈھونڈ لیا", type: "unit", chapters: [{ id: "16", code: "16", title: "میں نے ڈھونڈ لیا", type: "chapter" }] },
+  { id: "sabq-17", title: "سبق نمبر 17: آئیں مری چلیں", type: "unit", chapters: [{ id: "17", code: "17", title: "آئیں مری چلیں", type: "chapter" }] },
+  { id: "sabq-18", title: "سبق نمبر 18: میرا دیس (نظم)", type: "unit", chapters: [{ id: "18", code: "18", title: "میرا دیس (نظم)", type: "chapter" }] },
+  { id: "sabq-19", title: "سبق نمبر 19: درخت ہمارے ساتھی", type: "unit", chapters: [{ id: "19", code: "19", title: "درخت ہمارے ساتھی", type: "chapter" }] },
+  { id: "sabq-20", title: "سبق نمبر 20: آنکھ کا تارا", type: "unit", chapters: [{ id: "20", code: "20", title: "آنکھ کا تارا", type: "chapter" }] },
+  { id: "sabq-21", title: "سبق نمبر 21: ایک سواری، بڑی نیازی", type: "unit", chapters: [{ id: "21", code: "21", title: "ایک سواری، بڑی نیازی", type: "chapter" }] },
+  { id: "sabq-22", title: "سبق نمبر 22: ہمدردی (نظم)", type: "unit", chapters: [{ id: "22", code: "22", title: "ہمدردی (نظم)", type: "chapter" }] },
+  {
+    id: "urdu-b",
+    title: "اُردو (ب)",
+    type: "section",
+    chapters: [
+      { id: "ub-1", code: "1", title: "مذکر مونث", type: "chapter" },
+      { id: "ub-2", code: "2", title: "واحد جمع", type: "chapter" },
+      { id: "ub-3", code: "3", title: "الفاظ متضاد", type: "chapter" },
+      { id: "ub-4", code: "4", title: "اعراب لگائیں", type: "chapter" },
+      { id: "ub-5", code: "5", title: "الفاظ مترادف", type: "chapter" },
+      { id: "ub-6", code: "6", title: "جملوں کی درستگی", type: "chapter" },
+      { id: "ub-7", code: "7", title: "درخواستیں", type: "chapter" },
+      { id: "ub-8", code: "8", title: "خطوط", type: "chapter" },
+      { id: "ub-9", code: "9", title: "کہانیاں", type: "chapter" },
+      { id: "ub-10", code: "10", title: "مضامین", type: "chapter" },
+    ],
+  },
+];
+
+export default AFAQ_CLASS2_URDU;

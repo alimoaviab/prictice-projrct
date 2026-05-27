@@ -1,0 +1,28 @@
+import type { BaseUnit } from "@/components/syllabus/ChapterSelector";
+
+export const AFAQ_CLASS7_URDU: BaseUnit[] = [
+  { id: "s1", title: "سبق نمبر 1: حمد (نظم)", type: "unit", chapters: [{ id: "1", code: "1", title: "حمد (نظم)", type: "chapter" }] },
+  { id: "s2", title: "سبق نمبر 2: نعتِ رسولِ مقبول خاتم النبیین ﷺ (نظم)", type: "unit", chapters: [{ id: "2", code: "2", title: "نعتِ رسولِ مقبول خاتم النبیین ﷺ (نظم)", type: "chapter" }] },
+  { id: "s3", title: "سبق نمبر 3: پیارے نبی خاتم النبیین ﷺ کے پیارے اخلاق", type: "unit", chapters: [{ id: "3", code: "3", title: "پیارے نبی خاتم النبیین ﷺ کے پیارے اخلاق", type: "chapter" }] },
+  { id: "s4", title: "سبق نمبر 4: صفائی کی عادت اپناؤ", type: "unit", chapters: [{ id: "4", code: "4", title: "صفائی کی عادت اپناؤ", type: "chapter" }] },
+  { id: "s5", title: "سبق نمبر 5: دو پہیوں والی کار", type: "unit", chapters: [{ id: "5", code: "5", title: "دو پہیوں والی کار", type: "chapter" }] },
+  { id: "r1", title: "جائزہ 1", type: "unit", chapters: [{ id: "5.rev", code: "جائزہ 1", title: "جائزہ 1", type: "chapter" }] },
+  { id: "s6", title: "سبق نمبر 6: مل کے رہو (نظم)", type: "unit", chapters: [{ id: "6", code: "6", title: "مل کے رہو (نظم)", type: "chapter" }] },
+  { id: "s7", title: "سبق نمبر 7: کرپشن ہے بے لگام کیوں؟", type: "unit", chapters: [{ id: "7", code: "7", title: "کرپشن ہے بے لگام کیوں؟", type: "chapter" }] },
+  { id: "s8", title: "سبق نمبر 8: پرندوں کی دنیا کا درویش", type: "unit", chapters: [{ id: "8", code: "8", title: "پرندوں کی دنیا کا درویش", type: "chapter" }] },
+  { id: "s9", title: "سبق نمبر 9: اناڑی جاسوس", type: "unit", chapters: [{ id: "9", code: "9", title: "اناڑی جاسوس", type: "chapter" }] },
+  { id: "s10", title: "سبق نمبر 10: برسات (نظم)", type: "unit", chapters: [{ id: "10", code: "10", title: "برسات (نظم)", type: "chapter" }] },
+  { id: "r2", title: "جائزہ 2", type: "unit", chapters: [{ id: "10.rev", code: "جائزہ 2", title: "جائزہ 2", type: "chapter" }] },
+  { id: "s11", title: "سبق نمبر 11: محسنِ پاکستان", type: "unit", chapters: [{ id: "11", code: "11", title: "محسنِ پاکستان", type: "chapter" }] },
+  { id: "s12", title: "سبق نمبر 12: مرزا نے کرکٹ کھیلی", type: "unit", chapters: [{ id: "12", code: "12", title: "مرزا نے کرکٹ کھیلی", type: "chapter" }] },
+  { id: "s13", title: "سبق نمبر 13: قوم کا بہادر بیٹا", type: "unit", chapters: [{ id: "13", code: "13", title: "قوم کا بہادر بیٹا", type: "chapter" }] },
+  { id: "s14", title: "سبق نمبر 14: خراب ہے (نظم)", type: "unit", chapters: [{ id: "14", code: "14", title: "خراب ہے (نظم)", type: "chapter" }] },
+  { id: "s15", title: "سبق نمبر 15: اے وادیِ کشمیر", type: "unit", chapters: [{ id: "15", code: "15", title: "اے وادیِ کشمیر", type: "chapter" }] },
+  { id: "r3", title: "جائزہ 3", type: "unit", chapters: [{ id: "15.rev", code: "جائزہ 3", title: "جائزہ 3", type: "chapter" }] },
+  { id: "s16", title: "سبق نمبر 16: یہ زندگی کی اساس ہے", type: "unit", chapters: [{ id: "16", code: "16", title: "یہ زندگی کی اساس ہے", type: "chapter" }] },
+  { id: "s17", title: "سبق نمبر 17: یہ وطن تمہارا ہے، تم پاسباں اس کے", type: "unit", chapters: [{ id: "17", code: "17", title: "یہ وطن تمہارا ہے، تم پاسباں اس کے", type: "chapter" }] },
+  { id: "s18", title: "سبق نمبر 18: محبتوں کے دیے جلاؤ", type: "unit", chapters: [{ id: "18", code: "18", title: "محبتوں کے دیے جلاؤ", type: "chapter" }] },
+  { id: "s19", title: "سبق نمبر 19: ایک خاموش قاتل", type: "unit", chapters: [{ id: "19", code: "19", title: "ایک خاموش قاتل", type: "chapter" }] },
+  { id: "s20", title: "سبق نمبر 20: بڑا ہو کے میں نیک انسان بنوں گا (نظم)", type: "unit", chapters: [{ id: "20", code: "20", title: "بڑا ہو کے میں نیک انسان بنوں گا (نظم)", type: "chapter" }] },
+  { id: "r4", title: "جائزہ 4", type: "unit", chapters: [{ id: "20.rev", code: "جائزہ 4", title: "جائزہ 4", type: "chapter" }] },
+];

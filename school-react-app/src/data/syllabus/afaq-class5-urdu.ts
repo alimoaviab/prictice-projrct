@@ -1,0 +1,27 @@
+import type { BaseUnit } from "@/components/syllabus/ChapterSelector";
+
+export const AFAQ_CLASS5_URDU: BaseUnit[] = [
+  { id: "sabq-1", title: "سبق نمبر 1 : حمد (نظم)", type: "unit", chapters: [{ id: "1", code: "1", title: "حمد (نظم)", type: "chapter" }] },
+  { id: "sabq-2", title: "سبق نمبر 2 : نعتِ رسولِ مقبول ﷺ", type: "unit", chapters: [{ id: "2", code: "2", title: "نعتِ رسولِ مقبول ﷺ", type: "chapter" }] },
+  { id: "sabq-3", title: "سبق نمبر 3 : ہمارے ہادی، ہمارے رہبر", type: "unit", chapters: [{ id: "3", code: "3", title: "ہمارے ہادی، ہمارے رہبر", type: "chapter" }] },
+  { id: "sabq-4", title: "سبق نمبر 4 : سیرِ جنت نظیر کی", type: "unit", chapters: [{ id: "4", code: "4", title: "سیرِ جنت نظیر کی", type: "chapter" }] },
+  { id: "sabq-5", title: "سبق نمبر 5 : جو وعدہ کرو، اُسے پورا کرو", type: "unit", chapters: [{ id: "5", code: "5", title: "جو وعدہ کرو، اُسے پورا کرو", type: "chapter" }] },
+  { id: "sabq-6", title: "سبق نمبر 6 : شیخ چلی نے انگریزی سیکھی", type: "unit", chapters: [{ id: "6", code: "6", title: "شیخ چلی نے انگریزی سیکھی", type: "chapter" }] },
+  { id: "sabq-7", title: "سبق نمبر 7 : دھنک (نظم)", type: "unit", chapters: [{ id: "7", code: "7", title: "دھنک (نظم)", type: "chapter" }] },
+  { id: "sabq-8", title: "سبق نمبر 8 : تُو ہے میری پہچان", type: "unit", chapters: [{ id: "8", code: "8", title: "تُو ہے میری پہچان", type: "chapter" }] },
+  { id: "sabq-9", title: "سبق نمبر 9 : بِنا آپ کے ہم کچھ نہیں", type: "unit", chapters: [{ id: "9", code: "9", title: "بِنا آپ کے ہم کچھ نہیں", type: "chapter" }] },
+  { id: "sabq-10", title: "سبق نمبر 10 : ایک پہاڑ اور گلہری", type: "unit", chapters: [{ id: "10", code: "10", title: "ایک پہاڑ اور گلہری", type: "chapter" }] },
+  { id: "sabq-11", title: "سبق نمبر 11 : قائدِ ملت لیاقت علی خان", type: "unit", chapters: [{ id: "11", code: "11", title: "قائدِ ملت لیاقت علی خان", type: "chapter" }] },
+  { id: "sabq-12", title: "سبق نمبر 12 : جادو کی پٹاری", type: "unit", chapters: [{ id: "12", code: "12", title: "جادو کی پٹاری", type: "chapter" }] },
+  { id: "sabq-13", title: "سبق نمبر 13 : ترانہ (نظم)", type: "unit", chapters: [{ id: "13", code: "13", title: "ترانہ (نظم)", type: "chapter" }] },
+  { id: "sabq-14", title: "سبق نمبر 14 : بنٹی نے کی توبہ", type: "unit", chapters: [{ id: "14", code: "14", title: "بنٹی نے کی توبہ", type: "chapter" }] },
+  { id: "sabq-15", title: "سبق نمبر 15 : آئیں کریں مدد", type: "unit", chapters: [{ id: "15", code: "15", title: "آئیں کریں مدد", type: "chapter" }] },
+  { id: "sabq-16", title: "سبق نمبر 16 : کوئی تو بچائے ہمیں", type: "unit", chapters: [{ id: "16", code: "16", title: "کوئی تو بچائے ہمیں", type: "chapter" }] },
+  { id: "sabq-17", title: "سبق نمبر 17 : نیک بنو، نیکی پھیلاؤ (نظم)", type: "unit", chapters: [{ id: "17", code: "17", title: "نیک بنو، نیکی پھیلاؤ (نظم)", type: "chapter" }] },
+  { id: "sabq-18", title: "سبق نمبر 18 : کہانی شاہی اینٹ کی", type: "unit", chapters: [{ id: "18", code: "18", title: "کہانی شاہی اینٹ کی", type: "chapter" }] },
+  { id: "sabq-19", title: "سبق نمبر 19 : سینڈی بنا مسافر ہوا کا", type: "unit", chapters: [{ id: "19", code: "19", title: "سینڈی بنا مسافر ہوا کا", type: "chapter" }] },
+  { id: "sabq-20", title: "سبق نمبر 20 : خضر کا کام کروں (نظم)", type: "unit", chapters: [{ id: "20", code: "20", title: "خضر کا کام کروں (نظم)", type: "chapter" }] },
+  { id: "sabq-21", title: "سبق نمبر 21 : بے مثل ہے جس کی قدرت", type: "unit", chapters: [{ id: "21", code: "21", title: "بے مثل ہے جس کی قدرت", type: "chapter" }] },
+  { id: "sabq-22", title: "سبق نمبر 22 : سنہری باتیں", type: "unit", chapters: [{ id: "22", code: "22", title: "سنہری باتیں", type: "chapter" }] },
+  { id: "sabq-23", title: "سبق نمبر 23 : ٹوٹ بٹوٹ کے مہمان (نظم)", type: "unit", chapters: [{ id: "23", code: "23", title: "ٹوٹ بٹوٹ کے مہمان (نظم)", type: "chapter" }] },
+];
