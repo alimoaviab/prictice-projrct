@@ -8,11 +8,12 @@
 package certificates
 
 import (
+	"crypto/rand"
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math/rand"
+	"math/big"
 	"net/http"
 	"sort"
 	"strings"
@@ -496,7 +497,15 @@ func (h *Handler) certificateMetadata(c *store.GeneratedCertificate) (map[string
 }
 
 func generateCertNo(schoolID, studentID string) string {
-	src := fmt.Sprintf("%s:%s:%d:%d", schoolID, studentID, time.Now().UnixNano(), rand.Int())
+	r, err := rand.Int(rand.Reader, big.NewInt(999999999))
+	var randInt int64
+	if err != nil {
+		randInt = time.Now().UnixNano() // fallback
+	} else {
+		randInt = r.Int64()
+	}
+
+	src := fmt.Sprintf("%s:%s:%d:%d", schoolID, studentID, time.Now().UnixNano(), randInt)
 	h := sha1.Sum([]byte(src))
 	hash := strings.ToUpper(hex.EncodeToString(h[:])[:6])
 	return fmt.Sprintf("CERT-%d-%s", time.Now().Year(), hash)
@@ -504,7 +513,12 @@ func generateCertNo(schoolID, studentID string) string {
 
 func generateVerificationCode() string {
 	b := make([]byte, 12)
-	rand.Read(b)
+	if _, err := rand.Read(b); err != nil {
+		// fallback using timestamp and a simple hash
+		tsBytes := []byte(fmt.Sprintf("%d", time.Now().UnixNano()))
+		h := sha1.Sum(tsBytes)
+		copy(b, h[:12])
+	}
 	return strings.ToUpper(hex.EncodeToString(b)[:16])
 }
 
