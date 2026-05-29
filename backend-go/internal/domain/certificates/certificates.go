@@ -12,7 +12,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math/rand"
+	cryptoRand "crypto/rand"
+	"math/big"
 	"net/http"
 	"sort"
 	"strings"
@@ -496,7 +497,11 @@ func (h *Handler) certificateMetadata(c *store.GeneratedCertificate) (map[string
 }
 
 func generateCertNo(schoolID, studentID string) string {
-	src := fmt.Sprintf("%s:%s:%d:%d", schoolID, studentID, time.Now().UnixNano(), rand.Int())
+	randNum := int64(0)
+	if n, err := cryptoRand.Int(cryptoRand.Reader, big.NewInt(1000000000)); err == nil {
+		randNum = n.Int64()
+	}
+	src := fmt.Sprintf("%s:%s:%d:%d", schoolID, studentID, time.Now().UnixNano(), randNum)
 	h := sha1.Sum([]byte(src))
 	hash := strings.ToUpper(hex.EncodeToString(h[:])[:6])
 	return fmt.Sprintf("CERT-%d-%s", time.Now().Year(), hash)
@@ -504,7 +509,10 @@ func generateCertNo(schoolID, studentID string) string {
 
 func generateVerificationCode() string {
 	b := make([]byte, 12)
-	rand.Read(b)
+	if _, err := cryptoRand.Read(b); err != nil {
+		// Fallback code just in case cryptoRand fails
+		return fmt.Sprintf("CODE-%d", time.Now().UnixNano())
+	}
 	return strings.ToUpper(hex.EncodeToString(b)[:16])
 }
 
