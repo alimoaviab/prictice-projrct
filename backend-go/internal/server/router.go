@@ -11,6 +11,7 @@ import (
 	"github.com/eduplexo/backend-go/internal/cache"
 	"github.com/eduplexo/backend-go/internal/config"
 	"github.com/eduplexo/backend-go/internal/domain/academicyear"
+	"github.com/eduplexo/backend-go/internal/realtime"
 	"github.com/eduplexo/backend-go/internal/domain/analytics"
 	"github.com/eduplexo/backend-go/internal/domain/announcements"
 	"github.com/eduplexo/backend-go/internal/domain/attendance"
@@ -471,16 +472,51 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Patch("/super-admin/settings", saH.UpdateSettings)
 
 			// Global Question Bank (Super Admin only)
+			jq := realtime.NewJobQueue(rdb.Raw())
+
+			r.Get("/super-admin/global-bank/boards", qpH.GlobalListBoards)
+			r.Post("/super-admin/global-bank/boards", qpH.GlobalCreateBoard)
+			r.Put("/super-admin/global-bank/boards/{id}", qpH.GlobalUpdateBoard)
+			r.Delete("/super-admin/global-bank/boards/{id}", qpH.GlobalDeleteBoard)
+
 			r.Get("/super-admin/global-bank/classes", qpH.GlobalListClasses)
+			r.Post("/super-admin/global-bank/classes", qpH.GlobalCreateClass)
+			r.Put("/super-admin/global-bank/classes/{id}", qpH.GlobalUpdateClass)
+			r.Delete("/super-admin/global-bank/classes/{id}", qpH.GlobalDeleteClass)
+
 			r.Get("/super-admin/global-bank/subjects", qpH.GlobalListSubjects)
+			r.Post("/super-admin/global-bank/subjects", qpH.GlobalCreateSubject)
+			r.Put("/super-admin/global-bank/subjects/{id}", qpH.GlobalUpdateSubject)
+			r.Delete("/super-admin/global-bank/subjects/{id}", qpH.GlobalDeleteSubject)
+
 			r.Get("/super-admin/global-bank/chapters", qpH.GlobalListChapters)
 			r.Post("/super-admin/global-bank/chapters", qpH.GlobalCreateChapter)
+			r.Put("/super-admin/global-bank/chapters/{id}", qpH.GlobalUpdateChapter)
 			r.Delete("/super-admin/global-bank/chapters/{id}", qpH.GlobalDeleteChapter)
+
+			r.Get("/super-admin/global-bank/topics", qpH.GlobalListTopics)
+			r.Post("/super-admin/global-bank/topics", qpH.GlobalCreateTopic)
+			r.Put("/super-admin/global-bank/topics/{id}", qpH.GlobalUpdateTopic)
+			r.Delete("/super-admin/global-bank/topics/{id}", qpH.GlobalDeleteTopic)
+
 			r.Get("/super-admin/global-bank/questions", qpH.GlobalListQuestions)
 			r.Post("/super-admin/global-bank/questions", qpH.GlobalCreateQuestion)
 			r.Put("/super-admin/global-bank/questions/{id}", qpH.GlobalUpdateQuestion)
 			r.Delete("/super-admin/global-bank/questions/{id}", qpH.GlobalDeleteQuestion)
 			r.Get("/super-admin/global-bank/stats", qpH.GlobalStats)
+
+			r.Post("/super-admin/global-bank/questions/bulk/archive", qpH.GlobalBulkArchiveQuestions)
+			r.Post("/super-admin/global-bank/questions/bulk/delete", qpH.GlobalBulkDeleteQuestions)
+			r.Post("/super-admin/global-bank/questions/bulk/approve", qpH.GlobalBulkApproveQuestions)
+			r.Post("/super-admin/global-bank/questions/bulk/reject", qpH.GlobalBulkRejectQuestions)
+
+			// CSV Imports
+			r.Post("/super-admin/global-bank/import/validate", saH.ValidateCSVEndpoint)
+			r.Post("/super-admin/global-bank/import/confirm", func(w http.ResponseWriter, req *http.Request) {
+				saH.ConfirmImportEndpoint(w, req, jq)
+			})
+			r.Get("/super-admin/global-bank/import-logs", saH.ListImportLogs)
+			r.Get("/super-admin/global-bank/import-logs/{id}/download-failed", saH.DownloadFailedRows)
 
 			// Parents — admin/teacher use these to link students to
 			// existing parent accounts during student creation. The

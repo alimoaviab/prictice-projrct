@@ -150,10 +150,13 @@ export function ChaptersSelectionPage() {
               {/* Action Buttons */}
               {selectedChapters.length > 0 && (
                 <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-[0_2px_10px_rgba(0,0,0,0.04)] space-y-2">
-                  <button className="w-full h-9 rounded-lg bg-blue-600 text-white text-[12px] font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                  <Link
+                    to={`/admin/question-papers/generate/questions?syllabus=${syllabus}&class=${encodeURIComponent(className)}&subject=${encodeURIComponent(subject)}&chapters=${selectedChapters.join(",")}`}
+                    className="w-full h-9 rounded-lg bg-blue-600 text-white text-[12px] font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                  >
                     <AppIcon name="FileText" size={14} />
                     Generate Paper
-                  </button>
+                  </Link>
                   <button className="w-full h-9 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-[12px] font-bold hover:bg-slate-100 transition-colors flex items-center justify-center gap-2">
                     <AppIcon name="Save" size={14} />
                     Save Selection

@@ -27,6 +27,14 @@ const cards: DashboardCard[] = [
     href: "/admin/question-papers/generate/syllabus",
   },
   {
+    id: "premium-generator",
+    title: "Premium Paper Generator",
+    subtitle: "Professional paper-making software",
+    icon: "Crown",
+    href: "/admin/question-papers/premium-generator",
+    badge: "Premium",
+  },
+  {
     id: "smart-generator",
     title: "Smart Paper Generator",
     subtitle: "AI-powered premium paper builder",

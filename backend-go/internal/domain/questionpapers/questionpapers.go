@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -1389,89 +1390,79 @@ func (h *Handler) ArchiveChapter(w http.ResponseWriter, r *http.Request) {
 
 const globalSchoolID = "__global__"
 
-// GlobalListClasses returns a curated list of class names for the global bank.
-// Super admin defines these; they map to school classes by name matching.
+// GlobalListClasses returns all global classes.
 func (h *Handler) GlobalListClasses(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	if ctx.Role != "super_admin" {
 		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin only.", 403, nil))
 		return
 	}
+	boardID := r.URL.Query().Get("board_id")
+	all := r.URL.Query().Get("all") == "true"
+
 	h.Store.RLock()
 	defer h.Store.RUnlock()
 
-	// Collect unique class names from global chapters/questions
-	classMap := map[string]string{} // id → name
-	for _, ch := range h.Store.Chapters {
-		if ch.SchoolID == globalSchoolID && ch.Status == "active" {
-			classMap[ch.ClassID] = ch.ClassName
-		}
-	}
-	for _, q := range h.Store.Questions {
-		if q.SchoolID == globalSchoolID && q.Status == "active" {
-			if _, ok := classMap[q.ClassID]; !ok {
-				// Try to resolve name
-				for _, c := range h.Store.Classes {
-					if c.ID == q.ClassID {
-						classMap[q.ClassID] = c.Name
-						break
-					}
-				}
-			}
-		}
-	}
-
-	// Also include global classes (stored as chapters with distinct class_id)
 	out := make([]map[string]any, 0)
-	seen := map[string]bool{}
-	// Standard Pakistani class names
-	standardClasses := []string{
-		"Nursery", "KG-1", "KG-2",
-		"Class 1", "Class 2", "Class 3", "Class 4", "Class 5",
-		"Class 6", "Class 7", "Class 8", "Class 9", "Class 10",
-		"Class 11", "Class 12",
-	}
-	for _, name := range standardClasses {
-		id := "global_cls_" + strings.ReplaceAll(strings.ToLower(name), " ", "_")
-		out = append(out, map[string]any{"_id": id, "name": name})
-		seen[id] = true
-	}
-	// Add any extra classes from existing data
-	for id, name := range classMap {
-		if !seen[id] {
-			out = append(out, map[string]any{"_id": id, "name": name})
+	for _, c := range h.Store.Classes {
+		if boardID == "__unassigned__" {
+			if c.BoardID != "" {
+				continue
+			}
+		} else if boardID != "" && c.BoardID != boardID {
+			continue
 		}
+		if !all && c.Status != "active" {
+			continue
+		}
+		out = append(out, map[string]any{
+			"_id":        c.ID,
+				"school_id":  c.SchoolID,
+				"board_id":   c.BoardID,
+				"name":       c.Name,
+				"code":       c.Code,
+				"grade":      c.Grade,
+				"section":    c.Section,
+				"status":     c.Status,
+				"is_active":  c.Status == "active",
+			"created_at": c.CreatedAt,
+			"updated_at": c.UpdatedAt,
+		})
 	}
 	api.WriteResult(w, api.Ok(out))
 }
 
-// GlobalListSubjects returns all subjects available for the global bank.
+// GlobalListSubjects returns all global subjects.
 func (h *Handler) GlobalListSubjects(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	if ctx.Role != "super_admin" {
 		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin only.", 403, nil))
 		return
 	}
+	classID := r.URL.Query().Get("class_id")
+	all := r.URL.Query().Get("all") == "true"
+
 	h.Store.RLock()
 	defer h.Store.RUnlock()
 
-	// Standard Pakistani curriculum subjects
-	standardSubjects := []struct{ name, code string }{
-		{"Mathematics", "MATH"}, {"English", "ENG"}, {"Urdu", "URD"},
-		{"Science", "SCI"}, {"Physics", "PHY"}, {"Chemistry", "CHE"},
-		{"Biology", "BIO"}, {"Computer Science", "CS"}, {"Islamic Studies", "ISL"},
-		{"Pakistan Studies", "PST"}, {"General Knowledge", "GK"},
-		{"Social Studies", "SST"}, {"Geography", "GEO"}, {"History", "HIS"},
-		{"Art", "ART"}, {"Physical Education", "PE"},
-	}
-
-	out := make([]map[string]any, 0, len(standardSubjects))
-	for _, s := range standardSubjects {
-		id := "global_sub_" + strings.ReplaceAll(strings.ToLower(s.name), " ", "_")
+	out := make([]map[string]any, 0)
+	for _, s := range h.Store.Subjects {
+		if classID != "" && s.ClassID != classID {
+			continue
+		}
+		if !all && s.Status != "active" {
+			continue
+		}
 		out = append(out, map[string]any{
-			"_id":  id,
-			"name": s.name,
-			"code": s.code,
+			"_id":        s.ID,
+				"school_id":  s.SchoolID,
+				"class_id":   s.ClassID,
+				"name":       s.Name,
+				"code":       s.Code,
+				"status":     s.Status,
+				"is_active":  s.Status == "active",
+			"created_at": s.CreatedAt,
+			"updated_at": s.CreatedAt,
 		})
 	}
 	api.WriteResult(w, api.Ok(out))
@@ -1492,9 +1483,6 @@ func (h *Handler) GlobalListChapters(w http.ResponseWriter, r *http.Request) {
 
 	out := make([]map[string]any, 0)
 	for _, ch := range h.Store.Chapters {
-		if ch.SchoolID != globalSchoolID {
-			continue
-		}
 		if ch.Status != "active" {
 			continue
 		}
@@ -1584,29 +1572,45 @@ func (h *Handler) GlobalDeleteChapter(w http.ResponseWriter, r *http.Request) {
 	api.WriteResult(w, api.Fail("NOT_FOUND", "Chapter not found.", 404, nil))
 }
 
-// GlobalListQuestions returns all global questions, with optional filters.
+// GlobalListQuestions returns all global questions, with optional filters and pagination.
 func (h *Handler) GlobalListQuestions(w http.ResponseWriter, r *http.Request) {
 	ctx := api.FromRequest(r)
 	if ctx.Role != "super_admin" {
 		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin only.", 403, nil))
 		return
 	}
+	boardID := r.URL.Query().Get("board_id")
 	classID := r.URL.Query().Get("class_id")
 	subjectID := r.URL.Query().Get("subject_id")
 	chapterID := r.URL.Query().Get("chapter_id")
+	topicID := r.URL.Query().Get("topic_id")
 	qType := r.URL.Query().Get("type")
 	difficulty := r.URL.Query().Get("difficulty")
+	marksStr := r.URL.Query().Get("marks")
+	statusFilter := r.URL.Query().Get("status")
+	approvalStatus := r.URL.Query().Get("approval_status")
 	search := r.URL.Query().Get("search")
 
 	h.Store.RLock()
 	defer h.Store.RUnlock()
 
-	out := make([]map[string]any, 0)
+	filtered := make([]*store.Question, 0)
 	for _, q := range h.Store.Questions {
-		if q.SchoolID != globalSchoolID {
-			continue
+		if statusFilter != "" {
+			if q.Status != statusFilter {
+				continue
+			}
+		} else {
+			if q.Status != "active" {
+				continue
+			}
 		}
-		if q.Status != "active" {
+		if approvalStatus != "" {
+			if q.ApprovalStatus != approvalStatus {
+				continue
+			}
+		}
+		if boardID != "" && q.BoardID != boardID {
 			continue
 		}
 		if classID != "" && q.ClassID != classID {
@@ -1618,21 +1622,75 @@ func (h *Handler) GlobalListQuestions(w http.ResponseWriter, r *http.Request) {
 		if chapterID != "" && q.ChapterID != chapterID {
 			continue
 		}
+		if topicID != "" && q.TopicID != topicID {
+			continue
+		}
 		if qType != "" && q.Type != qType {
 			continue
 		}
 		if difficulty != "" && q.Difficulty != difficulty {
 			continue
 		}
+		if marksStr != "" {
+			m, _ := strconv.Atoi(marksStr)
+			if q.Marks != m {
+				continue
+			}
+		}
 		if search != "" && !strings.Contains(strings.ToLower(q.QuestionHTML), strings.ToLower(search)) {
 			continue
 		}
-		out = append(out, h.questionToMap(q))
+		filtered = append(filtered, q)
 	}
-	sort.Slice(out, func(i, j int) bool {
-		return out[i]["created_at"].(time.Time).After(out[j]["created_at"].(time.Time))
+
+	sort.Slice(filtered, func(i, j int) bool {
+		return filtered[i].CreatedAt.After(filtered[j].CreatedAt)
 	})
-	api.WriteResult(w, api.Ok(out))
+
+	isPaged := r.URL.Query().Get("page") != "" || r.URL.Query().Get("limit") != ""
+	if isPaged {
+		limit := 10
+		page := 1
+		if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+			if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+				limit = l
+			}
+		}
+		if pageStr := r.URL.Query().Get("page"); pageStr != "" {
+			if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+				page = p
+			}
+		}
+
+		total := len(filtered)
+		start := (page - 1) * limit
+		if start > total {
+			start = total
+		}
+		end := start + limit
+		if end > total {
+			end = total
+		}
+
+		paginated := filtered[start:end]
+		out := make([]map[string]any, 0, len(paginated))
+		for _, q := range paginated {
+			out = append(out, h.questionToMap(q))
+		}
+
+		api.WriteResult(w, api.Ok(map[string]any{
+			"items": out,
+			"total": total,
+			"page":  page,
+			"limit": limit,
+		}))
+	} else {
+		out := make([]map[string]any, 0, len(filtered))
+		for _, q := range filtered {
+			out = append(out, h.questionToMap(q))
+		}
+		api.WriteResult(w, api.Ok(out))
+	}
 }
 
 // GlobalCreateQuestion creates a question in the global bank (visible to all schools).
@@ -1643,11 +1701,13 @@ func (h *Handler) GlobalCreateQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body struct {
+		BoardID      string          `json:"board_id"`
 		ClassID      string          `json:"class_id"`
 		ClassName    string          `json:"class_name"`
 		SubjectID    string          `json:"subject_id"`
 		SubjectName  string          `json:"subject_name"`
 		ChapterID    string          `json:"chapter_id"`
+		TopicID      string          `json:"topic_id"`
 		Type         string          `json:"type"`
 		Difficulty   string          `json:"difficulty"`
 		QuestionHTML string          `json:"question_html"`
@@ -1685,10 +1745,12 @@ func (h *Handler) GlobalCreateQuestion(w http.ResponseWriter, r *http.Request) {
 		SchoolID:       globalSchoolID,
 		CreatedBy:      ctx.UserID,
 		CreatedByName:  "Super Admin",
+		BoardID:        body.BoardID,
 		ClassID:        body.ClassID,
 		SubjectID:      body.SubjectID,
 		SubjectName:    body.SubjectName,
 		ChapterID:      body.ChapterID,
+		TopicID:        body.TopicID,
 		Type:           body.Type,
 		Difficulty:     body.Difficulty,
 		QuestionHTML:   body.QuestionHTML,
@@ -1718,16 +1780,19 @@ func (h *Handler) GlobalUpdateQuestion(w http.ResponseWriter, r *http.Request) {
 	}
 	id := chi.URLParam(r, "id")
 	var body struct {
+		BoardID      string          `json:"board_id"`
 		ClassID      string          `json:"class_id"`
 		ClassName    string          `json:"class_name"`
 		SubjectID    string          `json:"subject_id"`
 		SubjectName  string          `json:"subject_name"`
 		ChapterID    string          `json:"chapter_id"`
+		TopicID      string          `json:"topic_id"`
 		Type         string          `json:"type"`
 		Difficulty   string          `json:"difficulty"`
 		QuestionHTML string          `json:"question_html"`
 		Options      json.RawMessage `json:"options"`
 		Marks        int             `json:"marks"`
+		Status       string          `json:"status"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Invalid JSON.", 400, nil))
@@ -1741,6 +1806,9 @@ func (h *Handler) GlobalUpdateQuestion(w http.ResponseWriter, r *http.Request) {
 			if body.QuestionHTML != "" {
 				q.QuestionHTML = body.QuestionHTML
 			}
+			if body.BoardID != "" {
+				q.BoardID = body.BoardID
+			}
 			if body.ClassID != "" {
 				q.ClassID = body.ClassID
 			}
@@ -1753,6 +1821,9 @@ func (h *Handler) GlobalUpdateQuestion(w http.ResponseWriter, r *http.Request) {
 			if body.ChapterID != "" {
 				q.ChapterID = body.ChapterID
 			}
+			if body.TopicID != "" {
+				q.TopicID = body.TopicID
+			}
 			if body.Type != "" {
 				q.Type = body.Type
 			}
@@ -1761,6 +1832,9 @@ func (h *Handler) GlobalUpdateQuestion(w http.ResponseWriter, r *http.Request) {
 			}
 			if body.Marks > 0 {
 				q.Marks = body.Marks
+			}
+			if body.Status != "" {
+				q.Status = body.Status
 			}
 			if len(body.Options) > 0 && string(body.Options) != "null" {
 				var asString string
@@ -1851,4 +1925,825 @@ func (h *Handler) GlobalStats(w http.ResponseWriter, r *http.Request) {
 		"hard":     hard,
 		"chapters": chapters,
 	}))
+}
+
+func (h *Handler) GlobalListBoards(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	if ctx.Role != "super_admin" {
+		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin only.", 403, nil))
+		return
+	}
+	all := r.URL.Query().Get("all") == "true"
+
+	h.Store.RLock()
+	defer h.Store.RUnlock()
+
+	out := make([]*store.Board, 0)
+	for _, b := range h.Store.Boards {
+		if !all && !b.IsActive {
+			continue
+		}
+		out = append(out, b)
+	}
+	out = append(out, &store.Board{
+		ID:        "__unassigned__",
+		Name:      "School Classes (Unassigned)",
+		Code:      "SCHOOL",
+		IsActive:  true,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	})
+	api.WriteResult(w, api.Ok(out))
+}
+
+func (h *Handler) GlobalCreateBoard(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	if ctx.Role != "super_admin" {
+		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin only.", 403, nil))
+		return
+	}
+	var body struct {
+		Name     string `json:"name"`
+		Code     string `json:"code"`
+		IsActive bool   `json:"is_active"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Invalid JSON.", 400, nil))
+		return
+	}
+	if body.Name == "" || body.Code == "" {
+		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Name and Code required.", 400, nil))
+		return
+	}
+
+	h.Store.Lock()
+	defer h.Store.Unlock()
+
+	for _, b := range h.Store.Boards {
+		if strings.EqualFold(b.Code, body.Code) {
+			api.WriteResult(w, api.Fail("DUPLICATE", "Board code already exists.", 400, nil))
+			return
+		}
+	}
+
+	now := time.Now()
+	board := &store.Board{
+		ID:        store.NewID("brd"),
+		Name:      body.Name,
+		Code:      body.Code,
+		IsActive:  body.IsActive,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+	h.Store.Boards = append(h.Store.Boards, board)
+	h.Save("boards", board)
+
+	api.WriteResult(w, api.Ok(board))
+}
+
+func (h *Handler) GlobalUpdateBoard(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	if ctx.Role != "super_admin" {
+		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin only.", 403, nil))
+		return
+	}
+	id := chi.URLParam(r, "id")
+	var body struct {
+		Name     *string `json:"name"`
+		Code     *string `json:"code"`
+		IsActive *bool   `json:"is_active"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Invalid JSON.", 400, nil))
+		return
+	}
+
+	h.Store.Lock()
+	defer h.Store.Unlock()
+
+	var board *store.Board
+	for _, b := range h.Store.Boards {
+		if b.ID == id {
+			board = b
+			break
+		}
+	}
+	if board == nil {
+		api.WriteResult(w, api.Fail("NOT_FOUND", "Board not found.", 404, nil))
+		return
+	}
+
+	if body.Code != nil && *body.Code != board.Code {
+		for _, b := range h.Store.Boards {
+			if b.ID != id && strings.EqualFold(b.Code, *body.Code) {
+				api.WriteResult(w, api.Fail("DUPLICATE", "Board code already exists.", 400, nil))
+				return
+			}
+		}
+		board.Code = *body.Code
+	}
+	if body.Name != nil {
+		board.Name = *body.Name
+	}
+	if body.IsActive != nil {
+		board.IsActive = *body.IsActive
+	}
+	board.UpdatedAt = time.Now()
+	h.Save("boards", board)
+
+	api.WriteResult(w, api.Ok(board))
+}
+
+func (h *Handler) GlobalDeleteBoard(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	if ctx.Role != "super_admin" {
+		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin only.", 403, nil))
+		return
+	}
+	id := chi.URLParam(r, "id")
+
+	h.Store.Lock()
+	defer h.Store.Unlock()
+
+	found := false
+	for i, b := range h.Store.Boards {
+		if b.ID == id {
+			h.Store.Boards = append(h.Store.Boards[:i], h.Store.Boards[i+1:]...)
+			found = true
+			break
+		}
+	}
+	if !found {
+		api.WriteResult(w, api.Fail("NOT_FOUND", "Board not found.", 404, nil))
+		return
+	}
+	h.Save("boards:delete", id)
+	api.WriteResult(w, api.Ok(map[string]any{"deleted": true}))
+}
+
+func (h *Handler) GlobalCreateClass(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	if ctx.Role != "super_admin" {
+		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin only.", 403, nil))
+		return
+	}
+	var body struct {
+		BoardID string `json:"board_id"`
+		Name    string `json:"name"`
+		Code    string `json:"code"`
+		Grade   string `json:"grade"`
+		Section string `json:"section"`
+		Status  string `json:"status"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Invalid JSON.", 400, nil))
+		return
+	}
+	if body.Name == "" || body.BoardID == "" {
+		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Name and BoardID required.", 400, nil))
+		return
+	}
+	if body.Status == "" {
+		body.Status = "active"
+	}
+
+	h.Store.Lock()
+	defer h.Store.Unlock()
+
+	boardExists := false
+	for _, b := range h.Store.Boards {
+		if b.ID == body.BoardID {
+			boardExists = true
+			break
+		}
+	}
+	if !boardExists {
+		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Board does not exist.", 400, nil))
+		return
+	}
+
+	now := time.Now()
+	cls := &store.Class{
+		ID:        store.NewID("gcls"),
+		SchoolID:  globalSchoolID,
+		BoardID:   body.BoardID,
+		Name:      body.Name,
+		Code:      body.Code,
+		Grade:     body.Grade,
+		Section:   body.Section,
+		Status:    body.Status,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+	h.Store.Classes = append(h.Store.Classes, cls)
+	h.Save("classes", cls)
+
+	api.WriteResult(w, api.Ok(cls))
+}
+
+func (h *Handler) GlobalUpdateClass(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	if ctx.Role != "super_admin" {
+		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin only.", 403, nil))
+		return
+	}
+	id := chi.URLParam(r, "id")
+	var body struct {
+		BoardID *string `json:"board_id"`
+		Name    *string `json:"name"`
+		Code    *string `json:"code"`
+		Grade   *string `json:"grade"`
+		Section *string `json:"section"`
+		Status  *string `json:"status"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Invalid JSON.", 400, nil))
+		return
+	}
+
+	h.Store.Lock()
+	defer h.Store.Unlock()
+
+	var cls *store.Class
+	for _, c := range h.Store.Classes {
+		if c.ID == id && c.SchoolID == globalSchoolID {
+			cls = c
+			break
+		}
+	}
+	if cls == nil {
+		api.WriteResult(w, api.Fail("NOT_FOUND", "Global class not found.", 404, nil))
+		return
+	}
+
+	if body.BoardID != nil {
+		boardExists := false
+		for _, b := range h.Store.Boards {
+			if b.ID == *body.BoardID {
+				boardExists = true
+				break
+			}
+		}
+		if !boardExists {
+			api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Board does not exist.", 400, nil))
+			return
+		}
+		cls.BoardID = *body.BoardID
+	}
+	if body.Name != nil {
+		cls.Name = *body.Name
+	}
+	if body.Code != nil {
+		cls.Code = *body.Code
+	}
+	if body.Grade != nil {
+		cls.Grade = *body.Grade
+	}
+	if body.Section != nil {
+		cls.Section = *body.Section
+	}
+	if body.Status != nil {
+		cls.Status = *body.Status
+	}
+	cls.UpdatedAt = time.Now()
+	h.Save("classes", cls)
+
+	api.WriteResult(w, api.Ok(cls))
+}
+
+func (h *Handler) GlobalDeleteClass(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	if ctx.Role != "super_admin" {
+		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin only.", 403, nil))
+		return
+	}
+	id := chi.URLParam(r, "id")
+
+	h.Store.Lock()
+	defer h.Store.Unlock()
+
+	found := false
+	for i, c := range h.Store.Classes {
+		if c.ID == id && c.SchoolID == globalSchoolID {
+			h.Store.Classes = append(h.Store.Classes[:i], h.Store.Classes[i+1:]...)
+			found = true
+			break
+		}
+	}
+	if !found {
+		api.WriteResult(w, api.Fail("NOT_FOUND", "Global class not found.", 404, nil))
+		return
+	}
+	h.Save("classes:delete", id)
+	api.WriteResult(w, api.Ok(map[string]any{"deleted": true}))
+}
+
+func (h *Handler) GlobalCreateSubject(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	if ctx.Role != "super_admin" {
+		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin only.", 403, nil))
+		return
+	}
+	var body struct {
+		ClassID string `json:"class_id"`
+		Name    string `json:"name"`
+		Code    string `json:"code"`
+		Status  string `json:"status"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Invalid JSON.", 400, nil))
+		return
+	}
+	if body.Name == "" || body.ClassID == "" {
+		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Name and ClassID required.", 400, nil))
+		return
+	}
+	if body.Status == "" {
+		body.Status = "active"
+	}
+
+	h.Store.Lock()
+	defer h.Store.Unlock()
+
+	classExists := false
+	for _, c := range h.Store.Classes {
+		if c.ID == body.ClassID && c.SchoolID == globalSchoolID {
+			classExists = true
+			break
+		}
+	}
+	if !classExists {
+		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Class does not exist.", 400, nil))
+		return
+	}
+
+	now := time.Now()
+	subj := &store.Subject{
+		ID:        store.NewID("gsub"),
+		SchoolID:  globalSchoolID,
+		ClassID:   body.ClassID,
+		Name:      body.Name,
+		Code:      body.Code,
+		Status:    body.Status,
+		CreatedAt: now,
+	}
+	h.Store.Subjects = append(h.Store.Subjects, subj)
+	h.Save("subjects", subj)
+
+	api.WriteResult(w, api.Ok(subj))
+}
+
+func (h *Handler) GlobalUpdateSubject(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	if ctx.Role != "super_admin" {
+		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin only.", 403, nil))
+		return
+	}
+	id := chi.URLParam(r, "id")
+	var body struct {
+		ClassID *string `json:"class_id"`
+		Name    *string `json:"name"`
+		Code    *string `json:"code"`
+		Status  *string `json:"status"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Invalid JSON.", 400, nil))
+		return
+	}
+
+	h.Store.Lock()
+	defer h.Store.Unlock()
+
+	var subj *store.Subject
+	for _, s := range h.Store.Subjects {
+		if s.ID == id && s.SchoolID == globalSchoolID {
+			subj = s
+			break
+		}
+	}
+	if subj == nil {
+		api.WriteResult(w, api.Fail("NOT_FOUND", "Global subject not found.", 404, nil))
+		return
+	}
+
+	if body.ClassID != nil {
+		classExists := false
+		for _, c := range h.Store.Classes {
+			if c.ID == *body.ClassID && c.SchoolID == globalSchoolID {
+				classExists = true
+				break
+			}
+		}
+		if !classExists {
+			api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Class does not exist.", 400, nil))
+			return
+		}
+		subj.ClassID = *body.ClassID
+	}
+	if body.Name != nil {
+		subj.Name = *body.Name
+	}
+	if body.Code != nil {
+		subj.Code = *body.Code
+	}
+	if body.Status != nil {
+		subj.Status = *body.Status
+	}
+	h.Save("subjects", subj)
+
+	api.WriteResult(w, api.Ok(subj))
+}
+
+func (h *Handler) GlobalDeleteSubject(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	if ctx.Role != "super_admin" {
+		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin only.", 403, nil))
+		return
+	}
+	id := chi.URLParam(r, "id")
+
+	h.Store.Lock()
+	defer h.Store.Unlock()
+
+	found := false
+	for i, s := range h.Store.Subjects {
+		if s.ID == id && s.SchoolID == globalSchoolID {
+			h.Store.Subjects = append(h.Store.Subjects[:i], h.Store.Subjects[i+1:]...)
+			found = true
+			break
+		}
+	}
+	if !found {
+		api.WriteResult(w, api.Fail("NOT_FOUND", "Global subject not found.", 404, nil))
+		return
+	}
+	h.Save("subjects:delete", id)
+	api.WriteResult(w, api.Ok(map[string]any{"deleted": true}))
+}
+
+func (h *Handler) GlobalUpdateChapter(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	if ctx.Role != "super_admin" {
+		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin only.", 403, nil))
+		return
+	}
+	id := chi.URLParam(r, "id")
+	var body struct {
+		ClassID       *string `json:"class_id"`
+		ClassName     *string `json:"class_name"`
+		SubjectID     *string `json:"subject_id"`
+		SubjectName   *string `json:"subject_name"`
+		Title         *string `json:"title"`
+		ChapterNumber *int    `json:"chapter_number"`
+		Status        *string `json:"status"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Invalid JSON.", 400, nil))
+		return
+	}
+
+	h.Store.Lock()
+	defer h.Store.Unlock()
+
+	var ch *store.Chapter
+	for _, c := range h.Store.Chapters {
+		if c.ID == id && c.SchoolID == globalSchoolID {
+			ch = c
+			break
+		}
+	}
+	if ch == nil {
+		api.WriteResult(w, api.Fail("NOT_FOUND", "Global chapter not found.", 404, nil))
+		return
+	}
+
+	if body.ClassID != nil {
+		ch.ClassID = *body.ClassID
+	}
+	if body.ClassName != nil {
+		ch.ClassName = *body.ClassName
+	}
+	if body.SubjectID != nil {
+		ch.SubjectID = *body.SubjectID
+	}
+	if body.SubjectName != nil {
+		ch.SubjectName = *body.SubjectName
+	}
+	if body.Title != nil {
+		ch.Title = *body.Title
+	}
+	if body.ChapterNumber != nil {
+		ch.ChapterNumber = *body.ChapterNumber
+	}
+	if body.Status != nil {
+		ch.Status = *body.Status
+	}
+	ch.UpdatedAt = time.Now()
+	h.Save("chapters", ch)
+
+	api.WriteResult(w, api.Ok(h.chapterToMap(ch)))
+}
+
+func (h *Handler) GlobalListTopics(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	if ctx.Role != "super_admin" {
+		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin only.", 403, nil))
+		return
+	}
+	chapterID := r.URL.Query().Get("chapter_id")
+	all := r.URL.Query().Get("all") == "true"
+
+	h.Store.RLock()
+	defer h.Store.RUnlock()
+
+	out := make([]*store.Topic, 0)
+	for _, t := range h.Store.Topics {
+		if chapterID != "" && t.ChapterID != chapterID {
+			continue
+		}
+		if !all && !t.IsActive {
+			continue
+		}
+		out = append(out, t)
+	}
+	api.WriteResult(w, api.Ok(out))
+}
+
+func (h *Handler) GlobalCreateTopic(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	if ctx.Role != "super_admin" {
+		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin only.", 403, nil))
+		return
+	}
+	var body struct {
+		ChapterID   string `json:"chapter_id"`
+		Name        string `json:"name"`
+		Code        string `json:"code"`
+		Description string `json:"description"`
+		IsActive    bool   `json:"is_active"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Invalid JSON.", 400, nil))
+		return
+	}
+	if body.Name == "" || body.ChapterID == "" {
+		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Name and ChapterID required.", 400, nil))
+		return
+	}
+
+	h.Store.Lock()
+	defer h.Store.Unlock()
+
+	chapterExists := false
+	for _, ch := range h.Store.Chapters {
+		if ch.ID == body.ChapterID && ch.SchoolID == globalSchoolID {
+			chapterExists = true
+			break
+		}
+	}
+	if !chapterExists {
+		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Chapter does not exist.", 400, nil))
+		return
+	}
+
+	now := time.Now()
+	topic := &store.Topic{
+		ID:          store.NewID("top"),
+		ChapterID:   body.ChapterID,
+		Name:        body.Name,
+		Code:        body.Code,
+		Description: body.Description,
+		IsActive:    body.IsActive,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+	h.Store.Topics = append(h.Store.Topics, topic)
+	h.Save("topics", topic)
+
+	api.WriteResult(w, api.Ok(topic))
+}
+
+func (h *Handler) GlobalUpdateTopic(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	if ctx.Role != "super_admin" {
+		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin only.", 403, nil))
+		return
+	}
+	id := chi.URLParam(r, "id")
+	var body struct {
+		ChapterID   *string `json:"chapter_id"`
+		Name        *string `json:"name"`
+		Code        *string `json:"code"`
+		Description *string `json:"description"`
+		IsActive    *bool   `json:"is_active"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Invalid JSON.", 400, nil))
+		return
+	}
+
+	h.Store.Lock()
+	defer h.Store.Unlock()
+
+	var topic *store.Topic
+	for _, t := range h.Store.Topics {
+		if t.ID == id {
+			topic = t
+			break
+		}
+	}
+	if topic == nil {
+		api.WriteResult(w, api.Fail("NOT_FOUND", "Topic not found.", 404, nil))
+		return
+	}
+
+	if body.ChapterID != nil {
+		chapterExists := false
+		for _, ch := range h.Store.Chapters {
+			if ch.ID == *body.ChapterID && ch.SchoolID == globalSchoolID {
+				chapterExists = true
+				break
+			}
+		}
+		if !chapterExists {
+			api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Chapter does not exist.", 400, nil))
+			return
+		}
+		topic.ChapterID = *body.ChapterID
+	}
+	if body.Name != nil {
+		topic.Name = *body.Name
+	}
+	if body.Code != nil {
+		topic.Code = *body.Code
+	}
+	if body.Description != nil {
+		topic.Description = *body.Description
+	}
+	if body.IsActive != nil {
+		topic.IsActive = *body.IsActive
+	}
+	topic.UpdatedAt = time.Now()
+	h.Save("topics", topic)
+
+	api.WriteResult(w, api.Ok(topic))
+}
+
+func (h *Handler) GlobalDeleteTopic(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	if ctx.Role != "super_admin" {
+		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin only.", 403, nil))
+		return
+	}
+	id := chi.URLParam(r, "id")
+
+	h.Store.Lock()
+	defer h.Store.Unlock()
+
+	found := false
+	for i, t := range h.Store.Topics {
+		if t.ID == id {
+			h.Store.Topics = append(h.Store.Topics[:i], h.Store.Topics[i+1:]...)
+			found = true
+			break
+		}
+	}
+	if !found {
+		api.WriteResult(w, api.Fail("NOT_FOUND", "Topic not found.", 404, nil))
+		return
+	}
+	h.Save("topics:delete", id)
+	api.WriteResult(w, api.Ok(map[string]any{"deleted": true}))
+}
+
+func (h *Handler) GlobalBulkArchiveQuestions(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	if ctx.Role != "super_admin" {
+		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin only.", 403, nil))
+		return
+	}
+	var body bulkActionInput
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Invalid JSON body.", 400, nil))
+		return
+	}
+
+	idSet := make(map[string]bool, len(body.IDs))
+	for _, id := range body.IDs {
+		idSet[id] = true
+	}
+
+	h.Store.Lock()
+	defer h.Store.Unlock()
+
+	count := 0
+	for _, q := range h.Store.Questions {
+		if idSet[q.ID] && q.SchoolID == globalSchoolID {
+			q.Status = "archived"
+			q.UpdatedAt = time.Now()
+			h.Save("questions", q)
+			count++
+		}
+	}
+	api.WriteResult(w, api.Ok(map[string]any{"archived": count}))
+}
+
+func (h *Handler) GlobalBulkDeleteQuestions(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	if ctx.Role != "super_admin" {
+		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin only.", 403, nil))
+		return
+	}
+	var body bulkActionInput
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Invalid JSON body.", 400, nil))
+		return
+	}
+	idSet := make(map[string]bool, len(body.IDs))
+	for _, id := range body.IDs {
+		idSet[id] = true
+	}
+
+	h.Store.Lock()
+	defer h.Store.Unlock()
+
+	kept := make([]*store.Question, 0, len(h.Store.Questions))
+	count := 0
+	for _, q := range h.Store.Questions {
+		if idSet[q.ID] && q.SchoolID == globalSchoolID {
+			h.Save("questions:delete", q.ID)
+			count++
+			continue
+		}
+		kept = append(kept, q)
+	}
+	h.Store.Questions = kept
+	api.WriteResult(w, api.Ok(map[string]any{"deleted": count}))
+}
+
+func (h *Handler) GlobalBulkApproveQuestions(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	if ctx.Role != "super_admin" {
+		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin only.", 403, nil))
+		return
+	}
+	var body bulkActionInput
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Invalid JSON body.", 400, nil))
+		return
+	}
+	idSet := make(map[string]bool, len(body.IDs))
+	for _, id := range body.IDs {
+		idSet[id] = true
+	}
+
+	h.Store.Lock()
+	defer h.Store.Unlock()
+
+	count := 0
+	now := time.Now()
+	for _, q := range h.Store.Questions {
+		if idSet[q.ID] && q.SchoolID == globalSchoolID {
+			q.ApprovalStatus = "approved"
+			q.IsGlobal = true
+			q.ApprovedBy = ctx.UserID
+			q.ApprovedAt = &now
+			q.UpdatedAt = now
+			h.Save("questions", q)
+			count++
+		}
+	}
+	api.WriteResult(w, api.Ok(map[string]any{"approved": count}))
+}
+
+func (h *Handler) GlobalBulkRejectQuestions(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	if ctx.Role != "super_admin" {
+		api.WriteResult(w, api.Fail("FORBIDDEN", "Super admin only.", 403, nil))
+		return
+	}
+	var body bulkActionInput
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Invalid JSON body.", 400, nil))
+		return
+	}
+	idSet := make(map[string]bool, len(body.IDs))
+	for _, id := range body.IDs {
+		idSet[id] = true
+	}
+
+	h.Store.Lock()
+	defer h.Store.Unlock()
+
+	count := 0
+	for _, q := range h.Store.Questions {
+		if idSet[q.ID] && q.SchoolID == globalSchoolID {
+			q.ApprovalStatus = "rejected"
+			q.IsGlobal = false
+			q.UpdatedAt = time.Now()
+			h.Save("questions", q)
+			count++
+		}
+	}
+	api.WriteResult(w, api.Ok(map[string]any{"rejected": count}))
 }

@@ -104,6 +104,12 @@ func upsertRow(ctx context.Context, tx pgx.Tx, table string, doc any) error {
 		return upsertStudentWallet(ctx, tx, v)
 	case *store.WalletTransaction:
 		return upsertWalletTransaction(ctx, tx, v)
+	case *store.Board:
+		return upsertBoard(ctx, tx, v)
+	case *store.Topic:
+		return upsertTopic(ctx, tx, v)
+	case *store.ImportLog:
+		return upsertImportLog(ctx, tx, v)
 	}
 	return fmt.Errorf("upsert: unknown document type for table %s", table)
 }
@@ -189,13 +195,13 @@ func upsertAcademicYear(ctx context.Context, tx pgx.Tx, v *store.AcademicYear) e
 func upsertSubject(ctx context.Context, tx pgx.Tx, v *store.Subject) error {
 	teacherID := nullableString(v.TeacherID)
 	_, err := tx.Exec(ctx, `
-		INSERT INTO subjects (id, school_id, name, code, description, status, total_marks, passing_marks, teacher_id, created_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+		INSERT INTO subjects (id, school_id, class_id, name, code, description, status, total_marks, passing_marks, teacher_id, created_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
 		ON CONFLICT (id) DO UPDATE SET
-			name=EXCLUDED.name, code=EXCLUDED.code, description=EXCLUDED.description,
+			class_id=EXCLUDED.class_id, name=EXCLUDED.name, code=EXCLUDED.code, description=EXCLUDED.description,
 			status=EXCLUDED.status, total_marks=EXCLUDED.total_marks,
 			passing_marks=EXCLUDED.passing_marks, teacher_id=EXCLUDED.teacher_id
-	`, v.ID, v.SchoolID, v.Name, v.Code, v.Description, v.Status, v.TotalMarks, v.PassingMarks, teacherID, v.CreatedAt)
+	`, v.ID, v.SchoolID, nullableString(v.ClassID), v.Name, v.Code, v.Description, v.Status, v.TotalMarks, v.PassingMarks, teacherID, v.CreatedAt)
 	return err
 }
 
@@ -207,18 +213,18 @@ func upsertClass(ctx context.Context, tx pgx.Tx, v *store.Class) error {
 
 	classTeacherID := nullableString(v.ClassTeacherID)
 	_, err = tx.Exec(ctx, `
-		INSERT INTO classes (id, school_id, academic_year_id, name, code, grade, section,
+		INSERT INTO classes (id, school_id, board_id, academic_year_id, name, code, grade, section,
 			capacity, display_order, passing_percentage, class_teacher_id,
 			room_number, description, subjects, status, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
 		ON CONFLICT (id) DO UPDATE SET
-			name=EXCLUDED.name, code=EXCLUDED.code, grade=EXCLUDED.grade,
+			board_id=EXCLUDED.board_id, name=EXCLUDED.name, code=EXCLUDED.code, grade=EXCLUDED.grade,
 			section=EXCLUDED.section, capacity=EXCLUDED.capacity,
 			display_order=EXCLUDED.display_order, passing_percentage=EXCLUDED.passing_percentage,
 			class_teacher_id=EXCLUDED.class_teacher_id, room_number=EXCLUDED.room_number,
 			description=EXCLUDED.description, subjects=EXCLUDED.subjects, status=EXCLUDED.status,
 			updated_at=EXCLUDED.updated_at
-	`, v.ID, v.SchoolID, v.AcademicYearID, v.Name, v.Code, v.Grade, v.Section,
+	`, v.ID, v.SchoolID, nullableString(v.BoardID), v.AcademicYearID, v.Name, v.Code, v.Grade, v.Section,
 		v.Capacity, v.DisplayOrder, v.PassingPercentage, classTeacherID,
 		v.RoomNumber, v.Description, subjects, v.Status, v.CreatedAt, v.UpdatedAt)
 	if err != nil {
@@ -858,22 +864,22 @@ func upsertChapter(ctx context.Context, tx pgx.Tx, v *store.Chapter) error {
 
 func upsertQuestion(ctx context.Context, tx pgx.Tx, v *store.Question) error {
 	_, err := tx.Exec(ctx, `
-		INSERT INTO questions (id, school_id, created_by, created_by_name, class_id,
-			subject_id, subject_name, chapter_id, type, difficulty, question_html,
+		INSERT INTO questions (id, school_id, created_by, created_by_name, board_id, class_id,
+			subject_id, subject_name, chapter_id, topic_id, type, difficulty, question_html,
 			options, marks, status, is_global, approval_status, approved_by,
 			approved_at, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
 		ON CONFLICT (id) DO UPDATE SET
-			class_id=EXCLUDED.class_id, subject_id=EXCLUDED.subject_id,
-			subject_name=EXCLUDED.subject_name, chapter_id=EXCLUDED.chapter_id,
+			board_id=EXCLUDED.board_id, class_id=EXCLUDED.class_id, subject_id=EXCLUDED.subject_id,
+			subject_name=EXCLUDED.subject_name, chapter_id=EXCLUDED.chapter_id, topic_id=EXCLUDED.topic_id,
 			type=EXCLUDED.type, difficulty=EXCLUDED.difficulty,
 			question_html=EXCLUDED.question_html, options=EXCLUDED.options,
 			marks=EXCLUDED.marks, status=EXCLUDED.status,
 			is_global=EXCLUDED.is_global, approval_status=EXCLUDED.approval_status,
 			approved_by=EXCLUDED.approved_by, approved_at=EXCLUDED.approved_at,
 			updated_at=EXCLUDED.updated_at
-	`, v.ID, v.SchoolID, v.CreatedBy, v.CreatedByName, v.ClassID,
-		v.SubjectID, v.SubjectName, v.ChapterID, defaultStr(v.Type, "short"),
+	`, v.ID, v.SchoolID, v.CreatedBy, v.CreatedByName, nullableString(v.BoardID), v.ClassID,
+		v.SubjectID, v.SubjectName, v.ChapterID, nullableString(v.TopicID), defaultStr(v.Type, "short"),
 		defaultStr(v.Difficulty, "medium"), v.QuestionHTML, v.Options, v.Marks,
 		defaultStr(v.Status, "active"), v.IsGlobal,
 		defaultStr(v.ApprovalStatus, "pending"), v.ApprovedBy, v.ApprovedAt,
@@ -1180,5 +1186,35 @@ func upsertWalletTransaction(ctx context.Context, tx pgx.Tx, v *store.WalletTran
 		ON CONFLICT (id) DO UPDATE SET
 			type=EXCLUDED.type, amount=EXCLUDED.amount, balance_after=EXCLUDED.balance_after
 	`, v.ID, v.SchoolID, v.StudentID, v.Type, v.Amount, v.Reason, v.FeeID, v.BalanceAfter, v.CreatedBy, v.CreatedAt)
+	return err
+}
+
+func upsertBoard(ctx context.Context, tx pgx.Tx, v *store.Board) error {
+	_, err := tx.Exec(ctx, `
+		INSERT INTO boards (id, name, code, is_active, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (id) DO UPDATE SET
+			name=EXCLUDED.name, code=EXCLUDED.code, is_active=EXCLUDED.is_active, updated_at=EXCLUDED.updated_at
+	`, v.ID, v.Name, v.Code, v.IsActive, v.CreatedAt, v.UpdatedAt)
+	return err
+}
+
+func upsertTopic(ctx context.Context, tx pgx.Tx, v *store.Topic) error {
+	_, err := tx.Exec(ctx, `
+		INSERT INTO topics (id, chapter_id, name, code, description, is_active, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		ON CONFLICT (id) DO UPDATE SET
+			chapter_id=EXCLUDED.chapter_id, name=EXCLUDED.name, code=EXCLUDED.code, description=EXCLUDED.description, is_active=EXCLUDED.is_active, updated_at=EXCLUDED.updated_at
+	`, v.ID, v.ChapterID, v.Name, v.Code, v.Description, v.IsActive, v.CreatedAt, v.UpdatedAt)
+	return err
+}
+
+func upsertImportLog(ctx context.Context, tx pgx.Tx, v *store.ImportLog) error {
+	_, err := tx.Exec(ctx, `
+		INSERT INTO import_logs (id, school_id, uploaded_by, file_name, total_rows, success_rows, failed_rows, duplicates, duration, status, failed_rows_csv, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		ON CONFLICT (id) DO UPDATE SET
+			total_rows=EXCLUDED.total_rows, success_rows=EXCLUDED.success_rows, failed_rows=EXCLUDED.failed_rows, duplicates=EXCLUDED.duplicates, duration=EXCLUDED.duration, status=EXCLUDED.status, failed_rows_csv=EXCLUDED.failed_rows_csv, updated_at=EXCLUDED.updated_at
+	`, v.ID, nullableString(v.SchoolID), nullableString(v.UploadedBy), v.FileName, v.TotalRows, v.SuccessRows, v.FailedRows, v.Duplicates, v.Duration, v.Status, nullableString(v.FailedRowsCSV), v.CreatedAt, v.UpdatedAt)
 	return err
 }

@@ -66,6 +66,7 @@ type AcademicYear struct {
 type Subject struct {
 	ID           string    `json:"_id"`
 	SchoolID     string    `json:"school_id"`
+	ClassID      string    `json:"class_id,omitempty"`
 	Name         string    `json:"name"`
 	Code         string    `json:"code"`
 	Description  string    `json:"description,omitempty"`
@@ -98,6 +99,7 @@ type GradeThreshold struct {
 type Class struct {
 	ID                 string         `json:"_id"`
 	SchoolID           string         `json:"school_id"`
+	BoardID            string         `json:"board_id,omitempty"`
 	AcademicYearID     string         `json:"academic_year_id"`
 	Name               string         `json:"name"`
 	Code               string         `json:"code,omitempty"`

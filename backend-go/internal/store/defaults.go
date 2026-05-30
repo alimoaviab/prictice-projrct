@@ -41,6 +41,7 @@ func EnsureSchoolDefaults(s *MemStore) {
 	// Run all feature provisioners
 	created += ensureSchoolSettings(s, schoolIDs)
 	created += ensureDefaultAcademicYear(s, schoolIDs)
+	created += ensureGlobalBoards(s)
 	// Add new feature provisioners here as features are added:
 	// created += ensureDefaultFeeTypes(s, schoolIDs)
 	// created += ensureDefaultNotificationPrefs(s, schoolIDs)
@@ -105,6 +106,40 @@ func ensureDefaultAcademicYear(s *MemStore, schoolIDs []string) int {
 			EndDate:   time.Date(startYear+1, 3, 31, 0, 0, 0, 0, time.UTC),
 			IsActive:  true,
 			Status:    "active",
+			CreatedAt: now,
+			UpdatedAt: now,
+		})
+		created++
+	}
+	return created
+}
+
+// ensureGlobalBoards ensures the default syllabuses used by the frontend exist as Boards.
+func ensureGlobalBoards(s *MemStore) int {
+	defaults := []struct{ ID, Name, Code string }{
+		{"ptb", "PTB", "PTB"},
+		{"afaq-snc", "AFAQ SNC", "AFAQ SNC"},
+		{"oxford-snc", "OXFORD SNC", "OXFORD SNC"},
+		{"gohar-snc", "GOHAR SNC", "GOHAR SNC"},
+		{"ba", "B.A", "B.A"},
+	}
+
+	existing := make(map[string]bool)
+	for _, b := range s.Boards {
+		existing[b.ID] = true
+	}
+
+	created := 0
+	now := time.Now()
+	for _, d := range defaults {
+		if existing[d.ID] {
+			continue
+		}
+		s.Boards = append(s.Boards, &Board{
+			ID:        d.ID,
+			Name:      d.Name,
+			Code:      d.Code,
+			IsActive:  true,
 			CreatedAt: now,
 			UpdatedAt: now,
 		})

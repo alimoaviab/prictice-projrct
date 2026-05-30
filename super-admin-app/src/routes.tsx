@@ -12,6 +12,8 @@ import { SettingsPage } from './pages/SettingsPage'
 import { AIUsagePage } from './pages/AIUsagePage'
 import { ModerationPage } from './pages/ModerationPage'
 import { GlobalQuestionBankPage } from './pages/GlobalQuestionBankPage'
+import { HierarchyPage } from './pages/HierarchyPage'
+import { CSVImportsPage } from './pages/CSVImportsPage'
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -30,6 +32,8 @@ export const router = createBrowserRouter([
       { path: '/settings', element: <SettingsPage /> },
       { path: '/moderation', element: <ModerationPage /> },
       { path: '/question-bank', element: <GlobalQuestionBankPage /> },
+      { path: '/hierarchy', element: <HierarchyPage /> },
+      { path: '/csv-imports', element: <CSVImportsPage /> },
     ],
   },
 ])

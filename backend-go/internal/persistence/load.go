@@ -68,10 +68,13 @@ func (p *Persister) Load(ctx context.Context, s *store.MemStore) error {
 		{"audit_logs", p.loadAuditLogs},
 		{"certificate_templates", p.loadCertificateTemplates},
 		{"generated_certificates", p.loadGeneratedCertificates},
+		{"boards", p.loadBoards},
+		{"topics", p.loadTopics},
 		{"chapters", p.loadChapters},
 		{"questions", p.loadQuestions},
 		{"question_papers", p.loadQuestionPapers},
 		{"star_collections", p.loadStarCollections},
+		{"import_logs", p.loadImportLogs},
 		{"conversations", p.loadConversations},
 		{"chat_messages", p.loadChatMessages},
 		{"broadcasts", p.loadBroadcasts},
@@ -119,10 +122,13 @@ func (p *Persister) Load(ctx context.Context, s *store.MemStore) error {
 	s.AuditLogs = nil
 	s.CertificateTemplates = nil
 	s.GeneratedCertificates = nil
+	s.Boards = nil
+	s.Topics = nil
 	s.Chapters = nil
 	s.Questions = nil
 	s.QuestionPapers = nil
 	s.StarCollections = nil
+	s.ImportLogs = nil
 	s.Conversations = nil
 	s.ChatMessages = nil
 	s.Broadcasts = nil
@@ -1374,6 +1380,59 @@ func (p *Persister) loadWalletTransactions(ctx context.Context, s *store.MemStor
 			continue
 		}
 		s.WalletTransactions = append(s.WalletTransactions, v)
+	}
+	return rows.Err()
+}
+
+func (p *Persister) loadBoards(ctx context.Context, s *store.MemStore) error {
+	rows, err := p.pool.Query(ctx, `SELECT id, name, code, is_active, created_at, updated_at FROM boards`)
+	if err != nil {
+		log.Printf("[persistence] loadBoards: %v (table may not exist yet)", err)
+		return nil
+	}
+	defer rows.Close()
+	for rows.Next() {
+		v := &store.Board{}
+		if err := rows.Scan(&v.ID, &v.Name, &v.Code, &v.IsActive, &v.CreatedAt, &v.UpdatedAt); err != nil {
+			return err
+		}
+		s.Boards = append(s.Boards, v)
+	}
+	return rows.Err()
+}
+
+func (p *Persister) loadTopics(ctx context.Context, s *store.MemStore) error {
+	rows, err := p.pool.Query(ctx, `SELECT id, chapter_id, name, code, description, is_active, created_at, updated_at FROM topics`)
+	if err != nil {
+		log.Printf("[persistence] loadTopics: %v (table may not exist yet)", err)
+		return nil
+	}
+	defer rows.Close()
+	for rows.Next() {
+		v := &store.Topic{}
+		if err := rows.Scan(&v.ID, &v.ChapterID, &v.Name, &v.Code, &v.Description, &v.IsActive, &v.CreatedAt, &v.UpdatedAt); err != nil {
+			return err
+		}
+		s.Topics = append(s.Topics, v)
+	}
+	return rows.Err()
+}
+
+func (p *Persister) loadImportLogs(ctx context.Context, s *store.MemStore) error {
+	rows, err := p.pool.Query(ctx, `
+		SELECT id, COALESCE(school_id, ''), COALESCE(uploaded_by, ''), file_name, total_rows, success_rows, failed_rows, duplicates, duration, status, COALESCE(failed_rows_csv, ''), created_at, updated_at 
+		FROM import_logs ORDER BY created_at DESC`)
+	if err != nil {
+		log.Printf("[persistence] loadImportLogs: %v (table may not exist yet)", err)
+		return nil
+	}
+	defer rows.Close()
+	for rows.Next() {
+		v := &store.ImportLog{}
+		if err := rows.Scan(&v.ID, &v.SchoolID, &v.UploadedBy, &v.FileName, &v.TotalRows, &v.SuccessRows, &v.FailedRows, &v.Duplicates, &v.Duration, &v.Status, &v.FailedRowsCSV, &v.CreatedAt, &v.UpdatedAt); err != nil {
+			return err
+		}
+		s.ImportLogs = append(s.ImportLogs, v)
 	}
 	return rows.Err()
 }

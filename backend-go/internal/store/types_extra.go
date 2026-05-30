@@ -339,10 +339,12 @@ type Question struct {
 	SchoolID       string     `json:"school_id"`
 	CreatedBy      string     `json:"created_by"`
 	CreatedByName  string     `json:"created_by_name,omitempty"`
+	BoardID        string     `json:"board_id,omitempty"`
 	ClassID        string     `json:"class_id"`
 	SubjectID      string     `json:"subject_id,omitempty"`
 	SubjectName    string     `json:"subject_name,omitempty"`
 	ChapterID      string     `json:"chapter_id,omitempty"`
+	TopicID        string     `json:"topic_id,omitempty"`
 	Type           string     `json:"type"`
 	Difficulty     string     `json:"difficulty"`
 	QuestionHTML   string     `json:"question_html"`
@@ -357,11 +359,36 @@ type Question struct {
 	UpdatedAt      time.Time  `json:"updated_at"`
 }
 
+// ─── Boards ──────────────────────────────────────────────────────────────
+
+type Board struct {
+	ID        string    `json:"_id"`
+	Name      string    `json:"name"`
+	Code      string    `json:"code"`
+	IsActive  bool      `json:"is_active"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// ─── Topics ──────────────────────────────────────────────────────────────
+
+type Topic struct {
+	ID          string    `json:"_id"`
+	ChapterID   string    `json:"chapter_id"`
+	Name        string    `json:"name"`
+	Code        string    `json:"code"`
+	Description string    `json:"description,omitempty"`
+	IsActive    bool      `json:"is_active"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
 // ── Chapters ────────────────────────────────────────────────────────────
 
 type Chapter struct {
 	ID            string    `json:"_id"`
 	SchoolID      string    `json:"school_id"`
+	BoardID       string    `json:"board_id,omitempty"`
 	ClassID       string    `json:"class_id"`
 	ClassName     string    `json:"class_name,omitempty"`
 	SubjectID     string    `json:"subject_id,omitempty"`
@@ -388,16 +415,19 @@ type StarCollection struct {
 // ─── Import Logs ─────────────────────────────────────────────────────────
 
 type ImportLog struct {
-	ID           string    `json:"_id"`
-	TeacherID    string    `json:"teacher_id"`
-	SchoolID     string    `json:"school_id"`
-	FileName     string    `json:"file_name"`
-	TotalRows    int       `json:"total_rows"`
-	SuccessCount int       `json:"success_count"`
-	ErrorCount   int       `json:"error_count"`
-	Status       string    `json:"status"` // processing | completed | failed
-	Errors       string    `json:"errors"` // JSON
-	CreatedAt    time.Time `json:"created_at"`
+	ID            string    `json:"_id"`
+	SchoolID      string    `json:"school_id"`
+	UploadedBy    string    `json:"uploaded_by"`
+	FileName      string    `json:"file_name"`
+	TotalRows     int       `json:"total_rows"`
+	SuccessRows   int       `json:"success_rows"`
+	FailedRows    int       `json:"failed_rows"`
+	Duplicates    int       `json:"duplicates"`
+	Duration      int       `json:"duration"` // in milliseconds
+	Status        string    `json:"status"`   // processing | completed | failed
+	FailedRowsCSV string    `json:"failed_rows_csv,omitempty"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }
 
 // ─── Exam Security ───────────────────────────────────────────────────────

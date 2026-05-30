@@ -24,7 +24,9 @@ import (
 	"github.com/eduplexo/backend-go/internal/cache"
 	"github.com/eduplexo/backend-go/internal/config"
 	"github.com/eduplexo/backend-go/internal/domain/dashboard"
+	"github.com/eduplexo/backend-go/internal/domain/superadmin"
 	"github.com/eduplexo/backend-go/internal/persistence"
+	"github.com/eduplexo/backend-go/internal/realtime"
 	"github.com/eduplexo/backend-go/internal/server"
 	"github.com/eduplexo/backend-go/internal/store"
 	"github.com/joho/godotenv"
@@ -105,6 +107,28 @@ func main() {
 				}
 			}
 		}()
+	}
+
+	if rdb.Available() {
+		saveFn := func(table string, doc any) {
+			if pg.Available() {
+				if len(table) > 7 && table[len(table)-7:] == ":delete" {
+					if s, ok := doc.(string); ok {
+						pg.Delete(table[:len(table)-7], s)
+					} else {
+						pg.DeleteWithDoc(table[:len(table)-7], doc)
+					}
+				} else {
+					pg.Save(table, doc)
+				}
+			}
+		}
+
+		jq := realtime.NewJobQueue(rdb.Raw())
+		worker := realtime.NewWorker(rdb.Raw(), jq, nil)
+		worker.Register("csv-import", superadmin.HandleCSVImportJob(s, saveFn, jq))
+		go worker.Start(ctx)
+		log.Println("[server] Redis background worker started for csv-import")
 	}
 
 	srv := &http.Server{

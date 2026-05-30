@@ -137,6 +137,8 @@ func extractSchoolID(doc any) string {
 		return v.SchoolID
 	case *store.ScheduleReminder:
 		return v.SchoolID
+	case *store.ImportLog:
+		return v.SchoolID
 	default:
 		return ""
 	}
@@ -255,15 +257,15 @@ func (p *Persister) drainQueue() []write {
 // tableOrder defines the FK-safe insertion order. Parent tables first,
 // child tables after. This prevents FK violations during flush.
 var tableOrder = []string{
-	"schools", "packages", "subscriptions", "users", "academic_years", "subjects",
+	"schools", "boards", "packages", "subscriptions", "users", "academic_years", "subjects",
 	"teachers", "classes",
 	"students", "parents", "student_parents",
 	"attendance", "exams", "results", "homework", "announcements",
 	"behaviors", "events", "leaves", "timetables", "live_classes",
 	"notifications", "fee_types", "class_fees", "fees",
-	"fee_adjustments", "fee_payments", "school_settings", "audit_logs",
+	"fee_adjustments", "fee_payments", "school_settings", "audit_logs", "import_logs",
 	"certificate_templates", "generated_certificates",
-	"chapters", "questions", "question_papers", "star_collections",
+	"chapters", "topics", "questions", "question_papers", "star_collections",
 	"student_scholarships", "student_fee_discounts", "student_wallets", "wallet_transactions",
 	"conversations", "conversation_participants", "chat_messages", "broadcasts",
 	"schedules", "schedule_reminders",

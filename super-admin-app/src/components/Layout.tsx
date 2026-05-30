@@ -7,6 +7,8 @@ const navItems = [
   { label: 'Schools', href: '/schools', icon: 'apartment' },
   { label: 'Question Bank', href: '/question-bank', icon: 'quiz' },
   { label: 'Moderation', href: '/moderation', icon: 'shield' },
+  { label: 'Hierarchy', href: '/hierarchy', icon: 'schema' },
+  { label: 'CSV Imports', href: '/csv-imports', icon: 'cloud_upload' },
   { label: 'Payments', href: '/payments', icon: 'payments' },
   { label: 'Packages', href: '/packages', icon: 'inventory_2' },
   { label: 'Subscriptions', href: '/subscriptions', icon: 'card_membership' },

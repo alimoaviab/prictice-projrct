@@ -75,6 +75,12 @@ type MemStore struct {
 	// Questions (Internal Repository).
 	Questions []*Question
 
+	// Boards.
+	Boards []*Board
+
+	// Topics.
+	Topics []*Topic
+
 	// Chapters.
 	Chapters []*Chapter
 
@@ -190,6 +196,26 @@ func EnsureBootstrapUsers(s *MemStore) {
 		if u.Email == schoolEmail && u.Role == "admin" {
 			schoolUser = u
 		}
+	}
+
+	// Ensure global school exists
+	hasGlobalSchool := false
+	for _, sch := range s.Schools {
+		if sch.SchoolID == "__global__" {
+			hasGlobalSchool = true
+			break
+		}
+	}
+	if !hasGlobalSchool {
+		s.Schools = append(s.Schools, &School{
+			ID:        "sch_global",
+			SchoolID:  "__global__",
+			Name:      "Global Curriculum",
+			Code:      "GLOBAL",
+			Status:    "active",
+			CreatedAt: now,
+			UpdatedAt: now,
+		})
 	}
 
 	// Ensure default school exists
@@ -313,6 +339,16 @@ func bootstrapAdmin(s *MemStore) {
 		SchoolID:  schoolID,
 		Name:      "Eduplexo Academy",
 		Code:      "MAIN",
+		Status:    "active",
+		CreatedAt: now,
+		UpdatedAt: now,
+	})
+
+	s.Schools = append(s.Schools, &School{
+		ID:        "sch_global",
+		SchoolID:  "__global__",
+		Name:      "Global Curriculum",
+		Code:      "GLOBAL",
 		Status:    "active",
 		CreatedAt: now,
 		UpdatedAt: now,
