@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Global Question Bank — Super Admin page.
@@ -607,7 +608,7 @@ function QuestionsTab({
 
             <div className="flex-1 min-w-0">
               {/* Question HTML */}
-              <div className="text-xs text-slate-800 font-semibold leading-relaxed" dangerouslySetInnerHTML={{ __html: q.question_html }} />
+              <div className="text-xs text-slate-800 font-semibold leading-relaxed" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(q.question_html) }} />
 
               {/* MCQ Options */}
               {q.type === 'mcq' && q.options && (() => {

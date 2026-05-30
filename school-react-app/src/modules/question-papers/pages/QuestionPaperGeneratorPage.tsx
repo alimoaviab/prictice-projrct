@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Question Paper Generator — Enterprise-grade module.
@@ -547,7 +548,7 @@ function QuestionSelectCard({ question: q, selected, onToggle }: { question: Que
       <div className="flex items-start gap-3">
         <input type="checkbox" checked={selected} onChange={onToggle} onClick={e => e.stopPropagation()} className="mt-1 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
         <div className="flex-1 min-w-0">
-          <div className="text-sm text-slate-800 font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: q.question_html }} />
+          <div className="text-sm text-slate-800 font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(q.question_html) }} />
           {q.type === "mcq" && opts.length > 0 && (
             <div className="mt-2 grid grid-cols-2 gap-1.5">
               {opts.map((opt: any, i: number) => (
@@ -730,7 +731,7 @@ function SectionBlock({ title, subtitle, questions, startIdx, showOptions, lines
             <div key={q._id} className="text-sm text-slate-800">
               <p className="font-medium leading-relaxed">
                 <strong className="text-slate-900">Q{startIdx + i + 1}.</strong>{" "}
-                <span dangerouslySetInnerHTML={{ __html: q.question_html }} />
+                <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(q.question_html) }} />
                 <span className="text-slate-400 ml-2 text-xs">({q.marks} Marks)</span>
               </p>
               {showOptions && opts.length > 0 && (

@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Question Bank — Enterprise main page.
@@ -576,7 +577,7 @@ function QuestionCard({
         <div className="flex-1 min-w-0">
           <div
             className="text-sm text-slate-800 font-medium leading-relaxed line-clamp-3"
-            dangerouslySetInnerHTML={{ __html: q.question_html }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(q.question_html) }}
           />
           {q.type === "mcq" && opts.length > 0 && (
             <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-1">
