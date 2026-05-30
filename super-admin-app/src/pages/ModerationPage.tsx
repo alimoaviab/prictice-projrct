@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 /**
  * Community Moderation — Super Admin reviews teacher-submitted questions.
  * Approve → question becomes globally visible to all schools.
@@ -129,7 +130,7 @@ export function ModerationPage() {
                   {/* Question text */}
                   <div
                     className="text-sm text-slate-800 font-medium leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: q.question_html }}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(q.question_html) }}
                   />
 
                   {/* MCQ options */}
