@@ -218,7 +218,7 @@ export function MessagesPage() {
   const isAdmin = user?.role === "admin" || user?.role === "super_admin";
 
   return (
-    <SchoolShell eyebrow="Communication" title="Messages">
+    <SchoolShell eyebrow="Communication" title="Conversations">
       <div className="flex h-[calc(100vh-140px)] bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
 
         {/* LEFT: Conversations Sidebar */}

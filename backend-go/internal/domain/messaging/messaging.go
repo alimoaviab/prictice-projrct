@@ -482,13 +482,45 @@ func (h *Handler) ListContacts(w http.ResponseWriter, r *http.Request) {
 			"role": u.Role,
 		}
 
-		// Add class info for students
+		// Add class info for students who have user accounts
 		if info, ok := studentClassMap[u.ID]; ok {
 			entry["class_name"] = info.ClassName
 			entry["section"] = info.Section
 		}
 
 		contacts = append(contacts, entry)
+	}
+
+	// Also add Student records (who don't have user accounts) as contacts
+	if isConversationAllowed(ctx.Role, "student") {
+		teacherClassIDs := map[string]bool{}
+		if ctx.Role == "teacher" {
+			teacherClassIDs = access.TeacherClassIDsLocked(h.Store, ctx)
+		}
+
+		for _, s := range h.Store.Students {
+			if s.SchoolID != ctx.SchoolID || s.Status != "active" {
+				continue
+			}
+			// Teachers only see students in their assigned classes
+			if ctx.Role == "teacher" && !teacherClassIDs[s.ClassID] {
+				continue
+			}
+
+			// If the student has a user account, they were already added above
+			if s.UserID != "" {
+				continue
+			}
+
+			entry := map[string]any{
+				"_id":        s.ID,
+				"name":       strings.TrimSpace(s.FirstName + " " + s.LastName),
+				"role":       "student",
+				"class_name": classNames[s.ClassID],
+				"section":    s.Section,
+			}
+			contacts = append(contacts, entry)
+		}
 	}
 
 	// Sort: teachers first, then students alphabetically
@@ -628,13 +660,17 @@ func (h *Handler) CleanupExpired() int {
 // ─── Helpers ─────────────────────────────────────────────────────────────
 
 func isConversationAllowed(role1, role2 string) bool {
-	// Allowed: student↔teacher, student↔admin, teacher↔admin
+	if role1 == "super_admin" || role2 == "super_admin" || role1 == "admin" || role2 == "admin" {
+		return true
+	}
+
+	// Allowed: student↔teacher, teacher↔teacher, parent↔teacher
 	// NOT allowed: student↔student, parent↔parent
 	pair := role1 + ":" + role2
 	allowed := map[string]bool{
 		"student:teacher": true, "teacher:student": true,
-		"student:admin": true, "admin:student": true,
-		"teacher:admin": true, "admin:teacher": true,
+		"teacher:teacher": true,
+		"parent:teacher":  true, "teacher:parent":  true,
 	}
 	return allowed[pair]
 }
@@ -645,6 +681,12 @@ func (h *Handler) getUserRole(userID, schoolID string) string {
 	for _, u := range h.Store.Users {
 		if u.ID == userID && u.SchoolID == schoolID {
 			return u.Role
+		}
+	}
+	// Fallback: check if it's a Student record without a User account
+	for _, s := range h.Store.Students {
+		if s.ID == userID && s.SchoolID == schoolID {
+			return "student"
 		}
 	}
 	return ""
@@ -679,6 +721,15 @@ func (h *Handler) resolveUser(userID string) *conversationUser {
 				ID:   u.ID,
 				Name: strings.TrimSpace(u.Profile.FirstName + " " + u.Profile.LastName),
 				Role: u.Role,
+			}
+		}
+	}
+	for _, s := range h.Store.Students {
+		if s.ID == userID {
+			return &conversationUser{
+				ID:   s.ID,
+				Name: strings.TrimSpace(s.FirstName + " " + s.LastName),
+				Role: "student",
 			}
 		}
 	}

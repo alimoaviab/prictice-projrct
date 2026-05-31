@@ -100,7 +100,7 @@ const adminNavGroups: NavGroup[] = [
     label: "Settings",
     items: [
       { label: "Schedule", href: "/admin/schedule", icon: "calendar_month" },
-      { label: "Messages", href: "/admin/messages", icon: "chat" },
+      { label: "Conversations", href: "/admin/messages", icon: "chat" },
       { label: "Settings", href: "/admin/settings", icon: "settings" },
     ],
   },
@@ -136,7 +136,7 @@ const teacherNavGroups: NavGroup[] = [
     label: "Communication",
     items: [
       { label: "Schedule", href: "/teacher/schedule", icon: "calendar_month" },
-      { label: "Messages", href: "/teacher/messages", icon: "chat" },
+      { label: "Conversations", href: "/teacher/messages", icon: "chat" },
       { label: "Events", href: "/teacher/events", icon: "event" },
     ],
   },
@@ -164,6 +164,10 @@ const parentNavGroups: NavGroup[] = [
     items: [{ label: "Leave", href: "/parent/leave", icon: "event_busy" }],
   },
   {
+    label: "Communication",
+    items: [{ label: "Conversations", href: "/parent/messages", icon: "chat" }],
+  },
+  {
     label: "School",
     items: [{ label: "Announcements", href: "/parent/announcements", icon: "campaign" }],
   },
@@ -187,8 +191,13 @@ const studentNavGroups: NavGroup[] = [
       { label: "Live classes", href: "/student/live-class", icon: "videocam" },
       { label: "Homework", href: "/student/homework", icon: "assignment" },
       { label: "Leave", href: "/student/leave", icon: "event_available" },
-      { label: "Messages", href: "/student/messages", icon: "chat" },
       { label: "Certificates", href: "/student/certificates", icon: "workspace_premium" },
+    ],
+  },
+  {
+    label: "Communication",
+    items: [
+      { label: "Conversations", href: "/student/messages", icon: "chat" },
     ],
   },
   {
