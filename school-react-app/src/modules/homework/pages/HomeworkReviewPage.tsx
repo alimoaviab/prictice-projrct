@@ -113,7 +113,7 @@ export function HomeworkReviewPage({ homeworkId, role = "TEACHER" }: { homeworkI
     }
   };
 
-  if (hwState.status === "loading") {
+  if (hwState.status === "loading" || hwState.status === "idle") {
     return (
       <div className="space-y-6">
         <Skeleton className="h-24 w-full rounded-2xl" />

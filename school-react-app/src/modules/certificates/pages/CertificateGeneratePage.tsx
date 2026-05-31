@@ -12,6 +12,7 @@ import { useGeneratedCertificates } from "../hooks/useCertificates";
 import * as service from "../services/certificate.service";
 import { CERTIFICATE_TYPE_LABELS, type CertificateTemplate } from "../types/certificate.types";
 import { showToast } from "@/utils/toast";
+import { useSchoolBranding } from "@/hooks/useSchoolBranding";
 
 interface StudentRow {
   _id: string;
@@ -71,14 +72,8 @@ export function CertificateGeneratePage() {
   const students = studentState.data || [];
   const classes = classState.data || [];
 
-  // Load school settings for print
-  const { state: settingsState, run: runSettings } = useSafeAsync<any>();
-  useEffect(() => {
-    void runSettings(async () => {
-      const r = await serviceRequest<any>("/api/settings");
-      return r.ok ? r.data : null;
-    }).catch(() => {});
-  }, [runSettings]);
+  // Load school branding
+  const { schoolName: brandedSchoolName, logoUrl: brandedLogoUrl, isLoading: brandingLoading } = useSchoolBranding();
 
   const filteredStudents = useMemo(() => {
     let list = students;
@@ -270,23 +265,53 @@ export function CertificateGeneratePage() {
               onClick={() => {
                 if (selectedStudents.size === 0 || !template) return;
                 const selectedList = students.filter(s => selectedStudents.has(s._id));
-                const schoolName = settingsState?.data?.profile?.school_name || "School";
+                const schoolName = brandedSchoolName || "School";
+                const logoUrl = brandedLogoUrl;
+                const logoHtml = logoUrl
+                  ? `<img src="${logoUrl}" alt="Logo" style="height: 50px; max-width: 120px; object-fit: contain; margin-bottom: 12px; display: block; margin-left: auto; margin-right: auto;" />`
+                  : "";
                 const certType = template.type.replace("_", " ");
                 const printWin = window.open("", "_blank");
                 if (!printWin) return;
-                const certsHtml = selectedList.map((stu, idx) => `
-                  <div class="cert ${idx > 0 ? 'page-break' : ''}">
-                    <p class="school">${schoolName}</p>
-                    <div class="divider"></div>
-                    <h1 class="title">${certType}</h1>
-                    <div class="divider"></div>
-                    <p class="body">This is to certify that <strong>${stu.first_name} ${stu.last_name}</strong> of Class <strong>${stu.class_name || ""}</strong> has been a student of this institution.</p>
-                    <div class="footer">
-                      <div class="sig"><div class="sig-line"></div><span class="sig-label">Principal</span></div>
-                      <div class="sig"><div class="sig-line"></div><span class="sig-label">Class Teacher</span></div>
+                const certsHtml = selectedList.map((stu, idx) => {
+                  const className = classes.find(c => c._id === stu.class_id)?.name || "";
+                  const certNo = `CERT-${new Date().getFullYear()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+                  
+                  let body = template.body_text || "This is to certify that {{student_name}} of Class {{class}} has been a student of {{school_name}}.";
+                  
+                  const dateStr = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+                  const meta: Record<string, string> = {
+                    student_name: `${stu.first_name} ${stu.last_name}`,
+                    class: className,
+                    class_name: className,
+                    school_name: schoolName,
+                    certificate_type: certType,
+                    issue_date: dateStr,
+                    year: String(new Date().getFullYear()),
+                    certificate_no: certNo,
+                    admission_no: stu.admission_no || "",
+                    registration_no: stu.admission_no || "",
+                  };
+                  
+                  Object.entries(meta).forEach(([key, val]) => {
+                    body = body.replace(new RegExp(`{{${key}}}`, "g"), val);
+                  });
+
+                  return `
+                    <div class="cert ${idx > 0 ? 'page-break' : ''}">
+                      ${logoHtml}
+                      <p class="school">${schoolName}</p>
+                      <div class="divider"></div>
+                      <h1 class="title">${certType}</h1>
+                      <div class="divider"></div>
+                      <p class="body">${body}</p>
+                      <div class="footer">
+                        <div class="sig"><div class="sig-line"></div><span class="sig-label">Principal</span></div>
+                        <div class="sig"><div class="sig-line"></div><span class="sig-label">Class Teacher</span></div>
+                      </div>
                     </div>
-                  </div>
-                `).join("");
+                  `;
+                }).join("");
                 printWin.document.write(`<!DOCTYPE html><html><head><title>Certificates</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Georgia,serif}.cert{width:100%;padding:60px;text-align:center;position:relative;border:3px solid #d4a853;margin:20px auto;max-width:800px}.cert::before{content:'';position:absolute;inset:8px;border:1px solid #d4a85380;border-radius:4px}.school{font-size:26px;font-weight:bold}.title{font-size:20px;color:#1e40af;text-transform:uppercase;letter-spacing:3px;margin:20px 0;font-weight:bold}.divider{width:80px;height:2px;background:#d4a853;margin:10px auto}.body{font-size:14px;line-height:1.8;margin:30px auto;max-width:500px;color:#333}.footer{display:flex;justify-content:space-between;margin-top:40px;padding-top:20px;border-top:1px solid #eee}.sig{text-align:center}.sig-line{width:120px;height:1px;background:#666;margin-bottom:4px}.sig-label{font-size:10px;color:#666;text-transform:uppercase}.page-break{page-break-before:always}@media print{body{padding:0}.cert{border:3px solid #d4a853;margin:0;page-break-inside:avoid}}</style></head><body>${certsHtml}</body></html>`);
                 printWin.document.close();
                 setTimeout(() => printWin.print(), 300);

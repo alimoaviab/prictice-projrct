@@ -38,7 +38,7 @@ export function TeacherHomeworkDetailPage({ homeworkId }: { homeworkId: string }
     });
   }, [runHw, homeworkId]);
 
-  if (hwState.status === "loading") {
+  if (hwState.status === "loading" || hwState.status === "idle") {
     return (
       <div className="space-y-6">
         <Skeleton className="h-24 w-full rounded-2xl" />
@@ -56,8 +56,11 @@ export function TeacherHomeworkDetailPage({ homeworkId }: { homeworkId: string }
   const submittedCount = submissions.filter(s => s.status === "submitted" || s.status === "late").length;
   const gradedCount = submissions.filter(s => s.grade !== undefined && s.grade !== null).length;
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "—";
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "—";
+    return date.toLocaleDateString("en-US", {
       weekday: "long",
       year: "numeric",
       month: "long",
@@ -65,7 +68,12 @@ export function TeacherHomeworkDetailPage({ homeworkId }: { homeworkId: string }
     });
   };
 
-  const isOverdue = new Date(hw.due_at) < new Date();
+  const isOverdue = (() => {
+    if (!hw.due_at) return false;
+    const date = new Date(hw.due_at);
+    if (isNaN(date.getTime())) return false;
+    return date < new Date();
+  })();
 
   return (
     <div className="space-y-6 pb-20">

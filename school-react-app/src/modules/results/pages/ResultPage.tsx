@@ -13,6 +13,7 @@ import { useQueryParams } from "@/hooks/useQueryParams";
 import { exportMarksheet, exportExamMarksheet } from "@/utils/marksheet";
 import { showToast } from "@/utils/toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useSchoolBranding } from "@/hooks/useSchoolBranding";
 
 export function ResultPage() {
     const navigate = useNavigate();
@@ -25,8 +26,8 @@ export function ResultPage() {
     const subject_id = currentParams.get("subject_id") || "all";
     const date_filter = currentParams.get("date") || "";
     
-    const { user } = useAuth();
-    const schoolName = (user as any)?.schoolName || (user as any)?.school_name || "School";
+    const { schoolName, logoUrl } = useSchoolBranding();
+    const brandedSchoolName = schoolName || "School";
 
     const { state: classState } = useClasses();
     const { state: examListState } = useExams(class_id !== "all" ? { class_id } : {});
@@ -195,7 +196,7 @@ export function ResultPage() {
           label: "Marksheet",
           variant: "primary",
           onClick: (row) => {
-            exportMarksheet(row, { schoolName });
+            exportMarksheet(row, { schoolName: brandedSchoolName, logoUrl });
             showToast("Generating marksheet…", "info");
           },
         },
@@ -346,7 +347,7 @@ export function ResultPage() {
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => {
-                            exportExamMarksheet(filteredRows, { schoolName });
+                            exportExamMarksheet(filteredRows, { schoolName: brandedSchoolName, logoUrl });
                             showToast("Generating printable report…", "info");
                         }}
                         className="h-9 px-4 rounded-xl border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all flex items-center gap-2 no-print"
@@ -484,7 +485,7 @@ export function ResultPage() {
 
                                         <div className="mt-auto px-5 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between group-hover:bg-white transition-all">
                                             <button 
-                                              onClick={() => exportMarksheet(row, { schoolName })}
+                                              onClick={() => exportMarksheet(row, { schoolName: brandedSchoolName, logoUrl })}
                                               className="text-[10px] font-bold text-slate-400 normal-case  hover:text-blue-600 flex items-center gap-1 transition-colors"
                                             >
                                                 <AppIcon name="BookOpen" size={14} />

@@ -52,6 +52,42 @@ function ChunkErrorBoundary() {
     }
   }
 
+  if (!isChunkError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
+        <div className="text-center max-w-lg bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+          <div className="h-16 w-16 rounded-2xl bg-rose-100 flex items-center justify-center mx-auto mb-4 text-rose-600">
+            <AppIcon name="RefreshCw" size={30} className="animate-spin text-rose-600" />
+          </div>
+          <h1 className="text-lg font-bold text-slate-900 mb-2">Application Error</h1>
+          <p className="text-sm text-slate-500 mb-4">
+            An unexpected error occurred. Please try reloading the page or contact support if the issue persists.
+          </p>
+          <div className="bg-rose-50 border border-rose-100 rounded-xl p-4 text-left mb-6 overflow-auto max-h-40">
+            <pre className="text-xs text-rose-700 font-mono whitespace-pre-wrap">
+              {message}
+              {error?.stack && `\n\n${error.stack}`}
+            </pre>
+          </div>
+          <div className="flex gap-4 justify-center">
+            <button
+              onClick={() => window.location.reload()}
+              className="h-10 px-6 rounded-lg bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-colors"
+            >
+              Reload Page
+            </button>
+            <button
+              onClick={() => window.location.href = "/"}
+              className="h-10 px-6 rounded-lg bg-slate-100 text-slate-700 text-sm font-bold hover:bg-slate-200 transition-colors"
+            >
+              Go to Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
       <div className="text-center max-w-md">

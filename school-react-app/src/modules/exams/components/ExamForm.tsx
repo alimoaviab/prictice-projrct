@@ -56,11 +56,8 @@ export function ExamForm({
   const [classSubjectOptions, setClassSubjectOptions] = useState<SubjectOption[]>([]);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
 
-  // Eligible classes: enrolled student count > 0.
-  const eligibleClasses = (classes || []).filter((c) => {
-    const count = c?.student_count ?? c?.enrolled_students ?? 0;
-    return Number(count) > 0;
-  });
+  // Eligible classes: list all classes so admins can set up exams.
+  const eligibleClasses = classes || [];
 
   const selectedClass = eligibleClasses.find(
     (c) => c.id === form.class_id || c._id === form.class_id
@@ -229,10 +226,13 @@ export function ExamForm({
             }}
             options={[
               { label: "Select target class", value: "" },
-              ...eligibleClasses.map((o) => ({
-                label: `${o.name}${o.student_count ? ` (${o.student_count} students)` : ""}`,
-                value: o.id || o._id,
-              })),
+              ...eligibleClasses.map((o) => {
+                const count = o.student_count ?? o.enrolled_students ?? 0;
+                return {
+                  label: `${o.name}${count ? ` (${count} students)` : ""}`,
+                  value: o.id || o._id,
+                };
+              }),
             ]}
             error={errors.class_id}
             required
@@ -252,9 +252,15 @@ export function ExamForm({
           />
         </div>
 
-        {eligibleClasses.length === 0 && classes.length > 0 && (
+        {form.class_id === "" && classes.length > 0 && classes.every(c => Number(c.student_count ?? c.enrolled_students ?? 0) === 0) && (
           <div className="rounded-lg border border-amber-100 bg-amber-50/50 px-3 py-2 text-[11px] font-bold text-amber-700">
-            No classes have enrolled students yet. Add students before scheduling an exam.
+            Notice: No classes have enrolled students yet. You can still schedule the exam, but ensure students are enrolled before the exam date.
+          </div>
+        )}
+
+        {selectedClass && Number(selectedClass.student_count ?? selectedClass.enrolled_students ?? 0) === 0 && (
+          <div className="rounded-lg border border-amber-100 bg-amber-50/50 px-3 py-2 text-[11px] font-bold text-amber-700">
+            Warning: The selected class has no enrolled students yet.
           </div>
         )}
 

@@ -26,6 +26,7 @@ import type { ResultRow } from "@/modules/results/types/result.types";
 import { exportMarksheet, exportExamMarksheet } from "@/utils/marksheet";
 import { showToast } from "@/utils/toast";
 import { serviceRequest } from "@/services/service-client";
+import { useSchoolBranding } from "@/hooks/useSchoolBranding";
 
 // ────────────────────────────────────────────────────────────────────────
 // Helpers — student id resolution mirrors the fees page so the page works
@@ -82,12 +83,8 @@ export function StudentResultsPage() {
 
   const { state } = useResults(studentId ? { student_id: studentId } : undefined);
 
-  const schoolName =
-    (user as unknown as { schoolName?: string; school_name?: string })
-      ?.schoolName ||
-    (user as unknown as { schoolName?: string; school_name?: string })
-      ?.school_name ||
-    "School";
+  const { schoolName, logoUrl } = useSchoolBranding();
+  const brandedSchoolName = schoolName || "School";
   const principal =
     (user as unknown as { principal?: string })?.principal ||
     "Authorized Signatory";
@@ -173,13 +170,13 @@ export function StudentResultsPage() {
   // ────────────────────────────────────────────────────────────────────
 
   function handlePrintRow(row: ResultRow) {
-    exportMarksheet(row, { schoolName, principal });
+    exportMarksheet(row, { schoolName: brandedSchoolName, logoUrl, principal });
     showToast("Generating marksheet…", "info");
   }
 
   function handlePrintAll() {
     if (rows.length === 0) return;
-    exportExamMarksheet(rows, { schoolName, principal });
+    exportExamMarksheet(rows, { schoolName: brandedSchoolName, logoUrl, principal });
     showToast("Generating combined marksheet…", "info");
   }
 

@@ -476,7 +476,7 @@ func upsertHomework(ctx context.Context, tx pgx.Tx, v *store.Homework) error {
 			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
 			ON CONFLICT (id) DO NOTHING
 		`, store.NewID("hws"), v.ID, sub.StudentID, sub.SubmittedAt, sub.GradedAt,
-			sub.Status, sub.AttachmentURLs, sub.Marks, sub.Feedback); err != nil {
+			sub.Status, sub.AttachmentURLs, sub.Grade, sub.Feedback); err != nil {
 			return err
 		}
 	}

@@ -65,6 +65,7 @@ func (h *Handler) hydrate(rows []*store.Homework) []map[string]any {
 	classByID := map[string]*store.Class{}
 	teacherByID := map[string]*store.Teacher{}
 	subjectByID := map[string]*store.Subject{}
+	studentByID := map[string]*store.Student{}
 	for _, c := range h.Store.Classes {
 		classByID[c.ID] = c
 	}
@@ -73,6 +74,9 @@ func (h *Handler) hydrate(rows []*store.Homework) []map[string]any {
 	}
 	for _, s := range h.Store.Subjects {
 		subjectByID[s.ID] = s
+	}
+	for _, s := range h.Store.Students {
+		studentByID[s.ID] = s
 	}
 
 	out := make([]map[string]any, 0, len(rows))
@@ -93,6 +97,27 @@ func (h *Handler) hydrate(rows []*store.Homework) []map[string]any {
 			subjectID = sub.ID
 			subjectName = sub.Name
 		}
+		populatedSubmissions := make([]map[string]any, 0)
+		for _, sub := range hw.Submissions {
+			stu := studentByID[sub.StudentID]
+			if stu == nil {
+				continue
+			}
+			populatedSubmissions = append(populatedSubmissions, map[string]any{
+				"student_id": map[string]any{
+					"_id":          stu.ID,
+					"first_name":   stu.FirstName,
+					"last_name":    stu.LastName,
+					"admission_no": stu.AdmissionNo,
+				},
+				"status":          sub.Status,
+				"grade":           sub.Grade,
+				"feedback":        sub.Feedback,
+				"attachment_urls": sub.AttachmentURLs,
+				"submitted_at":    sub.SubmittedAt,
+			})
+		}
+
 		out = append(out, map[string]any{
 			"_id":                 hw.ID,
 			"id":                  hw.ID,
@@ -111,7 +136,7 @@ func (h *Handler) hydrate(rows []*store.Homework) []map[string]any {
 			"instructions":        hw.Instructions,
 			"due_at":              api.FormatDate(hw.DueAt),
 			"status":              hw.Status,
-			"submissions":         hw.Submissions,
+			"submissions":         populatedSubmissions,
 			"attachments":         hw.Attachments,
 			"visibility":          hw.Visibility,
 			"created_by":          hw.CreatedBy,
@@ -563,6 +588,12 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 				}
 				if v, ok := body["visibility"]; ok {
 					_ = json.Unmarshal(v, &hw.Visibility)
+				}
+				if v, ok := body["submissions"]; ok {
+					var subs []store.HomeworkSubmission
+					if err := json.Unmarshal(v, &subs); err == nil {
+						hw.Submissions = subs
+					}
 				}
 				hw.UpdatedAt = time.Now()
 				updated = *hw

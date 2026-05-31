@@ -31,6 +31,7 @@ import { useClasses } from "../../classes/hooks/useClasses";
 import { useExams } from "../../exams/hooks/useExams";
 import { exportMarksheet, exportExamMarksheet } from "@/utils/marksheet";
 import { useAuth } from "@/hooks/useAuth";
+import { useSchoolBranding } from "@/hooks/useSchoolBranding";
 
 export function ResultListPage({
   filters,
@@ -263,9 +264,8 @@ export function ResultListPage({
     []
   );
 
-  const { user } = useAuth();
-  const schoolName =
-    (user as any)?.schoolName || (user as any)?.school_name || "School";
+  const { schoolName, logoUrl } = useSchoolBranding();
+  const brandedSchoolName = schoolName || "School";
 
   const rowActions: RowAction<ResultRow>[] = useMemo(
     () => [
@@ -287,7 +287,7 @@ export function ResultListPage({
         label: "Marksheet",
         variant: "primary",
         onClick: (row) => {
-          exportMarksheet(row, { schoolName });
+          exportMarksheet(row, { schoolName: brandedSchoolName, logoUrl });
           showToast("Generating marksheet…", "info");
         },
       },
@@ -395,7 +395,7 @@ export function ResultListPage({
             <button
               type="button"
               onClick={() => {
-                exportExamMarksheet(filteredRows, { schoolName });
+                exportExamMarksheet(filteredRows, { schoolName: brandedSchoolName, logoUrl });
                 showToast("Generating class marksheet…", "info");
               }}
               className="h-9 flex items-center gap-2 px-3 bg-white border border-slate-200 text-slate-700 rounded-lg text-[10px] font-black uppercase tracking-wider hover:border-blue-300 hover:text-blue-700 transition-all"

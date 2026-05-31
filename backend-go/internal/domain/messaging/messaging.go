@@ -560,7 +560,7 @@ func (h *Handler) SendBroadcast(w http.ResponseWriter, r *http.Request) {
 	h.Persist("broadcasts", broadcast)
 
 	// Send real-time notification to all targets
-	go h.deliverBroadcast(ctx.SchoolID, broadcast)
+	go h.deliverBroadcast(ctx.SchoolID, broadcast, body.RecipientIDs)
 
 	api.WriteResult(w, api.Ok(map[string]any{
 		"_id":     broadcast.ID,
@@ -753,7 +753,8 @@ func (h *Handler) notifyRecipient(ctx *api.RequestContext, convID string, msg *s
 	}
 }
 
-func (h *Handler) deliverBroadcast(schoolID string, b *store.Broadcast) {
+func (h *Handler) deliverBroadcast(schoolID string, b *store.Broadcast, recipientIDs []string) {
+	// First, notify all users about the broadcast generally (real-time notification)
 	_ = h.Hub.Publish(context.Background(), schoolID, "notifications", rt.Message{
 		Type: "broadcast_send",
 		Payload: map[string]any{
@@ -764,6 +765,179 @@ func (h *Handler) deliverBroadcast(schoolID string, b *store.Broadcast) {
 			"created_at":   b.CreatedAt,
 		},
 	})
+
+	// Get sender name
+	h.Store.RLock()
+	senderName := "Admin"
+	for _, u := range h.Store.Users {
+		if u.ID == b.SenderID {
+			senderName = strings.TrimSpace(u.Profile.FirstName + " " + u.Profile.LastName)
+			if senderName == "" {
+				senderName = "Admin"
+			}
+			break
+		}
+	}
+
+	type targetUser struct {
+		ID   string
+		Role string
+	}
+	var targets []targetUser
+
+	if b.TargetGroup == "selected" {
+		idMap := make(map[string]bool)
+		for _, rid := range recipientIDs {
+			idMap[rid] = true
+		}
+		for _, u := range h.Store.Users {
+			if u.SchoolID == schoolID && u.ID != b.SenderID && idMap[u.ID] {
+				targets = append(targets, targetUser{ID: u.ID, Role: u.Role})
+			}
+		}
+	} else {
+		for _, u := range h.Store.Users {
+			if u.SchoolID != schoolID || u.ID == b.SenderID {
+				continue
+			}
+			match := false
+			switch b.TargetGroup {
+			case "all":
+				match = true
+			case "teachers":
+				match = (u.Role == "teacher")
+			case "students":
+				match = (u.Role == "student")
+			case "parents":
+				match = (u.Role == "parent")
+			default:
+				if strings.HasPrefix(b.TargetGroup, "class:") {
+					classID := strings.TrimPrefix(b.TargetGroup, "class:")
+					for _, s := range h.Store.Students {
+						if s.UserID == u.ID && s.ClassID == classID {
+							match = true
+							break
+						}
+					}
+				}
+			}
+			if match {
+				targets = append(targets, targetUser{ID: u.ID, Role: u.Role})
+			}
+		}
+	}
+	h.Store.RUnlock()
+
+	// Deliver to each target user
+	for _, target := range targets {
+		var convID string
+
+		// 1. Try to find existing conversation
+		h.Store.RLock()
+		for _, conv := range h.Store.Conversations {
+			if conv.SchoolID != schoolID || conv.Type != "private" {
+				continue
+			}
+			hasSender := false
+			hasRecipient := false
+			for _, p := range conv.Participants {
+				if p.UserID == b.SenderID {
+					hasSender = true
+				}
+				if p.UserID == target.ID {
+					hasRecipient = true
+				}
+			}
+			if hasSender && hasRecipient {
+				convID = conv.ID
+				break
+			}
+		}
+		h.Store.RUnlock()
+
+		// 2. Create conversation if it doesn't exist
+		if convID == "" {
+			h.Store.Lock()
+			// Double check under write lock
+			for _, conv := range h.Store.Conversations {
+				if conv.SchoolID != schoolID || conv.Type != "private" {
+					continue
+				}
+				hasSender := false
+				hasRecipient := false
+				for _, p := range conv.Participants {
+					if p.UserID == b.SenderID {
+						hasSender = true
+					}
+					if p.UserID == target.ID {
+						hasRecipient = true
+					}
+				}
+				if hasSender && hasRecipient {
+					convID = conv.ID
+					break
+				}
+			}
+
+			if convID == "" {
+				now := time.Now()
+				conv := &store.Conversation{
+					ID:       store.NewID("conv"),
+					SchoolID: schoolID,
+					Type:     "private",
+					Participants: []store.ConversationParticipant{
+						{UserID: b.SenderID, Role: "admin", JoinedAt: now},
+						{UserID: target.ID, Role: target.Role, JoinedAt: now},
+					},
+					CreatedAt: now,
+					UpdatedAt: now,
+				}
+				h.Store.Conversations = append(h.Store.Conversations, conv)
+				convID = conv.ID
+				h.Store.Unlock()
+				h.Persist("conversations", conv)
+			} else {
+				h.Store.Unlock()
+			}
+		}
+
+		// 3. Create and append ChatMessage
+		now := time.Now()
+		msg := &store.ChatMessage{
+			ID:             store.NewID("msg"),
+			ConversationID: convID,
+			SenderID:       b.SenderID,
+			Text:           b.Message,
+			DeliveredAt:    now,
+			ExpiresAt:      now.Add(messageExpiry),
+			CreatedAt:      now,
+		}
+
+		h.Store.Lock()
+		h.Store.ChatMessages = append(h.Store.ChatMessages, msg)
+		for i, conv := range h.Store.Conversations {
+			if conv.ID == convID {
+				h.Store.Conversations[i].UpdatedAt = now
+				break
+			}
+		}
+		h.Store.Unlock()
+
+		h.Persist("chat_messages", msg)
+
+		// 4. Notify the recipient in real-time
+		h.Hub.SendToUser(schoolID, target.ID, rt.Message{
+			Type: "message_receive",
+			Payload: map[string]any{
+				"conversation_id": convID,
+				"message_id":      msg.ID,
+				"sender_id":       msg.SenderID,
+				"sender_name":     senderName,
+				"text":            msg.Text,
+				"created_at":      msg.CreatedAt,
+			},
+		})
+	}
 }
 
 func (h *Handler) isBroadcastTarget(ctx *api.RequestContext, b *store.Broadcast) bool {

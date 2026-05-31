@@ -7,6 +7,7 @@ import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { StatCardCompact, Skeleton, DataState, EntityCard, EntityGrid, ConfirmModal } from "@/components/ui";
 import { useCertificateTemplates, useGeneratedCertificates } from "../hooks/useCertificates";
+import { useSchoolBranding } from "@/hooks/useSchoolBranding";
 import { CERTIFICATE_TYPE_LABELS, type CertificateType, type GeneratedCertificate } from "../types/certificate.types";
 
 type TabView = "templates" | "generated";
@@ -19,6 +20,7 @@ export function CertificateListPage() {
 
   const { state: templateState, deleteTemplate, duplicateTemplate } = useCertificateTemplates();
   const { state: certState, revokeCertificate } = useGeneratedCertificates();
+  const { schoolName } = useSchoolBranding();
 
   const templates = templateState.data || [];
   const certificates = certState.data || [];
@@ -240,7 +242,7 @@ export function CertificateListPage() {
                     {
                       label: "Print",
                       icon: "print",
-                      onClick: () => printGeneratedCertificate(cert),
+                      onClick: () => printGeneratedCertificate(cert, schoolName),
                       accent: "blue",
                     },
                     ...(cert.status === "issued"
@@ -284,11 +286,11 @@ function escapeHtml(value: unknown): string {
     .replace(/'/g, "&#039;");
 }
 
-function printGeneratedCertificate(cert: GeneratedCertificate) {
+function printGeneratedCertificate(cert: GeneratedCertificate, currentSchoolName: string) {
   const printWin = window.open("", "_blank");
   if (!printWin) return;
   const metadata = cert.metadata || {};
-  const schoolName = metadata.school_name || "School";
+  const schoolName = (metadata.school_name && metadata.school_name !== "School") ? metadata.school_name : (currentSchoolName || "School");
   const body = cert.body_text || "";
   const title = CERTIFICATE_TYPE_LABELS[cert.certificate_type] || cert.certificate_type.replace("_", " ");
   const safeBody = escapeHtml(body).replace(/\n/g, "<br>");

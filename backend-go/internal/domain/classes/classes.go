@@ -177,7 +177,10 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 					continue
 				}
 			}
-			rows = append(rows, c)
+			
+			// Deep copy to prevent race conditions during enrichment
+			copyC := *c
+			rows = append(rows, &copyC)
 		}
 		h.Store.RUnlock()
 
@@ -273,8 +276,11 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 				if !access.CanAccessClassLocked(h.Store, ctx, c.ID) {
 					return nil, api.NewControlledError("FORBIDDEN", "You can only access assigned classes.", 403, nil)
 				}
-				h.enrichClass(c)
-				return c, nil
+				
+				// Deep copy to prevent race conditions during enrichment
+				copyC := *c
+				h.enrichClass(&copyC)
+				return &copyC, nil
 			}
 		}
 		return nil, api.NewControlledError("NOT_FOUND", "Class not found.", 404, nil)

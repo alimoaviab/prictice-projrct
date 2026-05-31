@@ -60,12 +60,7 @@ export function CertificateCreatePage() {
   }, [runSettings]);
 
   const schoolData = settingsState.data?.profile || {};
-  const resolvedSchoolName =
-    schoolData.schoolName ||
-    schoolData.school_name ||
-    schoolData.name ||
-    schoolName ||
-    "Your School Name";
+  const resolvedSchoolName = schoolName || "Your School Name";
   const resolvedAddress = schoolData.address || schoolData.city || "";
   const resolvedPhone = schoolData.phone || schoolData.contact || "";
   const resolvedPrincipal = schoolData.principal_name || "Principal Name";
@@ -187,8 +182,22 @@ export function CertificateCreatePage() {
           <Card className="p-5 space-y-4">
             <h2 className="text-base font-bold text-slate-900">Certificate Body</h2>
             <p className="text-[11px] text-slate-500">
-              Write the certificate content below. This text will appear on the generated certificate.
+              Write the certificate content below. Click the variables to insert them. They will be replaced with real data when generating.
             </p>
+
+            <div className="flex flex-wrap gap-1.5 py-1">
+              {CERTIFICATE_VARIABLES.map((v) => (
+                <button
+                  key={v.key}
+                  type="button"
+                  onClick={() => insertVariable(v.key)}
+                  className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-[10px] font-bold text-blue-700 ring-1 ring-inset ring-blue-700/10 hover:bg-blue-100 transition-colors"
+                  title={`Insert ${v.key}`}
+                >
+                  {v.label}
+                </button>
+              ))}
+            </div>
 
             <textarea
               ref={textareaRef}

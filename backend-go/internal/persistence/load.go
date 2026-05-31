@@ -595,7 +595,7 @@ func (p *Persister) loadHomework(ctx context.Context, s *store.MemStore) error {
 		var hwid string
 		var sub store.HomeworkSubmission
 		if err := subRows.Scan(&hwid, &sub.StudentID, &sub.SubmittedAt, &sub.GradedAt,
-			&sub.Status, &sub.AttachmentURLs, &sub.Marks, &sub.Feedback); err != nil {
+			&sub.Status, &sub.AttachmentURLs, &sub.Grade, &sub.Feedback); err != nil {
 			return err
 		}
 		if hw := hwById[hwid]; hw != nil {

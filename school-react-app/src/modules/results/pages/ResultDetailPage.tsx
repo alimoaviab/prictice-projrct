@@ -17,6 +17,7 @@ import { exportMarksheet } from "@/utils/marksheet";
 import { showToast } from "@/utils/toast";
 import { useAuth } from "@/hooks/useAuth";
 import { serviceRequest } from "@/services/service-client";
+import { useSchoolBranding } from "@/hooks/useSchoolBranding";
 
 export function ResultDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -30,8 +31,8 @@ export function ResultDetailPage() {
       : "/admin/results";
   
   const { state } = useResult(id);
-  const { user } = useAuth();
-  const schoolName = (user as any)?.schoolName || (user as any)?.school_name || "School";
+  const { schoolName, logoUrl } = useSchoolBranding();
+  const brandedSchoolName = schoolName || "School";
 
   const [examData, setExamData] = useState<any>(null);
   const [examLoading, setExamLoading] = useState(false);
@@ -122,7 +123,7 @@ export function ResultDetailPage() {
                variant="primary" 
                className="h-11 w-full rounded-xl flex items-center justify-center gap-2"
                onClick={() => {
-                 exportMarksheet(row, { schoolName });
+                 exportMarksheet(row, { schoolName: brandedSchoolName, logoUrl });
                  showToast("Generating marksheet...", "info");
                }}
              >

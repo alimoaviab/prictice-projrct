@@ -40,7 +40,7 @@ export function StudentHomeworkDetailPage({ homeworkId }: { homeworkId: string }
     });
   }, [runHw, homeworkId]);
 
-  if (hwState.status === "loading") {
+  if (hwState.status === "loading" || hwState.status === "idle") {
     return (
       <div className="space-y-6">
         <Skeleton className="h-24 w-full rounded-2xl" />
@@ -56,8 +56,11 @@ export function StudentHomeworkDetailPage({ homeworkId }: { homeworkId: string }
   const hw = hwState.data!;
   const submission = hw.my_submission;
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "—";
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "—";
+    return date.toLocaleDateString("en-US", {
       weekday: "long",
       year: "numeric",
       month: "long",

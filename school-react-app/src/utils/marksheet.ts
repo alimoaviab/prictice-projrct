@@ -24,6 +24,8 @@ export interface MarksheetOptions {
   schoolAddress?: string;
   /** Optional principal name printed in the signature row. */
   principal?: string;
+  /** Optional school logo URL. */
+  logoUrl?: string;
 }
 
 function gradeForRatio(ratio: number): { letter: string; band: string } {
@@ -174,11 +176,18 @@ function htmlEscape(s: string | number | undefined | null): string {
 }
 
 function renderHeader(opts: MarksheetOptions, badge: string): string {
+  const logoHtml = opts.logoUrl
+    ? `<img src="${htmlEscape(opts.logoUrl)}" alt="Logo" style="height: 50px; max-width: 120px; object-fit: contain; margin-right: 16px;" />`
+    : "";
+
   return `
-    <div class="header">
-      <div>
-        <h1>${htmlEscape(opts.schoolName || "School")}</h1>
-        <div class="school-meta">${htmlEscape(opts.schoolAddress || "Academic Transcript")}</div>
+    <div class="header" style="display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center;">
+        ${logoHtml}
+        <div>
+          <h1>${htmlEscape(opts.schoolName || "School")}</h1>
+          <div class="school-meta">${htmlEscape(opts.schoolAddress || "Academic Transcript")}</div>
+        </div>
       </div>
       <div class="badge">${htmlEscape(badge)}</div>
     </div>

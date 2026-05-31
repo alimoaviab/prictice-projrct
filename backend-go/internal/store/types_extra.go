@@ -93,7 +93,7 @@ type HomeworkSubmission struct {
 	Feedback       string     `json:"feedback,omitempty"`
 	SubmittedAt    *time.Time `json:"submitted_at,omitempty"`
 	GradedAt       *time.Time `json:"graded_at,omitempty"`
-	Marks          *float64   `json:"marks,omitempty"`
+	Grade          *float64   `json:"grade,omitempty"`
 }
 
 // Homework mirrors old-app/shared/models/homework.model.ts.

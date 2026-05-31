@@ -12,16 +12,8 @@ import { CERTIFICATE_TYPE_LABELS, type GeneratedCertificate } from "../types/cer
 
 export function CertificateViewPage() {
   const { id } = useParams<{ id: string }>();
-  const { schoolName } = useSchoolBranding();
+  const { schoolName, logoUrl } = useSchoolBranding();
   const { state, run } = useSafeAsync<GeneratedCertificate>();
-  const { state: settingsState, run: runSettings } = useSafeAsync<any>();
-
-  useEffect(() => {
-    void runSettings(async () => {
-      const r = await serviceRequest<any>("/api/settings");
-      return r.ok ? r.data : null;
-    }).catch(() => {});
-  }, [runSettings]);
 
   useEffect(() => {
     if (!id) return;
@@ -35,7 +27,8 @@ export function CertificateViewPage() {
     });
   }, [id, run]);
 
-  const resolvedSchoolName = settingsState.data?.profile?.school_name || schoolName || "School";
+  const resolvedSchoolName = schoolName || "School";
+  const resolvedLogoUrl = logoUrl;
 
   if (state.status === "loading" || state.status === "idle") {
     return <div className="space-y-4"><Skeleton className="h-20 w-full rounded-xl" /><Skeleton className="h-[500px] w-full rounded-xl" /></div>;
@@ -77,9 +70,13 @@ export function CertificateViewPage() {
           <div className="absolute inset-6 border border-amber-200/30 rounded-lg pointer-events-none" />
 
           <div className="text-center mb-6 relative z-10">
-            <div className="h-14 w-14 mx-auto rounded-full bg-blue-600 flex items-center justify-center text-white text-xl font-bold mb-2">
-              {resolvedSchoolName.charAt(0).toUpperCase()}
-            </div>
+            {resolvedLogoUrl ? (
+              <img src={resolvedLogoUrl} alt="Logo" className="h-14 mx-auto object-contain mb-2" />
+            ) : (
+              <div className="h-14 w-14 mx-auto rounded-full bg-blue-600 flex items-center justify-center text-white text-xl font-bold mb-2">
+                {resolvedSchoolName.charAt(0).toUpperCase()}
+              </div>
+            )}
             <h3 className="text-xl font-black text-slate-900">{resolvedSchoolName}</h3>
           </div>
 

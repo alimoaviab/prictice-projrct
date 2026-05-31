@@ -2,7 +2,7 @@ import { AppIcon } from "shared/ui/AppIcon";
 /**
  * Certificate Edit Page — Edit existing template.
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { Card, Button, Input, Skeleton, DataState } from "@/components/ui";
 import { useSafeAsync } from "@/hooks/useSafeAsync";
@@ -10,8 +10,7 @@ import { serviceRequest } from "@/services/service-client";
 import { useSchoolBranding } from "@/hooks/useSchoolBranding";
 import { useCertificateTemplates } from "../hooks/useCertificates";
 import * as service from "../services/certificate.service";
-import type { CertificateTemplate } from "../types/certificate.types";
-
+import { CERTIFICATE_VARIABLES, type CertificateTemplate } from "../types/certificate.types";
 export function CertificateEditPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -21,7 +20,30 @@ export function CertificateEditPage() {
   const [name, setName] = useState("");
   const [certificateTitle, setCertificateTitle] = useState("");
   const [bodyText, setBodyText] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const insertVariable = (variable: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) {
+      setBodyText((prev) => prev + " " + variable);
+      return;
+    }
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = bodyText;
+    const before = text.substring(0, start);
+    const after = text.substring(end);
+    const newText = before + variable + after;
+    
+    setBodyText(newText);
+    
+    requestAnimationFrame(() => {
+      textarea.focus();
+      const newPos = start + variable.length;
+      textarea.setSelectionRange(newPos, newPos);
+    });
+  };
   const { state: templateState, run: runTemplate } = useSafeAsync<CertificateTemplate>();
   useEffect(() => {
     if (!id) return;
@@ -40,15 +62,7 @@ export function CertificateEditPage() {
     }
   }, [templateState.data]);
 
-  const { state: settingsState, run: runSettings } = useSafeAsync<any>();
-  useEffect(() => {
-    void runSettings(async () => {
-      const r = await serviceRequest<any>("/api/settings");
-      return r.ok ? r.data : null;
-    }).catch(() => {});
-  }, [runSettings]);
-
-  const resolvedSchoolName = settingsState.data?.profile?.school_name || schoolName || "School";
+  const resolvedSchoolName = schoolName || "School";
 
   async function handleSave() {
     if (!name.trim() || !id) return;
@@ -85,7 +99,25 @@ export function CertificateEditPage() {
           </Card>
           <Card className="p-5 space-y-4">
             <h2 className="text-base font-bold text-slate-900">Certificate Body</h2>
-            <textarea value={bodyText} onChange={(e) => setBodyText(e.target.value)} rows={8} className="w-full rounded-xl border border-slate-200 p-4 text-sm text-slate-700 font-medium leading-relaxed focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none resize-y" placeholder="Write certificate body text..." />
+            <p className="text-[11px] text-slate-500">
+              Write the certificate content below. Click the variables to insert them. They will be replaced with real data when generating.
+            </p>
+
+            <div className="flex flex-wrap gap-1.5 py-1">
+              {CERTIFICATE_VARIABLES.map((v) => (
+                <button
+                  key={v.key}
+                  type="button"
+                  onClick={() => insertVariable(v.key)}
+                  className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-[10px] font-bold text-blue-700 ring-1 ring-inset ring-blue-700/10 hover:bg-blue-100 transition-colors"
+                  title={`Insert ${v.key}`}
+                >
+                  {v.label}
+                </button>
+              ))}
+            </div>
+
+            <textarea ref={textareaRef} value={bodyText} onChange={(e) => setBodyText(e.target.value)} rows={8} className="w-full rounded-xl border border-slate-200 p-4 text-sm text-slate-700 font-medium leading-relaxed focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none resize-y" placeholder="Write certificate body text..." />
           </Card>
           <div className="flex items-center gap-3">
             <Button onClick={handleSave} disabled={saving || !name.trim()}>{saving ? "Saving..." : "Save Changes"}</Button>
