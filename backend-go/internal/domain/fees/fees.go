@@ -23,11 +23,11 @@
 package fees
 
 import (
+	"crypto/rand"
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"sort"
 	"strconv"
@@ -183,7 +183,12 @@ func titleCase(s string) string {
 }
 
 func makeInvoiceNo(studentID, month string, year int) string {
-	src := fmt.Sprintf("%s:%s:%d:%d:%d", studentID, month, year, time.Now().UnixNano(), rand.Int())
+	randVal := time.Now().UnixNano()
+	b := make([]byte, 8)
+	if _, err := rand.Read(b); err == nil {
+		randVal = int64(b[0])<<56 | int64(b[1])<<48 | int64(b[2])<<40 | int64(b[3])<<32 | int64(b[4])<<24 | int64(b[5])<<16 | int64(b[6])<<8 | int64(b[7])
+	}
+	src := fmt.Sprintf("%s:%s:%d:%d:%d", studentID, month, year, time.Now().UnixNano(), randVal)
 	h := sha1.Sum([]byte(src))
 	hash := strings.ToUpper(hex.EncodeToString(h[:])[:10])
 	mn, _ := monthToNum(month)
@@ -194,7 +199,14 @@ func makeInvoiceNo(studentID, month string, year int) string {
 }
 
 func makeReceiptNo() string {
-	suffix := fmt.Sprintf("%X", rand.Uint32()&0xFFFFFF)
+	b := make([]byte, 4)
+	var randVal uint32
+	if _, err := rand.Read(b); err == nil {
+		randVal = uint32(b[0])<<24 | uint32(b[1])<<16 | uint32(b[2])<<8 | uint32(b[3])
+	} else {
+		randVal = uint32(time.Now().UnixNano())
+	}
+	suffix := fmt.Sprintf("%X", randVal&0xFFFFFF)
 	return fmt.Sprintf("RCP-%s-%s", strings.ToUpper(fmt.Sprintf("%X", time.Now().Unix())), suffix)
 }
 

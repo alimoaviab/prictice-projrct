@@ -8,11 +8,11 @@
 package certificates
 
 import (
+	"crypto/rand"
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"sort"
 	"strings"
@@ -496,7 +496,12 @@ func (h *Handler) certificateMetadata(c *store.GeneratedCertificate) (map[string
 }
 
 func generateCertNo(schoolID, studentID string) string {
-	src := fmt.Sprintf("%s:%s:%d:%d", schoolID, studentID, time.Now().UnixNano(), rand.Int())
+	randVal := time.Now().UnixNano()
+	b := make([]byte, 8)
+	if _, err := rand.Read(b); err == nil {
+		randVal = int64(b[0])<<56 | int64(b[1])<<48 | int64(b[2])<<40 | int64(b[3])<<32 | int64(b[4])<<24 | int64(b[5])<<16 | int64(b[6])<<8 | int64(b[7])
+	}
+	src := fmt.Sprintf("%s:%s:%d:%d", schoolID, studentID, time.Now().UnixNano(), randVal)
 	h := sha1.Sum([]byte(src))
 	hash := strings.ToUpper(hex.EncodeToString(h[:])[:6])
 	return fmt.Sprintf("CERT-%d-%s", time.Now().Year(), hash)
@@ -504,7 +509,12 @@ func generateCertNo(schoolID, studentID string) string {
 
 func generateVerificationCode() string {
 	b := make([]byte, 12)
-	rand.Read(b)
+	if _, err := rand.Read(b); err != nil {
+		// Fallback to time-based entropy if crypto/rand fails
+		for i := 0; i < 12; i++ {
+			b[i] = byte(time.Now().UnixNano() >> (i * 8))
+		}
+	}
 	return strings.ToUpper(hex.EncodeToString(b)[:16])
 }
 
