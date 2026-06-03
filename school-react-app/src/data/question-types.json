@@ -1,0 +1,194 @@
+{
+  "questionTypes": [
+    {
+      "id": "mcq",
+      "label": "MCQ",
+      "category": "objective",
+      "defaultMarks": 1,
+      "aliases": [
+        "MCQ",
+        "mcq"
+      ]
+    },
+    {
+      "id": "tick_correct_spelling",
+      "label": "Tick Correct Spelling",
+      "category": "objective",
+      "defaultMarks": 1,
+      "aliases": [
+        "Tick Correct Spelling",
+        "tick correct spelling"
+      ]
+    },
+    {
+      "id": "fill_in_the_blanks",
+      "label": "Fill In The Blanks",
+      "category": "objective",
+      "defaultMarks": 1,
+      "aliases": [
+        "Fill In The Blanks",
+        "fill in the blanks"
+      ]
+    },
+    {
+      "id": "match_columns",
+      "label": "Match Columns",
+      "category": "objective",
+      "defaultMarks": 1,
+      "aliases": [
+        "Match Columns",
+        "match columns"
+      ]
+    },
+    {
+      "id": "question_answers",
+      "label": "Question Answers",
+      "category": "written",
+      "defaultMarks": 2,
+      "aliases": [
+        "Question Answers",
+        "question answers"
+      ]
+    },
+    {
+      "id": "letters",
+      "label": "Letters",
+      "category": "written",
+      "defaultMarks": 2,
+      "aliases": [
+        "Letters",
+        "letters"
+      ]
+    },
+    {
+      "id": "applications",
+      "label": "Applications",
+      "category": "written",
+      "defaultMarks": 2,
+      "aliases": [
+        "Applications",
+        "applications"
+      ]
+    },
+    {
+      "id": "stories",
+      "label": "Stories",
+      "category": "written",
+      "defaultMarks": 2,
+      "aliases": [
+        "Stories",
+        "stories"
+      ]
+    },
+    {
+      "id": "essays",
+      "label": "Essays",
+      "category": "written",
+      "defaultMarks": 2,
+      "aliases": [
+        "Essays",
+        "essays"
+      ]
+    },
+    {
+      "id": "missing_letters",
+      "label": "Missing Letters",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Missing Letters",
+        "missing letters"
+      ]
+    },
+    {
+      "id": "form_of_verbs",
+      "label": "Form Of Verbs",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Form Of Verbs",
+        "form of verbs"
+      ]
+    },
+    {
+      "id": "words_into_sentences",
+      "label": "Words Into Sentences",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Words Into Sentences",
+        "words into sentences"
+      ]
+    },
+    {
+      "id": "word_meaning",
+      "label": "Word Meaning",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Word Meaning",
+        "word meaning"
+      ]
+    },
+    {
+      "id": "singular_plural",
+      "label": "Singular Plural",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Singular Plural",
+        "singular plural"
+      ]
+    },
+    {
+      "id": "genders",
+      "label": "Genders",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Genders",
+        "genders"
+      ]
+    },
+    {
+      "id": "translate_into_urdu",
+      "label": "Translate Into Urdu",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Translate Into Urdu",
+        "translate into urdu"
+      ]
+    },
+    {
+      "id": "grammar",
+      "label": "Grammar",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Grammar",
+        "grammar"
+      ]
+    },
+    {
+      "id": "exercise",
+      "label": "Exercise",
+      "category": "practice",
+      "defaultMarks": 2,
+      "aliases": [
+        "Exercise",
+        "exercise"
+      ]
+    },
+    {
+      "id": "additional_questions",
+      "label": "Additional Questions",
+      "category": "practice",
+      "defaultMarks": 2,
+      "aliases": [
+        "Additional Questions",
+        "additional questions"
+      ]
+    }
+  ]
+}

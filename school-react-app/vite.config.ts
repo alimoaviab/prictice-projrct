@@ -6,7 +6,12 @@ import fs from "node:fs";
 import path from "node:path";
 
 function sharedDataPlugin(): Plugin {
-  const sharedDataDir = path.resolve(__dirname, "../data");
+  const candidatePaths = [
+    path.resolve(__dirname, "../data"),
+    path.resolve(__dirname, "./src/data"),
+    path.resolve(__dirname, "./data"),
+  ];
+  const sharedDataDir = candidatePaths.find((p) => fs.existsSync(p) && fs.statSync(p).isDirectory()) || candidatePaths[1];
 
   return {
     name: "eduplexo-shared-data",
@@ -74,24 +79,6 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: "dist",
       sourcemap: true,
-      rollupOptions: {
-        output: {
-          manualChunks(id) {
-            if (!id.includes("node_modules")) return undefined;
-            if (id.includes("/react-dom/")) return "vendor-react-dom";
-            if (id.includes("/react/") || id.includes("/react-router") || id.includes("/scheduler/")) {
-              return "vendor-react";
-            }
-            if (id.includes("/lucide-react/") || id.includes("/lucide/")) return "vendor-icons";
-            if (id.includes("/@tanstack/")) return "vendor-query";
-            if (id.includes("/framer-motion/")) return "vendor-motion";
-            if (id.includes("/react-markdown/") || id.includes("/remark-") || id.includes("/micromark")) {
-              return "vendor-markdown";
-            }
-            return "vendor-misc";
-          },
-        },
-      },
     },
   };
 });

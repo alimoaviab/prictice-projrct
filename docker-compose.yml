@@ -177,6 +177,8 @@ services:
       dockerfile: Dockerfile
     container_name: school_frontend
     restart: unless-stopped
+    volumes:
+      - ./data:/usr/share/nginx/html/data:ro
     depends_on:
       backend-go:
         condition: service_started
