@@ -280,36 +280,36 @@ type CertificateTemplate struct {
 	ID            string    `json:"_id"`
 	SchoolID      string    `json:"school_id"`
 	Name          string    `json:"name"`
-	Type          string    `json:"type"`          // character, school_leaving, achievement, etc.
-	Orientation   string    `json:"orientation"`   // landscape | portrait
+	Type          string    `json:"type"`        // character, school_leaving, achievement, etc.
+	Orientation   string    `json:"orientation"` // landscape | portrait
 	BackgroundURL string    `json:"background_url"`
 	WatermarkURL  string    `json:"watermark_url"`
 	BorderStyle   string    `json:"border_style"`
 	BodyText      string    `json:"body_text"`
-	Elements      string    `json:"elements"`      // JSON string of positioned elements
+	Elements      string    `json:"elements"` // JSON string of positioned elements
 	IsDefault     bool      `json:"is_default"`
-	Status        string    `json:"status"`        // active | archived
+	Status        string    `json:"status"` // active | archived
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 }
 
 // GeneratedCertificate is a certificate issued to a specific student.
 type GeneratedCertificate struct {
-	ID               string    `json:"_id"`
-	SchoolID         string    `json:"school_id"`
-	TemplateID       string    `json:"template_id"`
-	StudentID        string    `json:"student_id"`
-	StudentName      string    `json:"student_name"`
-	ClassName        string    `json:"class_name"`
-	CertificateType  string    `json:"certificate_type"`
-	CertificateNo    string    `json:"certificate_no"`
-	VerificationCode string    `json:"verification_code"`
-	QRCodeURL        string    `json:"qr_code_url"`
-	PDFURL           string    `json:"pdf_url"`
-	IssueDate        time.Time `json:"issue_date"`
+	ID               string     `json:"_id"`
+	SchoolID         string     `json:"school_id"`
+	TemplateID       string     `json:"template_id"`
+	StudentID        string     `json:"student_id"`
+	StudentName      string     `json:"student_name"`
+	ClassName        string     `json:"class_name"`
+	CertificateType  string     `json:"certificate_type"`
+	CertificateNo    string     `json:"certificate_no"`
+	VerificationCode string     `json:"verification_code"`
+	QRCodeURL        string     `json:"qr_code_url"`
+	PDFURL           string     `json:"pdf_url"`
+	IssueDate        time.Time  `json:"issue_date"`
 	ExpiryDate       *time.Time `json:"expiry_date,omitempty"`
-	Status           string    `json:"status"` // issued | revoked | expired
-	CreatedAt        time.Time `json:"created_at"`
+	Status           string     `json:"status"` // issued | revoked | expired
+	CreatedAt        time.Time  `json:"created_at"`
 }
 
 // ─── Question Papers ─────────────────────────────────────────────────────
@@ -340,16 +340,21 @@ type Question struct {
 	CreatedBy      string     `json:"created_by"`
 	CreatedByName  string     `json:"created_by_name,omitempty"`
 	BoardID        string     `json:"board_id,omitempty"`
+	Syllabus       string     `json:"syllabus,omitempty"`
 	ClassID        string     `json:"class_id"`
+	ClassName      string     `json:"class_name,omitempty"`
 	SubjectID      string     `json:"subject_id,omitempty"`
 	SubjectName    string     `json:"subject_name,omitempty"`
 	ChapterID      string     `json:"chapter_id,omitempty"`
+	ChapterName    string     `json:"chapter_name,omitempty"`
 	TopicID        string     `json:"topic_id,omitempty"`
 	Type           string     `json:"type"`
 	Difficulty     string     `json:"difficulty"`
 	QuestionHTML   string     `json:"question_html"`
 	Options        string     `json:"options,omitempty"`
+	Answer         string     `json:"answer,omitempty"`
 	Marks          int        `json:"marks,omitempty"`
+	Metadata       string     `json:"metadata,omitempty"`
 	Status         string     `json:"status"`
 	IsGlobal       bool       `json:"is_global"`
 	ApprovalStatus string     `json:"approval_status"`
@@ -433,14 +438,14 @@ type ImportLog struct {
 // ─── Exam Security ───────────────────────────────────────────────────────
 
 type ExamSecuritySettings struct {
-	ExamID             string `json:"exam_id"`
-	ShuffleQuestions   bool   `json:"shuffle_questions"`
-	ShuffleOptions     bool   `json:"shuffle_options"`
-	IPRestriction      bool   `json:"ip_restriction"`
-	MaxTabSwitches     int    `json:"max_tab_switches"`
-	RequireFullscreen  bool   `json:"require_fullscreen"`
-	WebcamEnabled      bool   `json:"webcam_enabled"`
-	PerQuestionTimeLimit int  `json:"per_question_time_limit"` // seconds, 0 = disabled
+	ExamID               string `json:"exam_id"`
+	ShuffleQuestions     bool   `json:"shuffle_questions"`
+	ShuffleOptions       bool   `json:"shuffle_options"`
+	IPRestriction        bool   `json:"ip_restriction"`
+	MaxTabSwitches       int    `json:"max_tab_switches"`
+	RequireFullscreen    bool   `json:"require_fullscreen"`
+	WebcamEnabled        bool   `json:"webcam_enabled"`
+	PerQuestionTimeLimit int    `json:"per_question_time_limit"` // seconds, 0 = disabled
 }
 
 type ExamSecurityLog struct {
@@ -455,12 +460,12 @@ type ExamSecurityLog struct {
 // ─── AI Generation Logs ──────────────────────────────────────────────────
 
 type AIGenerationLog struct {
-	ID         string    `json:"_id"`
-	TeacherID  string    `json:"teacher_id"`
-	SchoolID   string    `json:"school_id"`
-	Prompt     string    `json:"prompt"`
-	Model      string    `json:"model"`
-	TokensUsed int       `json:"tokens_used"`
-	QuestionsGenerated int `json:"questions_generated"`
-	CreatedAt  time.Time `json:"created_at"`
+	ID                 string    `json:"_id"`
+	TeacherID          string    `json:"teacher_id"`
+	SchoolID           string    `json:"school_id"`
+	Prompt             string    `json:"prompt"`
+	Model              string    `json:"model"`
+	TokensUsed         int       `json:"tokens_used"`
+	QuestionsGenerated int       `json:"questions_generated"`
+	CreatedAt          time.Time `json:"created_at"`
 }

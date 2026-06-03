@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { renderHook, act, waitFor } from "@testing-library/react";
+import { renderHook, act } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
@@ -117,11 +117,13 @@ describe("Attendance Optimistic UI", () => {
         vi.advanceTimersByTime(600);
       });
 
-      // Wait for the mutation to settle
-      await waitFor(() => {
-        // After error, the cache should be invalidated (refetch will restore)
-        // The error toast should have been called
-      }, { timeout: 2000 });
+      await vi.waitFor(() => {
+        expect(mockToast).toHaveBeenCalledWith("Network error", "error");
+      });
+
+      const cached = queryClient.getQueryData(["attendance", { classId: "cls_1", date: "2026-05-15" }]) as any[];
+      const student1 = cached?.find((r: any) => r.student_id === "stu_1");
+      expect(student1?.status).toBe("present");
     });
   });
 
@@ -169,7 +171,7 @@ describe("Attendance Optimistic UI", () => {
       });
 
       // Should have made exactly 1 API call with all 5 changes
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect(mockFetch).toHaveBeenCalledTimes(1);
       });
 

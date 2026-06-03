@@ -22,9 +22,9 @@ const cards: DashboardCard[] = [
   {
     id: "generate-1",
     title: "Generate Paper",
-    subtitle: "Select syllabus, class & generate",
+    subtitle: "Unified syllabus, class, chapter & type filters",
     icon: "Sparkles",
-    href: "/admin/question-papers/generate/syllabus",
+    href: "/admin/question-papers/generator",
   },
   {
     id: "premium-generator",

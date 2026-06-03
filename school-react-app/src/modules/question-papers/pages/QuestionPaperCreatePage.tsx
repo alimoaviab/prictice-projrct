@@ -21,6 +21,7 @@ import type { PaperQuestion, QuestionType, Difficulty } from "../types/questionP
 import { showToast } from "@/utils/toast";
 import { autoGeneratePaper } from "@/modules/question-bank/services/questionBank.service";
 import type { BankQuestion } from "@/modules/question-bank/types/questionBank.types";
+import { getQuestionTypeLabel, QUESTION_TYPES } from "@/data/question-types";
 
 interface ClassRow { _id: string; id?: string; name: string; }
 interface TeacherRow { _id: string; id?: string; first_name: string; last_name: string; }
@@ -492,7 +493,7 @@ export function QuestionPaperCreatePage() {
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium text-slate-800 line-clamp-2">{q.question}</p>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">{q.type.toUpperCase()}</span>
+                        <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">{getQuestionTypeLabel(q.type)}</span>
                         <input
                           type="number"
                           min={1}
@@ -710,7 +711,9 @@ function AddQuestionDrawer({
   const [tab, setTab] = useState<"create" | "bank">("create");
 
   // Create new question form state
-  const [type, setType] = useState<QuestionType>("short");
+  const [type, setType] = useState<QuestionType>(
+    QUESTION_TYPES.find((item) => item.id === "question_answers")?.id || QUESTION_TYPES[0]?.id || "mcq",
+  );
   const [questionText, setQuestionText] = useState("");
   const [marks, setMarks] = useState(5);
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
@@ -819,19 +822,19 @@ function AddQuestionDrawer({
               {/* Question Type */}
               <div className="space-y-1">
                 <label className="text-[11px] font-bold text-slate-500">Question Type</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(["mcq", "short", "long"] as QuestionType[]).map((t) => (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {QUESTION_TYPES.map((questionType) => (
                     <button
-                      key={t}
+                      key={questionType.id}
                       type="button"
-                      onClick={() => setType(t)}
-                      className={`h-9 rounded-lg text-[11px] font-bold uppercase border transition-all ${
-                        type === t
+                      onClick={() => setType(questionType.id)}
+                      className={`min-h-9 rounded-lg px-2 py-1.5 text-[11px] font-bold border transition-all ${
+                        type === questionType.id
                           ? "bg-indigo-600 text-white border-indigo-600"
                           : "bg-white text-slate-600 border-slate-200 hover:border-indigo-300"
                       }`}
                     >
-                      {t === "mcq" ? "MCQ" : t === "short" ? "Short" : "Long"}
+                      {questionType.label}
                     </button>
                   ))}
                 </div>
@@ -937,7 +940,7 @@ function AddQuestionDrawer({
                           dangerouslySetInnerHTML={{ __html: q.question_html }}
                         />
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">{q.type.toUpperCase()}</span>
+                          <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">{getQuestionTypeLabel(q.type)}</span>
                           <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${q.difficulty === "easy" ? "bg-emerald-50 text-emerald-600" : q.difficulty === "hard" ? "bg-red-50 text-red-600" : "bg-amber-50 text-amber-600"}`}>{q.difficulty}</span>
                         </div>
                       </div>
@@ -1326,9 +1329,9 @@ function QuestionBankBrowseDrawer({
             </div>
             <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="h-8 rounded-lg border border-slate-200 px-2 text-[11px] font-bold bg-white focus:border-violet-500 outline-none">
               <option value="">All Types</option>
-              <option value="mcq">MCQ</option>
-              <option value="short">Short</option>
-              <option value="long">Long</option>
+              {QUESTION_TYPES.map((type) => (
+                <option key={type.id} value={type.id}>{type.label}</option>
+              ))}
             </select>
             <select value={filterDifficulty} onChange={(e) => setFilterDifficulty(e.target.value)} className="h-8 rounded-lg border border-slate-200 px-2 text-[11px] font-bold bg-white focus:border-violet-500 outline-none">
               <option value="">All Difficulty</option>
@@ -1406,7 +1409,7 @@ function QuestionBankBrowseDrawer({
                       </div>
                     )}
                     <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${q.type === "mcq" ? "bg-indigo-50 text-indigo-600" : q.type === "short" ? "bg-amber-50 text-amber-600" : "bg-violet-50 text-violet-600"}`}>{q.type.toUpperCase()}</span>
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${q.type === "mcq" ? "bg-indigo-50 text-indigo-600" : "bg-violet-50 text-violet-600"}`}>{getQuestionTypeLabel(q.type)}</span>
                       <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${q.difficulty === "easy" ? "bg-emerald-50 text-emerald-600" : q.difficulty === "hard" ? "bg-red-50 text-red-600" : "bg-amber-50 text-amber-600"}`}>{q.difficulty}</span>
                       {(q.marks || 0) > 0 && <span className="text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">{q.marks}m</span>}
                       {q.chapter_name && <span className="text-[9px] text-slate-400">{q.chapter_name}</span>}

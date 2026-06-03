@@ -864,23 +864,27 @@ func upsertChapter(ctx context.Context, tx pgx.Tx, v *store.Chapter) error {
 
 func upsertQuestion(ctx context.Context, tx pgx.Tx, v *store.Question) error {
 	_, err := tx.Exec(ctx, `
-		INSERT INTO questions (id, school_id, created_by, created_by_name, board_id, class_id,
-			subject_id, subject_name, chapter_id, topic_id, type, difficulty, question_html,
-			options, marks, status, is_global, approval_status, approved_by,
-			approved_at, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
+		INSERT INTO questions (id, school_id, created_by, created_by_name, board_id, syllabus,
+			class_id, class_name, subject_id, subject_name, chapter_id, chapter_name, topic_id,
+			type, difficulty, question_html, options, answer, marks, metadata, status, is_global,
+			approval_status, approved_by, approved_at, created_at, updated_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20::jsonb,$21,$22,$23,$24,$25,$26,$27)
 		ON CONFLICT (id) DO UPDATE SET
-			board_id=EXCLUDED.board_id, class_id=EXCLUDED.class_id, subject_id=EXCLUDED.subject_id,
-			subject_name=EXCLUDED.subject_name, chapter_id=EXCLUDED.chapter_id, topic_id=EXCLUDED.topic_id,
+			board_id=EXCLUDED.board_id, syllabus=EXCLUDED.syllabus, class_id=EXCLUDED.class_id,
+			class_name=EXCLUDED.class_name, subject_id=EXCLUDED.subject_id,
+			subject_name=EXCLUDED.subject_name, chapter_id=EXCLUDED.chapter_id,
+			chapter_name=EXCLUDED.chapter_name, topic_id=EXCLUDED.topic_id,
 			type=EXCLUDED.type, difficulty=EXCLUDED.difficulty,
 			question_html=EXCLUDED.question_html, options=EXCLUDED.options,
-			marks=EXCLUDED.marks, status=EXCLUDED.status,
+			answer=EXCLUDED.answer, marks=EXCLUDED.marks, metadata=EXCLUDED.metadata,
+			status=EXCLUDED.status,
 			is_global=EXCLUDED.is_global, approval_status=EXCLUDED.approval_status,
 			approved_by=EXCLUDED.approved_by, approved_at=EXCLUDED.approved_at,
 			updated_at=EXCLUDED.updated_at
-	`, v.ID, v.SchoolID, v.CreatedBy, v.CreatedByName, nullableString(v.BoardID), v.ClassID,
-		v.SubjectID, v.SubjectName, v.ChapterID, nullableString(v.TopicID), defaultStr(v.Type, "short"),
-		defaultStr(v.Difficulty, "medium"), v.QuestionHTML, v.Options, v.Marks,
+	`, v.ID, v.SchoolID, v.CreatedBy, v.CreatedByName, nullableString(v.BoardID), v.Syllabus,
+		v.ClassID, v.ClassName, v.SubjectID, v.SubjectName, v.ChapterID, v.ChapterName,
+		nullableString(v.TopicID), defaultStr(v.Type, "question_answers"), defaultStr(v.Difficulty, "medium"),
+		v.QuestionHTML, v.Options, v.Answer, v.Marks, defaultStr(v.Metadata, "{}"),
 		defaultStr(v.Status, "active"), v.IsGlobal,
 		defaultStr(v.ApprovalStatus, "pending"), v.ApprovedBy, v.ApprovedAt,
 		v.CreatedAt, v.UpdatedAt)

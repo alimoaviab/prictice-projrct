@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { renderHook, waitFor, act } from "@testing-library/react";
+import { renderHook, act } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
@@ -85,7 +85,7 @@ describe("TanStack Query Cache Behavior", () => {
         { wrapper: createWrapper(queryClient) }
       );
 
-      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      await vi.waitFor(() => expect(result.current.isSuccess).toBe(true));
       expect(mockFetch).toHaveBeenCalledTimes(1);
 
       // Unmount
@@ -129,7 +129,7 @@ describe("TanStack Query Cache Behavior", () => {
         { wrapper: createWrapper(queryClient) }
       );
 
-      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      await vi.waitFor(() => expect(result.current.isSuccess).toBe(true));
       expect(mockFetch).toHaveBeenCalledTimes(1);
 
       // Advance time past staleTime (11 minutes)
@@ -173,7 +173,7 @@ describe("TanStack Query Cache Behavior", () => {
         { wrapper: createWrapper(queryClient) }
       );
 
-      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      await vi.waitFor(() => expect(result.current.isSuccess).toBe(true));
 
       // Exactly 1 call — not separate calls for overview, attendance, fees, etc.
       expect(mockFetch).toHaveBeenCalledTimes(1);

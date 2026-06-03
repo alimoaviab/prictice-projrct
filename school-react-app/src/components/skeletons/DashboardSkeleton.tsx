@@ -34,13 +34,13 @@ export function DashboardSkeleton() {
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Attendance chart */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+        <div className="bg-slate-50 rounded-xl border border-gray-200 p-5 space-y-4">
           <div className="h-5 w-36 bg-gray-200 rounded animate-pulse" />
           <div className="h-48 bg-gray-100 rounded-lg animate-pulse" />
         </div>
 
         {/* Fee collection chart */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+        <div className="bg-slate-50 rounded-xl border border-gray-200 p-5 space-y-4">
           <div className="h-5 w-32 bg-gray-200 rounded animate-pulse" />
           <div className="h-48 bg-gray-100 rounded-lg animate-pulse" />
         </div>

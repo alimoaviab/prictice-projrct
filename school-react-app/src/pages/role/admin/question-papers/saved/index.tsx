@@ -6,6 +6,7 @@ import { Skeleton, ConfirmModal } from "@/components/ui";
 import { useQuestionPapers } from "@/modules/question-papers/hooks/useQuestionPapers";
 import { useSchoolBranding } from "@/hooks/useSchoolBranding";
 import type { QuestionPaper, PaperQuestion } from "@/modules/question-papers/types/questionPaper.types";
+import { getQuestionTypeLabel, QUESTION_TYPES } from "@/data/question-types";
 
 /**
  * Saved Papers Page
@@ -85,7 +86,7 @@ export function SavedPapersPage() {
             </div>
             <button
               type="button"
-              onClick={() => navigate("/admin/question-papers/generate/syllabus")}
+              onClick={() => navigate("/admin/question-papers/generator")}
               className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg bg-blue-600 text-white text-[12px] font-bold shadow-sm hover:bg-blue-700 transition-colors active:scale-[0.98]"
             >
               <AppIcon name="Plus" size={14} />
@@ -117,7 +118,7 @@ export function SavedPapersPage() {
             </p>
             {!search && (
               <Link
-                to="/admin/question-papers/generate/syllabus"
+                to="/admin/question-papers/generator"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-[12px] font-bold hover:bg-blue-700 transition-colors shadow-sm"
               >
                 <AppIcon name="Sparkles" size={14} />
@@ -251,10 +252,16 @@ function printPaper(paper: QuestionPaper, schoolName: string) {
     } catch {/* ignore */}
   }
 
-  const mcqs = questions.filter((q) => q.type === "mcq");
-  const shorts = questions.filter((q) => q.type === "short");
-  const longs = questions.filter((q) => q.type === "long");
   const totalMarks = questions.reduce((s, q) => s + (q.marks || 0), 0);
+  const knownTypes = new Set(QUESTION_TYPES.map((type) => type.id));
+  const grouped = [
+    ...QUESTION_TYPES.map((type) => ({ id: type.id, title: type.label, questions: questions.filter((q) => q.type === type.id) })),
+    ...[...new Set(questions.map((q) => q.type).filter((type) => !knownTypes.has(type)))].map((type) => ({
+      id: type,
+      title: getQuestionTypeLabel(type),
+      questions: questions.filter((q) => q.type === type),
+    })),
+  ].filter((group) => group.questions.length > 0);
 
   const section = (title: string, list: PaperQuestion[], startIdx: number, includeOptions: boolean) => {
     if (list.length === 0) return "";
@@ -296,9 +303,10 @@ function printPaper(paper: QuestionPaper, schoolName: string) {
     </div>
     <div class="meta"><span>Total Marks: ${totalMarks}</span><span>Total Questions: ${questions.length}</span></div>
   </div>
-  ${section("Section A — Multiple Choice", mcqs, 0, true)}
-  ${section("Section B — Short Questions", shorts, mcqs.length, false)}
-  ${section("Section C — Long Questions", longs, mcqs.length + shorts.length, false)}
+  ${grouped.map((group) => {
+    const startIdx = grouped.slice(0, grouped.indexOf(group)).reduce((sum, item) => sum + item.questions.length, 0);
+    return section(group.title, group.questions, startIdx, group.id === "mcq");
+  }).join("")}
 </body></html>`;
 
   const w = window.open("", "_blank", "width=900,height=1100");

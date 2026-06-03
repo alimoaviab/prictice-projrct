@@ -16,7 +16,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "./useAuth";
+import { useAuth } from "@/hooks/useAuth";
 
 interface WSMessage {
   type: string;
@@ -32,6 +32,7 @@ const MAX_RECONNECT_DELAY = 30_000; // 30 seconds
 const INITIAL_RECONNECT_DELAY = 1_000; // 1 second
 
 export function useWebSocket(opts: UseWebSocketOptions = {}) {
+  const { enabled: enabledOption = true, onMessage } = opts;
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const wsRef = useRef<WebSocket | null>(null);
@@ -42,7 +43,8 @@ export function useWebSocket(opts: UseWebSocketOptions = {}) {
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<WSMessage | null>(null);
 
-  const enabled = opts.enabled !== false && !!user;
+  const hasToken = typeof localStorage !== "undefined" && Boolean(localStorage.getItem("token"));
+  const enabled = enabledOption !== false && (!!user || hasToken);
 
   // Build WebSocket URL
   const getWSUrl = useCallback(() => {
@@ -106,19 +108,19 @@ export function useWebSocket(opts: UseWebSocketOptions = {}) {
           }
 
           // Call custom handler if provided
-          opts.onMessage?.(msg);
+          onMessage?.(msg);
         }
       } catch {
         // Ignore parse errors for non-JSON messages (ping/pong)
       }
     },
-    [queryClient, opts]
+    [queryClient, onMessage]
   );
 
   // Connect to WebSocket
   const connect = useCallback(() => {
     if (!enabled || !mountedRef.current) return;
-    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return;
 
     const url = getWSUrl();
     const ws = new WebSocket(url);
@@ -127,7 +129,6 @@ export function useWebSocket(opts: UseWebSocketOptions = {}) {
     ws.onopen = () => {
       if (!mountedRef.current) return;
       setIsConnected(true);
-      reconnectAttemptRef.current = 0; // Reset backoff on successful connect
       console.info("[ws] connected");
     };
 

@@ -7,7 +7,7 @@
  *   3. Only valid status transitions are allowed
  */
 
-export type AttendanceStatus = "unmarked" | "present" | "absent";
+export type AttendanceStatus = "unmarked" | "present" | "absent" | "late" | "excused";
 
 /**
  * Validates a state transition. Prevents reversions.
@@ -32,15 +32,17 @@ export function isValidAttendanceTransition(
   currentStatus: AttendanceStatus | undefined,
   newStatus: AttendanceStatus
 ): boolean {
+  const markedStatuses: AttendanceStatus[] = ["present", "absent", "late", "excused"];
+
   // No current status = always valid (new record)
   if (!currentStatus || currentStatus === "unmarked") {
-    return newStatus === "present" || newStatus === "absent";
+    return markedStatuses.includes(newStatus);
   }
 
   // From marked status, only allow transition to other marked status
   // Never allow transition back to unmarked
-  if (currentStatus === "present" || currentStatus === "absent") {
-    return newStatus === "present" || newStatus === "absent";
+  if (markedStatuses.includes(currentStatus)) {
+    return markedStatuses.includes(newStatus);
   }
 
   return false;

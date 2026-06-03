@@ -1,0 +1,39 @@
+{
+  "generatedBy": "scripts/generate-syllabus-config.mjs",
+  "source": {
+    "registry": "school-react-app/src/data/syllabus/registry.ts",
+    "subjects": "school-react-app/src/pages/role/admin/question-papers/generate/subjects.tsx",
+    "classes": "school-react-app/src/pages/role/admin/question-papers/generate/classes.tsx",
+    "registryKeys": 427
+  },
+  "syllabi": [
+    {
+      "id": "ptb",
+      "classes": 13,
+      "subjects": 174,
+      "chapterGroups": 1483,
+      "chapters": 4505
+    },
+    {
+      "id": "afaq",
+      "classes": 7,
+      "subjects": 101,
+      "chapterGroups": 1123,
+      "chapters": 2103
+    },
+    {
+      "id": "oxford",
+      "classes": 7,
+      "subjects": 58,
+      "chapterGroups": 0,
+      "chapters": 0
+    },
+    {
+      "id": "gohar",
+      "classes": 7,
+      "subjects": 22,
+      "chapterGroups": 0,
+      "chapters": 0
+    }
+  ]
+}

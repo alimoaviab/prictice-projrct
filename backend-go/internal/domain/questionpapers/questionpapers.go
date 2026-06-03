@@ -28,24 +28,35 @@ func New(s *store.MemStore, save func(string, any)) *Handler {
 }
 
 type createPaperInput struct {
-	Title      string          `json:"title"`
-	ClassID    string          `json:"class_id"`
-	SubjectID  string          `json:"subject_id"`
-	ChapterIDs []string        `json:"chapter_ids"`
-	TeacherID  string          `json:"teacher_id"`
-	Date       string          `json:"date"`
-	Questions  json.RawMessage `json:"questions"`
+	Title       string          `json:"title"`
+	Syllabus    string          `json:"syllabus"`
+	ClassID     string          `json:"class_id"`
+	ClassName   string          `json:"class_name"`
+	SubjectID   string          `json:"subject_id"`
+	SubjectName string          `json:"subject_name"`
+	ChapterIDs  []string        `json:"chapter_ids"`
+	TeacherID   string          `json:"teacher_id"`
+	Date        string          `json:"date"`
+	Questions   json.RawMessage `json:"questions"`
 }
 
 type createQuestionInput struct {
+	Syllabus     string          `json:"syllabus"`
 	ClassID      string          `json:"class_id"`
+	ClassName    string          `json:"class_name"`
 	SubjectID    string          `json:"subject_id"`
+	SubjectName  string          `json:"subject_name"`
 	ChapterID    string          `json:"chapter_id"`
+	ChapterName  string          `json:"chapter_name"`
 	Type         string          `json:"type"`
+	QuestionType string          `json:"question_type"`
 	Difficulty   string          `json:"difficulty"`
 	QuestionHTML string          `json:"question_html"`
+	Question     string          `json:"question"`
 	Options      json.RawMessage `json:"options"`
+	Answer       string          `json:"answer"`
 	Marks        int             `json:"marks"`
+	Metadata     json.RawMessage `json:"metadata"`
 }
 
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
@@ -85,14 +96,17 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
 	// Resolve names
 	h.Store.RLock()
-	className := ""
+	className := strings.TrimSpace(body.ClassName)
 	for _, c := range h.Store.Classes {
 		if c.ID == body.ClassID {
 			className = c.Name
 			break
 		}
 	}
-	subjectName := ""
+	if className == "" {
+		className = body.ClassID
+	}
+	subjectName := strings.TrimSpace(body.SubjectName)
 	if body.SubjectID != "" {
 		for _, s := range h.Store.Subjects {
 			if s.ID == body.SubjectID {
@@ -100,6 +114,9 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 		}
+	}
+	if subjectName == "" {
+		subjectName = body.SubjectID
 	}
 	teacherName := ""
 	if body.TeacherID != "" {
@@ -201,9 +218,16 @@ func (h *Handler) ListQuestions(w http.ResponseWriter, r *http.Request) {
 
 	// Parse query filters
 	classID := r.URL.Query().Get("class_id")
+	className := r.URL.Query().Get("class")
 	subjectID := r.URL.Query().Get("subject_id")
+	subjectName := r.URL.Query().Get("subject")
 	chapterID := r.URL.Query().Get("chapter_id")
+	chapterName := r.URL.Query().Get("chapter")
+	syllabus := r.URL.Query().Get("syllabus")
 	questionType := r.URL.Query().Get("type")
+	if questionType == "" {
+		questionType = r.URL.Query().Get("question_type")
+	}
 	difficulty := r.URL.Query().Get("difficulty")
 	search := r.URL.Query().Get("search")
 	status := r.URL.Query().Get("status")
@@ -277,6 +301,9 @@ func (h *Handler) ListQuestions(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 		}
+		if className != "" && !sameText(q.ClassName, className) && !sameText(q.ClassID, className) {
+			continue
+		}
 		// Subject filter — match both school subject ID and equivalent global subject ID
 		if subjectID != "" {
 			matchesSubject := q.SubjectID == subjectID
@@ -287,7 +314,16 @@ func (h *Handler) ListQuestions(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 		}
+		if subjectName != "" && !sameText(q.SubjectName, subjectName) && !sameText(q.SubjectID, subjectName) {
+			continue
+		}
 		if chapterID != "" && q.ChapterID != chapterID {
+			continue
+		}
+		if chapterName != "" && !sameText(q.ChapterName, chapterName) && !sameText(q.ChapterID, chapterName) {
+			continue
+		}
+		if syllabus != "" && q.Syllabus != "" && !sameText(q.Syllabus, syllabus) {
 			continue
 		}
 		if questionType != "" && q.Type != questionType {
@@ -314,18 +350,47 @@ func (h *Handler) CreateQuestion(w http.ResponseWriter, r *http.Request) {
 		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Invalid JSON body.", 400, nil))
 		return
 	}
-	if strings.TrimSpace(body.QuestionHTML) == "" || body.ClassID == "" {
+	questionText := strings.TrimSpace(body.QuestionHTML)
+	if questionText == "" {
+		questionText = strings.TrimSpace(body.Question)
+	}
+	if questionText == "" || body.ClassID == "" {
 		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Question and class_id are required.", 400, nil))
 		return
+	}
+	questionType := strings.TrimSpace(body.Type)
+	if questionType == "" {
+		questionType = strings.TrimSpace(body.QuestionType)
+	}
+	if questionType == "" {
+		questionType = "question_answers"
 	}
 
 	// Resolve names
 	h.Store.RLock()
-	subjectName := ""
+	subjectName := strings.TrimSpace(body.SubjectName)
 	if body.SubjectID != "" {
 		for _, s := range h.Store.Subjects {
 			if s.ID == body.SubjectID {
 				subjectName = s.Name
+				break
+			}
+		}
+	}
+	className := strings.TrimSpace(body.ClassName)
+	if body.ClassID != "" {
+		for _, c := range h.Store.Classes {
+			if c.ID == body.ClassID {
+				className = c.Name
+				break
+			}
+		}
+	}
+	chapterName := strings.TrimSpace(body.ChapterName)
+	if body.ChapterID != "" {
+		for _, ch := range h.Store.Chapters {
+			if ch.ID == body.ChapterID {
+				chapterName = ch.Title
 				break
 			}
 		}
@@ -361,15 +426,20 @@ func (h *Handler) CreateQuestion(w http.ResponseWriter, r *http.Request) {
 		SchoolID:       ctx.SchoolID,
 		CreatedBy:      ctx.UserID,
 		CreatedByName:  createdByName,
+		Syllabus:       strings.TrimSpace(body.Syllabus),
 		ClassID:        body.ClassID,
+		ClassName:      className,
 		SubjectID:      body.SubjectID,
 		SubjectName:    subjectName,
 		ChapterID:      body.ChapterID,
-		Type:           body.Type,
+		ChapterName:    chapterName,
+		Type:           questionType,
 		Difficulty:     body.Difficulty,
-		QuestionHTML:   body.QuestionHTML,
+		QuestionHTML:   questionText,
 		Options:        optsStr,
+		Answer:         strings.TrimSpace(body.Answer),
 		Marks:          body.Marks,
+		Metadata:       normalizeRawJSON(body.Metadata),
 		Status:         "active",
 		IsGlobal:       false,
 		ApprovalStatus: "pending",
@@ -481,14 +551,14 @@ func (h *Handler) questionToMap(q *store.Question) map[string]any {
 	// store lock — questionToMap is called from already-locked contexts
 	// (List uses RLock, Create/Archive uses Lock). We do a best-effort
 	// lookup using the underlying slices directly.
-	className := ""
+	className := q.ClassName
 	for _, c := range h.Store.Classes {
 		if c.ID == q.ClassID {
 			className = c.Name
 			break
 		}
 	}
-	chapterName := ""
+	chapterName := q.ChapterName
 	if q.ChapterID != "" {
 		for _, ch := range h.Store.Chapters {
 			if ch.ID == q.ChapterID {
@@ -497,29 +567,61 @@ func (h *Handler) questionToMap(q *store.Question) map[string]any {
 			}
 		}
 	}
-	return map[string]any{
-		"_id":              q.ID,
-		"school_id":        q.SchoolID,
-		"created_by":       q.CreatedBy,
-		"created_by_name":  q.CreatedByName,
-		"class_id":         q.ClassID,
-		"class_name":       className,
-		"subject_id":       q.SubjectID,
-		"subject_name":     q.SubjectName,
-		"chapter_id":       q.ChapterID,
-		"chapter_name":     chapterName,
-		"type":             q.Type,
-		"difficulty":       q.Difficulty,
-		"question_html":    q.QuestionHTML,
-		"options":          q.Options,
-		"marks":            q.Marks,
-		"status":           q.Status,
-		"is_global":        q.IsGlobal,
-		"approval_status":  q.ApprovalStatus,
-		"approved_by":      q.ApprovedBy,
-		"approved_at":      q.ApprovedAt,
-		"created_at":       q.CreatedAt,
+	metadata := map[string]any{}
+	if strings.TrimSpace(q.Metadata) != "" {
+		_ = json.Unmarshal([]byte(q.Metadata), &metadata)
 	}
+	return map[string]any{
+		"_id":             q.ID,
+		"school_id":       q.SchoolID,
+		"created_by":      q.CreatedBy,
+		"created_by_name": q.CreatedByName,
+		"syllabus":        q.Syllabus,
+		"class_id":        q.ClassID,
+		"class_name":      className,
+		"class":           className,
+		"subject_id":      q.SubjectID,
+		"subject_name":    q.SubjectName,
+		"subject":         q.SubjectName,
+		"chapter_id":      q.ChapterID,
+		"chapter_name":    chapterName,
+		"chapter":         chapterName,
+		"type":            q.Type,
+		"question_type":   q.Type,
+		"questionType":    q.Type,
+		"difficulty":      q.Difficulty,
+		"question_html":   q.QuestionHTML,
+		"question":        q.QuestionHTML,
+		"options":         q.Options,
+		"answer":          q.Answer,
+		"marks":           q.Marks,
+		"metadata":        metadata,
+		"status":          q.Status,
+		"is_global":       q.IsGlobal,
+		"approval_status": q.ApprovalStatus,
+		"approved_by":     q.ApprovedBy,
+		"approved_at":     q.ApprovedAt,
+		"created_at":      q.CreatedAt,
+	}
+}
+
+func sameText(left, right string) bool {
+	return strings.EqualFold(strings.TrimSpace(left), strings.TrimSpace(right))
+}
+
+func normalizeRawJSON(raw json.RawMessage) string {
+	if len(raw) == 0 || string(raw) == "null" {
+		return "{}"
+	}
+	var decoded any
+	if err := json.Unmarshal(raw, &decoded); err != nil {
+		return "{}"
+	}
+	clean, err := json.Marshal(decoded)
+	if err != nil {
+		return "{}"
+	}
+	return string(clean)
 }
 
 // ─── Chapters ────────────────────────────────────────────────────────────
@@ -787,18 +889,18 @@ func (h *Handler) SeedDefaultChapters(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) chapterToMap(ch *store.Chapter) map[string]any {
 	return map[string]any{
-		"_id":             ch.ID,
-		"school_id":       ch.SchoolID,
-		"class_id":        ch.ClassID,
-		"class_name":      ch.ClassName,
-		"subject_id":      ch.SubjectID,
-		"subject_name":    ch.SubjectName,
-		"title":           ch.Title,
-		"chapter_number":  ch.ChapterNumber,
-		"is_default":      ch.IsDefault,
-		"status":          ch.Status,
-		"created_at":      ch.CreatedAt,
-		"updated_at":      ch.UpdatedAt,
+		"_id":            ch.ID,
+		"school_id":      ch.SchoolID,
+		"class_id":       ch.ClassID,
+		"class_name":     ch.ClassName,
+		"subject_id":     ch.SubjectID,
+		"subject_name":   ch.SubjectName,
+		"title":          ch.Title,
+		"chapter_number": ch.ChapterNumber,
+		"is_default":     ch.IsDefault,
+		"status":         ch.Status,
+		"created_at":     ch.CreatedAt,
+		"updated_at":     ch.UpdatedAt,
 	}
 }
 
@@ -916,7 +1018,6 @@ func getDefaultChapters(classID, className, subjectID, subjectName string) []str
 
 	return nil
 }
-
 
 // ─── Star / Unstar (per teacher) ─────────────────────────────────────────
 //
@@ -1056,18 +1157,18 @@ func (h *Handler) QuestionStats(w http.ResponseWriter, r *http.Request) {
 // ─── Auto Paper Generator ────────────────────────────────────────────────
 
 type autoGenerateInput struct {
-	ClassID         string   `json:"class_id"`
-	SubjectID       string   `json:"subject_id"`
-	ChapterIDs      []string `json:"chapter_ids"`
-	MCQCount        int      `json:"mcq_count"`
-	ShortCount      int      `json:"short_count"`
-	LongCount       int      `json:"long_count"`
-	EasyRatio       float64  `json:"easy_ratio"`
-	MediumRatio     float64  `json:"medium_ratio"`
-	HardRatio       float64  `json:"hard_ratio"`
-	MCQMarks        int      `json:"mcq_marks"`
-	ShortMarks      int      `json:"short_marks"`
-	LongMarks       int      `json:"long_marks"`
+	ClassID     string   `json:"class_id"`
+	SubjectID   string   `json:"subject_id"`
+	ChapterIDs  []string `json:"chapter_ids"`
+	MCQCount    int      `json:"mcq_count"`
+	ShortCount  int      `json:"short_count"`
+	LongCount   int      `json:"long_count"`
+	EasyRatio   float64  `json:"easy_ratio"`
+	MediumRatio float64  `json:"medium_ratio"`
+	HardRatio   float64  `json:"hard_ratio"`
+	MCQMarks    int      `json:"mcq_marks"`
+	ShortMarks  int      `json:"short_marks"`
+	LongMarks   int      `json:"long_marks"`
 }
 
 // AutoGeneratePaper picks a balanced set of questions matching the
@@ -1191,9 +1292,9 @@ func (h *Handler) AutoGeneratePaper(w http.ResponseWriter, r *http.Request) {
 	}
 
 	api.WriteResult(w, api.Ok(map[string]any{
-		"questions":  out,
-		"pool_size":  len(pool),
-		"picked":     len(picked),
+		"questions":   out,
+		"pool_size":   len(pool),
+		"picked":      len(picked),
 		"total_marks": calcTotalMarks(picked, body),
 	}))
 }
@@ -1417,14 +1518,14 @@ func (h *Handler) GlobalListClasses(w http.ResponseWriter, r *http.Request) {
 		}
 		out = append(out, map[string]any{
 			"_id":        c.ID,
-				"school_id":  c.SchoolID,
-				"board_id":   c.BoardID,
-				"name":       c.Name,
-				"code":       c.Code,
-				"grade":      c.Grade,
-				"section":    c.Section,
-				"status":     c.Status,
-				"is_active":  c.Status == "active",
+			"school_id":  c.SchoolID,
+			"board_id":   c.BoardID,
+			"name":       c.Name,
+			"code":       c.Code,
+			"grade":      c.Grade,
+			"section":    c.Section,
+			"status":     c.Status,
+			"is_active":  c.Status == "active",
 			"created_at": c.CreatedAt,
 			"updated_at": c.UpdatedAt,
 		})
@@ -1455,12 +1556,12 @@ func (h *Handler) GlobalListSubjects(w http.ResponseWriter, r *http.Request) {
 		}
 		out = append(out, map[string]any{
 			"_id":        s.ID,
-				"school_id":  s.SchoolID,
-				"class_id":   s.ClassID,
-				"name":       s.Name,
-				"code":       s.Code,
-				"status":     s.Status,
-				"is_active":  s.Status == "active",
+			"school_id":  s.SchoolID,
+			"class_id":   s.ClassID,
+			"name":       s.Name,
+			"code":       s.Code,
+			"status":     s.Status,
+			"is_active":  s.Status == "active",
 			"created_at": s.CreatedAt,
 			"updated_at": s.CreatedAt,
 		})
@@ -1581,10 +1682,17 @@ func (h *Handler) GlobalListQuestions(w http.ResponseWriter, r *http.Request) {
 	}
 	boardID := r.URL.Query().Get("board_id")
 	classID := r.URL.Query().Get("class_id")
+	className := r.URL.Query().Get("class")
 	subjectID := r.URL.Query().Get("subject_id")
+	subjectName := r.URL.Query().Get("subject")
 	chapterID := r.URL.Query().Get("chapter_id")
+	chapterName := r.URL.Query().Get("chapter")
 	topicID := r.URL.Query().Get("topic_id")
 	qType := r.URL.Query().Get("type")
+	if qType == "" {
+		qType = r.URL.Query().Get("question_type")
+	}
+	syllabus := r.URL.Query().Get("syllabus")
 	difficulty := r.URL.Query().Get("difficulty")
 	marksStr := r.URL.Query().Get("marks")
 	statusFilter := r.URL.Query().Get("status")
@@ -1616,13 +1724,25 @@ func (h *Handler) GlobalListQuestions(w http.ResponseWriter, r *http.Request) {
 		if classID != "" && q.ClassID != classID {
 			continue
 		}
+		if className != "" && !sameText(q.ClassName, className) && !sameText(q.ClassID, className) {
+			continue
+		}
 		if subjectID != "" && q.SubjectID != subjectID {
+			continue
+		}
+		if subjectName != "" && !sameText(q.SubjectName, subjectName) && !sameText(q.SubjectID, subjectName) {
 			continue
 		}
 		if chapterID != "" && q.ChapterID != chapterID {
 			continue
 		}
+		if chapterName != "" && !sameText(q.ChapterName, chapterName) && !sameText(q.ChapterID, chapterName) {
+			continue
+		}
 		if topicID != "" && q.TopicID != topicID {
+			continue
+		}
+		if syllabus != "" && q.Syllabus != "" && !sameText(q.Syllabus, syllabus) {
 			continue
 		}
 		if qType != "" && q.Type != qType {
@@ -1702,28 +1822,40 @@ func (h *Handler) GlobalCreateQuestion(w http.ResponseWriter, r *http.Request) {
 	}
 	var body struct {
 		BoardID      string          `json:"board_id"`
+		Syllabus     string          `json:"syllabus"`
 		ClassID      string          `json:"class_id"`
 		ClassName    string          `json:"class_name"`
 		SubjectID    string          `json:"subject_id"`
 		SubjectName  string          `json:"subject_name"`
 		ChapterID    string          `json:"chapter_id"`
+		ChapterName  string          `json:"chapter_name"`
 		TopicID      string          `json:"topic_id"`
 		Type         string          `json:"type"`
+		QuestionType string          `json:"question_type"`
 		Difficulty   string          `json:"difficulty"`
 		QuestionHTML string          `json:"question_html"`
+		Question     string          `json:"question"`
 		Options      json.RawMessage `json:"options"`
+		Answer       string          `json:"answer"`
 		Marks        int             `json:"marks"`
+		Metadata     json.RawMessage `json:"metadata"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Invalid JSON.", 400, nil))
 		return
+	}
+	if body.QuestionHTML == "" {
+		body.QuestionHTML = body.Question
 	}
 	if body.QuestionHTML == "" || body.ClassID == "" {
 		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "question_html and class_id required.", 400, nil))
 		return
 	}
 	if body.Type == "" {
-		body.Type = "short"
+		body.Type = body.QuestionType
+	}
+	if body.Type == "" {
+		body.Type = "question_answers"
 	}
 	if body.Difficulty == "" {
 		body.Difficulty = "medium"
@@ -1746,16 +1878,21 @@ func (h *Handler) GlobalCreateQuestion(w http.ResponseWriter, r *http.Request) {
 		CreatedBy:      ctx.UserID,
 		CreatedByName:  "Super Admin",
 		BoardID:        body.BoardID,
+		Syllabus:       strings.TrimSpace(body.Syllabus),
 		ClassID:        body.ClassID,
+		ClassName:      body.ClassName,
 		SubjectID:      body.SubjectID,
 		SubjectName:    body.SubjectName,
 		ChapterID:      body.ChapterID,
+		ChapterName:    body.ChapterName,
 		TopicID:        body.TopicID,
 		Type:           body.Type,
 		Difficulty:     body.Difficulty,
 		QuestionHTML:   body.QuestionHTML,
 		Options:        optsStr,
+		Answer:         strings.TrimSpace(body.Answer),
 		Marks:          body.Marks,
+		Metadata:       normalizeRawJSON(body.Metadata),
 		Status:         "active",
 		IsGlobal:       true,
 		ApprovalStatus: "approved",
@@ -1781,17 +1918,23 @@ func (h *Handler) GlobalUpdateQuestion(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	var body struct {
 		BoardID      string          `json:"board_id"`
+		Syllabus     string          `json:"syllabus"`
 		ClassID      string          `json:"class_id"`
 		ClassName    string          `json:"class_name"`
 		SubjectID    string          `json:"subject_id"`
 		SubjectName  string          `json:"subject_name"`
 		ChapterID    string          `json:"chapter_id"`
+		ChapterName  string          `json:"chapter_name"`
 		TopicID      string          `json:"topic_id"`
 		Type         string          `json:"type"`
+		QuestionType string          `json:"question_type"`
 		Difficulty   string          `json:"difficulty"`
 		QuestionHTML string          `json:"question_html"`
+		Question     string          `json:"question"`
 		Options      json.RawMessage `json:"options"`
+		Answer       string          `json:"answer"`
 		Marks        int             `json:"marks"`
+		Metadata     json.RawMessage `json:"metadata"`
 		Status       string          `json:"status"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -1806,11 +1949,20 @@ func (h *Handler) GlobalUpdateQuestion(w http.ResponseWriter, r *http.Request) {
 			if body.QuestionHTML != "" {
 				q.QuestionHTML = body.QuestionHTML
 			}
+			if body.Question != "" {
+				q.QuestionHTML = body.Question
+			}
 			if body.BoardID != "" {
 				q.BoardID = body.BoardID
 			}
+			if body.Syllabus != "" {
+				q.Syllabus = strings.TrimSpace(body.Syllabus)
+			}
 			if body.ClassID != "" {
 				q.ClassID = body.ClassID
+			}
+			if body.ClassName != "" {
+				q.ClassName = body.ClassName
 			}
 			if body.SubjectID != "" {
 				q.SubjectID = body.SubjectID
@@ -1821,17 +1973,29 @@ func (h *Handler) GlobalUpdateQuestion(w http.ResponseWriter, r *http.Request) {
 			if body.ChapterID != "" {
 				q.ChapterID = body.ChapterID
 			}
+			if body.ChapterName != "" {
+				q.ChapterName = body.ChapterName
+			}
 			if body.TopicID != "" {
 				q.TopicID = body.TopicID
 			}
 			if body.Type != "" {
 				q.Type = body.Type
 			}
+			if body.QuestionType != "" {
+				q.Type = body.QuestionType
+			}
 			if body.Difficulty != "" {
 				q.Difficulty = body.Difficulty
 			}
 			if body.Marks > 0 {
 				q.Marks = body.Marks
+			}
+			if body.Answer != "" {
+				q.Answer = strings.TrimSpace(body.Answer)
+			}
+			if len(body.Metadata) > 0 {
+				q.Metadata = normalizeRawJSON(body.Metadata)
 			}
 			if body.Status != "" {
 				q.Status = body.Status

@@ -1072,9 +1072,12 @@ func (p *Persister) loadChapters(ctx context.Context, s *store.MemStore) error {
 
 func (p *Persister) loadQuestions(ctx context.Context, s *store.MemStore) error {
 	rows, err := p.pool.Query(ctx, `
-		SELECT id, school_id, created_by, created_by_name, class_id, subject_id,
-			subject_name, chapter_id, type, difficulty, question_html, options,
-			marks, status, is_global, approval_status, approved_by, approved_at,
+		SELECT id, school_id, created_by, created_by_name, COALESCE(board_id, ''),
+			COALESCE(syllabus, ''), class_id, COALESCE(class_name, ''), subject_id,
+			subject_name, chapter_id, COALESCE(chapter_name, ''), COALESCE(topic_id, ''),
+			type, difficulty, question_html, options, COALESCE(answer, ''),
+			marks, COALESCE(metadata::text, '{}'), status, is_global, approval_status,
+			approved_by, approved_at,
 			created_at, updated_at
 		FROM questions ORDER BY created_at DESC`)
 	if err != nil {
@@ -1085,9 +1088,10 @@ func (p *Persister) loadQuestions(ctx context.Context, s *store.MemStore) error 
 		v := &store.Question{}
 		var approvedAt *time.Time
 		if err := rows.Scan(&v.ID, &v.SchoolID, &v.CreatedBy, &v.CreatedByName,
-			&v.ClassID, &v.SubjectID, &v.SubjectName, &v.ChapterID, &v.Type,
-			&v.Difficulty, &v.QuestionHTML, &v.Options, &v.Marks, &v.Status,
-			&v.IsGlobal, &v.ApprovalStatus, &v.ApprovedBy, &approvedAt,
+			&v.BoardID, &v.Syllabus, &v.ClassID, &v.ClassName, &v.SubjectID,
+			&v.SubjectName, &v.ChapterID, &v.ChapterName, &v.TopicID, &v.Type,
+			&v.Difficulty, &v.QuestionHTML, &v.Options, &v.Answer, &v.Marks,
+			&v.Metadata, &v.Status, &v.IsGlobal, &v.ApprovalStatus, &v.ApprovedBy, &approvedAt,
 			&v.CreatedAt, &v.UpdatedAt); err != nil {
 			return err
 		}

@@ -6,7 +6,7 @@
  *   - Frontend keeps optional subject_name / chapter_name / class_name for display.
  */
 
-export type QuestionType = "mcq" | "short" | "long";
+export type QuestionType = string;
 export type Difficulty = "easy" | "medium" | "hard";
 export type QuestionStatus = "active" | "archived";
 export type ApprovalStatus = "pending" | "approved" | "rejected";
@@ -18,6 +18,7 @@ export interface BankQuestion {
   created_by_name?: string;
   /** Optional legacy field. New questions use `subject_id`. */
   board?: string;
+  syllabus?: string;
   class_id: string;
   class_name?: string;
   subject_id?: string;
@@ -29,8 +30,13 @@ export interface BankQuestion {
   /** Free-text field used by older imports; prefer `chapter_name`. */
   chapter?: string;
   type: QuestionType;
+  questionType?: QuestionType;
+  question_type?: QuestionType;
   difficulty: Difficulty;
   question_html: string;
+  question?: string;
+  answer?: string;
+  metadata?: Record<string, unknown>;
   /**
    * Backend returns options as JSON-stringified array. Frontend either
    * keeps it as string or parses lazily. We accept both shapes.
@@ -53,17 +59,25 @@ export interface QuestionOption {
 export interface CreateQuestionInput {
   /** Optional legacy/board metadata. */
   board?: string;
+  syllabus?: string;
   class_id: string;
+  class_name?: string;
   subject_id?: string;
+  subject_name?: string;
   /** Free-text subject for legacy callers — backend accepts both. */
   subject?: string;
   chapter_id?: string;
+  chapter_name?: string;
   /** Free-text chapter for legacy callers — backend accepts both. */
   chapter?: string;
   type: QuestionType;
+  question_type?: QuestionType;
   difficulty: Difficulty;
   marks?: number;
   question_html: string;
+  question?: string;
+  answer?: string;
+  metadata?: Record<string, unknown>;
   /** When type=mcq, options is a JSON-encoded array of {option_text,is_correct}. */
   options?: { option_text: string; is_correct: boolean }[];
 }

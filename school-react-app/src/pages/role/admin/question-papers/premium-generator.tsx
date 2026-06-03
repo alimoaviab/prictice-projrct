@@ -3,6 +3,7 @@ import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { SchoolShell } from "@/layouts/SchoolShell";
 import { motion, AnimatePresence } from "framer-motion";
+import { QUESTION_TYPES as QUESTION_TYPE_CONFIGS } from "@/data/question-types";
 
 /**
  * Premium Paper Generator Page
@@ -29,22 +30,7 @@ const MOCK_SUBJECT = {
   ],
 };
 
-const QUESTION_TYPES = [
-  "Multiple Choice Questions",
-  "Tick Correct Spelling",
-  "Tick Correct Grammar",
-  "Fill In The Blanks",
-  "True False",
-  "Match Columns",
-  "Question Answers",
-  "Letters",
-  "Applications",
-  "Stories",
-  "Essays",
-  "Missing Letters",
-  "Singular Plural",
-  "Translate Into Urdu Paragraphs",
-];
+const QUESTION_TYPE_LABELS = QUESTION_TYPE_CONFIGS.map((type) => type.label);
 
 const DIFFICULTY_LEVELS = ["Easy", "Medium", "Hard", "Mixed"];
 const MEDIUM_OPTIONS = ["English", "Urdu", "Both"];
@@ -53,7 +39,7 @@ const MEDIUM_OPTIONS = ["English", "Urdu", "Both"];
 const MOCK_QUESTIONS = Array.from({ length: 50 }, (_, i) => ({
   id: `q${i + 1}`,
   text: `Sample question ${i + 1}: What is the meaning of this word?`,
-  type: QUESTION_TYPES[i % QUESTION_TYPES.length],
+  type: QUESTION_TYPE_LABELS[i % QUESTION_TYPE_LABELS.length],
   chapter: MOCK_SUBJECT.units[i % MOCK_SUBJECT.units.length].code,
   marks: [1, 2, 3, 5][i % 4],
   difficulty: DIFFICULTY_LEVELS[i % 3],
@@ -292,7 +278,7 @@ export function PremiumPaperGeneratorPage() {
                   <label className="block text-xs font-bold text-slate-600 mb-2">Question Type</label>
                   <CustomDropdown
                     value={questionType}
-                    options={QUESTION_TYPES}
+                    options={QUESTION_TYPE_LABELS}
                     onChange={setQuestionType}
                     placeholder="Select type..."
                   />

@@ -17,6 +17,7 @@ import { serviceRequest } from "@/services/service-client";
 import { useQuestionBank } from "../hooks/useQuestionBank";
 import * as service from "../services/questionBank.service";
 import { showToast } from "@/utils/toast";
+import { getQuestionTypeLabel, QUESTION_TYPES } from "@/data/question-types";
 import type {
   QuestionFilters,
   QuestionType,
@@ -334,12 +335,11 @@ export function QuestionBankPage({ defaultTab = "all" }: { defaultTab?: TabView 
           <FilterSelect value={classFilter} onChange={(v) => { setClassFilter(v); setSubjectFilter(""); setChapterFilter(""); }} options={[{ value: "", label: "All Classes" }, ...classes.map((c) => ({ value: c._id || c.id || "", label: c.name }))]} />
           <FilterSelect value={subjectFilter} onChange={(v) => { setSubjectFilter(v); setChapterFilter(""); }} options={[{ value: "", label: "All Subjects" }, ...subjects.map((s) => ({ value: s._id || s.id || "", label: s.name }))]} disabled={!classFilter} />
           <FilterSelect value={chapterFilter} onChange={setChapterFilter} options={[{ value: "", label: "All Chapters" }, ...chapters.map((c) => ({ value: c._id || c.id || "", label: c.title }))]} disabled={!subjectFilter} />
-          <FilterSelect value={typeFilter} onChange={(v) => setTypeFilter(v as any)} options={[
-            { value: "", label: "All Types" },
-            { value: "mcq", label: "MCQ" },
-            { value: "short", label: "Short" },
-            { value: "long", label: "Long" },
-          ]} />
+          <FilterSelect
+            value={typeFilter}
+            onChange={(v) => setTypeFilter(v as any)}
+            options={[{ value: "", label: "All Types" }, ...QUESTION_TYPES.map((type) => ({ value: type.id, label: type.label }))]}
+          />
           <FilterSelect value={difficultyFilter} onChange={(v) => setDifficultyFilter(v as any)} options={[
             { value: "", label: "All Difficulty" },
             { value: "easy", label: "Easy" },
@@ -588,7 +588,7 @@ function QuestionCard({
             </div>
           )}
           <div className="flex flex-wrap items-center gap-2 mt-2">
-            <span className="text-[9px] font-bold text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded">{q.type.toUpperCase()}</span>
+            <span className="text-[9px] font-bold text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded">{getQuestionTypeLabel(q.type)}</span>
             <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${q.difficulty === "easy" ? "bg-emerald-50 text-emerald-600" : q.difficulty === "hard" ? "bg-red-50 text-red-600" : "bg-amber-50 text-amber-600"}`}>
               {q.difficulty}
             </span>
@@ -650,7 +650,9 @@ function AddQuestionDrawer({
   defaultSubjectId?: string;
   defaultChapterId?: string;
 }) {
-  const [type, setType] = useState<QuestionType>("short");
+  const [type, setType] = useState<QuestionType>(
+    QUESTION_TYPES.find((item) => item.id === "question_answers")?.id || QUESTION_TYPES[0]?.id || "mcq",
+  );
   const [classId, setClassId] = useState(defaultClassId || "");
   const [subjectId, setSubjectId] = useState(defaultSubjectId || "");
   const [chapterId, setChapterId] = useState(defaultChapterId || "");
@@ -772,17 +774,17 @@ function AddQuestionDrawer({
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
           <div className="space-y-1">
             <label className="text-[11px] font-bold text-slate-500">Question Type</label>
-            <div className="grid grid-cols-3 gap-2">
-              {(["mcq", "short", "long"] as QuestionType[]).map((t) => (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {QUESTION_TYPES.map((questionType) => (
                 <button
-                  key={t}
+                  key={questionType.id}
                   type="button"
-                  onClick={() => setType(t)}
-                  className={`h-9 rounded-lg text-[11px] font-bold uppercase border transition-all ${
-                    type === t ? "bg-violet-600 text-white border-violet-600" : "bg-white text-slate-600 border-slate-200 hover:border-violet-300"
+                  onClick={() => setType(questionType.id)}
+                  className={`min-h-9 rounded-lg px-2 py-1.5 text-[11px] font-bold border transition-all ${
+                    type === questionType.id ? "bg-violet-600 text-white border-violet-600" : "bg-white text-slate-600 border-slate-200 hover:border-violet-300"
                   }`}
                 >
-                  {t === "mcq" ? "MCQ" : t === "short" ? "Short" : "Long"}
+                  {questionType.label}
                 </button>
               ))}
             </div>

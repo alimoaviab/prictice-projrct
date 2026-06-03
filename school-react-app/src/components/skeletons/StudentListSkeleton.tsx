@@ -24,7 +24,7 @@ export function StudentRowSkeleton() {
       <div className="hidden lg:block h-4 w-12 bg-gray-100 rounded animate-pulse" />
 
       {/* Status badge */}
-      <div className="h-6 w-16 bg-gray-200 rounded-full animate-pulse" />
+      <div className="h-6 w-16 bg-gray-200 rounded-md animate-pulse" />
 
       {/* Actions */}
       <div className="h-8 w-8 bg-gray-100 rounded animate-pulse" />

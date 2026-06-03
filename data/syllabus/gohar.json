@@ -1,0 +1,308 @@
+{
+  "id": "gohar",
+  "name": "GOHAR",
+  "metadata": {
+    "sourceId": "gohar-snc",
+    "source": "legacy-typescript-registry",
+    "schemaVersion": 1
+  },
+  "classes": [
+    {
+      "id": "one",
+      "name": "ONE",
+      "metadata": {
+        "sourceSyllabus": "gohar-snc",
+        "subjects": 3,
+        "chapterCount": 0
+      },
+      "subjects": [
+        {
+          "id": "one-snc",
+          "name": "واقفیتِ عامہ (SNC)",
+          "metadata": {
+            "sourceSyllabus": "gohar-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "one-snc",
+          "name": "اسلامیات (SNC)",
+          "metadata": {
+            "sourceSyllabus": "gohar-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "one-computer-science-srm",
+          "name": "COMPUTER Science (SRM)",
+          "metadata": {
+            "sourceSyllabus": "gohar-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        }
+      ]
+    },
+    {
+      "id": "two",
+      "name": "TWO",
+      "metadata": {
+        "sourceSyllabus": "gohar-snc",
+        "subjects": 3,
+        "chapterCount": 0
+      },
+      "subjects": [
+        {
+          "id": "two-snc",
+          "name": "واقفیتِ عامہ (SNC)",
+          "metadata": {
+            "sourceSyllabus": "gohar-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "two-snc",
+          "name": "اسلامیات (SNC)",
+          "metadata": {
+            "sourceSyllabus": "gohar-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "two-computer-science-srm",
+          "name": "COMPUTER Science (SRM)",
+          "metadata": {
+            "sourceSyllabus": "gohar-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        }
+      ]
+    },
+    {
+      "id": "three",
+      "name": "THREE",
+      "metadata": {
+        "sourceSyllabus": "gohar-snc",
+        "subjects": 3,
+        "chapterCount": 0
+      },
+      "subjects": [
+        {
+          "id": "three-snc",
+          "name": "واقفیتِ عامہ (SNC)",
+          "metadata": {
+            "sourceSyllabus": "gohar-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "three-snc",
+          "name": "اسلامیات (SNC)",
+          "metadata": {
+            "sourceSyllabus": "gohar-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "three-computer-science-srm",
+          "name": "COMPUTER Science (SRM)",
+          "metadata": {
+            "sourceSyllabus": "gohar-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        }
+      ]
+    },
+    {
+      "id": "four",
+      "name": "FOUR",
+      "metadata": {
+        "sourceSyllabus": "gohar-snc",
+        "subjects": 3,
+        "chapterCount": 0
+      },
+      "subjects": [
+        {
+          "id": "four-snc",
+          "name": "واقفیتِ عامہ (SNC)",
+          "metadata": {
+            "sourceSyllabus": "gohar-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "four-snc",
+          "name": "اسلامیات (SNC)",
+          "metadata": {
+            "sourceSyllabus": "gohar-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "four-computer-science-srm",
+          "name": "COMPUTER Science (SRM)",
+          "metadata": {
+            "sourceSyllabus": "gohar-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        }
+      ]
+    },
+    {
+      "id": "5th",
+      "name": "5TH",
+      "metadata": {
+        "sourceSyllabus": "gohar-snc",
+        "subjects": 3,
+        "chapterCount": 0
+      },
+      "subjects": [
+        {
+          "id": "5th-snc",
+          "name": "واقفیتِ عامہ (SNC)",
+          "metadata": {
+            "sourceSyllabus": "gohar-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "5th-snc",
+          "name": "اسلامیات (SNC)",
+          "metadata": {
+            "sourceSyllabus": "gohar-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "5th-computer-science-srm",
+          "name": "COMPUTER Science (SRM)",
+          "metadata": {
+            "sourceSyllabus": "gohar-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        }
+      ]
+    },
+    {
+      "id": "6th",
+      "name": "6TH",
+      "metadata": {
+        "sourceSyllabus": "gohar-snc",
+        "subjects": 3,
+        "chapterCount": 0
+      },
+      "subjects": [
+        {
+          "id": "6th-snc",
+          "name": "واقفیتِ عامہ (SNC)",
+          "metadata": {
+            "sourceSyllabus": "gohar-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "6th-snc",
+          "name": "اسلامیات (SNC)",
+          "metadata": {
+            "sourceSyllabus": "gohar-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "6th-computer-science-srm",
+          "name": "COMPUTER Science (SRM)",
+          "metadata": {
+            "sourceSyllabus": "gohar-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        }
+      ]
+    },
+    {
+      "id": "7th",
+      "name": "7TH",
+      "metadata": {
+        "sourceSyllabus": "gohar-snc",
+        "subjects": 4,
+        "chapterCount": 0
+      },
+      "subjects": [
+        {
+          "id": "7th-computer-snc",
+          "name": "COMPUTER (SNC)",
+          "metadata": {
+            "sourceSyllabus": "gohar-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "7th-general-science-snc",
+          "name": "GENERAL SCIENCE (SNC)",
+          "metadata": {
+            "sourceSyllabus": "gohar-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "7th-history-snc",
+          "name": "HISTORY (SNC)",
+          "metadata": {
+            "sourceSyllabus": "gohar-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "7th-computer-science-srm",
+          "name": "COMPUTER SCIENCE (SRM)",
+          "metadata": {
+            "sourceSyllabus": "gohar-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        }
+      ]
+    }
+  ]
+}

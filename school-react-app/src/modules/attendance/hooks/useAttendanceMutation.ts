@@ -76,6 +76,8 @@ export function useAttendanceMutation(opts: UseAttendanceMutationOptions) {
 
   // Batch buffer: accumulates multiple toggles before sending
   const batchRef = useRef<Record<string, string>>({});
+  const rollbackSnapshotRef = useRef<unknown>(undefined);
+  const hasRollbackSnapshotRef = useRef(false);
 
   // The actual API call — sends all batched changes at once
   const mutation = useMutation<
@@ -104,7 +106,9 @@ export function useAttendanceMutation(opts: UseAttendanceMutationOptions) {
       await queryClient.cancelQueries({ queryKey });
 
       // Snapshot the previous value for rollback
-      const previousData = queryClient.getQueryData(queryKey);
+      const previousData = hasRollbackSnapshotRef.current
+        ? rollbackSnapshotRef.current
+        : queryClient.getQueryData(queryKey);
 
       // Optimistically update the cached attendance records
       queryClient.setQueryData(queryKey, (old: any) => {
@@ -148,6 +152,9 @@ export function useAttendanceMutation(opts: UseAttendanceMutationOptions) {
 
     // ─── Sync with Server ──────────────────────────────────────────────
     onSettled: () => {
+      hasRollbackSnapshotRef.current = false;
+      rollbackSnapshotRef.current = undefined;
+
       // Always refetch after mutation to ensure we're in sync with the server.
       // This handles edge cases where the optimistic update was slightly wrong
       // (e.g., another teacher marked the same class simultaneously).
@@ -223,6 +230,11 @@ export function useAttendanceMutation(opts: UseAttendanceMutationOptions) {
 
       // Add to batch
       batchRef.current[input.studentId] = input.status;
+
+      if (!hasRollbackSnapshotRef.current) {
+        rollbackSnapshotRef.current = queryClient.getQueryData(queryKey);
+        hasRollbackSnapshotRef.current = true;
+      }
 
       // Optimistically update the UI immediately (don't wait for batch)
       queryClient.setQueryData(queryKey, (old: any) => {

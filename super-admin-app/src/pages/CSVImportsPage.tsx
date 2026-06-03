@@ -38,6 +38,7 @@ interface ImportLog {
 interface BoardItem { _id: string; name: string }
 interface ClassItem { _id: string; name: string }
 interface SubjectItem { _id: string; name: string }
+interface ChapterItem { _id: string; title: string; name?: string }
 
 // --- Toast helper ---
 function toast(msg: string) {
@@ -63,10 +64,12 @@ export function CSVImportsPage() {
   const [boards, setBoards] = useState<BoardItem[]>([])
   const [classes, setClasses] = useState<ClassItem[]>([])
   const [subjects, setSubjectItems] = useState<SubjectItem[]>([])
+  const [chapters, setChapters] = useState<ChapterItem[]>([])
 
   const [selectedBoardId, setSelectedBoardId] = useState('')
   const [selectedClassId, setSelectedClassId] = useState('')
   const [selectedSubjectId, setSelectedSubjectId] = useState('')
+  const [selectedChapterId, setSelectedChapterId] = useState('')
 
   // Log list
   const [logs, setLogs] = useState<ImportLog[]>([])
@@ -84,7 +87,11 @@ export function CSVImportsPage() {
 
   useEffect(() => {
     setSelectedClassId('')
+    setSelectedSubjectId('')
+    setSelectedChapterId('')
     setClasses([])
+    setSubjectItems([])
+    setChapters([])
     if (selectedBoardId) {
       apiRequest<ClassItem[]>(`/api/super-admin/global-bank/classes?all=true&board_id=${selectedBoardId}`).then(r => {
         if (r.ok && r.data) setClasses(r.data)
@@ -94,7 +101,9 @@ export function CSVImportsPage() {
 
   useEffect(() => {
     setSelectedSubjectId('')
+    setSelectedChapterId('')
     setSubjectItems([])
+    setChapters([])
     if (selectedClassId) {
       apiRequest<SubjectItem[]>(`/api/super-admin/global-bank/subjects?all=true&class_id=${selectedClassId}`).then(r => {
         if (r.ok && r.data) setSubjectItems(r.data)
@@ -102,10 +111,21 @@ export function CSVImportsPage() {
     }
   }, [selectedClassId])
 
+  useEffect(() => {
+    setSelectedChapterId('')
+    setChapters([])
+    if (selectedClassId && selectedSubjectId) {
+      apiRequest<ChapterItem[]>(`/api/super-admin/global-bank/chapters?all=true&class_id=${selectedClassId}&subject_id=${selectedSubjectId}`).then(r => {
+        if (r.ok && r.data) setChapters(r.data)
+      })
+    }
+  }, [selectedClassId, selectedSubjectId])
+
   // Resolve Names
   const selectedBoardName = boards.find(b => b._id === selectedBoardId)?.name || ''
   const selectedClassName = classes.find(c => c._id === selectedClassId)?.name || ''
   const selectedSubjectName = subjects.find(s => s._id === selectedSubjectId)?.name || ''
+  const selectedChapterName = chapters.find(c => c._id === selectedChapterId)?.title || chapters.find(c => c._id === selectedChapterId)?.name || ''
 
   // --- Load Historic Logs ---
   const loadLogs = useCallback(async () => {
@@ -189,6 +209,11 @@ export function CSVImportsPage() {
 
   // --- Validate CSV File API Call ---
   const validateFile = async (csvFile: File) => {
+    if (!selectedBoardName || !selectedClassName || !selectedSubjectName || !selectedChapterName) {
+      toast('Select syllabus, class, subject, and chapter before uploading')
+      setFile(null)
+      return
+    }
     setValidating(true)
     setValidationResult(null)
 
@@ -199,6 +224,7 @@ export function CSVImportsPage() {
     if (selectedBoardName) queryParams.set('board', selectedBoardName)
     if (selectedClassName) queryParams.set('class', selectedClassName)
     if (selectedSubjectName) queryParams.set('subject', selectedSubjectName)
+    if (selectedChapterName) queryParams.set('chapter', selectedChapterName)
 
     const token = localStorage.getItem('sa_token')
     try {
@@ -237,7 +263,8 @@ export function CSVImportsPage() {
         file_name: validationResult.file_name,
         board: selectedBoardName,
         class: selectedClassName,
-        subject: selectedSubjectName
+        subject: selectedSubjectName,
+        chapter: selectedChapterName
       })
     })
 
@@ -299,13 +326,13 @@ export function CSVImportsPage() {
       <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3 shadow-sm">
         <div>
           <h2 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Curriculum Context Mapping</h2>
-          <p className="text-[11px] text-slate-400 mt-0.5">Select target Board, Class, and Subject for custom CSV files lacking default columns.</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">Select target syllabus, class, subject, and chapter before uploading a CSV.</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
-            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">Board</label>
+            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">Syllabus</label>
             <select value={selectedBoardId} onChange={e => setSelectedBoardId(e.target.value)} className="h-9 w-full px-3 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500">
-              <option value="">Select Board</option>
+              <option value="">Select Syllabus</option>
               {boards.map(b => <option key={b._id} value={b._id}>{b.name}</option>)}
             </select>
           </div>
@@ -321,6 +348,13 @@ export function CSVImportsPage() {
             <select value={selectedSubjectId} onChange={e => setSelectedSubjectId(e.target.value)} disabled={!selectedClassId} className="h-9 w-full px-3 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-slate-50">
               <option value="">Select Subject</option>
               {subjects.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">Chapter</label>
+            <select value={selectedChapterId} onChange={e => setSelectedChapterId(e.target.value)} disabled={!selectedSubjectId} className="h-9 w-full px-3 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-slate-50">
+              <option value="">Select Chapter</option>
+              {chapters.map(c => <option key={c._id} value={c._id}>{c.title || c.name}</option>)}
             </select>
           </div>
         </div>

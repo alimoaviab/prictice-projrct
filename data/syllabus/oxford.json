@@ -1,0 +1,668 @@
+{
+  "id": "oxford",
+  "name": "OXFORD",
+  "metadata": {
+    "sourceId": "oxford-snc",
+    "source": "legacy-typescript-registry",
+    "schemaVersion": 1
+  },
+  "classes": [
+    {
+      "id": "one",
+      "name": "ONE",
+      "metadata": {
+        "sourceSyllabus": "oxford-snc",
+        "subjects": 10,
+        "chapterCount": 0
+      },
+      "subjects": [
+        {
+          "id": "one-modern-oxford-snc",
+          "name": "Modern Oxford (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "one-computer-snc",
+          "name": "Computer (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "one-snc",
+          "name": "میری دنیا (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "one-countdown-snc",
+          "name": "Countdown (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "one-snc",
+          "name": "اسلامیات (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "one-snc",
+          "name": "موتیا (اُردو) (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "one-computer-whiz-oxford-snc",
+          "name": "Computer Whiz (Oxford SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "one-primary-science-snc",
+          "name": "Primary Science (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "one-maths-wise-snc",
+          "name": "Maths Wise (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "one-social-studies-oxford-essential-series",
+          "name": "Social Studies (Oxford Essential Series)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        }
+      ]
+    },
+    {
+      "id": "two",
+      "name": "TWO",
+      "metadata": {
+        "sourceSyllabus": "oxford-snc",
+        "subjects": 10,
+        "chapterCount": 0
+      },
+      "subjects": [
+        {
+          "id": "two-modern-oxford-snc",
+          "name": "Modern Oxford (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "two-computer-snc",
+          "name": "Computer (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "two-snc",
+          "name": "میری دنیا (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "two-countdown-snc",
+          "name": "Countdown (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "two-snc",
+          "name": "اسلامیات (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "two-snc",
+          "name": "گیندا (اُردو) (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "two-computer-whiz-oxford-snc",
+          "name": "Computer Whiz (Oxford SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "two-primary-science-snc",
+          "name": "Primary Science (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "two-maths-wise-snc",
+          "name": "Maths Wise (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "two-social-studies-oxford-essential-series",
+          "name": "Social Studies (Oxford Essential Series)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        }
+      ]
+    },
+    {
+      "id": "three",
+      "name": "THREE",
+      "metadata": {
+        "sourceSyllabus": "oxford-snc",
+        "subjects": 10,
+        "chapterCount": 0
+      },
+      "subjects": [
+        {
+          "id": "three-modern-english-snc",
+          "name": "Modern English (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "three-computer-snc",
+          "name": "Computer (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "three-snc",
+          "name": "میری دنیا (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "three-countdown-snc",
+          "name": "Countdown (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "three-snc",
+          "name": "اسلامیات (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "three-snc",
+          "name": "سدا بہار (اُردو) (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "three-computer-whiz-snc",
+          "name": "Computer Whiz (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "three-primary-science-snc",
+          "name": "Primary Science (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "three-maths-wise-snc",
+          "name": "Maths Wise (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "three-social-studies-oxford-essential-series",
+          "name": "Social Studies (Oxford Essential Series)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        }
+      ]
+    },
+    {
+      "id": "four",
+      "name": "FOUR",
+      "metadata": {
+        "sourceSyllabus": "oxford-snc",
+        "subjects": 10,
+        "chapterCount": 0
+      },
+      "subjects": [
+        {
+          "id": "four-modern-english-snc",
+          "name": "Modern English (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "four-computer-snc",
+          "name": "Computer (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "four-primary-science-snc",
+          "name": "Primary Science (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "four-social-studies-fourth-edition",
+          "name": "Social Studies (Fourth Edition)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "four-countdown-snc",
+          "name": "Countdown (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "four-snc",
+          "name": "اسلامیات (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "four-snc",
+          "name": "نرگس (اُردو) (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "four-computer-whiz-oxford-snc",
+          "name": "Computer Whiz (Oxford SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "four-maths-wise-snc",
+          "name": "Maths Wise (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "four-social-studies-oxford-essential-series",
+          "name": "Social Studies (Oxford Essential Series)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        }
+      ]
+    },
+    {
+      "id": "5th",
+      "name": "5TH",
+      "metadata": {
+        "sourceSyllabus": "oxford-snc",
+        "subjects": 10,
+        "chapterCount": 0
+      },
+      "subjects": [
+        {
+          "id": "5th-modern-english-snc",
+          "name": "Modern English (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "5th-computer-snc",
+          "name": "Computer (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "5th-primary-science-snc",
+          "name": "Primary Science (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "5th-social-studies-fourth-edition",
+          "name": "Social Studies (Fourth Edition)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "5th-countdown-snc",
+          "name": "Countdown (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "5th-snc",
+          "name": "اسلامیات (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "5th-snc",
+          "name": "نرگس (اُردو) (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "5th-computer-whiz-oxford-snc",
+          "name": "Computer Whiz (Oxford SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "5th-maths-wise-snc",
+          "name": "Maths Wise (SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "5th-social-studies-oxford-essential-series",
+          "name": "Social Studies (Oxford Essential Series)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        }
+      ]
+    },
+    {
+      "id": "6th",
+      "name": "6TH",
+      "metadata": {
+        "sourceSyllabus": "oxford-snc",
+        "subjects": 4,
+        "chapterCount": 0
+      },
+      "subjects": [
+        {
+          "id": "6th-modern-english-third-edition",
+          "name": "MODERN ENGLISH (Third Edition)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "6th-new-countdown-third-edition",
+          "name": "NEW COUNTDOWN (Third Edition)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "6th-secondary-science-oxford",
+          "name": "SECONDARY SCIENCE (Oxford)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "6th-oxf",
+          "name": "اُردو (چمپا) (OXF)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        }
+      ]
+    },
+    {
+      "id": "7th",
+      "name": "7TH",
+      "metadata": {
+        "sourceSyllabus": "oxford-snc",
+        "subjects": 4,
+        "chapterCount": 0
+      },
+      "subjects": [
+        {
+          "id": "7th-secondary-science-oxford-snc",
+          "name": "SECONDARY SCIENCE (Oxford SNC)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "7th-new-countdown-third-edition",
+          "name": "NEW COUNTDOWN (Third Edition)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "7th-english-oxford",
+          "name": "ENGLISH (Oxford)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        },
+        {
+          "id": "7th-oxf",
+          "name": "اُردو (سورج مکھی) (OXF)",
+          "metadata": {
+            "sourceSyllabus": "oxford-snc",
+            "chapterGroups": 0,
+            "chapterCount": 0
+          },
+          "chapters": []
+        }
+      ]
+    }
+  ]
+}

@@ -11,6 +11,7 @@ import { useSafeAsync } from "@/hooks/useSafeAsync";
 import { serviceRequest } from "@/services/service-client";
 import { useSchoolBranding } from "@/hooks/useSchoolBranding";
 import type { QuestionPaper, PaperQuestion } from "../types/questionPaper.types";
+import { getQuestionTypeLabel, QUESTION_TYPES } from "@/data/question-types";
 
 export function QuestionPaperViewPage() {
   const { id } = useParams<{ id: string }>();
@@ -47,9 +48,26 @@ export function QuestionPaperViewPage() {
   }, [paper]);
 
   const totalMarks = questions.reduce((s, q) => s + (q.marks || 0), 0);
-  const mcqs = questions.filter(q => q.type === "mcq");
-  const shorts = questions.filter(q => q.type === "short");
-  const longs = questions.filter(q => q.type === "long");
+  const sections = useMemo(() => {
+    const configured = QUESTION_TYPES.map((type) => ({
+      id: type.id,
+      title: type.label,
+      questions: questions.filter((question) => question.type === type.id),
+    })).filter((section) => section.questions.length > 0);
+    const known = new Set(QUESTION_TYPES.map((type) => type.id));
+    const unknownTypes = [...new Set(questions.map((question) => question.type).filter((type) => !known.has(type)))];
+    const unknown = unknownTypes.map((type) => ({
+      id: type,
+      title: getQuestionTypeLabel(type),
+      questions: questions.filter((question) => question.type === type),
+    }));
+    let startIdx = 0;
+    return [...configured, ...unknown].map((section) => {
+      const row = { ...section, startIdx };
+      startIdx += section.questions.length;
+      return row;
+    });
+  }, [questions]);
 
   function handlePrint() {
     window.print();
@@ -114,31 +132,16 @@ export function QuestionPaperViewPage() {
           </div>
 
           {/* Sections */}
-          {mcqs.length > 0 && (
-            <PaperSection title="Section A — Multiple Choice Questions" marks={mcqs.reduce((s, q) => s + (q.marks || 0), 0)} questions={mcqs} startIdx={0} showOptions />
-          )}
-          {shorts.length > 0 && (
-            <PaperSection title="Section B — Short Questions" marks={shorts.reduce((s, q) => s + (q.marks || 0), 0)} questions={shorts} startIdx={mcqs.length} />
-          )}
-          {longs.length > 0 && (
-            <PaperSection title="Section C — Long Questions" marks={longs.reduce((s, q) => s + (q.marks || 0), 0)} questions={longs} startIdx={mcqs.length + shorts.length} />
-          )}
-
-          {/* If no sections, show flat list */}
-          {mcqs.length === 0 && shorts.length === 0 && longs.length === 0 && questions.length > 0 && (
-            <div className="space-y-4">
-              {questions.map((q, idx) => (
-                <div key={q.id || idx} className="text-sm text-slate-800">
-                  <p className="font-medium"><strong>Q{idx + 1}.</strong> {q.question} <span className="text-slate-400">({q.marks} Marks)</span></p>
-                  {q.type === "mcq" && q.options && q.options.length > 0 && (
-                    <div className="ml-6 mt-1.5 grid grid-cols-2 gap-1">
-                      {q.options.map((opt, oi) => <p key={oi} className="text-xs text-slate-600">({String.fromCharCode(97 + oi)}) {opt}</p>)}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+          {sections.map((section) => (
+            <PaperSection
+              key={section.id}
+              title={section.title}
+              marks={section.questions.reduce((s, q) => s + (q.marks || 0), 0)}
+              questions={section.questions}
+              startIdx={section.startIdx}
+              showOptions={section.id === "mcq"}
+            />
+          ))}
         </div>
       </div>
     </div>

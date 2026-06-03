@@ -12,6 +12,7 @@ import { Skeleton, DataState, ConfirmModal } from "@/components/ui";
 import { useQuestionPapers } from "../hooks/useQuestionPapers";
 import { useSchoolBranding } from "@/hooks/useSchoolBranding";
 import type { QuestionPaper, PaperQuestion } from "../types/questionPaper.types";
+import { getQuestionTypeLabel, QUESTION_TYPES } from "@/data/question-types";
 
 export function QuestionPaperListPage() {
   const navigate = useNavigate();
@@ -212,10 +213,16 @@ function printPaper(paper: QuestionPaper, schoolName: string) {
     } catch {/* ignore */}
   }
 
-  const mcqs = questions.filter((q) => q.type === "mcq");
-  const shorts = questions.filter((q) => q.type === "short");
-  const longs = questions.filter((q) => q.type === "long");
   const totalMarks = questions.reduce((s, q) => s + (q.marks || 0), 0);
+  const knownTypes = new Set(QUESTION_TYPES.map((type) => type.id));
+  const grouped = [
+    ...QUESTION_TYPES.map((type) => ({ id: type.id, title: type.label, questions: questions.filter((q) => q.type === type.id) })),
+    ...[...new Set(questions.map((q) => q.type).filter((type) => !knownTypes.has(type)))].map((type) => ({
+      id: type,
+      title: getQuestionTypeLabel(type),
+      questions: questions.filter((q) => q.type === type),
+    })),
+  ].filter((group) => group.questions.length > 0);
 
   const section = (title: string, list: PaperQuestion[], startIdx: number, includeOptions: boolean, lines: number) => {
     if (list.length === 0) return "";
@@ -264,9 +271,10 @@ function printPaper(paper: QuestionPaper, schoolName: string) {
     </div>
     <div class="meta"><span>Total Marks: ${totalMarks}</span><span>Total Questions: ${questions.length}</span></div>
   </div>
-  ${section("Section A — Multiple Choice", mcqs, 0, true, 0)}
-  ${section("Section B — Short Questions", shorts, mcqs.length, false, 0)}
-  ${section("Section C — Long Questions", longs, mcqs.length + shorts.length, false, 0)}
+  ${grouped.map((group) => {
+    const startIdx = grouped.slice(0, grouped.indexOf(group)).reduce((sum, item) => sum + item.questions.length, 0);
+    return section(group.title, group.questions, startIdx, group.id === "mcq", 0);
+  }).join("")}
 </body></html>`;
 
   const w = window.open("", "_blank", "width=900,height=1100");

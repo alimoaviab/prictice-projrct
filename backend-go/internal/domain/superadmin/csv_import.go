@@ -25,6 +25,71 @@ import (
 
 const globalSchoolID = "__global__"
 
+func rowIsEmpty(row []string) bool {
+	for _, cell := range row {
+		if strings.TrimSpace(cell) != "" {
+			return false
+		}
+	}
+	return true
+}
+
+func normalizeQuestionType(value string) string {
+	key := strings.ToLower(strings.TrimSpace(value))
+	key = strings.ReplaceAll(key, "-", "_")
+	key = strings.ReplaceAll(key, " ", "_")
+	key = strings.ReplaceAll(key, "__", "_")
+
+	aliases := map[string]string{
+		"multiple_choice":       "mcq",
+		"multiple_options":      "mcq",
+		"objective":             "mcq",
+		"fill_blank":            "fill_in_the_blanks",
+		"fill_in_blank":         "fill_in_the_blanks",
+		"fill_in_blanks":        "fill_in_the_blanks",
+		"short":                 "question_answers",
+		"short_question":        "question_answers",
+		"short_questions":       "question_answers",
+		"long":                  "question_answers",
+		"long_question":         "question_answers",
+		"long_questions":        "question_answers",
+		"essay":                 "essays",
+		"application":           "applications",
+		"story":                 "stories",
+		"translation":           "translate_into_urdu",
+		"translate":             "translate_into_urdu",
+		"match_column":          "match_columns",
+		"correct_spelling":      "tick_correct_spelling",
+		"tick_spelling":         "tick_correct_spelling",
+		"verb_forms":            "form_of_verbs",
+		"forms_of_verbs":        "form_of_verbs",
+		"meaning":               "word_meaning",
+		"meanings":              "word_meaning",
+		"singular_plural_words": "singular_plural",
+		"gender":                "genders",
+		"additional":            "additional_questions",
+		"additional_question":   "additional_questions",
+		"true_false":            "true_false",
+	}
+	if mapped, ok := aliases[key]; ok {
+		return mapped
+	}
+	return key
+}
+
+func validQuestionType(value string) bool {
+	valid := map[string]bool{
+		"mcq": true, "tick_correct_spelling": true, "fill_in_the_blanks": true,
+		"match_columns": true, "question_answers": true, "letters": true,
+		"applications": true, "stories": true, "essays": true,
+		"missing_letters": true, "form_of_verbs": true, "words_into_sentences": true,
+		"word_meaning": true, "singular_plural": true, "genders": true,
+		"translate_into_urdu": true, "grammar": true, "exercise": true,
+		"additional_questions": true, "true_false": true,
+	}
+	return valid[normalizeQuestionType(value)]
+}
+
 // Queue adds realtime.JobQueue support to the superadmin Handler
 type QueueSetter interface {
 	SetQueue(q *realtime.JobQueue)
@@ -85,7 +150,8 @@ func (h *Handler) ValidateCSVEndpoint(w http.ResponseWriter, r *http.Request) {
 		headerIndices[strings.ToLower(strings.TrimSpace(h))] = i
 	}
 
-	// Minimal headers check: must have at least "chapter" and ("question" or "question text" or "question_text")
+	// Minimal headers check: must have at least a question column. Curriculum
+	// context can come from either CSV columns or the selected import filters.
 	hasChapter := false
 	hasQuestion := false
 	for _, h := range headers {
@@ -98,8 +164,8 @@ func (h *Handler) ValidateCSVEndpoint(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if !hasChapter || !hasQuestion {
-		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "CSV file must contain at least 'Chapter' and 'Question Text' columns.", 400, nil))
+	if !hasQuestion {
+		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "CSV file must contain a Question, Question Text, or question_text column.", 400, nil))
 		return
 	}
 
@@ -109,17 +175,24 @@ func (h *Handler) ValidateCSVEndpoint(w http.ResponseWriter, r *http.Request) {
 	hasSubjectCol := false
 	for _, h := range headers {
 		lh := strings.ToLower(strings.TrimSpace(h))
-		if lh == "board" { hasBoardCol = true }
-		if lh == "class" { hasClassCol = true }
-		if lh == "subject" { hasSubjectCol = true }
+		if lh == "board" {
+			hasBoardCol = true
+		}
+		if lh == "class" {
+			hasClassCol = true
+		}
+		if lh == "subject" {
+			hasSubjectCol = true
+		}
 	}
 
 	defaultBoard := strings.TrimSpace(r.URL.Query().Get("board"))
 	defaultClass := strings.TrimSpace(r.URL.Query().Get("class"))
 	defaultSubject := strings.TrimSpace(r.URL.Query().Get("subject"))
+	defaultChapter := strings.TrimSpace(r.URL.Query().Get("chapter"))
 
-	if (!hasBoardCol && defaultBoard == "") || (!hasClassCol && defaultClass == "") || (!hasSubjectCol && defaultSubject == "") {
-		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Missing curriculum context. Please specify Board, Class, and Subject for this import file.", 400, nil))
+	if (!hasBoardCol && defaultBoard == "") || (!hasClassCol && defaultClass == "") || (!hasSubjectCol && defaultSubject == "") || (!hasChapter && defaultChapter == "") {
+		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Missing curriculum context. Please specify Syllabus, Class, Subject, and Chapter for this import file.", 400, nil))
 		return
 	}
 
@@ -150,7 +223,7 @@ func (h *Handler) ValidateCSVEndpoint(w http.ResponseWriter, r *http.Request) {
 
 	for i := 1; i < len(records); i++ {
 		row := records[i]
-		if len(row) == 0 || (len(row) == 1 && row[0] == "") {
+		if len(row) == 0 || rowIsEmpty(row) {
 			totalRows--
 			continue
 		}
@@ -158,23 +231,34 @@ func (h *Handler) ValidateCSVEndpoint(w http.ResponseWriter, r *http.Request) {
 		var rowErrors []string
 		status := "valid"
 
-		board, class, subject, chapter, topic, qType, difficulty, question, optionA, optionB, _, _, correctAnswer, _, marksStr, _, _, _, _ := mapRowFields(row, headerIndices, defaultBoard, defaultClass, defaultSubject)
+		board, class, subject, chapter, topic, qType, difficulty, question, optionA, optionB, _, _, correctAnswer, _, marksStr, _, _, _, _ := mapRowFields(row, headerIndices, defaultBoard, defaultClass, defaultSubject, defaultChapter)
 
-		if board == "" { rowErrors = append(rowErrors, "board is required") }
-		if class == "" { rowErrors = append(rowErrors, "class is required") }
-		if subject == "" { rowErrors = append(rowErrors, "subject is required") }
-		if chapter == "" { rowErrors = append(rowErrors, "chapter is required") }
-		if topic == "" { rowErrors = append(rowErrors, "topic is required") }
-		if qType == "" { rowErrors = append(rowErrors, "question_type is required") }
-		if difficulty == "" { rowErrors = append(rowErrors, "difficulty is required") }
-		if question == "" { rowErrors = append(rowErrors, "question is required") }
-
-		validTypes := map[string]bool{
-			"mcq": true, "short": true, "long": true, "true_false": true,
-			"fill_blank": true, "match_columns": true, "grammar": true,
-			"essay": true, "application": true, "translation": true,
+		if board == "" {
+			rowErrors = append(rowErrors, "board is required")
 		}
-		if qType != "" && !validTypes[qType] {
+		if class == "" {
+			rowErrors = append(rowErrors, "class is required")
+		}
+		if subject == "" {
+			rowErrors = append(rowErrors, "subject is required")
+		}
+		if chapter == "" {
+			rowErrors = append(rowErrors, "chapter is required")
+		}
+		if topic == "" {
+			rowErrors = append(rowErrors, "topic is required")
+		}
+		if qType == "" {
+			rowErrors = append(rowErrors, "question_type is required")
+		}
+		if difficulty == "" {
+			rowErrors = append(rowErrors, "difficulty is required")
+		}
+		if question == "" {
+			rowErrors = append(rowErrors, "question is required")
+		}
+
+		if qType != "" && !validQuestionType(qType) {
 			rowErrors = append(rowErrors, fmt.Sprintf("invalid question_type: '%s'", qType))
 		}
 
@@ -267,7 +351,7 @@ func (h *Handler) ValidateCSVEndpoint(w http.ResponseWriter, r *http.Request) {
 	}))
 }
 
-func mapRowFields(row []string, headerIndices map[string]int, defaultBoard, defaultClass, defaultSubject string) (board, class, subject, chapter, topic, qType, difficulty, question, optionA, optionB, optionC, optionD, correctAnswer, answerText, marksStr, explanation, language, medium, tags string) {
+func mapRowFields(row []string, headerIndices map[string]int, defaultBoard, defaultClass, defaultSubject, defaultChapter string) (board, class, subject, chapter, topic, qType, difficulty, question, optionA, optionB, optionC, optionD, correctAnswer, answerText, marksStr, explanation, language, medium, tags string) {
 	getVal := func(col string) string {
 		idx, exists := headerIndices[col]
 		if exists && idx < len(row) {
@@ -290,6 +374,9 @@ func mapRowFields(row []string, headerIndices map[string]int, defaultBoard, defa
 	}
 
 	chapter = getVal("chapter")
+	if chapter == "" {
+		chapter = defaultChapter
+	}
 	topic = getVal("topic")
 	if topic == "" {
 		topic = getVal("section") // user's CSV section can map to topic
@@ -298,19 +385,9 @@ func mapRowFields(row []string, headerIndices map[string]int, defaultBoard, defa
 		}
 	}
 
-	qType = strings.ToLower(getVal("question_type"))
+	qType = normalizeQuestionType(getVal("question_type"))
 	if qType == "" {
-		qType = strings.ToLower(getVal("question type"))
-	}
-	// normalize question type
-	if strings.Contains(qType, "short") {
-		qType = "short"
-	} else if strings.Contains(qType, "long") {
-		qType = "long"
-	} else if strings.Contains(qType, "mcq") {
-		qType = "mcq"
-	} else if strings.Contains(qType, "true") || strings.Contains(qType, "false") {
-		qType = "true_false"
+		qType = normalizeQuestionType(getVal("question type"))
 	}
 
 	difficulty = strings.ToLower(getVal("difficulty"))
@@ -335,9 +412,9 @@ func mapRowFields(row []string, headerIndices map[string]int, defaultBoard, defa
 
 	marksStr = getVal("marks")
 	if marksStr == "" {
-		if qType == "short" {
+		if qType == "question_answers" {
 			marksStr = "2"
-		} else if qType == "long" {
+		} else if qType == "essays" || qType == "applications" || qType == "stories" {
 			marksStr = "5"
 		} else {
 			marksStr = "1"
@@ -369,6 +446,7 @@ func (h *Handler) ConfirmImportEndpoint(w http.ResponseWriter, r *http.Request, 
 		Board      string `json:"board"`
 		Class      string `json:"class"`
 		Subject    string `json:"subject"`
+		Chapter    string `json:"chapter"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Invalid JSON.", 400, nil))
@@ -432,6 +510,7 @@ func (h *Handler) ConfirmImportEndpoint(w http.ResponseWriter, r *http.Request, 
 		"board":         body.Board,
 		"class":         body.Class,
 		"subject":       body.Subject,
+		"chapter":       body.Chapter,
 	}
 
 	jobID := store.NewID("job_csv")
@@ -521,6 +600,7 @@ func HandleCSVImportJob(s *store.MemStore, save func(string, any), jq *realtime.
 			Board       string `json:"board"`
 			Class       string `json:"class"`
 			Subject     string `json:"subject"`
+			Chapter     string `json:"chapter"`
 		}
 
 		if err := json.Unmarshal(payload, &args); err != nil {
@@ -600,23 +680,42 @@ func HandleCSVImportJob(s *store.MemStore, save func(string, any), jq *realtime.
 
 		for idx := 1; idx < len(records); idx++ {
 			row := records[idx]
-			if len(row) == 0 || (len(row) == 1 && row[0] == "") {
+			if len(row) == 0 || rowIsEmpty(row) {
 				totalRows--
 				continue
 			}
 
-			boardVal, classVal, subjectVal, chapterVal, topicVal, qType, difficulty, questionVal, optionA, optionB, optionC, optionD, correctAnswer, answerText, marksStr, explanation, language, medium, tags := mapRowFields(row, headerIndices, args.Board, args.Class, args.Subject)
+			boardVal, classVal, subjectVal, chapterVal, topicVal, qType, difficulty, questionVal, optionA, optionB, optionC, optionD, correctAnswer, answerText, marksStr, explanation, language, medium, tags := mapRowFields(row, headerIndices, args.Board, args.Class, args.Subject, args.Chapter)
 
 			var rowErrors []string
 
-			if boardVal == "" { rowErrors = append(rowErrors, "board is required") }
-			if classVal == "" { rowErrors = append(rowErrors, "class is required") }
-			if subjectVal == "" { rowErrors = append(rowErrors, "subject is required") }
-			if chapterVal == "" { rowErrors = append(rowErrors, "chapter is required") }
-			if topicVal == "" { rowErrors = append(rowErrors, "topic is required") }
-			if qType == "" { rowErrors = append(rowErrors, "question_type is required") }
-			if difficulty == "" { rowErrors = append(rowErrors, "difficulty is required") }
-			if questionVal == "" { rowErrors = append(rowErrors, "question is required") }
+			if boardVal == "" {
+				rowErrors = append(rowErrors, "board is required")
+			}
+			if classVal == "" {
+				rowErrors = append(rowErrors, "class is required")
+			}
+			if subjectVal == "" {
+				rowErrors = append(rowErrors, "subject is required")
+			}
+			if chapterVal == "" {
+				rowErrors = append(rowErrors, "chapter is required")
+			}
+			if topicVal == "" {
+				rowErrors = append(rowErrors, "topic is required")
+			}
+			if qType == "" {
+				rowErrors = append(rowErrors, "question_type is required")
+			}
+			if qType != "" && !validQuestionType(qType) {
+				rowErrors = append(rowErrors, fmt.Sprintf("invalid question_type: '%s'", qType))
+			}
+			if difficulty == "" {
+				rowErrors = append(rowErrors, "difficulty is required")
+			}
+			if questionVal == "" {
+				rowErrors = append(rowErrors, "question is required")
+			}
 
 			marks := 1
 			if marksStr != "" {
@@ -808,6 +907,20 @@ func HandleCSVImportJob(s *store.MemStore, save func(string, any), jq *realtime.
 			} else if corrAns == "" {
 				corrAns = answerText
 			}
+			metadataBytes, _ := json.Marshal(map[string]any{
+				"source":      "csv-import",
+				"file_name":   args.FileName,
+				"row_number":  idx + 1,
+				"board":       boardVal,
+				"class":       classVal,
+				"subject":     subjectVal,
+				"chapter":     chapterVal,
+				"topic":       topicVal,
+				"language":    language,
+				"medium":      medium,
+				"tags":        tags,
+				"explanation": explanation,
+			})
 
 			// Insert question
 			q := &store.Question{
@@ -816,16 +929,21 @@ func HandleCSVImportJob(s *store.MemStore, save func(string, any), jq *realtime.
 				CreatedBy:      args.UserID,
 				CreatedByName:  "CSV Import",
 				BoardID:        board.ID,
+				Syllabus:       boardVal,
 				ClassID:        class.ID,
+				ClassName:      class.Name,
 				SubjectID:      subject.ID,
 				SubjectName:    subject.Name,
 				ChapterID:      chapter.ID,
+				ChapterName:    chapter.Title,
 				TopicID:        topic.ID,
 				Type:           qType,
 				Difficulty:     difficulty,
 				QuestionHTML:   questionVal,
 				Options:        optsStr,
+				Answer:         corrAns,
 				Marks:          marks,
+				Metadata:       string(metadataBytes),
 				Status:         "active",
 				IsGlobal:       true,
 				ApprovalStatus: "approved",
