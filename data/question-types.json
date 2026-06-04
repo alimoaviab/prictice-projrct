@@ -189,6 +189,247 @@
         "Additional Questions",
         "additional questions"
       ]
+    },
+    {
+      "id": "poetry_explanation",
+      "label": "اشعار کی تشریح",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Poetry Explanation",
+        "اشعار کی تشریح"
+      ]
+    },
+    {
+      "id": "sentence_completion",
+      "label": "جملوں کی تکمیل",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Sentence Completion",
+        "جملوں کی تکمیل"
+      ]
+    },
+    {
+      "id": "translate_into_urdu_sentences",
+      "label": "Translate Into Urdu Sentences",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Translate Into Urdu Sentences"
+      ]
+    },
+    {
+      "id": "translate_into_english_sentences",
+      "label": "Translate Into English Sentences",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Translate Into English Sentences"
+      ]
+    },
+    {
+      "id": "direct_indirect",
+      "label": "Direct & Indirect",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Direct & Indirect",
+        "direct & indirect"
+      ]
+    },
+    {
+      "id": "dialogues",
+      "label": "Dialogues",
+      "category": "written",
+      "defaultMarks": 2,
+      "aliases": [
+        "Dialogues",
+        "dialogues"
+      ]
+    },
+    {
+      "id": "idioms",
+      "label": "Idioms",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Idioms",
+        "idioms"
+      ]
+    },
+    {
+      "id": "sentence_correction",
+      "label": "جملوں کی درستگی",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Sentence Correction",
+        "جملوں کی درستگی"
+      ]
+    },
+    {
+      "id": "summary_matric",
+      "label": "Summary (خلاصہ) Matric",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Summary (خلاصہ) Matric"
+      ]
+    },
+    {
+      "id": "theme",
+      "label": "Theme (مرکزی خیال)",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Theme (مرکزی خیال)"
+      ]
+    },
+    {
+      "id": "antonyms",
+      "label": "Antonyms (الفاظ متضاد)",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Antonyms (الفاظ متضاد)"
+      ]
+    },
+    {
+      "id": "synonyms",
+      "label": "Synonyms (الفاظ مترادف)",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Synonyms (الفاظ مترادف)"
+      ]
+    },
+    {
+      "id": "pointing",
+      "label": "Pointing (اعراب لگائیں)",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Pointing (اعراب لگائیں)"
+      ]
+    },
+    {
+      "id": "homophones",
+      "label": "Homophones (مشابہ الفاظ)",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Homophones (مشابہ الفاظ)"
+      ]
+    },
+    {
+      "id": "paragraph_explanation_matric",
+      "label": "Matric پیراگراف کی تشریح",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Matric پیراگراف کی تشریح"
+      ]
+    },
+    {
+      "id": "verses_translation",
+      "label": "Verses Translation (آیات کا ترجمہ)",
+      "category": "language",
+      "defaultMarks": 5,
+      "aliases": [
+        "Verses Translation (آیات کا ترجمہ)",
+        "verses_translation"
+      ]
+    },
+    {
+      "id": "words_meanings",
+      "label": "Words Meanings (الفاظ کے معنی)",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Words Meanings (الفاظ کے معنی)",
+        "words_meanings"
+      ]
+    },
+    {
+      "id": "verses",
+      "label": "Verses (آیات)",
+      "category": "language",
+      "defaultMarks": 5,
+      "aliases": [
+        "Verses (آیات)",
+        "verses"
+      ]
+    },
+    {
+      "id": "summary_inter",
+      "label": "Summary (خلاصہ) Inter",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Summary (خلاصہ) Inter",
+        "summary_inter"
+      ]
+    },
+    {
+      "id": "correct_meaning_underlined_word",
+      "label": "Correct Meaning Of Underlined Word",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Correct Meaning Of Underlined Word",
+        "correct_meaning_underlined_word"
+      ]
+    },
+    {
+      "id": "tick_correct_form_of_verb",
+      "label": "Tick Correct Form Of Verb",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Tick Correct Form Of Verb",
+        "tick_correct_form_of_verb"
+      ]
+    },
+    {
+      "id": "tick_correct_according_to_grammar",
+      "label": "Tick Correct According To Grammar",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Tick Correct According To Grammar",
+        "tick_correct_according_to_grammar"
+      ]
+    },
+    {
+      "id": "active_passive_voice",
+      "label": "Active & Passive Voice",
+      "category": "language",
+      "defaultMarks": 2,
+      "aliases": [
+        "Active & Passive Voice",
+        "active_passive_voice"
+      ]
+    },
+    {
+      "id": "comprehension_paragraphs",
+      "label": "Comprehension Paragraphs (تفہیم عبارات)",
+      "category": "language",
+      "defaultMarks": 5,
+      "aliases": [
+        "Comprehension Paragraphs (تفہیم عبارات)",
+        "comprehension_paragraphs"
+      ]
+    },
+    {
+      "id": "poems_stanzas",
+      "label": "Poems Stanzas",
+      "category": "language",
+      "defaultMarks": 5,
+      "aliases": [
+        "Poems Stanzas",
+        "poems_stanzas"
+      ]
     }
   ]
 }

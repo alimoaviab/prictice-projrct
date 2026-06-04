@@ -1,0 +1,2980 @@
+{
+  "ptb": {
+    "ONE": {
+      "English": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "tick_correct_spelling",
+          "label": "Tick Correct Spelling"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        },
+        {
+          "id": "letters",
+          "label": "Letters (خطوط)"
+        },
+        {
+          "id": "applications",
+          "label": "Applications (درخواستیں)"
+        },
+        {
+          "id": "stories",
+          "label": "Stories (کہانیاں)"
+        },
+        {
+          "id": "essays",
+          "label": "Essays (مضامین)"
+        },
+        {
+          "id": "missing_letters",
+          "label": "Missing Letters"
+        },
+        {
+          "id": "form_of_verbs",
+          "label": "Form of verbs (فعل کی اقسام)"
+        },
+        {
+          "id": "words_into_sentences",
+          "label": "Words Into Sentences (الفاظ کو جملوں میں استعمال)"
+        },
+        {
+          "id": "word_meaning",
+          "label": "Word Meaning (الفاظ معنی)"
+        },
+        {
+          "id": "singular_plural",
+          "label": "Singular Plural (واحد جمع)"
+        },
+        {
+          "id": "genders",
+          "label": "Genders (مذکر مونث)"
+        },
+        {
+          "id": "translate_into_urdu",
+          "label": "Translate Into Urdu Paragraphs"
+        }
+      ],
+      "General Knowledge": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "true_false_statements",
+          "label": "True False Statements (درست غلط جملے)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        }
+      ],
+      "Mathematics": [
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        }
+      ],
+      "اسلامیات": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        }
+      ],
+      "اُردو": [
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "true_false_statements",
+          "label": "True False Statements (درست غلط جملے)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        },
+        {
+          "id": "letters",
+          "label": "Letters (خطوط)"
+        },
+        {
+          "id": "applications",
+          "label": "Applications (درخواستیں)"
+        },
+        {
+          "id": "sentence_correction",
+          "label": "جملوں کی درستگی"
+        },
+        {
+          "id": "stories",
+          "label": "Stories (کہانیاں)"
+        },
+        {
+          "id": "essays",
+          "label": "Essays (مضامین)"
+        },
+        {
+          "id": "words_into_sentences",
+          "label": "Words Into Sentences (الفاظ کو جملوں میں استعمال)"
+        },
+        {
+          "id": "word_meaning",
+          "label": "Word Meaning (الفاظ معنی)"
+        },
+        {
+          "id": "singular_plural",
+          "label": "Singular Plural (واحد جمع)"
+        },
+        {
+          "id": "genders",
+          "label": "Genders (مذکر مونث)"
+        },
+        {
+          "id": "antonyms",
+          "label": "Antonyms (الفاظ متضاد)"
+        },
+        {
+          "id": "synonyms",
+          "label": "Synonyms (الفاظ مترادف)"
+        },
+        {
+          "id": "pointing",
+          "label": "Pointing (اعراب لگائیں)"
+        }
+      ]
+    },
+    "TWO": {
+      "English": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "tick_correct_spelling",
+          "label": "Tick Correct Spelling"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        },
+        {
+          "id": "letters",
+          "label": "Letters (خطوط)"
+        },
+        {
+          "id": "applications",
+          "label": "Applications (درخواستیں)"
+        },
+        {
+          "id": "stories",
+          "label": "Stories (کہانیاں)"
+        },
+        {
+          "id": "essays",
+          "label": "Essays (مضامین)"
+        },
+        {
+          "id": "missing_letters",
+          "label": "Missing Letters"
+        },
+        {
+          "id": "form_of_verbs",
+          "label": "Form of verbs (فعل کی اقسام)"
+        },
+        {
+          "id": "words_into_sentences",
+          "label": "Words Into Sentences (الفاظ کو جملوں میں استعمال)"
+        },
+        {
+          "id": "word_meaning",
+          "label": "Word Meaning (الفاظ معنی)"
+        },
+        {
+          "id": "singular_plural",
+          "label": "Singular Plural (واحد جمع)"
+        },
+        {
+          "id": "genders",
+          "label": "Genders (مذکر مونث)"
+        },
+        {
+          "id": "translate_into_urdu",
+          "label": "Translate Into Urdu Paragraphs"
+        }
+      ],
+      "General Knowledge": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "true_false_statements",
+          "label": "True False Statements (درست غلط جملے)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        }
+      ],
+      "Mathematics": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        }
+      ],
+      "اسلامیات": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        }
+      ],
+      "اُردو": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "true_false_statements",
+          "label": "True False Statements (درست غلط جملے)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        },
+        {
+          "id": "letters",
+          "label": "Letters (خطوط)"
+        },
+        {
+          "id": "applications",
+          "label": "Applications (درخواستیں)"
+        },
+        {
+          "id": "sentence_correction",
+          "label": "جملوں کی درستگی"
+        },
+        {
+          "id": "stories",
+          "label": "Stories (کہانیاں)"
+        },
+        {
+          "id": "essays",
+          "label": "Essays (مضامین)"
+        },
+        {
+          "id": "words_into_sentences",
+          "label": "Words Into Sentences (الفاظ کو جملوں میں استعمال)"
+        },
+        {
+          "id": "word_meaning",
+          "label": "Word Meaning (الفاظ معنی)"
+        },
+        {
+          "id": "singular_plural",
+          "label": "Singular Plural (واحد جمع)"
+        },
+        {
+          "id": "genders",
+          "label": "Genders (مذکر مونث)"
+        },
+        {
+          "id": "antonyms",
+          "label": "Antonyms (الفاظ متضاد)"
+        },
+        {
+          "id": "synonyms",
+          "label": "Synonyms (الفاظ مترادف)"
+        },
+        {
+          "id": "pointing",
+          "label": "Pointing (اعراب لگائیں)"
+        }
+      ]
+    },
+    "THREE": {
+      "English": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "tick_correct_spelling",
+          "label": "Tick Correct Spelling"
+        },
+        {
+          "id": "tick_correct_grammar",
+          "label": "Tick Correct According To Grammar"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        },
+        {
+          "id": "letters",
+          "label": "Letters (خطوط)"
+        },
+        {
+          "id": "applications",
+          "label": "Applications (درخواستیں)"
+        },
+        {
+          "id": "stories",
+          "label": "Stories (کہانیاں)"
+        },
+        {
+          "id": "essays",
+          "label": "Essays (مضامین)"
+        },
+        {
+          "id": "missing_letters",
+          "label": "Missing Letters"
+        },
+        {
+          "id": "form_of_verbs",
+          "label": "Form of verbs (فعل کی اقسام)"
+        },
+        {
+          "id": "words_into_sentences",
+          "label": "Words Into Sentences (الفاظ کو جملوں میں استعمال)"
+        },
+        {
+          "id": "word_meaning",
+          "label": "Word Meaning (الفاظ معنی)"
+        },
+        {
+          "id": "singular_plural",
+          "label": "Singular Plural (واحد جمع)"
+        },
+        {
+          "id": "genders",
+          "label": "Genders (مذکر مونث)"
+        },
+        {
+          "id": "translate_into_urdu",
+          "label": "Translate Into Urdu Paragraphs"
+        }
+      ],
+      "General Knowledge": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "true_false_statements",
+          "label": "True False Statements (درست غلط جملے)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        }
+      ],
+      "Mathematics": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        }
+      ],
+      "اسلامیات": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "اُردو": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "true_false_statements",
+          "label": "True False Statements (درست غلط جملے)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        },
+        {
+          "id": "letters",
+          "label": "Letters (خطوط)"
+        },
+        {
+          "id": "applications",
+          "label": "Applications (درخواستیں)"
+        },
+        {
+          "id": "sentence_correction",
+          "label": "جملوں کی درستگی"
+        },
+        {
+          "id": "stories",
+          "label": "Stories (کہانیاں)"
+        },
+        {
+          "id": "essays",
+          "label": "Essays (مضامین)"
+        },
+        {
+          "id": "words_into_sentences",
+          "label": "Words Into Sentences (الفاظ کو جملوں میں استعمال)"
+        },
+        {
+          "id": "word_meaning",
+          "label": "Word Meaning (الفاظ معنی)"
+        },
+        {
+          "id": "singular_plural",
+          "label": "Singular Plural (واحد جمع)"
+        },
+        {
+          "id": "genders",
+          "label": "Genders (مذکر مونث)"
+        },
+        {
+          "id": "antonyms",
+          "label": "Antonyms (الفاظ متضاد)"
+        },
+        {
+          "id": "synonyms",
+          "label": "Synonyms (الفاظ مترادف)"
+        },
+        {
+          "id": "pointing",
+          "label": "Pointing (اعراب لگائیں)"
+        }
+      ]
+    },
+    "FOUR": {
+      "English": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "tick_correct_spelling",
+          "label": "Tick Correct Spelling"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        },
+        {
+          "id": "letters",
+          "label": "Letters (خطوط)"
+        },
+        {
+          "id": "applications",
+          "label": "Applications (درخواستیں)"
+        },
+        {
+          "id": "stories",
+          "label": "Stories (کہانیاں)"
+        },
+        {
+          "id": "essays",
+          "label": "Essays (مضامین)"
+        },
+        {
+          "id": "missing_letters",
+          "label": "Missing Letters"
+        },
+        {
+          "id": "form_of_verbs",
+          "label": "Form of verbs (فعل کی اقسام)"
+        },
+        {
+          "id": "words_into_sentences",
+          "label": "Words Into Sentences (الفاظ کو جملوں میں استعمال)"
+        },
+        {
+          "id": "word_meaning",
+          "label": "Word Meaning (الفاظ معنی)"
+        },
+        {
+          "id": "singular_plural",
+          "label": "Singular Plural (واحد جمع)"
+        },
+        {
+          "id": "genders",
+          "label": "Genders (مذکر مونث)"
+        },
+        {
+          "id": "translate_into_urdu",
+          "label": "Translate Into Urdu Paragraphs"
+        }
+      ],
+      "General Science": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "Social Studies": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "true_false_statements",
+          "label": "True False Statements (درست غلط جملے)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "Mathematics": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        }
+      ],
+      "اسلامیات": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "اُردو": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "true_false_statements",
+          "label": "True False Statements (درست غلط جملے)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        },
+        {
+          "id": "letters",
+          "label": "Letters (خطوط)"
+        },
+        {
+          "id": "applications",
+          "label": "Applications (درخواستیں)"
+        },
+        {
+          "id": "poetry_explanation",
+          "label": "اشعار کی تشریح"
+        },
+        {
+          "id": "sentence_correction",
+          "label": "جملوں کی درستگی"
+        },
+        {
+          "id": "stories",
+          "label": "Stories (کہانیاں)"
+        },
+        {
+          "id": "essays",
+          "label": "Essays (مضامین)"
+        },
+        {
+          "id": "words_into_sentences",
+          "label": "Words Into Sentences (الفاظ کو جملوں میں استعمال)"
+        },
+        {
+          "id": "word_meaning",
+          "label": "Word Meaning (الفاظ معنی)"
+        },
+        {
+          "id": "singular_plural",
+          "label": "Singular Plural (واحد جمع)"
+        },
+        {
+          "id": "genders",
+          "label": "Genders (مذکر مونث)"
+        },
+        {
+          "id": "antonyms",
+          "label": "Antonyms (الفاظ متضاد)"
+        },
+        {
+          "id": "synonyms",
+          "label": "Synonyms (الفاظ مترادف)"
+        },
+        {
+          "id": "pointing",
+          "label": "Pointing (اعراب لگائیں)"
+        }
+      ]
+    },
+    "5TH": {
+      "English": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "tick_correct_spelling",
+          "label": "Tick Correct Spelling"
+        },
+        {
+          "id": "tick_correct_form_of_verb",
+          "label": "Tick Correct Form Of Verb"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        },
+        {
+          "id": "letters",
+          "label": "Letters (خطوط)"
+        },
+        {
+          "id": "applications",
+          "label": "Applications (درخواستیں)"
+        },
+        {
+          "id": "convert_sentences",
+          "label": "Convert Sentences"
+        },
+        {
+          "id": "translate_into_urdu_sentences",
+          "label": "Translate Into Urdu Sentences"
+        },
+        {
+          "id": "translate_into_english_sentences",
+          "label": "Translate Into English Sentences"
+        },
+        {
+          "id": "stories",
+          "label": "Stories (کہانیاں)"
+        },
+        {
+          "id": "essays",
+          "label": "Essays (مضامین)"
+        },
+        {
+          "id": "missing_letters",
+          "label": "Missing Letters"
+        },
+        {
+          "id": "form_of_verbs",
+          "label": "Form of verbs (فعل کی اقسام)"
+        },
+        {
+          "id": "words_into_sentences",
+          "label": "Words Into Sentences (الفاظ کو جملوں میں استعمال)"
+        },
+        {
+          "id": "word_meaning",
+          "label": "Word Meaning (الفاظ معنی)"
+        },
+        {
+          "id": "singular_plural",
+          "label": "Singular Plural (واحد جمع)"
+        },
+        {
+          "id": "genders",
+          "label": "Genders (مذکر مونث)"
+        },
+        {
+          "id": "translate_into_urdu",
+          "label": "Translate Into Urdu Paragraphs"
+        }
+      ],
+      "General Science": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "Social Studies": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "true_false_statements",
+          "label": "True False Statements (درست غلط جملے)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "Mathematics": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        }
+      ],
+      "اسلامیات": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "اُردو": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "true_false_statements",
+          "label": "True False Statements (درست غلط جملے)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        },
+        {
+          "id": "letters",
+          "label": "Letters (خطوط)"
+        },
+        {
+          "id": "applications",
+          "label": "Applications (درخواستیں)"
+        },
+        {
+          "id": "poetry_explanation",
+          "label": "اشعار کی تشریح"
+        },
+        {
+          "id": "sentence_correction",
+          "label": "جملوں کی درستگی"
+        },
+        {
+          "id": "stories",
+          "label": "Stories (کہانیاں)"
+        },
+        {
+          "id": "essays",
+          "label": "Essays (مضامین)"
+        },
+        {
+          "id": "words_into_sentences",
+          "label": "Words Into Sentences (الفاظ کو جملوں میں استعمال)"
+        },
+        {
+          "id": "word_meaning",
+          "label": "Word Meaning (الفاظ معنی)"
+        },
+        {
+          "id": "singular_plural",
+          "label": "Singular Plural (واحد جمع)"
+        },
+        {
+          "id": "genders",
+          "label": "Genders (مذکر مونث)"
+        },
+        {
+          "id": "antonyms",
+          "label": "Antonyms (الفاظ متضاد)"
+        },
+        {
+          "id": "synonyms",
+          "label": "Synonyms (الفاظ مترادف)"
+        },
+        {
+          "id": "pointing",
+          "label": "Pointing (اعراب لگائیں)"
+        }
+      ]
+    },
+    "6TH": {
+      "ہوم اکنامکس": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "true_false_statements",
+          "label": "True False Statements (درست غلط جملے)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "پنجابی": [
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        },
+        {
+          "id": "poetry_explanation",
+          "label": "اشعار کی تشریح"
+        },
+        {
+          "id": "words_into_sentences",
+          "label": "Words Into Sentences (الفاظ کو جملوں میں استعمال)"
+        },
+        {
+          "id": "word_meaning",
+          "label": "Word Meaning (الفاظ معنی)"
+        }
+      ],
+      "زرعی تعلیم": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "true_false_statements",
+          "label": "True False Statements (درست غلط جملے)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "اسلامیات لازمی": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "English": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "tick_correct_spelling",
+          "label": "Tick Correct Spelling"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        },
+        {
+          "id": "letters",
+          "label": "Letters (خطوط)"
+        },
+        {
+          "id": "applications",
+          "label": "Applications (درخواستیں)"
+        },
+        {
+          "id": "translate_into_urdu_sentences",
+          "label": "Translate Into Urdu Sentences"
+        },
+        {
+          "id": "translate_into_english_sentences",
+          "label": "Translate Into English Sentences"
+        },
+        {
+          "id": "direct_indirect",
+          "label": "Direct & Indirect"
+        },
+        {
+          "id": "stories",
+          "label": "Stories (کہانیاں)"
+        },
+        {
+          "id": "essays",
+          "label": "Essays (مضامین)"
+        },
+        {
+          "id": "dialogues",
+          "label": "Dialogues (مکالمے)"
+        },
+        {
+          "id": "missing_letters",
+          "label": "Missing Letters"
+        },
+        {
+          "id": "words_into_sentences",
+          "label": "Words Into Sentences (الفاظ کو جملوں میں استعمال)"
+        },
+        {
+          "id": "idioms",
+          "label": "Idioms"
+        },
+        {
+          "id": "word_meaning",
+          "label": "Word Meaning (الفاظ معنی)"
+        },
+        {
+          "id": "singular_plural",
+          "label": "Singular Plural (واحد جمع)"
+        },
+        {
+          "id": "genders",
+          "label": "Genders (مذکر مونث)"
+        },
+        {
+          "id": "translate_into_urdu",
+          "label": "Translate Into Urdu Paragraphs"
+        }
+      ],
+      "Computer": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "Geography": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "History": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "Mathematics": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "true_false_statements",
+          "label": "True False Statements (درست غلط جملے)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "اُردو لازمی": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "true_false_statements",
+          "label": "True False Statements (درست غلط جملے)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        },
+        {
+          "id": "letters",
+          "label": "Letters (خطوط)"
+        },
+        {
+          "id": "applications",
+          "label": "Applications (درخواستیں)"
+        },
+        {
+          "id": "poetry_explanation",
+          "label": "اشعار کی تشریح"
+        },
+        {
+          "id": "sentence_correction",
+          "label": "جملوں کی درستگی"
+        },
+        {
+          "id": "stories",
+          "label": "Stories (کہانیاں)"
+        },
+        {
+          "id": "essays",
+          "label": "Essays (مضامین)"
+        },
+        {
+          "id": "summary_matric",
+          "label": "Summary (خلاصہ) Matric"
+        },
+        {
+          "id": "theme",
+          "label": "Theme (مرکزی خیال)"
+        },
+        {
+          "id": "dialogues",
+          "label": "Dialogues (مکالمے)"
+        },
+        {
+          "id": "history",
+          "label": "History (روداد)"
+        },
+        {
+          "id": "words_into_sentences",
+          "label": "Words Into Sentences (الفاظ کو جملوں میں استعمال)"
+        },
+        {
+          "id": "word_meaning",
+          "label": "Word Meaning (الفاظ معنی)"
+        },
+        {
+          "id": "singular_plural",
+          "label": "Singular Plural (واحد جمع)"
+        },
+        {
+          "id": "genders",
+          "label": "Genders (مذکر مونث)"
+        },
+        {
+          "id": "antonyms",
+          "label": "Antonyms (الفاظ متضاد)"
+        },
+        {
+          "id": "synonyms",
+          "label": "Synonyms (الفاظ مترادف)"
+        },
+        {
+          "id": "pointing",
+          "label": "Pointing (اعراب لگائیں)"
+        },
+        {
+          "id": "homophones",
+          "label": "Homophones (مشابہ الفاظ)"
+        },
+        {
+          "id": "paragraph_explanation_matric",
+          "label": "Matric پیراگراف کی تشریح"
+        }
+      ],
+      "اخلاقیات": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "true_false_statements",
+          "label": "True False Statements (درست غلط جملے)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ]
+    },
+    "7TH": {
+      "ہوم اکنامکس": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "true_false_statements",
+          "label": "True False Statements (درست غلط جملے)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "پنجابی": [
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        },
+        {
+          "id": "poetry_explanation",
+          "label": "اشعار کی تشریح"
+        },
+        {
+          "id": "sentence_completion",
+          "label": "جملوں کی تکمیل"
+        },
+        {
+          "id": "words_into_sentences",
+          "label": "Words Into Sentences (الفاظ کو جملوں میں استعمال)"
+        },
+        {
+          "id": "word_meaning",
+          "label": "Word Meaning (الفاظ معنی)"
+        }
+      ],
+      "زرعی تعلیم": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "true_false_statements",
+          "label": "True False Statements (درست غلط جملے)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "اسلامیات لازمی": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "English": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "tick_correct_spelling",
+          "label": "Tick Correct Spelling"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        },
+        {
+          "id": "letters",
+          "label": "Letters (خطوط)"
+        },
+        {
+          "id": "applications",
+          "label": "Applications (درخواستیں)"
+        },
+        {
+          "id": "translate_into_urdu_sentences",
+          "label": "Translate Into Urdu Sentences"
+        },
+        {
+          "id": "translate_into_english_sentences",
+          "label": "Translate Into English Sentences"
+        },
+        {
+          "id": "direct_indirect",
+          "label": "Direct & Indirect"
+        },
+        {
+          "id": "stories",
+          "label": "Stories (کہانیاں)"
+        },
+        {
+          "id": "essays",
+          "label": "Essays (مضامین)"
+        },
+        {
+          "id": "dialogues",
+          "label": "Dialogues (مکالمے)"
+        },
+        {
+          "id": "missing_letters",
+          "label": "Missing Letters"
+        },
+        {
+          "id": "words_into_sentences",
+          "label": "Words Into Sentences (الفاظ کو جملوں میں استعمال)"
+        },
+        {
+          "id": "idioms",
+          "label": "Idioms"
+        },
+        {
+          "id": "word_meaning",
+          "label": "Word Meaning (الفاظ معنی)"
+        },
+        {
+          "id": "singular_plural",
+          "label": "Singular Plural (واحد جمع)"
+        },
+        {
+          "id": "genders",
+          "label": "Genders (مذکر مونث)"
+        },
+        {
+          "id": "translate_into_urdu",
+          "label": "Translate Into Urdu Paragraphs"
+        }
+      ],
+      "Computer": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "General Science": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "Geography": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "History": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "Mathematics": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "اُردو لازمی": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "true_false_statements",
+          "label": "True False Statements (درست غلط جملے)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        },
+        {
+          "id": "letters",
+          "label": "Letters (خطوط)"
+        },
+        {
+          "id": "applications",
+          "label": "Applications (درخواستیں)"
+        },
+        {
+          "id": "poetry_explanation",
+          "label": "اشعار کی تشریح"
+        },
+        {
+          "id": "sentence_correction",
+          "label": "جملوں کی درستگی"
+        },
+        {
+          "id": "stories",
+          "label": "Stories (کہانیاں)"
+        },
+        {
+          "id": "essays",
+          "label": "Essays (مضامین)"
+        },
+        {
+          "id": "summary_matric",
+          "label": "Summary (خلاصہ) Matric"
+        },
+        {
+          "id": "theme",
+          "label": "Theme (مرکزی خیال)"
+        },
+        {
+          "id": "dialogues",
+          "label": "Dialogues (مکالمے)"
+        },
+        {
+          "id": "words_into_sentences",
+          "label": "Words Into Sentences (الفاظ کو جملوں میں استعمال)"
+        },
+        {
+          "id": "word_meaning",
+          "label": "Word Meaning (الفاظ معنی)"
+        },
+        {
+          "id": "singular_plural",
+          "label": "Singular Plural (واحد جمع)"
+        },
+        {
+          "id": "genders",
+          "label": "Genders (مذکر مونث)"
+        },
+        {
+          "id": "antonyms",
+          "label": "Antonyms (الفاظ متضاد)"
+        },
+        {
+          "id": "synonyms",
+          "label": "Synonyms (الفاظ مترادف)"
+        },
+        {
+          "id": "pointing",
+          "label": "Pointing (اعراب لگائیں)"
+        },
+        {
+          "id": "homophones",
+          "label": "Homophones (مشابہ الفاظ)"
+        },
+        {
+          "id": "paragraph_explanation_matric",
+          "label": "Matric پیراگراف کی تشریح"
+        }
+      ],
+      "اخلاقیات": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "true_false_statements",
+          "label": "True False Statements (درست غلط جملے)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ]
+    },
+    "8TH": {
+      "ہوم اکنامکس": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "true_false_statements",
+          "label": "True False Statements (درست غلط جملے)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "پنجابی": [
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        },
+        {
+          "id": "poetry_explanation",
+          "label": "اشعار کی تشریح"
+        },
+        {
+          "id": "words_into_sentences",
+          "label": "Words Into Sentences (الفاظ کو جملوں میں استعمال)"
+        },
+        {
+          "id": "word_meaning",
+          "label": "Word Meaning (الفاظ معنی)"
+        },
+        {
+          "id": "genders",
+          "label": "Genders (مذکر مونث)"
+        },
+        {
+          "id": "antonyms",
+          "label": "Antonyms (الفاظ متضاد)"
+        },
+        {
+          "id": "synonyms",
+          "label": "Synonyms (الفاظ مترادف)"
+        }
+      ],
+      "زرعی تعلیم": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "true_false_statements",
+          "label": "True False Statements (درست غلط جملے)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "ترجمۃ القرآن": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        },
+        {
+          "id": "verses",
+          "label": "Verses (آیات)"
+        },
+        {
+          "id": "word_meaning",
+          "label": "Word Meaning (الفاظ معنی)"
+        }
+      ],
+      "اسلامیات لازمی": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "English": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "tick_correct_spelling",
+          "label": "Tick Correct Spelling"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        },
+        {
+          "id": "letters",
+          "label": "Letters (خطوط)"
+        },
+        {
+          "id": "applications",
+          "label": "Applications (درخواستیں)"
+        },
+        {
+          "id": "translate_into_urdu_sentences",
+          "label": "Translate Into Urdu Sentences"
+        },
+        {
+          "id": "translate_into_english_sentences",
+          "label": "Translate Into English Sentences"
+        },
+        {
+          "id": "direct_indirect",
+          "label": "Direct & Indirect"
+        },
+        {
+          "id": "stories",
+          "label": "Stories (کہانیاں)"
+        },
+        {
+          "id": "essays",
+          "label": "Essays (مضامین)"
+        },
+        {
+          "id": "summary_matric",
+          "label": "Summary (خلاصہ) Matric"
+        },
+        {
+          "id": "dialogues",
+          "label": "Dialogues (مکالمے)"
+        },
+        {
+          "id": "missing_letters",
+          "label": "Missing Letters"
+        },
+        {
+          "id": "words_into_sentences",
+          "label": "Words Into Sentences (الفاظ کو جملوں میں استعمال)"
+        },
+        {
+          "id": "idioms",
+          "label": "Idioms"
+        },
+        {
+          "id": "word_meaning",
+          "label": "Word Meaning (الفاظ معنی)"
+        },
+        {
+          "id": "singular_plural",
+          "label": "Singular Plural (واحد جمع)"
+        },
+        {
+          "id": "genders",
+          "label": "Genders (مذکر مونث)"
+        },
+        {
+          "id": "translate_into_urdu",
+          "label": "Translate Into Urdu Paragraphs"
+        }
+      ],
+      "Computer": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "true_false_statements",
+          "label": "True False Statements (درست غلط جملے)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "General Science": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "Geography": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "History": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "Mathematics": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "اُردو لازمی": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "true_false_statements",
+          "label": "True False Statements (درست غلط جملے)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        },
+        {
+          "id": "letters",
+          "label": "Letters (خطوط)"
+        },
+        {
+          "id": "applications",
+          "label": "Applications (درخواستیں)"
+        },
+        {
+          "id": "poetry_explanation",
+          "label": "اشعار کی تشریح"
+        },
+        {
+          "id": "sentence_correction",
+          "label": "جملوں کی درستگی"
+        },
+        {
+          "id": "stories",
+          "label": "Stories (کہانیاں)"
+        },
+        {
+          "id": "essays",
+          "label": "Essays (مضامین)"
+        },
+        {
+          "id": "summary_matric",
+          "label": "Summary (خلاصہ) Matric"
+        },
+        {
+          "id": "summary_inter",
+          "label": "Summary (خلاصہ) Inter"
+        },
+        {
+          "id": "theme",
+          "label": "Theme (مرکزی خیال)"
+        },
+        {
+          "id": "words_into_sentences",
+          "label": "Words Into Sentences (الفاظ کو جملوں میں استعمال)"
+        },
+        {
+          "id": "word_meaning",
+          "label": "Word Meaning (الفاظ معنی)"
+        },
+        {
+          "id": "singular_plural",
+          "label": "Singular Plural (واحد جمع)"
+        },
+        {
+          "id": "genders",
+          "label": "Genders (مذکر مونث)"
+        },
+        {
+          "id": "antonyms",
+          "label": "Antonyms (الفاظ متضاد)"
+        },
+        {
+          "id": "synonyms",
+          "label": "Synonyms (الفاظ مترادف)"
+        },
+        {
+          "id": "pointing",
+          "label": "Pointing (اعراب لگائیں)"
+        },
+        {
+          "id": "homophones",
+          "label": "Homophones (مشابہ الفاظ)"
+        },
+        {
+          "id": "paragraph_explanation_matric",
+          "label": "Matric پیراگراف کی تشریح"
+        }
+      ],
+      "اخلاقیات": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "fill_in_the_blanks",
+          "label": "Fill In The Blanks (خالی جگہ)"
+        },
+        {
+          "id": "true_false_statements",
+          "label": "True False Statements (درست غلط جملے)"
+        },
+        {
+          "id": "match_columns",
+          "label": "Match Columns (کالم ملائیں)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ]
+    },
+    "9TH": {
+      "Biology": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "Computer": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "Chemistry": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "Physics": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "Mathematics": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "English": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "tick_correct_spelling",
+          "label": "Tick Correct Spelling"
+        },
+        {
+          "id": "correct_meaning_underlined_word",
+          "label": "Correct Meaning Of Underlined Word"
+        },
+        {
+          "id": "tick_correct_form_of_verb",
+          "label": "Tick Correct Form Of Verb"
+        },
+        {
+          "id": "tick_correct_according_to_grammar",
+          "label": "Tick Correct According To Grammar"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        },
+        {
+          "id": "letters",
+          "label": "Letters (خطوط)"
+        },
+        {
+          "id": "translate_into_english_sentences",
+          "label": "Translate Into English Sentences"
+        },
+        {
+          "id": "active_passive_voice",
+          "label": "Active & Passive Voice"
+        },
+        {
+          "id": "stories",
+          "label": "Stories (کہانیاں)"
+        },
+        {
+          "id": "summary_matric",
+          "label": "Summary (خلاصہ) Matric"
+        },
+        {
+          "id": "dialogues",
+          "label": "Dialogues (مکالمے)"
+        },
+        {
+          "id": "words_into_sentences",
+          "label": "Words Into Sentences (الفاظ کو جملوں میں استعمال)"
+        },
+        {
+          "id": "idioms",
+          "label": "Idioms"
+        },
+        {
+          "id": "translate_into_urdu",
+          "label": "Translate Into Urdu Paragraphs"
+        },
+        {
+          "id": "comprehension_paragraphs",
+          "label": "Comprehension Paragraphs (تفہیم عبارات)"
+        },
+        {
+          "id": "poems_stanzas",
+          "label": "Poems Stanzas"
+        }
+      ],
+      "اُردو لازمی": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        },
+        {
+          "id": "letters",
+          "label": "Letters (خطوط)"
+        },
+        {
+          "id": "applications",
+          "label": "Applications (درخواستیں)"
+        },
+        {
+          "id": "poetry_explanation",
+          "label": "اشعار کی تشریح"
+        },
+        {
+          "id": "sentence_correction",
+          "label": "جملوں کی درستگی"
+        },
+        {
+          "id": "sentence_completion",
+          "label": "جملوں کی تکمیل"
+        },
+        {
+          "id": "stories",
+          "label": "Stories (کہانیاں)"
+        },
+        {
+          "id": "summary_matric",
+          "label": "Summary (خلاصہ) Matric"
+        },
+        {
+          "id": "theme",
+          "label": "Theme (مرکزی خیال)"
+        },
+        {
+          "id": "dialogues",
+          "label": "Dialogues (مکالمے)"
+        },
+        {
+          "id": "pointing",
+          "label": "Pointing (اعراب لگائیں)"
+        },
+        {
+          "id": "paragraph_explanation_matric",
+          "label": "پیرا گراف کی تشریح Matric"
+        }
+      ],
+      "اسلامیات لازمی": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        },
+        {
+          "id": "hadith",
+          "label": "Hadith (احادیث)"
+        },
+        {
+          "id": "personalities",
+          "label": "(Personalities) شخصیات"
+        }
+      ],
+      "General Science": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "ایجوکیشن (Education)": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "پنجابی (Punjabi)": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        },
+        {
+          "id": "letters",
+          "label": "Letters (خطوط)"
+        },
+        {
+          "id": "poetry_explanation",
+          "label": "اشعار کی تشریح"
+        },
+        {
+          "id": "stories",
+          "label": "Stories (کہانیاں)"
+        },
+        {
+          "id": "summary_matric",
+          "label": "Summary (خلاصہ) Matric"
+        },
+        {
+          "id": "theme",
+          "label": "Theme (مرکزی خیال)"
+        },
+        {
+          "id": "words_into_sentences",
+          "label": "Words Into Sentences (الفاظ کو جملوں میں استعمال)"
+        },
+        {
+          "id": "word_meaning",
+          "label": "Word Meaning (الفاظ معنی)"
+        },
+        {
+          "id": "singular_plural",
+          "label": "Singular Plural (واحد جمع)"
+        },
+        {
+          "id": "genders",
+          "label": "Genders (مذکر مونث)"
+        },
+        {
+          "id": "paragraph_explanation_matric",
+          "label": "پیرا گراف کی تشریح Matric"
+        }
+      ],
+      "اسلامیات اختیاری (Islamiyat Elective)": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        },
+        {
+          "id": "verses",
+          "label": "Verses (آیات)"
+        },
+        {
+          "id": "hadith",
+          "label": "Hadith (احادیث)"
+        }
+      ],
+      "ہوم اکنامکس (Home Economics)": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "معاشیات (Economics)": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "ترجمۃ القرآن المجید (Translation of Holy Quran)": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        },
+        {
+          "id": "verses",
+          "label": "Verses (آیات)"
+        },
+        {
+          "id": "word_meaning",
+          "label": "Word Meaning (الفاظ معنی)"
+        }
+      ],
+      "اخلاقیات (Ethics)": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "فزیکل ایجوکیشن (Physical Education)": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "مرغبانی (Poultry Farming)": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "غذا اور غذائیت (Food and Nutrition)": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ]
+    },
+    "10TH": {
+      "Biology": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "Computer": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "Chemistry": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "Physics": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "Mathematics": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        }
+      ],
+      "English": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "tick_correct_spelling",
+          "label": "Tick Correct Spelling"
+        },
+        {
+          "id": "correct_meaning_underlined_word",
+          "label": "Correct Meaning Of Underlined Word"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        },
+        {
+          "id": "summary_matric",
+          "label": "Summary (خلاصہ) Matric"
+        },
+        {
+          "id": "translate_into_urdu",
+          "label": "Translate Into Urdu Paragraphs"
+        },
+        {
+          "id": "poems_stanzas",
+          "label": "Poems Stanzas"
+        }
+      ],
+      "Pakistan Studies": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "اُردو لازمی": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        },
+        {
+          "id": "poetry_explanation",
+          "label": "اشعار کی تشریح"
+        },
+        {
+          "id": "summary_matric",
+          "label": "Summary (خلاصہ) Matric"
+        },
+        {
+          "id": "theme",
+          "label": "Theme (مرکزی خیال)"
+        },
+        {
+          "id": "paragraph_explanation_matric",
+          "label": "پیرا گراف کی تشریح Matric"
+        }
+      ],
+      "اسلامیات لازمی": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        },
+        {
+          "id": "hadith",
+          "label": "Hadith (احادیث)"
+        }
+      ],
+      "General Science": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "جنرل ریاضی (General Mathematics)": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "ایجوکیشن (Education)": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "پنجابی (Punjabi)": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "question_answers",
+          "label": "Question Answers (سوالات جوابات)"
+        },
+        {
+          "id": "poetry_explanation",
+          "label": "اشعار کی تشریح"
+        },
+        {
+          "id": "essays",
+          "label": "Essays (مضامین)"
+        },
+        {
+          "id": "words_into_sentences",
+          "label": "Words Into Sentences (الفاظ کو جملوں میں استعمال)"
+        },
+        {
+          "id": "word_meaning",
+          "label": "Word Meaning (الفاظ معنی)"
+        },
+        {
+          "id": "singular_plural",
+          "label": "Singular Plural (واحد جمع)"
+        },
+        {
+          "id": "genders",
+          "label": "Genders (مذکر مونث)"
+        },
+        {
+          "id": "paragraph_explanation_matric",
+          "label": "پیرا گراف کی تشریح Matric"
+        }
+      ],
+      "اسلامیات اختیاری (Islamiyat Elective)": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        },
+        {
+          "id": "verses",
+          "label": "Verses (آیات)"
+        },
+        {
+          "id": "hadith",
+          "label": "Hadith (احادیث)"
+        }
+      ],
+      "ہوم اکنامکس (Home Economics)": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "سوکس (Civics)": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "معاشیات (Economics)": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "ترجمۃ القرآن المجید (Translation of Holy Quran)": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        },
+        {
+          "id": "verses",
+          "label": "Verses (آیات)"
+        },
+        {
+          "id": "word_meaning",
+          "label": "Word Meaning (الفاظ معنی)"
+        }
+      ],
+      "اخلاقیات (Ethics)": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "فزیکل ایجوکیشن (Physical Education)": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "مرغبانی (Poultry Farming)": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ],
+      "غذا اور غذائیت (Food and Nutrition)": [
+        {
+          "id": "mcq",
+          "label": "Multiple Options (چار ممکنہ جوابات)"
+        },
+        {
+          "id": "short_questions",
+          "label": "Short Questions (مختصر سوالات)"
+        },
+        {
+          "id": "long_questions",
+          "label": "Long Questions (تفصیلاً سوالات)"
+        }
+      ]
+    }
+  }
+}
