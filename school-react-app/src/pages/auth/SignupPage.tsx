@@ -37,12 +37,15 @@ const COUNTRIES = [
 
 const currentYear = new Date().getFullYear();
 
+
+
 export function SignupPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [step, setStep] = useState(1);
   const [acceptTerms, setAcceptTerms] = useState(false);
+
   const selectedRole: Role = "admin";
 
   const [formData, setFormData] = useState({
@@ -158,7 +161,10 @@ export function SignupPage() {
       const response = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, role: selectedRole }),
+        body: JSON.stringify({ 
+          ...formData, 
+          role: selectedRole
+        }),
       });
 
       const result = await response.json().catch(() => null);
@@ -252,6 +258,7 @@ export function SignupPage() {
                     <Field label="Postal Code (Optional)" name="postalCode" value={formData.postalCode} onChange={handleChange} placeholder="74000" />
                   </div>
                   <SelectField label="Country (Optional)" name="country" value={formData.country} onChange={handleChange} options={COUNTRIES as unknown as string[]} />
+
                   
                   <div className="flex items-start gap-3 mt-4 ml-2">
                     <input
@@ -313,6 +320,7 @@ export function SignupPage() {
           </div>
         </motion.div>
       </div>
+
     </div>
   );
 }

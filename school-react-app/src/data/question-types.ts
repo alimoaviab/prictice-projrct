@@ -1,4 +1,4 @@
-import questionTypeConfig from "../../../data/question-types.json";
+import questionTypeConfig from "./question-types.json";
 
 export interface QuestionTypeConfig {
   id: string;

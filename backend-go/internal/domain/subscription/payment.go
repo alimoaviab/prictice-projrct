@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/eduplexo/backend-go/internal/api"
@@ -140,27 +141,37 @@ type PaymentRequest struct {
 	ID              string     `json:"id"`
 	SchoolID        string     `json:"school_id"`
 	PlanID          string     `json:"plan_id"`
+	SelectedPackages []string  `json:"selected_packages,omitempty"`
 	PaymentMethodID string     `json:"payment_method_id"`
+	PaymentMethod   string     `json:"payment_method,omitempty"`
 	ScreenshotURL   string     `json:"screenshot_url,omitempty"`
 	TransactionID   string     `json:"transaction_id"`
 	Amount          int        `json:"amount"`
 	Status          string     `json:"status"`
 	SubmittedAt     time.Time  `json:"submitted_at"`
+	PaymentDate     *time.Time `json:"payment_date,omitempty"`
 	VerifiedAt      *time.Time `json:"verified_at,omitempty"`
 	VerifiedBy      string     `json:"verified_by,omitempty"`
 	RejectionReason string    `json:"rejection_reason,omitempty"`
 	Notes           string     `json:"notes,omitempty"`
 	// Joined fields
 	SchoolName      string     `json:"school_name,omitempty"`
+	OwnerName       string     `json:"owner_name,omitempty"`
+	Phone           string     `json:"phone,omitempty"`
+	WhatsApp        string     `json:"whatsapp,omitempty"`
+	StudentCount    int        `json:"student_count,omitempty"`
 	PlanName        string     `json:"plan_name,omitempty"`
 }
 
 type uploadPaymentInput struct {
 	PlanID          string `json:"plan_id"`
+	SelectedPackages []string `json:"selected_packages"`
 	PaymentMethodID string `json:"payment_method_id"`
+	PaymentMethod   string `json:"payment_method"`
 	ScreenshotURL   string `json:"screenshot_url"`
 	TransactionID   string `json:"transaction_id"`
 	Amount          int    `json:"amount"`
+	PaymentDate     string `json:"payment_date"`
 	Notes           string `json:"notes"`
 }
 
@@ -172,8 +183,79 @@ func (h *Handler) UploadPayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	api.WriteResult(w, api.ServiceTry(func() (*PaymentRequest, error) {
-		if body.PlanID == "" || (body.ScreenshotURL == "" && body.Notes == "") || body.TransactionID == "" || body.Amount < 1 {
-			return nil, api.NewControlledError("VALIDATION_ERROR", "plan_id, transaction_id, amount, and either screenshot or SMS text are required.", 400, nil)
+		selected := NormalizePackages(body.SelectedPackages)
+		if body.PlanID != "" && len(body.SelectedPackages) == 0 {
+			selected = ParseSelectedPackages(body.PlanID, nil)
+		}
+		planID := strings.TrimSpace(body.PlanID)
+		if planID == "" {
+			planID = EncodeSelectedPackages(selected)
+		}
+		if (body.ScreenshotURL == "" && body.Notes == "") || body.TransactionID == "" || body.Amount < 1 {
+			return nil, api.NewControlledError("VALIDATION_ERROR", "transaction_id, amount, and either screenshot or SMS text are required.", 400, nil)
+		}
+		var paidAt *time.Time
+		if body.PaymentDate != "" {
+			if parsed, err := time.Parse("2006-01-02", body.PaymentDate); err == nil {
+				paidAt = &parsed
+			}
+		}
+		if h.Pool == nil {
+			now := time.Now()
+			pr := &PaymentRequest{
+				ID:               store.NewID("pay"),
+				SchoolID:         ctx.SchoolID,
+				PlanID:           planID,
+				SelectedPackages: selected,
+				PaymentMethodID:  body.PaymentMethodID,
+				PaymentMethod:    body.PaymentMethod,
+				ScreenshotURL:    body.ScreenshotURL,
+				TransactionID:    body.TransactionID,
+				Amount:           body.Amount,
+				Status:           "pending",
+				SubmittedAt:      now,
+				PaymentDate:      paidAt,
+				Notes:            body.Notes,
+			}
+			h.Store.Lock()
+			for _, t := range h.Store.Transactions {
+				if t.ReferenceNo == body.TransactionID && t.Status != "failed" {
+					h.Store.Unlock()
+					return nil, api.NewControlledError("DUPLICATE", "This transaction ID has already been submitted.", 400, nil)
+				}
+			}
+			paymentDate := now
+			if paidAt != nil {
+				paymentDate = *paidAt
+			}
+			h.Store.Transactions = append(h.Store.Transactions, &store.Transaction{
+				ID:               pr.ID,
+				SchoolID:         ctx.SchoolID,
+				PackageID:        planID,
+				SelectedPackages: selected,
+				Amount:           float64(body.Amount),
+				PaymentMethod:    firstNonEmptyString(body.PaymentMethod, body.PaymentMethodID),
+				ReferenceNo:      body.TransactionID,
+				ScreenshotURL:    body.ScreenshotURL,
+				PaymentDate:      paymentDate,
+				Status:           "pending",
+				Notes:            body.Notes,
+				CreatedAt:        now,
+			})
+			h.Store.AuditLogs = append(h.Store.AuditLogs, &store.AuditLog{
+				ID:         store.NewID("aud"),
+				SchoolID:   ctx.SchoolID,
+				ActorID:    ctx.UserID,
+				ActorRole:  ctx.Role,
+				ActorEmail: ctx.ActorEmail,
+				Action:     "subscription_purchase",
+				EntityType: "payment",
+				EntityID:   pr.ID,
+				After:      pr,
+				CreatedAt:  now,
+			})
+			h.Store.Unlock()
+			return pr, nil
 		}
 		// Check duplicate transaction ID
 		var exists bool
@@ -184,10 +266,10 @@ func (h *Handler) UploadPayment(w http.ResponseWriter, r *http.Request) {
 
 		id := store.NewID("pay")
 		pr := &PaymentRequest{
-			ID: id, SchoolID: ctx.SchoolID, PlanID: body.PlanID,
+			ID: id, SchoolID: ctx.SchoolID, PlanID: planID, SelectedPackages: selected,
 			PaymentMethodID: body.PaymentMethodID, ScreenshotURL: body.ScreenshotURL,
 			TransactionID: body.TransactionID, Amount: body.Amount,
-			Status: "pending", SubmittedAt: time.Now(), Notes: body.Notes,
+			Status: "pending", SubmittedAt: time.Now(), PaymentDate: paidAt, Notes: body.Notes,
 		}
 		_, err := h.Pool.Exec(r.Context(), `
 			INSERT INTO payment_requests (id, school_id, plan_id, payment_method_id, screenshot_url, transaction_id, amount, status, notes, submitted_at, created_at)
@@ -211,23 +293,31 @@ func (h *Handler) AdminListPendingPayments(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	status := r.URL.Query().Get("status")
-	if status == "" {
+	allStatuses := strings.Contains(r.URL.Path, "/all") || status == "all"
+	if status == "" && !allStatuses {
 		status = "pending"
 	}
 	api.WriteResult(w, api.ServiceTry(func() ([]PaymentRequest, error) {
+		if h.Pool == nil {
+			return h.adminListStorePayments(status, allStatuses), nil
+		}
 		query := `
-			SELECT pr.id, pr.school_id, pr.plan_id, COALESCE(pr.payment_method_id,''), pr.screenshot_url,
+			SELECT pr.id, pr.school_id, pr.plan_id, COALESCE(pr.payment_method_id,''), COALESCE(pr.screenshot_url,''),
 			       pr.transaction_id, pr.amount, pr.status, pr.submitted_at, pr.verified_at, COALESCE(pr.verified_by,''),
 			       COALESCE(pr.rejection_reason,''), COALESCE(pr.notes,''),
 			       COALESCE(s.name,'Unknown') AS school_name,
-			       COALESCE(sp.name,'Unknown') AS plan_name
+			       COALESCE(s.principal_name,''), COALESCE(s.phone,''), COALESCE(s.phone,''),
+			       COALESCE(sp.name, pr.plan_id) AS plan_name
 			FROM payment_requests pr
 			LEFT JOIN schools s ON s.school_id = pr.school_id OR s.id = pr.school_id
 			LEFT JOIN subscription_plans sp ON sp.id = pr.plan_id
-			WHERE pr.status = $1
+			WHERE ($1::text = 'all' OR pr.status = $1)
 			ORDER BY pr.submitted_at DESC
 			LIMIT 100
 		`
+		if allStatuses {
+			status = "all"
+		}
 		rows, err := h.Pool.Query(r.Context(), query, status)
 		if err != nil {
 			return nil, fmt.Errorf("list payments: %w", err)
@@ -238,7 +328,9 @@ func (h *Handler) AdminListPendingPayments(w http.ResponseWriter, r *http.Reques
 			var p PaymentRequest
 			rows.Scan(&p.ID, &p.SchoolID, &p.PlanID, &p.PaymentMethodID, &p.ScreenshotURL,
 				&p.TransactionID, &p.Amount, &p.Status, &p.SubmittedAt, &p.VerifiedAt, &p.VerifiedBy,
-				&p.RejectionReason, &p.Notes, &p.SchoolName, &p.PlanName)
+				&p.RejectionReason, &p.Notes, &p.SchoolName, &p.OwnerName, &p.Phone, &p.WhatsApp, &p.PlanName)
+			p.SelectedPackages = ParseSelectedPackages(p.PlanID, nil)
+			p.StudentCount = h.countActiveStudents(p.SchoolID)
 			payments = append(payments, p)
 		}
 		return payments, nil
@@ -253,6 +345,9 @@ func (h *Handler) AdminVerifyPayment(w http.ResponseWriter, r *http.Request) {
 	}
 	paymentID := chi.URLParam(r, "id")
 	api.WriteResult(w, api.ServiceTry(func() (map[string]any, error) {
+		if h.Pool == nil {
+			return h.adminVerifyStorePayment(paymentID, ctx.UserID)
+		}
 		// Get payment request
 		var schoolID, planID string
 		var amount int
@@ -266,13 +361,19 @@ func (h *Handler) AdminVerifyPayment(w http.ResponseWriter, r *http.Request) {
 			return nil, fmt.Errorf("get payment: %w", err)
 		}
 
-		// Get plan details
+		// Get plan details. Modular package-builder payments store selected
+		// package ids directly in plan_id, so there may be no subscription_plans row.
 		var planName string
 		var studentLimit, durationDays int
 		err = h.Pool.QueryRow(r.Context(), `
 			SELECT name, student_limit, duration_days FROM subscription_plans WHERE id=$1
 		`, planID).Scan(&planName, &studentLimit, &durationDays)
-		if err != nil {
+		if err == pgx.ErrNoRows {
+			selected := ParseSelectedPackages(planID, nil)
+			planName = EncodeSelectedPackages(selected)
+			studentLimit = h.countActiveStudents(schoolID)
+			durationDays = 30
+		} else if err != nil {
 			return nil, fmt.Errorf("get plan: %w", err)
 		}
 
@@ -300,6 +401,22 @@ func (h *Handler) AdminVerifyPayment(w http.ResponseWriter, r *http.Request) {
 		// Record history
 		h.recordHistory(r.Context(), schoolID, planName, studentLimit, amount, "paid", now, endDate, "subscribe")
 
+		if h.Store != nil {
+			h.Store.Lock()
+			h.Store.AuditLogs = append(h.Store.AuditLogs, &store.AuditLog{
+				ID:         store.NewID("aud"),
+				SchoolID:   schoolID,
+				ActorID:    ctx.UserID,
+				ActorRole:  ctx.Role,
+				Action:     "payment_approval",
+				EntityType: "payment",
+				EntityID:   paymentID,
+				After:      map[string]any{"plan": planName, "amount": amount, "end_date": endDate},
+				CreatedAt:  now,
+			})
+			h.Store.Unlock()
+		}
+
 		return map[string]any{
 			"payment_id":     paymentID,
 			"subscription_id": subID,
@@ -326,6 +443,9 @@ func (h *Handler) AdminRejectPayment(w http.ResponseWriter, r *http.Request) {
 	var body rejectInput
 	json.NewDecoder(r.Body).Decode(&body)
 	api.WriteResult(w, api.ServiceTry(func() (map[string]any, error) {
+		if h.Pool == nil {
+			return h.adminRejectStorePayment(paymentID, ctx.UserID, body.Reason)
+		}
 		reason := body.Reason
 		if reason == "" {
 			reason = "Payment could not be verified."
@@ -335,6 +455,20 @@ func (h *Handler) AdminRejectPayment(w http.ResponseWriter, r *http.Request) {
 		`, paymentID, reason, ctx.UserID)
 		if err != nil {
 			return nil, fmt.Errorf("reject: %w", err)
+		}
+		if h.Store != nil {
+			h.Store.Lock()
+			h.Store.AuditLogs = append(h.Store.AuditLogs, &store.AuditLog{
+				ID:         store.NewID("aud"),
+				ActorID:    ctx.UserID,
+				ActorRole:  ctx.Role,
+				Action:     "payment_rejection",
+				EntityType: "payment",
+				EntityID:   paymentID,
+				After:      map[string]any{"reason": reason},
+				CreatedAt:  time.Now(),
+			})
+			h.Store.Unlock()
 		}
 		return map[string]any{"id": paymentID, "rejected": true, "reason": reason}, nil
 	}))
@@ -469,6 +603,159 @@ func (h *Handler) AdminAnalytics(w http.ResponseWriter, r *http.Request) {
 			"monthly_revenue": monthlyRevenue,
 		}, nil
 	}))
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// IN-MEMORY STORE HELPERS (used when Pool == nil / dev mode)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// firstNonEmptyString returns the first non-empty string from the arguments.
+func firstNonEmptyString(values ...string) string {
+	for _, v := range values {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
+}
+
+// adminListStorePayments returns payment requests from MemStore filtered by status.
+func (h *Handler) adminListStorePayments(status string, allStatuses bool) []PaymentRequest {
+	if h.Store == nil {
+		return []PaymentRequest{}
+	}
+	h.Store.RLock()
+	defer h.Store.RUnlock()
+	payments := make([]PaymentRequest, 0)
+	for _, t := range h.Store.Transactions {
+		if !allStatuses && status != "" && t.Status != status {
+			continue
+		}
+		var payDate *time.Time
+		if !t.PaymentDate.IsZero() {
+			d := t.PaymentDate
+			payDate = &d
+		}
+		payments = append(payments, PaymentRequest{
+			ID:              t.ID,
+			SchoolID:        t.SchoolID,
+			PlanID:          t.PackageID,
+			SelectedPackages: t.SelectedPackages,
+			PaymentMethodID: t.PaymentMethod,
+			PaymentMethod:   t.PaymentMethod,
+			ScreenshotURL:   t.ScreenshotURL,
+			TransactionID:   t.ReferenceNo,
+			Amount:          int(t.Amount),
+			Status:          t.Status,
+			SubmittedAt:     t.CreatedAt,
+			PaymentDate:     payDate,
+			Notes:           t.Notes,
+			StudentCount:    h.countActiveStudents(t.SchoolID),
+		})
+	}
+	return payments
+}
+
+// adminVerifyStorePayment verifies a payment in MemStore and activates the subscription.
+func (h *Handler) adminVerifyStorePayment(paymentID, verifierID string) (map[string]any, error) {
+	if h.Store == nil {
+		return nil, api.NewControlledError("NOT_FOUND", "Payment request not found.", 404, nil)
+	}
+	h.Store.Lock()
+	defer h.Store.Unlock()
+
+	var found *store.Transaction
+	for _, t := range h.Store.Transactions {
+		if t.ID == paymentID && t.Status == "pending" {
+			found = t
+			break
+		}
+	}
+	if found == nil {
+		return nil, api.NewControlledError("NOT_FOUND", "Payment request not found or already processed.", 404, nil)
+	}
+
+	now := time.Now()
+	found.Status = "verified"
+
+	// Activate or update subscription in store
+	selected := ParseSelectedPackages(found.PackageID, found.SelectedPackages)
+	planName := EncodeSelectedPackages(selected)
+	endDate := now.AddDate(0, 0, 30)
+
+	var latest *store.Subscription
+	for _, sub := range h.Store.Subscriptions {
+		if sub.SchoolID == found.SchoolID && (sub.Status == "active" || sub.Status == "trial") {
+			if latest == nil || sub.CreatedAt.After(latest.CreatedAt) {
+				latest = sub
+			}
+		}
+	}
+	subID := store.NewID("sub")
+	if latest != nil {
+		latest.Status = "cancelled"
+	}
+	h.Store.Subscriptions = append(h.Store.Subscriptions, &store.Subscription{
+		ID:               subID,
+		SchoolID:         found.SchoolID,
+		PackageID:        planName,
+		SelectedPackages: selected,
+		Status:           "active",
+		NextRenewal:      endDate,
+		CreatedAt:        now,
+		UpdatedAt:        now,
+	})
+	h.Store.AuditLogs = append(h.Store.AuditLogs, &store.AuditLog{
+		ID:         store.NewID("aud"),
+		SchoolID:   found.SchoolID,
+		ActorID:    verifierID,
+		ActorRole:  "super_admin",
+		Action:     "payment_approval",
+		EntityType: "payment",
+		EntityID:   paymentID,
+		After:      map[string]any{"plan": planName, "end_date": endDate},
+		CreatedAt:  now,
+	})
+
+	return map[string]any{
+		"payment_id":      paymentID,
+		"subscription_id": subID,
+		"school_id":       found.SchoolID,
+		"plan":            planName,
+		"end_date":        endDate,
+		"verified":        true,
+	}, nil
+}
+
+// adminRejectStorePayment rejects a payment in MemStore.
+func (h *Handler) adminRejectStorePayment(paymentID, verifierID, reason string) (map[string]any, error) {
+	if h.Store == nil {
+		return nil, api.NewControlledError("NOT_FOUND", "Payment request not found.", 404, nil)
+	}
+	h.Store.Lock()
+	defer h.Store.Unlock()
+
+	for _, t := range h.Store.Transactions {
+		if t.ID == paymentID && t.Status == "pending" {
+			t.Status = "rejected"
+			if reason == "" {
+				reason = "Payment could not be verified."
+			}
+			h.Store.AuditLogs = append(h.Store.AuditLogs, &store.AuditLog{
+				ID:         store.NewID("aud"),
+				SchoolID:   t.SchoolID,
+				ActorID:    verifierID,
+				ActorRole:  "super_admin",
+				Action:     "payment_rejection",
+				EntityType: "payment",
+				EntityID:   paymentID,
+				After:      map[string]any{"reason": reason},
+				CreatedAt:  time.Now(),
+			})
+			return map[string]any{"id": paymentID, "rejected": true, "reason": reason}, nil
+		}
+	}
+	return nil, api.NewControlledError("NOT_FOUND", "Payment request not found or already processed.", 404, nil)
 }
 
 // helper to suppress unused import

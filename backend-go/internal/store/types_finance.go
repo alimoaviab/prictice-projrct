@@ -99,28 +99,36 @@ type Invoice struct {
 
 // Transaction represents a payment transaction.
 type Transaction struct {
-	ID            string    `json:"_id"`
-	InvoiceID     string    `json:"invoice_id"`
-	SchoolID      string    `json:"school_id"`
-	Amount        float64   `json:"amount"`
-	PaymentMethod string    `json:"payment_method"` // manual, card, bank_transfer, online, other
-	ReferenceNo   string    `json:"reference_no"`
-	Status        string    `json:"status"` // pending, completed, failed, refunded
-	Notes         string    `json:"notes"`
-	ProcessedBy   string    `json:"processed_by"`
-	ProcessedAt   time.Time `json:"processed_at"`
-	CreatedAt     time.Time `json:"created_at"`
+	ID               string    `json:"_id"`
+	InvoiceID        string    `json:"invoice_id"`
+	SchoolID         string    `json:"school_id"`
+	PackageID        string    `json:"package_id,omitempty"`
+	SelectedPackages []string  `json:"selected_packages,omitempty"`
+	Amount           float64   `json:"amount"`
+	PaymentMethod    string    `json:"payment_method"` // jazzcash, easypaisa, bank_transfer, manual, online, other
+	ReferenceNo      string    `json:"reference_no"`
+	ScreenshotURL    string    `json:"screenshot_url,omitempty"`
+	PaymentDate      time.Time `json:"payment_date,omitempty"`
+	Status           string    `json:"status"` // pending, completed, failed, refunded
+	Notes            string    `json:"notes"`
+	RejectionReason  string    `json:"rejection_reason,omitempty"`
+	ProcessedBy      string    `json:"processed_by"`
+	ProcessedAt      time.Time `json:"processed_at"`
+	CreatedAt        time.Time `json:"created_at"`
 }
 
 // Subscription represents a school's subscription to a package.
 type Subscription struct {
-	ID          string    `json:"_id"`
-	SchoolID    string    `json:"school_id"`
-	PackageID   string    `json:"package_id"`
-	Status      string    `json:"status"` // active, paused, cancelled, expired
-	AutoRenew   bool      `json:"auto_renew"`
-	NextRenewal time.Time `json:"next_renewal"`
-	CancelledAt *time.Time `json:"cancelled_at"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID               string    `json:"_id"`
+	SchoolID         string    `json:"school_id"`
+	PackageID        string    `json:"package_id"`
+	SelectedPackages []string  `json:"selected_packages,omitempty"`
+	StudentLimit     int       `json:"student_limit,omitempty"`
+	Price            int       `json:"price,omitempty"`
+	Status           string    `json:"status"` // trial, active, paused, cancelled, expired
+	AutoRenew        bool      `json:"auto_renew"`
+	NextRenewal      time.Time `json:"next_renewal"`
+	CancelledAt      *time.Time `json:"cancelled_at"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
 }

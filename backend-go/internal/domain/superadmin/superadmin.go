@@ -1259,12 +1259,21 @@ type PlatformSettings struct {
 	AutoApproveSchools bool   `json:"auto_approve_schools"`
 	DefaultPackageID   string `json:"default_package_id"`
 	TrialDays          int    `json:"trial_days"`
+	PackageRates       map[string]int `json:"package_rates"`
 }
 
 var platformSettings = PlatformSettings{
 	AutoApproveSchools: true,
 	DefaultPackageID:   "",
 	TrialDays:          14,
+	PackageRates: map[string]int{
+		"academic":       5,
+		"learning":       4,
+		"administration": 4,
+		"finance":        4,
+		"communication":  2,
+		"premium":        1,
+	},
 }
 
 // GetPlatformSettings returns the current platform settings (exported for use by other packages).
@@ -1301,6 +1310,16 @@ func (h *Handler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
 	platformSettings.AutoApproveSchools = body.AutoApproveSchools
 	platformSettings.DefaultPackageID = body.DefaultPackageID
 	platformSettings.TrialDays = body.TrialDays
+	if body.PackageRates != nil {
+		if platformSettings.PackageRates == nil {
+			platformSettings.PackageRates = map[string]int{}
+		}
+		for k, v := range body.PackageRates {
+			if v >= 0 {
+				platformSettings.PackageRates[strings.ToLower(strings.TrimSpace(k))] = v
+			}
+		}
+	}
 
 	api.WriteResult(w, api.Ok(map[string]any{"success": true, "settings": platformSettings}))
 }

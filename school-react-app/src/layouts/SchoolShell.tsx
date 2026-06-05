@@ -219,17 +219,22 @@ function navGroupsForRole(role: Role | undefined): NavGroup[] {
   return [];
 }
 
-function AdminActions() {
+function AdminActions({ allowedModules }: { allowedModules: Record<string, boolean> | null }) {
   const actions = [
-    { label: "Student", icon: "person_add", href: "/admin/students?action=new", color: "text-blue-600 border-blue-200 hover:bg-blue-50" },
-    { label: "Attendance", icon: "how_to_reg", href: "/admin/attendance", color: "text-blue-600 border-blue-200 hover:bg-blue-50" },
-    { label: "Exam", icon: "add_task", href: "/admin/exams?action=new", color: "text-blue-600 border-blue-200 hover:bg-blue-50" },
-    { label: "Broadcast", icon: "campaign", href: "/admin/announcements?action=new", color: "text-blue-600 border-blue-200 hover:bg-blue-50" },
+    { label: "Student", icon: "person_add", href: "/admin/students?action=new", color: "text-blue-600 border-blue-200 hover:bg-blue-50", module: "students" },
+    { label: "Attendance", icon: "how_to_reg", href: "/admin/attendance", color: "text-blue-600 border-blue-200 hover:bg-blue-50", module: "attendance" },
+    { label: "Exam", icon: "add_task", href: "/admin/exams?action=new", color: "text-blue-600 border-blue-200 hover:bg-blue-50", module: "exams" },
+    { label: "Broadcast", icon: "campaign", href: "/admin/announcements?action=new", color: "text-blue-600 border-blue-200 hover:bg-blue-50", module: "announcements" },
   ];
+
+  const filteredActions = actions.filter((action) => {
+    if (!allowedModules) return true;
+    return allowedModules[action.module] !== false;
+  });
 
   return (
     <div className="hidden lg:flex items-center gap-2">
-      {actions.map((action) => (
+      {filteredActions.map((action) => (
         <Link
           key={action.label}
           to={action.href}
@@ -240,12 +245,16 @@ function AdminActions() {
         </Link>
       ))}
       <div className="flex gap-1 ml-1">
-        <Link to="/admin/results" className="p-1 rounded-full text-slate-400 hover:text-blue-600 hover:bg-slate-50 transition-all" title="Results">
-          <AppIcon name="Leaderboard" size={18} />
-        </Link>
-        <Link to="/admin/timetable" className="p-1 rounded-full text-slate-400 hover:text-blue-600 hover:bg-slate-50 transition-all" title="Timetable">
-          <AppIcon name="CalendarDays" size={18} />
-        </Link>
+        {(!allowedModules || allowedModules["results"] !== false) && (
+          <Link to="/admin/results" className="p-1 rounded-full text-slate-400 hover:text-blue-600 hover:bg-slate-50 transition-all" title="Results">
+            <AppIcon name="Leaderboard" size={18} />
+          </Link>
+        )}
+        {(!allowedModules || allowedModules["timetable"] !== false) && (
+          <Link to="/admin/timetable" className="p-1 rounded-full text-slate-400 hover:text-blue-600 hover:bg-slate-50 transition-all" title="Timetable">
+            <AppIcon name="CalendarDays" size={18} />
+          </Link>
+        )}
       </div>
     </div>
   );
@@ -269,6 +278,97 @@ function Tooltip({ children, text }: { children: ReactNode; text: string }) {
     </div>
   );
 }
+
+const routeToModuleMap: Record<string, string> = {
+  "/admin/dashboard": "dashboard",
+  "/admin/academic-years": "academic-years",
+  "/admin/classes": "classes",
+  "/admin/teachers": "teachers",
+  "/admin/leave": "leave",
+  "/admin/students": "students",
+  "/admin/behavior": "behavior",
+  "/admin/timetable": "timetable",
+  "/admin/attendance": "attendance",
+  "/admin/homework": "homework",
+  "/admin/exams": "exams",
+  "/admin/tests": "tests",
+  "/admin/results": "results",
+  "/admin/question-papers": "question-papers",
+  "/admin/live-class": "live-classes",
+  "/admin/announcements": "announcements",
+  "/admin/certificates": "certificates",
+  "/admin/fee": "fee",
+  "/admin/subscription": "subscription",
+  "/admin/schedule": "schedule",
+  "/admin/messages": "conversations",
+  "/admin/settings": "settings",
+  
+  "/teacher/dashboard": "dashboard",
+  "/teacher/classes": "classes",
+  "/teacher/timetable": "timetable",
+  "/teacher/exams": "exams",
+  "/teacher/tests": "tests",
+  "/teacher/results": "results",
+  "/teacher/attendance": "attendance",
+  "/teacher/live-class": "live-classes",
+  "/teacher/homework": "homework",
+  "/teacher/question-papers": "question-papers",
+  "/teacher/leave": "leave",
+  "/teacher/behavior": "behavior",
+  "/teacher/schedule": "schedule",
+  "/teacher/messages": "conversations",
+  
+  "/parent/dashboard": "dashboard",
+  "/parent/timetable": "timetable",
+  "/parent/exams": "exams",
+  "/parent/results": "results",
+  "/parent/attendance": "attendance",
+  "/parent/homework": "homework",
+  "/parent/live-classes": "live-classes",
+  "/parent/fees": "fee",
+  "/parent/leave": "leave",
+  "/parent/messages": "conversations",
+  "/parent/announcements": "announcements",
+  
+  "/student/dashboard": "dashboard",
+  "/student/profile": "dashboard",
+  "/student/timetable": "timetable",
+  "/student/exams": "exams",
+  "/student/results": "results",
+  "/student/attendance": "attendance",
+  "/student/live-class": "live-classes",
+  "/student/homework": "homework",
+  "/student/leave": "leave",
+  "/student/certificates": "certificates",
+  "/student/messages": "conversations",
+  "/student/fees": "fee",
+  "/student/announcements": "announcements",
+};
+
+const MODULE_NAMES: Record<string, string> = {
+  "academic-years": "Academic Years Setup",
+  "classes": "Classes Setup",
+  "teachers": "Teachers Directory",
+  "students": "Students Directory",
+  "subjects": "Subjects Configuration",
+  "homework": "Homework & Assignments",
+  "exams": "Exam Management",
+  "tests": "Class Tests",
+  "results": "Results & Marksheets",
+  "question-papers": "Question Papers Generator",
+  "question-bank": "Question Bank Repository",
+  "academic-analytics": "Academic Analytics",
+  "attendance": "Attendance Tracking",
+  "leave": "Leave Management",
+  "timetable": "Timetable Scheduler",
+  "behavior": "Behavior Tracking & Incident Reports",
+  "fee": "Fee & Invoicing Collection",
+  "announcements": "School Announcements & Noticeboards",
+  "conversations": "Instant Conversations & Chat",
+  "live-classes": "Live Classes Integration (Jitsi)",
+  "certificates": "Student Certificate Generator",
+  "schedule": "Event Calendar Schedules",
+};
 
 interface SchoolShellProps {
   children: ReactNode;
@@ -302,10 +402,164 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
     return false;
   });
   const [academyYears, setAcademyYears] = useState<AcademicYearRow[]>([]);
-  const [selectedAcademyYearId, setSelectedAcademicYearIdState] = useState<string>("");
+  const [selectedAcademicYearId, setSelectedAcademicYearIdState] = useState<string>("");
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const [allowedModules, setAllowedModules] = useState<Record<string, boolean> | null>(null);
+  const [subBuilderRequired, setSubBuilderRequired] = useState(false);
+  const [availablePackages, setAvailablePackages] = useState<any[]>([]);
+  const [selectedItems, setSelectedItems] = useState<string[]>(["academic"]);
+  const [savingPlan, setSavingPlan] = useState(false);
+  const [studentLimit, setStudentLimit] = useState<number>(100);
 
   const navGroups = useMemo(() => navGroupsForRole(user?.role), [user]);
+
+  const filteredNavGroups = useMemo(() => {
+    if (!allowedModules || user?.role === "super_admin") return navGroups;
+
+    return navGroups
+      .map((group) => {
+        const items = group.items.filter((item) => {
+          const moduleKey = routeToModuleMap[item.href];
+          if (moduleKey && !allowedModules[moduleKey]) {
+            return false;
+          }
+          return true;
+        });
+        return { ...group, items };
+      })
+      .filter((group) => group.items.length > 0);
+  }, [navGroups, allowedModules, user]);
+
+  useEffect(() => {
+    if (user && user.role !== "super_admin") {
+      fetch("/api/subscription/current", {
+        headers: {
+          authorization: `Bearer ${localStorage.getItem("token") ?? ""}`,
+        },
+      })
+        .then((res) => res.json())
+        .then((payload) => {
+          if (payload?.ok && payload?.data) {
+            const data = payload.data;
+            if (data.allowed_modules) {
+              setAllowedModules(data.allowed_modules);
+            }
+            if (data.available_packages) {
+              setAvailablePackages(data.available_packages);
+            }
+            if (data.package_builder_required && user.role === "admin") {
+              setSubBuilderRequired(true);
+            }
+            if (data.selected_packages) {
+              setSelectedItems(data.selected_packages);
+            }
+            if (data.students_limit && data.students_limit > 0) {
+              setStudentLimit(data.students_limit);
+            }
+          }
+        })
+        .catch(() => {});
+    }
+  }, [user]);
+
+  const handleToggleModule = (pkgId: string, moduleId: string, mandatory: boolean) => {
+    if (mandatory) return;
+    setSelectedItems((prev) => {
+      let next = [...prev];
+      if (next.includes(moduleId)) {
+        next = next.filter((x) => x !== moduleId);
+        next = next.filter((x) => x !== pkgId);
+      } else {
+        next.push(moduleId);
+        const pkg = availablePackages.find((p) => p.id === pkgId);
+        if (pkg) {
+          const allModulesChecked = pkg.modules.every((m: string) => next.includes(m));
+          if (allModulesChecked && !next.includes(pkgId)) {
+            next.push(pkgId);
+          }
+        }
+      }
+      return next;
+    });
+  };
+
+  const handleTogglePackage = (pkgId: string, mandatory: boolean) => {
+    if (mandatory) return;
+    const pkg = availablePackages.find((p) => p.id === pkgId);
+    if (!pkg) return;
+    
+    setSelectedItems((prev) => {
+      let next = [...prev];
+      const isSelected = next.includes(pkgId);
+      if (isSelected) {
+        next = next.filter((x) => x !== pkgId && !pkg.modules.includes(x));
+      } else {
+        if (!next.includes(pkgId)) next.push(pkgId);
+        pkg.modules.forEach((m: string) => {
+          if (!next.includes(m)) next.push(m);
+        });
+      }
+      return next;
+    });
+  };
+
+  const totalRateForDisplay = useMemo(() => {
+    if (!availablePackages.length) return 0;
+    let totalRate = 0;
+    availablePackages.forEach((pkg) => {
+      if (pkg.mandatory) {
+        totalRate += pkg.rate;
+        return;
+      }
+      let pkgSelectedRate = 0;
+      pkg.modules.forEach((m: string) => {
+        if (selectedItems.includes(m)) {
+          const rate = m === "fee" ? 4 : 1;
+          pkgSelectedRate += rate;
+        }
+      });
+      if (pkgSelectedRate > pkg.rate) {
+        pkgSelectedRate = pkg.rate;
+      }
+      totalRate += pkgSelectedRate;
+    });
+    return totalRate;
+  }, [availablePackages, selectedItems]);
+
+  const estimatedCost = useMemo(() => {
+    const cost = studentLimit * totalRateForDisplay;
+    return cost < 500 ? 500 : cost;
+  }, [studentLimit, totalRateForDisplay]);
+
+  const handleSavePlan = async () => {
+    setSavingPlan(true);
+    try {
+      const response = await fetch("/api/subscription/packages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${localStorage.getItem("token") ?? ""}`,
+        },
+        body: JSON.stringify({
+          selected_packages: selectedItems,
+          student_limit: studentLimit,
+        }),
+      });
+      const payload = await response.json();
+      if (payload?.ok && payload?.data) {
+        if (payload.data.allowed_modules) {
+          setAllowedModules(payload.data.allowed_modules);
+        }
+        setSubBuilderRequired(false);
+      } else {
+        alert("Failed to save plan. Please try again.");
+      }
+    } catch {
+      alert("Failed to save plan. Please check your network.");
+    } finally {
+      setSavingPlan(false);
+    }
+  };
 
   useEffect(() => {
     const savedGroups = localStorage.getItem("sidebar-expanded-groups");
@@ -317,10 +571,10 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
       }
     } else {
       const initial: Record<string, boolean> = {};
-      navGroups.forEach((g) => (initial[g.label] = true));
+      filteredNavGroups.forEach((g) => (initial[g.label] = true));
       setExpandedGroups(initial);
     }
-  }, [navGroups]);
+  }, [filteredNavGroups]);
 
   useEffect(() => {
     localStorage.setItem("sidebar-collapsed", String(isCollapsed));
@@ -456,7 +710,7 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
         </div>
 
         <nav className="flex-1 space-y-1.5 px-2 py-2.5 custom-scrollbar overflow-y-auto">
-          {navGroups.map((group) => (
+          {filteredNavGroups.map((group) => (
             <div key={group.label} className="space-y-0.5">
               {group.items.map((item) => {
                 const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
@@ -549,7 +803,7 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
             <div className="hidden sm:flex items-center gap-2 rounded-md border border-slate-100 bg-white px-2 py-1">
               <AppIcon name="Calendar" size={14} className="text-slate-400" />
               <select
-                value={selectedAcademyYearId}
+                value={selectedAcademicYearId}
                 onChange={async (event) => {
                   const nextId = event.target.value;
                   setSelectedAcademicYearIdState(nextId);
@@ -589,7 +843,7 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
             <div className="mx-0.5 hidden h-3 w-px bg-slate-200/40 sm:block" />
 
             <div className="flex items-center gap-2">
-              {user.role === "admin" && <AdminActions />}
+              {user.role === "admin" && <AdminActions allowedModules={allowedModules} />}
 
               <button className="relative flex h-8 w-8 items-center justify-center rounded-full border border-slate-100 bg-white text-slate-400 transition-all hover:border-blue-400 hover:text-blue-600 active:scale-95 shadow-sm">
                 <AppIcon name="Bell" size={19} />
@@ -622,5 +876,167 @@ export function SchoolShell({ children, title, eyebrow, description, actions }: 
   // Suppress unused-import warning for Breadcrumb until module pages opt in.
   void Breadcrumb;
 
-  return content;
+  return (
+    <>
+      {content}
+      {subBuilderRequired && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/60 backdrop-blur-md p-4">
+          <div className="bg-white rounded-[32px] border border-slate-100 max-w-3xl w-full shadow-2xl relative flex flex-col max-h-[85vh] overflow-hidden">
+            {/* Header */}
+            <div className="px-8 py-6 bg-slate-50 border-b border-slate-100/80">
+              <h3 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                <AppIcon name="Settings" size={24} className="text-blue-600" />
+                Configure School Portal Setup
+              </h3>
+              <p className="text-xs text-slate-500 font-bold mt-1">
+                Customize features and modules to activate in your school's 14-day free trial. You can change this configuration anytime.
+              </p>
+            </div>
+
+            {/* Content */}
+            <div className="px-8 py-6 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
+              
+              {/* Sticky Controls Panel */}
+              <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md pb-6 pt-2 border-b border-slate-100 -mx-8 px-8 flex flex-col md:flex-row gap-6 items-center justify-between">
+                <div className="flex-1 w-full">
+                  <label htmlFor="student-limit-input" className="block text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2">
+                    Expected Students Limit
+                  </label>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="relative flex-1 min-w-[140px] max-w-[200px]">
+                      <AppIcon name="School" size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        id="student-limit-input"
+                        type="number"
+                        min="1"
+                        value={studentLimit}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          setStudentLimit(isNaN(val) || val < 1 ? 1 : val);
+                        }}
+                        className="w-full pl-10 pr-3 py-2 text-xs font-black text-slate-800 bg-slate-50 border border-slate-200/80 rounded-2xl focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all focus:outline-none"
+                        placeholder="100"
+                      />
+                    </div>
+                    {/* Common limit presets */}
+                    <div className="flex items-center gap-1.5">
+                      {[100, 250, 500, 1000].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setStudentLimit(preset)}
+                          className={`px-3 py-2 text-[10px] font-black rounded-xl border transition-all ${
+                            studentLimit === preset
+                              ? "bg-blue-600 border-blue-600 text-white shadow-sm"
+                              : "bg-white border-slate-100 text-slate-600 hover:border-slate-200"
+                          }`}
+                        >
+                          {preset}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pricing Display */}
+                <div className="w-full md:w-auto min-w-[260px] bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-4 rounded-2xl shadow-lg shadow-blue-600/10 flex flex-col justify-between">
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-blue-200">Estimated Monthly Cost</p>
+                    <p className="text-2xl font-black tracking-tight mt-0.5 text-white">
+                      PKR {estimatedCost.toLocaleString()}
+                      <span className="text-[10px] font-bold text-blue-200/80 ml-1">/ mo</span>
+                    </p>
+                  </div>
+                  <div className="mt-2 pt-2 border-t border-white/10 flex items-center justify-center text-[9px] font-bold text-blue-100/90">
+                    <span>Per Student Cost: PKR {totalRateForDisplay}</span>
+                  </div>
+                </div>
+              </div>
+
+              {availablePackages.map((pkg) => {
+                const isPkgChecked = selectedItems.includes(pkg.id);
+                return (
+                  <div key={pkg.id} className="border border-slate-100 rounded-2xl p-5 bg-slate-50/30 hover:bg-slate-50/50 transition-all">
+                    <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          disabled={pkg.mandatory}
+                          checked={isPkgChecked || pkg.mandatory}
+                          onChange={() => handleTogglePackage(pkg.id, pkg.mandatory)}
+                          className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 accent-blue-600 cursor-pointer"
+                        />
+                        <div>
+                          <span className="text-sm font-black text-slate-800 flex items-center gap-2">
+                            {pkg.name}
+                            {pkg.mandatory && (
+                              <span className="bg-blue-100 text-blue-700 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                Required
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      </label>
+                      {pkg.mandatory && (
+                        <span className="text-[10px] font-black text-slate-400 uppercase bg-white border border-slate-100 px-2.5 py-1 rounded-lg">
+                          Included
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-8">
+                      {pkg.modules.map((m: string) => {
+                        const isModChecked = selectedItems.includes(m);
+                        return (
+                          <label
+                            key={m}
+                            className={`flex items-center gap-2.5 p-2 rounded-xl border transition-all cursor-pointer text-xs font-bold ${
+                              pkg.mandatory
+                                ? "bg-slate-50 border-slate-100 text-slate-400 cursor-default"
+                                : isModChecked
+                                  ? "bg-blue-50/40 border-blue-200 text-blue-800"
+                                  : "bg-white border-slate-100 text-slate-600 hover:border-slate-200"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              disabled={pkg.mandatory}
+                              checked={isModChecked || pkg.mandatory}
+                              onChange={() => handleToggleModule(pkg.id, m, pkg.mandatory)}
+                              className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 accent-blue-600 cursor-pointer disabled:cursor-default"
+                            />
+                            {MODULE_NAMES[m] || m}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Footer */}
+            <div className="px-8 py-5 bg-slate-50 border-t border-slate-100/80 flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="text-center md:text-left">
+                <p className="text-[10px] text-slate-400 font-black uppercase tracking-wider">Plan Duration</p>
+                <div className="flex items-baseline gap-1.5 justify-center md:justify-start mt-0.5">
+                  <span className="text-lg font-black text-blue-600">14-Day Free Trial</span>
+                </div>
+                <p className="text-[9px] text-slate-400 font-medium mt-0.5">Activate selected modules instantly with no credit card required.</p>
+              </div>
+              <button
+                type="button"
+                disabled={savingPlan}
+                onClick={handleSavePlan}
+                className="w-full md:w-auto px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs rounded-2xl shadow-lg shadow-blue-600/15 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {savingPlan ? "Activating Portal..." : "Launch School Portal"}
+                {!savingPlan && <AppIcon name="ArrowRight" size={16} />}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
 }

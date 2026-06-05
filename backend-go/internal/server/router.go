@@ -130,6 +130,9 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.Authenticator(cfg, s))
+			if pg != nil {
+				r.Use(middleware.SubscriptionGate(pg.Pool()))
+			}
 
 			ayH := academicyear.New(s, saveFn)
 			r.Get("/academic-years", ayH.List)
@@ -404,6 +407,7 @@ func Router(cfg config.Config, s *store.MemStore, pg *persistence.Persister, rdb
 			r.Get("/subscription/plans", subH.GetPlans)
 			r.Post("/subscription/upgrade", subH.Upgrade)
 			r.Post("/subscription/start-trial", subH.StartTrial)
+			r.Post("/subscription/packages", subH.UpdatePackages)
 			r.Get("/subscription/history", subH.GetHistory)
 
 			// Payment (School Admin)

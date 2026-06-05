@@ -25,6 +25,10 @@ function sharedDataPlugin(): Plugin {
     },
     closeBundle() {
       const outputDir = path.resolve(__dirname, "dist/data");
+      // In Docker, the shared ../data directory may not exist — skip gracefully.
+      if (!fs.existsSync(sharedDataDir)) {
+        return;
+      }
       fs.rmSync(outputDir, { recursive: true, force: true });
       fs.cpSync(sharedDataDir, outputDir, { recursive: true });
     },
@@ -78,9 +82,11 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks(id) {
             if (!id.includes("node_modules")) return undefined;
-            if (id.includes("/react-dom/")) return "vendor-react-dom";
-            if (id.includes("/react/") || id.includes("/react-router") || id.includes("/scheduler/")) {
+            if (id.includes("/react-dom/") || id.includes("/react/") || id.includes("/scheduler/")) {
               return "vendor-react";
+            }
+            if (id.includes("/react-router")) {
+              return "vendor-react-router";
             }
             if (id.includes("/lucide-react/") || id.includes("/lucide/")) return "vendor-icons";
             if (id.includes("/@tanstack/")) return "vendor-query";

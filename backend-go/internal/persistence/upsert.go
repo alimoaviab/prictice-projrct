@@ -986,18 +986,26 @@ func upsertStoreSubscription(ctx context.Context, tx pgx.Tx, v *store.Subscripti
 		planName = "growth"
 	}
 	status := defaultStr(v.Status, "active")
-	studentLimit := 500
-	price := 0
-	switch planName {
-	case "starter":
-		studentLimit = 200
-		price = 4000
-	case "growth":
+	studentLimit := v.StudentLimit
+	price := v.Price
+	if studentLimit <= 0 {
 		studentLimit = 500
-		price = 9000
-	case "custom", "enterprise":
-		studentLimit = 800
-		price = 0
+		switch planName {
+		case "starter":
+			studentLimit = 200
+		case "growth":
+			studentLimit = 500
+		case "custom", "enterprise":
+			studentLimit = 800
+		}
+	}
+	if price <= 0 {
+		switch planName {
+		case "starter":
+			price = 4000
+		case "growth":
+			price = 9000
+		}
 	}
 	isTrial := strings.EqualFold(v.PackageID, "trial") || strings.EqualFold(status, "trial")
 	trialStart := (*time.Time)(nil)
