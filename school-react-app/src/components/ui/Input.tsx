@@ -18,6 +18,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string;
   helperText?: string;
   leftIcon?: ReactNode;
+  rightIcon?: ReactNode;
 }
 
 export function Input({
@@ -25,6 +26,7 @@ export function Input({
   error,
   helperText,
   leftIcon,
+  rightIcon,
   id,
   className = "",
   ...props
@@ -60,12 +62,17 @@ export function Input({
           {...props}
           aria-describedby={describedBy}
           aria-invalid={!!error}
-          className={`w-full h-11 ${leftIcon ? "pl-10" : "px-3.5"} text-[13px] font-medium text-slate-700 bg-white border rounded-xl outline-none transition-all placeholder:text-slate-400 ${
+          className={`w-full h-11 ${leftIcon ? "pl-10" : "px-3.5"} ${rightIcon ? "pr-10" : ""} text-[13px] font-medium text-slate-700 bg-white border rounded-xl outline-none transition-all placeholder:text-slate-400 ${
             error
               ? "border-rose-400 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10"
               : "border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5"
           } ${className}`}
         />
+        {rightIcon && (
+          <div className="absolute right-3.5 flex items-center justify-center">
+            {rightIcon}
+          </div>
+        )}
       </div>
       {helperText && !error && (
         <span id={helperId} className="text-[10px] font-medium text-slate-400 mt-0.5 px-1">

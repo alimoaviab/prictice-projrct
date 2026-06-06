@@ -199,10 +199,11 @@ func (h *Handler) hydrate(rows []*store.Result) []map[string]any {
 			studentName = stu.FirstName + " " + stu.LastName
 			admission = stu.AdmissionNo
 		}
-		examTitle, examSubject := "Unknown Exam", "N/A"
+		examTitle, examSubject, examTerm := "Unknown Exam", "N/A", ""
 		if exm != nil {
 			examTitle = exm.Title
 			examSubject = exm.Subject
+			examTerm = exm.Term
 		}
 		className := "N/A"
 		if cls != nil {
@@ -228,6 +229,7 @@ func (h *Handler) hydrate(rows []*store.Result) []map[string]any {
 			"admission_no":     admission,
 			"exam_title":       examTitle,
 			"exam_subject":     examSubject,
+			"exam_term":        examTerm,
 			"max_marks":        max,
 			"class_name":       className,
 			"grade":            calculateGrade(r.ObtainedMarks, float64(max)),

@@ -127,6 +127,11 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/certificates/view/:id", element: lazyPage(() => import("@/pages/role/admin/certificates/view/Param_id"), "AdminCertificateViewPage") },
   { path: "/admin/certificates/generate/:id", element: lazyPage(() => import("@/pages/role/admin/certificates/generate/Param_id"), "AdminCertificateGeneratePage") },
 
+  // Template Designer Hub
+  { path: "/admin/templates", element: lazyPage(() => import("@/pages/role/admin/templates"), "AdminTemplatesPage") },
+  { path: "/admin/templates/create", element: lazyPage(() => import("@/pages/role/admin/templates/create"), "AdminTemplateCreatePage") },
+  { path: "/admin/templates/edit/:id", element: lazyPage(() => import("@/pages/role/admin/templates/edit/Param_id"), "AdminTemplateEditPage") },
+
   // Question Papers
   { path: "/admin/question-papers", element: lazyPage(() => import("@/pages/role/admin/question-papers"), "AdminQuestionPapersPage") },
   { path: "/admin/question-papers/create", element: lazyPage(() => import("@/pages/role/admin/question-papers/create"), "AdminQuestionPaperCreatePage") },

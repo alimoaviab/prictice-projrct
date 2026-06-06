@@ -13,6 +13,7 @@ import * as service from "../services/certificate.service";
 import { CERTIFICATE_TYPE_LABELS, type CertificateTemplate } from "../types/certificate.types";
 import { showToast } from "@/utils/toast";
 import { useSchoolBranding } from "@/hooks/useSchoolBranding";
+import { getThemeLayoutHTML } from "../utils/themeHelper";
 
 interface StudentRow {
   _id: string;
@@ -162,7 +163,7 @@ export function CertificateGeneratePage() {
                   <h2 className="text-lg font-bold text-slate-900">{template.name}</h2>
                   <div className="flex items-center gap-2 mt-1">
                     <Badge variant="secondary" className="text-[9px]">
-                      {CERTIFICATE_TYPE_LABELS[template.type]}
+                      {CERTIFICATE_TYPE_LABELS[template.type as keyof typeof CERTIFICATE_TYPE_LABELS] || template.type}
                     </Badge>
                     <Badge variant="secondary" className="text-[9px]">
                       {template.orientation}
@@ -267,10 +268,41 @@ export function CertificateGeneratePage() {
                 const selectedList = students.filter(s => selectedStudents.has(s._id));
                 const schoolName = brandedSchoolName || "School";
                 const logoUrl = brandedLogoUrl;
+                
+                // Parse custom styles
+                let styles = {
+                  primaryColor: "#d4a853",
+                  titleColor: "#1e40af",
+                  bodyColor: "#334155",
+                  headingFont: "Cinzel",
+                  recipientFont: "Great Vibes",
+                  bodyFont: "EB Garamond",
+                  themeLayout: "classic",
+                };
+                if (template.border_style) {
+                  try {
+                    const parsed = JSON.parse(template.border_style);
+                    if (parsed && typeof parsed === "object") {
+                      styles = {
+                        primaryColor: parsed.primaryColor || styles.primaryColor,
+                        titleColor: parsed.titleColor || styles.titleColor,
+                        bodyColor: parsed.bodyColor || styles.bodyColor,
+                        headingFont: parsed.headingFont || styles.headingFont,
+                        recipientFont: parsed.recipientFont || styles.recipientFont,
+                        bodyFont: parsed.bodyFont || styles.bodyFont,
+                        themeLayout: parsed.themeLayout || styles.themeLayout,
+                      };
+                    }
+                  } catch (e) {}
+                }
+
+                const certType = CERTIFICATE_TYPE_LABELS[template.type as keyof typeof CERTIFICATE_TYPE_LABELS] || template.type.replace("_", " ");
                 const logoHtml = logoUrl
                   ? `<img src="${logoUrl}" alt="Logo" style="height: 50px; max-width: 120px; object-fit: contain; margin-bottom: 12px; display: block; margin-left: auto; margin-right: auto;" />`
-                  : "";
-                const certType = template.type.replace("_", " ");
+                  : `<div style="height: 48px; width: 48px; border-radius: 50%; background-color: ${styles.titleColor}; color: #fff; font-family: sans-serif; font-size: 20px; font-weight: bold; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; box-shadow: 0 3px 6px rgba(0,0,0,0.1);">${schoolName.charAt(0).toUpperCase()}</div>`;
+
+                const getPrintLayoutHTML = (layout: string, colors: typeof styles) => getThemeLayoutHTML(layout, colors);
+
                 const printWin = window.open("", "_blank");
                 if (!printWin) return;
                 const certsHtml = selectedList.map((stu, idx) => {
@@ -280,8 +312,10 @@ export function CertificateGeneratePage() {
                   let body = template.body_text || "This is to certify that {{student_name}} of Class {{class}} has been a student of {{school_name}}.";
                   
                   const dateStr = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+                  const studentSpan = `<span style="font-family: '${styles.recipientFont}', cursive; font-size: 1.5em; color: ${styles.titleColor}; display: inline-block; font-weight: normal; line-height: 1; vertical-align: middle;">${stu.first_name} ${stu.last_name}</span>`;
+                  
                   const meta: Record<string, string> = {
-                    student_name: `${stu.first_name} ${stu.last_name}`,
+                    student_name: studentSpan,
                     class: className,
                     class_name: className,
                     school_name: schoolName,
@@ -299,6 +333,7 @@ export function CertificateGeneratePage() {
 
                   return `
                     <div class="cert ${idx > 0 ? 'page-break' : ''}">
+                      ${getPrintLayoutHTML(styles.themeLayout, styles)}
                       ${logoHtml}
                       <p class="school">${schoolName}</p>
                       <div class="divider"></div>
@@ -312,7 +347,7 @@ export function CertificateGeneratePage() {
                     </div>
                   `;
                 }).join("");
-                printWin.document.write(`<!DOCTYPE html><html><head><title>Certificates</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Georgia,serif}.cert{width:100%;padding:60px;text-align:center;position:relative;border:3px solid #d4a853;margin:20px auto;max-width:800px}.cert::before{content:'';position:absolute;inset:8px;border:1px solid #d4a85380;border-radius:4px}.school{font-size:26px;font-weight:bold}.title{font-size:20px;color:#1e40af;text-transform:uppercase;letter-spacing:3px;margin:20px 0;font-weight:bold}.divider{width:80px;height:2px;background:#d4a853;margin:10px auto}.body{font-size:14px;line-height:1.8;margin:30px auto;max-width:500px;color:#333}.footer{display:flex;justify-content:space-between;margin-top:40px;padding-top:20px;border-top:1px solid #eee}.sig{text-align:center}.sig-line{width:120px;height:1px;background:#666;margin-bottom:4px}.sig-label{font-size:10px;color:#666;text-transform:uppercase}.page-break{page-break-before:always}@media print{body{padding:0}.cert{border:3px solid #d4a853;margin:0;page-break-inside:avoid}}</style></head><body>${certsHtml}</body></html>`);
+                printWin.document.write(`<!DOCTYPE html><html><head><title>Certificates</title><style>@import url('https://fonts.googleapis.com/css2?family=Alex+Brush&family=Allura&family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,700;1,400&family=EB+Garamond:ital,wght@0,400;0,700;1,400&family=Great+Vibes&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@400;700&family=Parisienne&family=Pinyon+Script&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Tangerine:wght@400;700&display=swap');*{margin:0;padding:0;box-sizing:border-box}body{font-family:Georgia,serif;padding:40px;display:flex;align-items:center;justify-content:center;min-height:100vh;background-color:#f8fafc}.cert{width:100%;padding:60px;text-align:center;position:relative;margin:20px auto;max-width:800px;background:#fff;box-shadow:0 10px 25px rgba(0,0,0,0.05);border-radius:12px;aspect-ratio:1.414/1}.school{font-size:26px;font-weight:bold;color:${styles.titleColor};font-family:'${styles.headingFont}', serif}.title{font-size:20px;color:${styles.titleColor};font-family:'${styles.headingFont}', serif;text-transform:uppercase;letter-spacing:3px;margin:20px 0;font-weight:bold}.divider{width:80px;height:2px;background:${styles.primaryColor};margin:10px auto}.body{font-size:14px;line-height:1.8;margin:30px auto;max-width:500px;color:${styles.bodyColor};font-family:'${styles.bodyFont}', serif}.footer{display:flex;justify-content:space-between;margin-top:40px;padding-top:10px;border-top:none}.sig{text-align:center}.sig-line{width:100px;height:1px;background:${styles.primaryColor};margin-bottom:4px}.sig-label{font-size:10px;color:#94a3b8;text-transform:uppercase;font-family:sans-serif;letter-spacing:1px;font-weight:bold}.page-break{page-break-before:always}@media print{body{padding:0;background-color:#fff}.cert{margin:0;box-shadow:none;border-radius:0;page-break-inside:avoid}}</style></head><body>${certsHtml}</body></html>`);
                 printWin.document.close();
                 setTimeout(() => printWin.print(), 300);
               }}

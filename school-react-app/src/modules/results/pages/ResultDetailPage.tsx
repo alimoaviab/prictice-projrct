@@ -101,7 +101,7 @@ export function ResultDetailPage() {
       eyebrow="Academic Record"
       icon="grading"
       title="Assessment Details"
-      subtitle={`${row.student_name} — ${row.exam_title}`}
+      subtitle={row.exam_term ? `${row.student_name} — ${row.exam_title} (${row.exam_term})` : `${row.student_name} — ${row.exam_title}`}
       asideTitle="Performance Analytics"
       aside={
         <>

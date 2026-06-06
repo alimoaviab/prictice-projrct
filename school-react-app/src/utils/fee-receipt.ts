@@ -1493,3 +1493,151 @@ function renderBulkEntryPage(
     </div>
   `;
 }
+
+export interface LedgerReportEntry {
+  student: {
+    id: string;
+    name: string;
+    admission_no: string;
+    class_name: string;
+  };
+  carry_forward: number;
+  current_fee: { amount: number; discount_amount?: number } | null;
+  total_payable: number;
+  paid_total: number;
+  remaining: number;
+  status: string;
+}
+
+export function exportFeeLedgerReport(
+  entries: LedgerReportEntry[],
+  opts: FeeReceiptOptions & { period: string }
+): void {
+  const currency = opts.currency || "Rs.";
+  const period = opts.period || fmtToday();
+  const title = `Fee Ledger Report — ${period}`;
+
+  // Totals calculations
+  let totalCF = 0;
+  let totalMonthly = 0;
+  let totalPayable = 0;
+  let totalPaid = 0;
+  let totalRemaining = 0;
+
+  const rowsHtml = entries
+    .map((e, index) => {
+      const cf = e.carry_forward || 0;
+      const monthly = e.current_fee?.amount || 0;
+      const payable = e.total_payable || 0;
+      const paid = e.paid_total || 0;
+      const remaining = e.remaining || 0;
+
+      totalCF += cf;
+      totalMonthly += monthly;
+      totalPayable += payable;
+      totalPaid += paid;
+      totalRemaining += remaining;
+
+      const tone = statusTone(e.status);
+
+      return `
+        <tr>
+          <td>${index + 1}</td>
+          <td style="font-family: monospace;">${htmlEscape(e.student.admission_no)}</td>
+          <td><strong>${htmlEscape(e.student.name)}</strong></td>
+          <td>${htmlEscape(e.student.class_name)}</td>
+          <td class="amount">${fmtMoney(cf, currency)}</td>
+          <td class="amount">${fmtMoney(monthly, currency)}</td>
+          <td class="amount" style="color:#1e293b;">${fmtMoney(payable, currency)}</td>
+          <td class="amount" style="color:#16a34a;">${fmtMoney(paid, currency)}</td>
+          <td class="amount" style="color:#dc2626; font-weight:bold;">${fmtMoney(remaining, currency)}</td>
+          <td>
+            <span class="pill" style="background:${tone.bg};color:${tone.fg}; font-size:8px;">
+              ${htmlEscape(e.status)}
+            </span>
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  const summaryHtml = `
+    <div class="totals" style="margin-top: 16px; margin-bottom: 24px;">
+      <div class="stat">
+        <div class="lbl">Total Invoiced</div>
+        <div class="val" style="color:#1e293b;">${fmtMoney(totalPayable, currency)}</div>
+      </div>
+      <div class="stat">
+        <div class="lbl">Total Collected</div>
+        <div class="val" style="color:#16a34a;">${fmtMoney(totalPaid, currency)}</div>
+      </div>
+      <div class="stat">
+        <div class="lbl">Total Outstanding</div>
+        <div class="val" style="color:#dc2626;">${fmtMoney(totalRemaining, currency)}</div>
+      </div>
+    </div>
+  `;
+
+  const html = `<!DOCTYPE html><html lang="en"><head>
+    <meta charset="utf-8" />
+    <title>${htmlEscape(title)}</title>
+    ${baseStyles}
+    <style>
+      @page {
+        size: A4 landscape;
+        margin: 10mm;
+      }
+      .sheet {
+        max-width: 100%;
+        padding: 0;
+      }
+      th, td {
+        padding: 8px 10px;
+        font-size: 11px;
+      }
+      thead th {
+        background: #f8fafc;
+        border-bottom: 2px solid #cbd5e1;
+      }
+    </style>
+  </head><body>
+    <div class="sheet">
+      ${renderHeader(opts, "Ledger Report", `<div class="receipt-meta"><strong>Period:</strong> ${htmlEscape(period)}</div>`)}
+      
+      ${summaryHtml}
+
+      <table style="width: 100%;">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Roll No</th>
+            <th>Student Name</th>
+            <th>Class</th>
+            <th class="amount">Carry Fwd</th>
+            <th class="amount">Monthly Fee</th>
+            <th class="amount">Total Payable</th>
+            <th class="amount">Paid</th>
+            <th class="amount">Outstanding</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+          <tr style="background: #f1f5f9; font-weight: bold; border-top: 2px solid #cbd5e1;">
+            <td colspan="4" style="text-align: right; text-transform: uppercase; letter-spacing: 1px; font-size: 10px;">Grand Totals:</td>
+            <td class="amount">${fmtMoney(totalCF, currency)}</td>
+            <td class="amount">${fmtMoney(totalMonthly, currency)}</td>
+            <td class="amount">${fmtMoney(totalPayable, currency)}</td>
+            <td class="amount" style="color:#16a34a;">${fmtMoney(totalPaid, currency)}</td>
+            <td class="amount" style="color:#dc2626;">${fmtMoney(totalRemaining, currency)}</td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+
+      ${renderFooter(opts)}
+    </div>
+  </body></html>`;
+
+  printHtmlDocument(html, title);
+}

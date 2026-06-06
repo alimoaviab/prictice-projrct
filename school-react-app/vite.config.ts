@@ -30,6 +30,10 @@ function sharedDataPlugin(): Plugin {
     },
     closeBundle() {
       const outputDir = path.resolve(__dirname, "dist/data");
+      // In Docker, the shared ../data directory may not exist — skip gracefully.
+      if (!fs.existsSync(sharedDataDir)) {
+        return;
+      }
       fs.rmSync(outputDir, { recursive: true, force: true });
       fs.cpSync(sharedDataDir, outputDir, { recursive: true });
     },

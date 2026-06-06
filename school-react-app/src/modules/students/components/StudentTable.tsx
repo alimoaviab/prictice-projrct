@@ -12,7 +12,14 @@ export function StudentTable({ students }: { students: StudentRow[] }) {
             key: "name",
             label: "Name",
             render: (row: StudentRow) => (
-                <div className="font-semibold text-gray-900">{row.first_name} {row.last_name}</div>
+                <div className="flex flex-col">
+                    <span className="font-semibold text-gray-900">{row.first_name} {row.last_name}</span>
+                    {row.guardian?.email && (
+                        <span className="text-[10px] text-slate-400 font-semibold lowercase mt-0.5">
+                            {row.guardian.email}
+                        </span>
+                    )}
+                </div>
             )
         },
         {
@@ -32,6 +39,11 @@ export function StudentTable({ students }: { students: StudentRow[] }) {
                 <div className="flex flex-col">
                     <span className="text-sm font-medium text-gray-700">{row.guardian.name}</span>
                     <span className="text-xs text-gray-400">{row.guardian.phone}</span>
+                    {row.guardian?.email && (
+                        <span className="text-[10px] text-slate-400 font-semibold lowercase mt-0.5">
+                            {row.guardian.email}
+                        </span>
+                    )}
                 </div>
             )
         },

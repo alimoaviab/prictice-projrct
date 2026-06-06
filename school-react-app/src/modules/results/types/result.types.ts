@@ -23,6 +23,7 @@ export interface ResultRow {
   _id: string;
   exam_id: string;
   exam_title: string;
+  exam_term?: string;
   // Joined display string ("Math, English, Physics, Chemistry") for
   // legacy widgets. New code should iterate `subjects[]` instead.
   exam_subject: string;

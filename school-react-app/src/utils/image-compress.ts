@@ -119,7 +119,6 @@ export async function compressImageToBudget(
     options: CompressOptions = {}
 ): Promise<CompressResult> {
     const targetBytes = options.targetBytes ?? DEFAULT_TARGET_BYTES;
-    const maxDimension = options.maxDimension ?? DIMENSION_LADDER[0];
 
     // SVG fast-path. SVGs are text and already compact; rasterizing
     // them would lose vector fidelity.
@@ -139,14 +138,22 @@ export async function compressImageToBudget(
 
     const mime = supportsWebp() ? "image/webp" : "image/jpeg";
 
-    // Build a dimension ladder bounded by the user-supplied ceiling.
-    const ladder = DIMENSION_LADDER.filter((d) => d <= maxDimension);
-    if (ladder.length === 0) ladder.push(maxDimension);
+    // Start with max long edge of 1200px (or options ceiling)
+    const initialMaxDimension = Math.min(1200, options.maxDimension ?? 1200);
 
+    let dimensionScale = 1.0;
     let best: CompressResult | null = null;
 
-    for (const longEdge of ladder) {
-        for (const quality of QUALITY_LADDER) {
+    // Progressive reduction logic:
+    // If the image is larger than 100 KB:
+    // 1. Reduce quality progressively (start at 85%, decrease by 5% increments down to 60%)
+    // 2. If quality decreases alone don't reach target size, reduce dimensions by 10% increments
+    while (dimensionScale > 0.05) {
+        const longEdge = Math.round(initialMaxDimension * dimensionScale);
+
+        // Quality ranges between 85% and 60% with 5% steps
+        for (let q = 85; q >= 60; q -= 5) {
+            const quality = q / 100;
             const { dataUrl, width, height } = encodeAt(
                 img,
                 longEdge,
@@ -154,11 +161,12 @@ export async function compressImageToBudget(
                 mime
             );
             const size = dataUrlBytes(dataUrl);
+            
             if (size <= targetBytes) {
                 return { dataUrl, sizeBytes: size, width, height, mime };
             }
-            // Track the smallest output we've seen so we have something
-            // to return even if every combo blew the budget.
+
+            // Keep track of the smallest encoded version
             if (!best || size < best.sizeBytes) {
                 best = {
                     dataUrl,
@@ -169,12 +177,11 @@ export async function compressImageToBudget(
                 };
             }
         }
+
+        // Scale down dimensions by 10%
+        dimensionScale -= 0.10;
     }
 
-    // Hit the floor of the ladder without satisfying the budget. Return
-    // the smallest output we produced so the caller still has something
-    // usable. Realistically this only triggers for genuinely huge
-    // input or pathological aspect ratios.
     if (!best) throw new Error("Compression produced no output");
     return best;
 }

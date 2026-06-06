@@ -2,12 +2,16 @@ import { AppIcon } from "shared/ui/AppIcon";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SchoolShell } from "@/layouts/SchoolShell";
-import { Badge, Skeleton, DataState, StatCardGrid } from "@/components/ui";
+import { Badge, Skeleton, DataState, StatCardGrid, Pagination } from "@/components/ui";
 import { serviceRequest } from "@/services/service-client";
 import { showToast } from "@/utils/toast";
 import { useClasses } from "@/modules/classes/hooks/useClasses";
 import { useSettings } from "@/modules/settings/hooks/useSettings";
-import { exportFeeBulkReport, type FeeBulkEntry } from "@/utils/fee-receipt";
+import { exportFeeBulkReport, exportFeeLedgerReport, type FeeBulkEntry } from "@/utils/fee-receipt";
+import { useCertificateTemplates } from "@/modules/certificates/hooks/useCertificates";
+import { BulkGeneratorModal } from "@/modules/certificates/components/BulkGeneratorModal";
+import type { CertificateTemplate } from "@/modules/certificates/types/certificate.types";
+import { AllPaymentsHistoryModal } from "@/components/fee/AllPaymentsHistoryModal";
 
 interface Student {
     id: string;
@@ -59,6 +63,12 @@ interface DashboardData {
 export function StudentFeeDashboard() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
+    const { state: templatesState } = useCertificateTemplates();
+    const [selectedTemplate, setSelectedTemplate] = useState<CertificateTemplate | null>(null);
+
+    const feeTemplates = (templatesState.data || []).filter(
+        (t) => (t.type as string) === "fee_challan"
+    );
     const [saving, setSaving] = useState(false);
     const [data, setData] = useState<DashboardData | null>(null);
     const [isPaying, setIsPaying] = useState<LedgerEntry | null>(null);
@@ -89,6 +99,9 @@ export function StudentFeeDashboard() {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
     const [exporting, setExporting] = useState(false);
     const [showExportDrawer, setShowExportDrawer] = useState(false);
+    const [showPaymentsHistory, setShowPaymentsHistory] = useState(false);
+    const [printingLedger, setPrintingLedger] = useState(false);
+    const [bulkPrintScope, setBulkPrintScope] = useState<"selected" | "all">("selected");
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
     // Plain-language export config. We never expose paper size,
     // orientation, compact density, or per-row notes — the engine
@@ -178,16 +191,112 @@ export function StudentFeeDashboard() {
             }));
     }
 
+    const handlePrintLedger = async () => {
+        setPrintingLedger(true);
+        try {
+            const query = new URLSearchParams({
+                ...filters,
+                page: '1',
+                limit: '100000'
+            } as any).toString();
+            const res = await serviceRequest<DashboardData>(`/api/fees/ledger?${query}`);
+            if (res.success && res.data) {
+                const periodLabel = `${filters.month.charAt(0).toUpperCase()}${filters.month.slice(1)} ${filters.year}`;
+                const printEntries = res.data.students.map((e) => ({
+                    student: {
+                        id: e.student.id,
+                        name: e.student.name,
+                        admission_no: e.student.admission_no,
+                        class_name: e.student.class_name,
+                    },
+                    carry_forward: e.carry_forward,
+                    current_fee: e.current_fee ? {
+                        amount: e.current_fee.amount,
+                        discount_amount: e.current_fee.discount_amount,
+                    } : null,
+                    total_payable: e.total_payable,
+                    paid_total: e.paid_total,
+                    remaining: e.remaining,
+                    status: e.status,
+                }));
+                
+                exportFeeLedgerReport(printEntries, {
+                    schoolName: settings?.academy_name || "School",
+                    logoUrl: settings?.logo_url || "/logo.jpeg",
+                    schoolAddress: [settings?.academy_address, settings?.academy_phone, settings?.academy_email]
+                        .filter(Boolean)
+                        .join(" · ") || undefined,
+                    principal: settings?.principal_name,
+                    period: periodLabel,
+                    currency: "Rs.",
+                });
+            } else {
+                showToast(res.message || "Failed to load ledger records", "error");
+            }
+        } catch (err) {
+            showToast("Error printing ledger", "error");
+        } finally {
+            setPrintingLedger(false);
+        }
+    };
+
     async function handleGenerateReport() {
-        const baseEntries = buildBulkEntries();
+        let baseEntries: FeeBulkEntry[] = [];
+        
+        if (bulkPrintScope === "all") {
+            setExporting(true);
+            try {
+                const query = new URLSearchParams({
+                    ...filters,
+                    page: '1',
+                    limit: '100000'
+                } as any).toString();
+                const res = await serviceRequest<DashboardData>(`/api/fees/ledger?${query}`);
+                if (res.success && res.data) {
+                    const periodLabel = `${filters.month.charAt(0).toUpperCase()}${filters.month.slice(1)} ${filters.year}`;
+                    baseEntries = res.data.students.map((e) => ({
+                        student: {
+                            id: e.student.id,
+                            name: e.student.name,
+                            admission_no: e.student.admission_no,
+                            class_name: e.student.class_name,
+                        },
+                        period: periodLabel,
+                        monthly_fee: e.current_fee?.amount ?? 0,
+                        carry_forward: e.carry_forward,
+                        total_payable: e.total_payable,
+                        paid_total: e.paid_total,
+                        remaining: e.remaining,
+                        status: e.status,
+                        components: Array.isArray(e.current_fee?.components)
+                            ? e.current_fee!.components.map((c: any) => ({
+                                fee_type: c.fee_type_name || c.name || c.fee_type || "Fee",
+                                amount: Number(c.amount) || 0,
+                                is_optional: !!c.is_optional,
+                                note: c.note,
+                            }))
+                            : undefined,
+                    }));
+                } else {
+                    showToast(res.message || "Failed to load matching students for bulk print", "error");
+                    setExporting(false);
+                    return;
+                }
+            } catch (err) {
+                showToast("Error loading students for bulk print", "error");
+                setExporting(false);
+                return;
+            }
+        } else {
+            baseEntries = buildBulkEntries();
+        }
+
         if (baseEntries.length === 0) {
-            showToast("Select at least one student to generate a report.", "error");
+            showToast("No students to generate vouchers for.", "error");
+            setExporting(false);
             return;
         }
 
-        // Duplicate each entry copiesPerStudent times. The PDF engine
-        // doesn't know the concept of copies — at this layer we just
-        // hand it a longer list.
         const entries: FeeBulkEntry[] = [];
         for (const e of baseEntries) {
             for (let i = 0; i < exportConfig.copiesPerStudent; i++) {
@@ -206,14 +315,10 @@ export function StudentFeeDashboard() {
                 principal: settings?.principal_name,
                 period: `${filters.month.charAt(0).toUpperCase()}${filters.month.slice(1)} ${filters.year}`,
                 currency: "Rs.",
-                // The engine auto-picks orientation and density from
-                // the count, so admins never see paper / orientation /
-                // compact / notes knobs.
                 studentsPerPage: exportConfig.copiesPerPage,
             });
             setShowExportDrawer(false);
         } finally {
-            // Allow the print iframe to spawn before clearing the loading state.
             setTimeout(() => setExporting(false), 600);
         }
     }
@@ -330,6 +435,64 @@ export function StudentFeeDashboard() {
                   ]}
                 />
 
+                {/* Canva Designed Challan Layouts */}
+                {templatesState.status !== "loading" && templatesState.status !== "idle" && feeTemplates.length > 0 && (
+                    <div className="space-y-4 no-print mb-6">
+                        <div className="flex items-center gap-2">
+                            <div className="h-6 w-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center">
+                                <AppIcon name="Palette" size={14} />
+                            </div>
+                            <h2 className="text-xs font-black text-slate-800 uppercase tracking-widest">
+                                Canva Designed Challan Layouts
+                            </h2>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                            {feeTemplates.map((template) => (
+                                <div 
+                                    key={template._id} 
+                                    className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group relative overflow-hidden"
+                                >
+                                    <div className="absolute right-0 top-0 w-24 h-24 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-full blur-xl pointer-events-none" />
+                                    <div>
+                                        <div className="flex items-start justify-between mb-2">
+                                            <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 text-[9px] font-black uppercase tracking-widest">
+                                                Canva Template
+                                            </span>
+                                            <span className="text-[9px] font-bold text-slate-400 capitalize">
+                                                {template.orientation}
+                                            </span>
+                                        </div>
+                                        <h3 className="font-bold text-slate-900 text-xs mb-1 group-hover:text-indigo-600 transition-colors">
+                                            {template.name}
+                                        </h3>
+                                        <p className="text-[10px] text-slate-400 font-medium">
+                                            Designed on {new Date(template.updated_at).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                    
+                                    <div className="mt-4 pt-3 border-t border-slate-100 flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => navigate(`/admin/templates/edit/${template._id}`)}
+                                            className="flex-1 h-8 rounded-lg border border-slate-200 text-[9px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-colors"
+                                        >
+                                            Edit Layout
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelectedTemplate(template)}
+                                            className="flex-1 h-8 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-[9px] font-black uppercase tracking-widest text-white shadow-sm transition-colors"
+                                        >
+                                            Generate Bills
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {/* FILTERS & SEARCH */}
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-slate-50/50 p-2 rounded-2xl border border-slate-100 no-print">
                     <div className="flex items-center gap-2 flex-1 w-full">
@@ -380,16 +543,40 @@ export function StudentFeeDashboard() {
                             </button>
                         </div>
                         <button
-                            onClick={() => setShowExportDrawer(true)}
+                            onClick={() => {
+                                setBulkPrintScope("selected");
+                                setShowExportDrawer(true);
+                            }}
                             className="h-10 px-4 rounded-xl border border-blue-200 bg-blue-50 text-[10px] font-black uppercase tracking-widest text-blue-700 hover:bg-blue-100 transition-all flex items-center gap-2 no-print shadow-sm"
                         >
                             <AppIcon name="FileText" size={16} />
-                            Generate PDF
+                            Bulk Vouchers
                             {selectedIds.size > 0 ? (
                                 <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-blue-600 text-white text-[9px]">
                                     {selectedIds.size}
                                 </span>
                             ) : null}
+                        </button>
+                        <button
+                            onClick={handlePrintLedger}
+                            disabled={printingLedger}
+                            className="h-10 px-4 rounded-xl border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 transition-all flex items-center gap-2 no-print shadow-sm disabled:opacity-50"
+                        >
+                            {printingLedger ? (
+                                <div className="h-4 w-4 border-2 border-slate-400 border-t-slate-800 rounded-full animate-spin" />
+                            ) : (
+                                <>
+                                    <AppIcon name="Print" size={16} />
+                                    Print Ledger
+                                </>
+                            )}
+                        </button>
+                        <button
+                            onClick={() => setShowPaymentsHistory(true)}
+                            className="h-10 px-4 rounded-xl border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 transition-all flex items-center gap-2 no-print shadow-sm"
+                        >
+                            <AppIcon name="History" size={16} />
+                            Payment History
                         </button>
                         <div className="h-10 w-px bg-slate-200 mx-1 no-print" />
                         <select 
@@ -599,25 +786,17 @@ export function StudentFeeDashboard() {
                 )}
 
                 {/* PAGINATION */}
-                {data && data.pagination.pages > 1 && (
-                    <div className="flex items-center justify-center gap-2 mt-8 no-print">
-                        <button 
-                            disabled={filters.page === 1}
-                            onClick={() => setFilters({...filters, page: filters.page - 1})}
-                            className="h-8 w-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-blue-600 disabled:opacity-50 transition-all"
-                        >
-                            <AppIcon name="ChevronLeft" size={18} />
-                        </button>
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                            Page {filters.page} of {data.pagination.pages}
-                        </span>
-                        <button 
-                            disabled={filters.page === data.pagination.pages}
-                            onClick={() => setFilters({...filters, page: filters.page + 1})}
-                            className="h-8 w-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-blue-600 disabled:opacity-50 transition-all"
-                        >
-                            <AppIcon name="ChevronRight" size={18} />
-                        </button>
+                {data && (
+                    <div className="mt-8 no-print border-t border-slate-100">
+                        <Pagination
+                            page={filters.page}
+                            pages={data.pagination.pages}
+                            total={data.pagination.total}
+                            limit={filters.limit}
+                            onPageChange={(p) => setFilters({ ...filters, page: p })}
+                            onLimitChange={(l) => setFilters({ ...filters, limit: l, page: 1 })}
+                            isFetching={loading}
+                        />
                     </div>
                 )}
             </div>
@@ -949,9 +1128,41 @@ export function StudentFeeDashboard() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest ml-1">Selected Students</label>
+                                <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest ml-1">Print Scope</label>
+                                <div className="grid grid-cols-2 gap-2 bg-slate-50 p-1 rounded-xl">
+                                    <button
+                                        type="button"
+                                        onClick={() => setBulkPrintScope("selected")}
+                                        className={`h-9 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                                            bulkPrintScope === "selected"
+                                                ? "bg-white text-blue-600 shadow-sm"
+                                                : "text-slate-400 hover:text-slate-700"
+                                        }`}
+                                    >
+                                        Selected ({selectedIds.size})
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setBulkPrintScope("all")}
+                                        className={`h-9 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                                            bulkPrintScope === "all"
+                                                ? "bg-white text-blue-600 shadow-sm"
+                                                : "text-slate-400 hover:text-slate-700"
+                                        }`}
+                                    >
+                                        All Matching ({data?.pagination.total ?? 0})
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest ml-1">Vouchers Preview List</label>
                                 <div className="rounded-2xl border border-slate-100 max-h-[220px] overflow-y-auto divide-y divide-slate-100">
-                                    {selectedIds.size === 0 ? (
+                                    {bulkPrintScope === "all" ? (
+                                        <p className="text-[11px] text-slate-500 text-center py-6">
+                                            All {data?.pagination.total ?? 0} matching students will be printed.
+                                        </p>
+                                    ) : selectedIds.size === 0 ? (
                                         <p className="text-[11px] text-slate-400 text-center py-6">
                                             No students selected. Tick checkboxes on the cards or use a quick-select above.
                                         </p>
@@ -982,7 +1193,7 @@ export function StudentFeeDashboard() {
 
                         <div className="p-5 border-t border-slate-100 bg-white">
                             <button
-                                disabled={exporting || selectedIds.size === 0}
+                                disabled={exporting || (bulkPrintScope === "selected" ? selectedIds.size === 0 : (data?.pagination.total ?? 0) === 0)}
                                 onClick={handleGenerateReport}
                                 className="w-full h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center gap-0.5 active:scale-[0.99]"
                             >
@@ -995,7 +1206,12 @@ export function StudentFeeDashboard() {
                                             Generate Fee Vouchers
                                         </span>
                                         <span className="text-[11px] font-medium text-blue-100/90">
-                                            {selectedIds.size * exportConfig.copiesPerStudent} voucher{selectedIds.size * exportConfig.copiesPerStudent === 1 ? '' : 's'} · {Math.max(0, Math.ceil((selectedIds.size * exportConfig.copiesPerStudent) / exportConfig.copiesPerPage))} page{Math.max(0, Math.ceil((selectedIds.size * exportConfig.copiesPerStudent) / exportConfig.copiesPerPage)) === 1 ? '' : 's'}
+                                            {(() => {
+                                                const totalStudents = bulkPrintScope === "all" ? (data?.pagination.total ?? 0) : selectedIds.size;
+                                                const totalVouchers = totalStudents * exportConfig.copiesPerStudent;
+                                                const totalPages = Math.max(0, Math.ceil(totalVouchers / exportConfig.copiesPerPage));
+                                                return `${totalVouchers} voucher${totalVouchers === 1 ? '' : 's'} · ${totalPages} page${totalPages === 1 ? '' : 's'}`;
+                                            })()}
                                         </span>
                                     </>
                                 )}
@@ -1004,6 +1220,35 @@ export function StudentFeeDashboard() {
                     </div>
                 </div>
             )}
+            {selectedTemplate && (
+                <BulkGeneratorModal
+                    isOpen={selectedTemplate !== null}
+                    onClose={() => setSelectedTemplate(null)}
+                    activeType="fee_challan"
+                    template={selectedTemplate}
+                    customStudents={(data?.students || []).map((e) => ({
+                        _id: e.student.id,
+                        first_name: e.student.name.split(" ")[0] || e.student.name,
+                        last_name: e.student.name.split(" ").slice(1).join(" ") || "",
+                        roll_no: e.student.admission_no || "N/A",
+                        registration_no: e.student.admission_no || "N/A",
+                        class_name: e.student.class_name || "N/A",
+                        section: "A",
+                        father_name: `Father of ${e.student.name}`,
+                        marks: "—",
+                        grade: "—",
+                        percentage: "—",
+                        fee_amount: String(e.remaining),
+                        due_date: `${filters.month.toUpperCase()} 10, ${filters.year}`,
+                        course_name: "General Curriculum",
+                        issue_date: new Date().toLocaleDateString()
+                    }))}
+                />
+            )}
+            <AllPaymentsHistoryModal
+                isOpen={showPaymentsHistory}
+                onClose={() => setShowPaymentsHistory(false)}
+            />
         </SchoolShell>
     );
 }

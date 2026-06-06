@@ -1,0 +1,14 @@
+DROP TABLE IF EXISTS activity_logs;
+DROP TABLE IF EXISTS platform_audit_logs;
+DROP TABLE IF EXISTS platform_notifications;
+DROP TABLE IF EXISTS ticket_messages;
+DROP TABLE IF EXISTS support_tickets;
+DROP TABLE IF EXISTS school_limits;
+DROP TABLE IF EXISTS feature_flags;
+DROP TABLE IF EXISTS transactions;
+DROP TABLE IF EXISTS invoices;
+DROP TABLE IF EXISTS subscriptions;
+DROP TABLE IF EXISTS platform_schools;
+DROP TABLE IF EXISTS subscription_plans;
+DROP TABLE IF EXISTS platform_admins;
+DROP TABLE IF EXISTS platform_roles;

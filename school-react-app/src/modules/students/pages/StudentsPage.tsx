@@ -31,7 +31,11 @@ export function StudentsPage() {
 
   const isClassDependencyLoading = classState.status === "idle" || classState.status === "loading";
   const classes = Array.isArray(classState.data) ? classState.data : (classState.data as any)?.data || (classState.data as any)?.items || [];
-  const classOptions = classes.map((item: any) => ({ id: item._id, label: item.name }));
+  const classOptions = classes.map((item: any) => ({
+    id: item._id,
+    label: item.name,
+    section: item.section || ""
+  }));
 
   const filteredStudents = useMemo(() => {
     const rows = students ?? [];

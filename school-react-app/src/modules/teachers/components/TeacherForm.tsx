@@ -13,6 +13,7 @@
  */
 
 import { FormEvent, useEffect, useState } from "react";
+import { AppIcon } from "shared/ui/AppIcon";
 import { Button, Input, Select } from "@/components/ui";
 import { TeacherFormInput, TeacherRow } from "../types/teacher.types";
 
@@ -66,6 +67,8 @@ export function TeacherForm({
     );
     const [internalSaving, setInternalSaving] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [showPassword, setShowPassword] = useState(false);
+    const [isChangingPassword, setIsChangingPassword] = useState(false);
 
     // Sync incoming initialValues — important when the edit page finishes
     // loading the teacher record after first paint.
@@ -101,7 +104,7 @@ export function TeacherForm({
             // In edit mode, drop the password field if it wasn't changed
             // so the backend doesn't overwrite the existing hash.
             const payload =
-                formMode === "edit" && !form.password.trim()
+                formMode === "edit" && (!isChangingPassword || !form.password.trim())
                     ? { ...form, password: undefined as unknown as string }
                     : form;
 
@@ -131,23 +134,52 @@ export function TeacherForm({
                         required
                     />
 
-                    <Input
-                        label={
-                            formMode === "edit"
-                                ? "New Password (leave blank to keep current)"
-                                : "Login Password"
-                        }
-                        placeholder={
-                            formMode === "edit"
-                                ? "Leave blank to keep current password"
-                                : "Set password"
-                        }
-                        type="password"
-                        value={form.password}
-                        onChange={(e) => setForm({ ...form, password: e.target.value })}
-                        error={errors.password}
-                        required={formMode === "create"}
-                    />
+                    {formMode === "edit" && !isChangingPassword ? (
+                        <div className="flex items-end gap-3 w-full">
+                            <Input
+                                label="Login Password"
+                                type="password"
+                                value="••••••••"
+                                disabled
+                                className="h-11 rounded-xl bg-slate-50 border-slate-200 text-slate-400"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setIsChangingPassword(true)}
+                                className="h-11 px-4 rounded-xl border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 font-bold text-xs transition-all tracking-wide normal-case active:scale-95 shrink-0"
+                            >
+                                Change Password
+                            </button>
+                        </div>
+                    ) : (
+                        <Input
+                            label={
+                                formMode === "edit"
+                                    ? "New Password"
+                                    : "Login Password"
+                            }
+                            placeholder={
+                                formMode === "edit"
+                                    ? "Enter new password"
+                                    : "Set password"
+                            }
+                            type={showPassword ? "text" : "password"}
+                            value={form.password}
+                            onChange={(e) => setForm({ ...form, password: e.target.value })}
+                            error={errors.password}
+                            required={formMode === "create"}
+                            className="h-11 rounded-xl bg-white border-slate-200"
+                            rightIcon={
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="text-slate-400 hover:text-slate-600 transition-colors"
+                                >
+                                    <AppIcon name={showPassword ? "EyeOff" : "Eye"} size={16} />
+                                </button>
+                            }
+                        />
+                    )}
                 </div>
             </div>
 

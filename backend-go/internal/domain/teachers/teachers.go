@@ -659,8 +659,109 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 				if v, ok := body["phone"]; ok { _ = json.Unmarshal(v, &t.Phone) }
 				if v, ok := body["qualification"]; ok { _ = json.Unmarshal(v, &t.Qualification) }
 				if v, ok := body["status"]; ok { _ = json.Unmarshal(v, &t.Status) }
+				if v, ok := body["subjects"]; ok { _ = json.Unmarshal(v, &t.Subjects) }
+				if v, ok := body["subject_ids"]; ok { _ = json.Unmarshal(v, &t.SubjectIDs) }
+				if v, ok := body["class_ids"]; ok { _ = json.Unmarshal(v, &t.ClassIDs) }
+
+				var emailStr string
+				var emailUpdated bool
+				if v, ok := body["email"]; ok {
+					_ = json.Unmarshal(v, &emailStr)
+					emailStr = strings.ToLower(strings.TrimSpace(emailStr))
+					if emailStr != "" && emailStr != t.Email {
+						t.Email = emailStr
+						emailUpdated = true
+					}
+				}
+
+				var newPassword string
+				if v, ok := body["password"]; ok {
+					_ = json.Unmarshal(v, &newPassword)
+				}
+
+				// Synchronize User profile/password if linked User exists
+				var user *store.User
+				if t.UserID != "" {
+					for _, u := range h.Store.Users {
+						if u.ID == t.UserID && u.SchoolID == ctx.SchoolID {
+							user = u
+							break
+						}
+					}
+				}
+
+				if user != nil {
+					if emailUpdated {
+						user.Email = t.Email
+					}
+					if v, ok := body["first_name"]; ok { _ = json.Unmarshal(v, &user.Profile.FirstName) }
+					if v, ok := body["last_name"]; ok { _ = json.Unmarshal(v, &user.Profile.LastName) }
+					if v, ok := body["phone"]; ok { _ = json.Unmarshal(v, &user.Profile.Phone) }
+					if newPassword != "" {
+						hash, _ := auth.HashPassword(newPassword)
+						user.PasswordHash = hash
+					}
+					user.UpdatedAt = time.Now()
+					h.Persist("users", user)
+
+					// Direct user PG update if Pool exists
+					if h.Pool != nil {
+						_, _ = h.Pool.Exec(r.Context(), `
+							UPDATE users SET email=$3, password_hash=$4, profile_first=$5, profile_last=$6, profile_phone=$7, updated_at=$8
+							WHERE id=$1 AND school_id=$2
+						`, user.ID, user.SchoolID, user.Email, user.PasswordHash, user.Profile.FirstName, user.Profile.LastName, user.Profile.Phone, user.UpdatedAt)
+					}
+				} else if newPassword != "" && t.Email != "" {
+					// Create user if they didn't have one and a password was supplied
+					hash, _ := auth.HashPassword(newPassword)
+					userID := store.NewID("usr")
+					user = &store.User{
+						ID: userID, SchoolID: ctx.SchoolID, Email: t.Email, PasswordHash: hash, Role: "teacher",
+						Permissions: []string{"teacher:basic"},
+						Status: "active",
+						Profile: store.UserProfile{FirstName: t.FirstName, LastName: t.LastName, Phone: t.Phone},
+						CreatedAt: time.Now(), UpdatedAt: time.Now(),
+					}
+					h.Store.Users = append(h.Store.Users, user)
+					h.Persist("users", user)
+					t.UserID = userID
+
+					// Direct user PG insert if Pool exists
+					if h.Pool != nil {
+						_, _ = h.Pool.Exec(r.Context(), `
+							INSERT INTO users (id, school_id, email, password_hash, role, permissions, status, profile_first, profile_last, profile_phone, created_at, updated_at)
+							VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+						`, user.ID, user.SchoolID, user.Email, user.PasswordHash, user.Role, user.Permissions, user.Status, user.Profile.FirstName, user.Profile.LastName, user.Profile.Phone, user.CreatedAt, user.UpdatedAt)
+					}
+				}
+
 				t.UpdatedAt = time.Now()
 				h.Persist("teachers", t)
+
+				// Direct teacher + junction tables PG updates if Pool exists
+				if h.Pool != nil {
+					_, _ = h.Pool.Exec(r.Context(), `
+						UPDATE teachers SET first_name=$3, last_name=$4, email=$5, phone=$6,
+						       qualification=$7, status=$8, user_id=$9, updated_at=$10
+						WHERE id=$1 AND school_id=$2
+					`, t.ID, t.SchoolID, t.FirstName, t.LastName, t.Email, t.Phone,
+						t.Qualification, t.Status, t.UserID, t.UpdatedAt)
+
+					// Direct update of junction tables
+					_, _ = h.Pool.Exec(r.Context(), `DELETE FROM teacher_subjects WHERE teacher_id=$1`, t.ID)
+					for _, sid := range t.SubjectIDs {
+						if sid != "" {
+							_, _ = h.Pool.Exec(r.Context(), `INSERT INTO teacher_subjects (teacher_id, subject_id) VALUES ($1,$2) ON CONFLICT DO NOTHING`, t.ID, sid)
+						}
+					}
+					_, _ = h.Pool.Exec(r.Context(), `DELETE FROM teacher_classes WHERE teacher_id=$1`, t.ID)
+					for _, cid := range t.ClassIDs {
+						if cid != "" {
+							_, _ = h.Pool.Exec(r.Context(), `INSERT INTO teacher_classes (teacher_id, class_id) VALUES ($1,$2) ON CONFLICT DO NOTHING`, t.ID, cid)
+						}
+					}
+				}
+
 				h.invalidateCaches(context.Background(), t.SchoolID, t.AcademicYearID)
 				return t, nil
 			}

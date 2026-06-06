@@ -1455,7 +1455,7 @@ func (h *Handler) LedgerDashboard(w http.ResponseWriter, r *http.Request) {
 			page = p
 		}
 		limit := 20
-		if l, err := strconv.Atoi(q.Get("limit")); err == nil && l > 0 && l <= 200 {
+		if l, err := strconv.Atoi(q.Get("limit")); err == nil && l > 0 && l <= 100000 {
 			limit = l
 		}
 

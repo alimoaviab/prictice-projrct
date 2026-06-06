@@ -188,6 +188,7 @@ func (h *Handler) hydrate(rows []*store.Exam) []map[string]any {
 			"subject_count":    len(subjects),
 			"title":            e.Title,
 			"type":             e.Type,
+			"term":             e.Term,
 			"starts_at":        api.FormatDate(e.StartsAt),
 			"max_marks":        totalMax,
 			"status":           e.Status,
@@ -386,6 +387,7 @@ type createInput struct {
 	StartsAt    string `json:"starts_at"`
 	Status      string `json:"status,omitempty"`
 	Description string `json:"description,omitempty"`
+	Term        string `json:"term,omitempty"`
 
 	// New shape — preferred.
 	Subjects []subjectInput `json:"subjects,omitempty"`
@@ -498,6 +500,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 			Subjects:    subjects,
 			Title:       body.Title,
 			Type:        examType,
+			Term:        body.Term,
 			StartsAt:    startsAt,
 			MaxMarks:    totalMax,
 			Status:      orDefault(body.Status, "scheduled"),
@@ -549,6 +552,9 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 				}
 				if v, ok := body["description"]; ok {
 					_ = json.Unmarshal(v, &e.Description)
+				}
+				if v, ok := body["term"]; ok {
+					_ = json.Unmarshal(v, &e.Term)
 				}
 				if v, ok := body["class_id"]; ok {
 					var nextClassID string

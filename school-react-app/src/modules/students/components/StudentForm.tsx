@@ -30,7 +30,7 @@ export type StudentFormMode = "create" | "edit";
 
 interface StudentFormProps {
   onSubmit: (input: StudentFormInput) => Promise<unknown>;
-  classOptions: Array<{ id: string; label: string }>;
+  classOptions: Array<{ id: string; label: string; section?: string }>;
   /** Existing student data — when present, the form runs in edit mode. */
   initialValues?: StudentRow | null;
   mode?: StudentFormMode;
@@ -40,7 +40,7 @@ interface StudentFormProps {
 /** Backwards-compatible alias for legacy `onCreate` callers. */
 interface LegacyStudentFormProps {
   onCreate: (input: StudentFormInput) => Promise<unknown>;
-  classOptions: Array<{ id: string; label: string }>;
+  classOptions: Array<{ id: string; label: string; section?: string }>;
 }
 
 function mapInitialValues(s: StudentRow): StudentFormInput {
@@ -83,6 +83,58 @@ export function StudentForm(props: StudentFormProps | LegacyStudentFormProps) {
   const [existingParent, setExistingParent] = useState<ExistingParent | null>(null);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [linkMode, setLinkMode] = useState(false);
+
+  const [selectedClassName, setSelectedClassName] = useState<string>("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  // Group class records by their label (unique names)
+  const uniqueClassNames = Array.from(new Set(classOptions.map(o => o.label)));
+  
+  // Available sections based on selected class name
+  const availableSections = classOptions
+    .filter(o => o.label === selectedClassName)
+    .map(o => o.section || "")
+    .filter(Boolean);
+
+  const handleClassChange = (className: string) => {
+    setSelectedClassName(className);
+    const matched = classOptions.filter(o => o.label === className);
+    if (matched.length > 0) {
+      setForm((prev: StudentFormInput) => ({
+        ...prev,
+        class_id: matched[0].id,
+        section: matched[0].section || ""
+      }));
+    } else {
+      setForm((prev: StudentFormInput) => ({
+        ...prev,
+        class_id: "",
+        section: ""
+      }));
+    }
+  };
+
+  const handleSectionChange = (section: string) => {
+    const matched = classOptions.find(o => o.label === selectedClassName && o.section === section);
+    if (matched) {
+      setForm((prev: StudentFormInput) => ({
+        ...prev,
+        class_id: matched.id,
+        section: section
+      }));
+    }
+  };
+
+  // Sync selected class name when form is loaded with class_id
+  useEffect(() => {
+    if (form.class_id && classOptions.length > 0) {
+      const matched = classOptions.find(o => o.id === form.class_id);
+      if (matched) {
+        setSelectedClassName(matched.label);
+      }
+    }
+  }, [form.class_id, classOptions]);
 
   // Re-populate when initialValues arrives late (edit page finishes
   // loading the student record after first paint).
@@ -229,23 +281,27 @@ export function StudentForm(props: StudentFormProps | LegacyStudentFormProps) {
           <div className="grid grid-cols-2 gap-4">
             <Select
               label="Class"
-              value={form.class_id}
-              onChange={(e) => setForm({ ...form, class_id: e.target.value })}
+              value={selectedClassName}
+              onChange={(e) => handleClassChange(e.target.value)}
               options={[
-                { label: "Select class", value: "" },
-                ...classOptions.map(o => ({ label: o.label, value: o.id }))
+                { label: "Select Class", value: "" },
+                ...uniqueClassNames.map(name => ({ label: name, value: name }))
               ]}
               error={errors.class_id}
               required
               className="h-11 rounded-xl bg-white"
             />
-            <Input
+            <Select
               label="Section"
-              placeholder="e.g., A"
               value={form.section}
-              onChange={(e) => setForm({ ...form, section: e.target.value })}
+              onChange={(e) => handleSectionChange(e.target.value)}
+              options={[
+                { label: "Select Section", value: "" },
+                ...availableSections.map(sec => ({ label: sec, value: sec }))
+              ]}
               error={errors.section}
               required
+              disabled={!selectedClassName || availableSections.length === 0}
               className="h-11 rounded-xl bg-white"
             />
           </div>
@@ -357,29 +413,59 @@ export function StudentForm(props: StudentFormProps | LegacyStudentFormProps) {
             className="h-11 rounded-xl bg-white border-indigo-100 focus:border-indigo-400"
           />
 
-          <Input
-            label={
-              mode === "edit"
-                ? "New Password (leave blank to keep current)"
-                : linkMode
-                  ? "Password (managed by linked parent)"
-                  : "Temporary Password"
-            }
-            placeholder={
-              mode === "edit"
-                ? "Leave blank to keep current password"
-                : linkMode
-                  ? "Linked — password not needed"
-                  : "Minimum 8 characters"
-            }
-            type="password"
-            value={linkMode ? "" : form.password || ""}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
-            error={errors.password}
-            required={mode === "create" && !linkMode}
-            disabled={linkMode}
-            className="h-11 rounded-xl bg-white border-indigo-100 focus:border-indigo-400"
-          />
+          {mode === "edit" && !isChangingPassword ? (
+            <div className="flex items-end gap-3 w-full">
+              <Input
+                label="Login Password"
+                type="password"
+                value="••••••••"
+                disabled
+                className="h-11 rounded-xl bg-slate-50 border-indigo-100 text-slate-400"
+              />
+              <button
+                type="button"
+                onClick={() => setIsChangingPassword(true)}
+                className="h-11 px-4 rounded-xl border border-indigo-200 text-indigo-600 bg-white hover:bg-indigo-50 font-bold text-xs transition-all tracking-wide normal-case active:scale-95 shrink-0"
+              >
+                Change Password
+              </button>
+            </div>
+          ) : (
+            <Input
+              label={
+                mode === "edit"
+                  ? "New Password"
+                  : linkMode
+                    ? "Password (managed by linked parent)"
+                    : "Temporary Password"
+              }
+              placeholder={
+                mode === "edit"
+                  ? "Enter new password"
+                  : linkMode
+                    ? "Linked — password not needed"
+                    : "Minimum 8 characters"
+              }
+              type={showPassword ? "text" : "password"}
+              value={linkMode ? "" : form.password || ""}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              error={errors.password}
+              required={mode === "create" && !linkMode}
+              disabled={linkMode}
+              className="h-11 rounded-xl bg-white border-indigo-100 focus:border-indigo-400"
+              rightIcon={
+                !linkMode ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    <AppIcon name={showPassword ? "EyeOff" : "Eye"} size={16} />
+                  </button>
+                ) : undefined
+              }
+            />
+          )}
 
           <div className="md:col-span-2">
             {checkingEmail && (

@@ -418,17 +418,17 @@ func upsertExam(ctx context.Context, tx pgx.Tx, v *store.Exam) error {
 	}
 	_, err := tx.Exec(ctx, `
 		INSERT INTO exams (id, school_id, academic_year_id, class_id, teacher_id,
-			subject, title, type, starts_at, max_marks, status, description,
+			subject, title, type, term, starts_at, max_marks, status, description,
 			created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
 		ON CONFLICT (id) DO UPDATE SET
 			class_id=EXCLUDED.class_id, teacher_id=EXCLUDED.teacher_id,
 			subject=EXCLUDED.subject, title=EXCLUDED.title, type=EXCLUDED.type,
-			starts_at=EXCLUDED.starts_at, max_marks=EXCLUDED.max_marks,
+			term=EXCLUDED.term, starts_at=EXCLUDED.starts_at, max_marks=EXCLUDED.max_marks,
 			status=EXCLUDED.status, description=EXCLUDED.description,
 			updated_at=EXCLUDED.updated_at
 	`, v.ID, v.SchoolID, nullableString(v.AcademicYearID), v.ClassID, nullableString(v.TeacherID),
-		v.Subject, v.Title, examType, v.StartsAt, v.MaxMarks, v.Status, v.Description,
+		v.Subject, v.Title, examType, v.Term, v.StartsAt, v.MaxMarks, v.Status, v.Description,
 		v.CreatedAt, v.UpdatedAt)
 	return err
 }
@@ -986,18 +986,26 @@ func upsertStoreSubscription(ctx context.Context, tx pgx.Tx, v *store.Subscripti
 		planName = "growth"
 	}
 	status := defaultStr(v.Status, "active")
-	studentLimit := 500
-	price := 0
-	switch planName {
-	case "starter":
-		studentLimit = 200
-		price = 4000
-	case "growth":
+	studentLimit := v.StudentLimit
+	price := v.Price
+	if studentLimit <= 0 {
 		studentLimit = 500
-		price = 9000
-	case "custom", "enterprise":
-		studentLimit = 800
-		price = 0
+		switch planName {
+		case "starter":
+			studentLimit = 200
+		case "growth":
+			studentLimit = 500
+		case "custom", "enterprise":
+			studentLimit = 800
+		}
+	}
+	if price <= 0 {
+		switch planName {
+		case "starter":
+			price = 4000
+		case "growth":
+			price = 9000
+		}
 	}
 	isTrial := strings.EqualFold(v.PackageID, "trial") || strings.EqualFold(status, "trial")
 	trialStart := (*time.Time)(nil)

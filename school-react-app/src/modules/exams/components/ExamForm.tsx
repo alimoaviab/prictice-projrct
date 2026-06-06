@@ -45,6 +45,7 @@ export function ExamForm({
     teacher_id: "",
     title: "",
     type: "exam",
+    term: "",
     starts_at: "",
     status: "scheduled",
     description: "",
@@ -191,6 +192,7 @@ export function ExamForm({
           teacher_id: "",
           title: "",
           type: "exam",
+          term: "",
           starts_at: "",
           status: "scheduled",
           description: "",
@@ -370,16 +372,32 @@ export function ExamForm({
           </div>
         )}
 
-        <Input
-          label="Examination Title"
-          placeholder="e.g., Mid-Term Assessment"
-          value={form.title}
-          onChange={(e) => setField("title", e.target.value)}
-          error={errors.title}
-          required
-          leftIcon={<AppIcon name="Title" size={16} />}
-          className={inputCls}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input
+            label="Examination Title"
+            placeholder="e.g., Mid-Term Assessment"
+            value={form.title}
+            onChange={(e) => setField("title", e.target.value)}
+            error={errors.title}
+            required
+            leftIcon={<AppIcon name="Title" size={16} />}
+            className={inputCls}
+          />
+          <Select
+            label="Exam Term"
+            value={form.term || ""}
+            onChange={(e) => setField("term", e.target.value)}
+            options={[
+              { label: "Select Term (Optional)", value: "" },
+              { label: "First Term", value: "First Term" },
+              { label: "Mid Term", value: "Mid Term" },
+              { label: "Final Term", value: "Final Term" },
+              { label: "Second Term", value: "Second Term" },
+              { label: "Third Term", value: "Third Term" },
+            ]}
+            className={inputCls}
+          />
+        </div>
 
         <div>
           <label className="block text-[11px] font-bold text-slate-700 normal-case mb-1.5">

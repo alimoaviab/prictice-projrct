@@ -36,7 +36,7 @@ export function TeacherEditPage() {
     const navigate = useNavigate();
     const { updateTeacher } = useTeachers();
 
-    const { state: teacherState, run: runTeacher } = useSafeAsync<TeacherRow>(
+    const { state: teacherState, run: runTeacher } = useSafeAsync<any>(
         // Disable empty-detection — a teacher object is never "empty".
         NEVER_EMPTY
     );
@@ -106,10 +106,11 @@ export function TeacherEditPage() {
         label: item.name,
     }));
 
-    const teacherName = teacherState.data
-        ? `${teacherState.data.first_name ?? ""} ${
-              teacherState.data.last_name ?? ""
-          }`.trim() || teacherState.data.email
+    const teacher = teacherState.data?.teacher;
+    const teacherName = teacher
+        ? `${teacher.first_name ?? ""} ${
+              teacher.last_name ?? ""
+          }`.trim() || teacher.email
         : "";
 
     // ─── Render ─────────────────────────────────────────────────────────
@@ -169,11 +170,11 @@ export function TeacherEditPage() {
                                 label: "Classes available to assign",
                             },
                             {
-                                done: !!teacherState.data?.email,
+                                done: !!teacher?.email,
                                 label: "Email reachable",
                             },
                             {
-                                done: !!teacherState.data?.phone,
+                                done: !!teacher?.phone,
                                 label: "Phone on file",
                             },
                         ]}
@@ -188,7 +189,7 @@ export function TeacherEditPage() {
                     message={classState.error}
                     onRetry={loadClasses}
                 />
-            ) : teacherLoading || classLoading || !teacherState.data ? (
+            ) : teacherLoading || classLoading || !teacher ? (
                 <div className="space-y-4">
                     <Skeleton className="h-11 w-full rounded-xl" />
                     <div className="grid grid-cols-2 gap-4">
@@ -208,7 +209,7 @@ export function TeacherEditPage() {
                     onSubmit={handleUpdate}
                     onCancel={() => navigate("/admin/teachers")}
                     classOptions={classOptions}
-                    initialValues={teacherState.data}
+                    initialValues={teacher}
                 />
             )}
         </EntityCreateLayout>

@@ -50,6 +50,7 @@ type Exam struct {
 	Subjects    []ExamSubject `json:"subjects,omitempty"`
 	Title       string        `json:"title"`
 	Type        string        `json:"type"` // exam | test
+	Term        string        `json:"term,omitempty"`
 	StartsAt    time.Time     `json:"starts_at"`
 	MaxMarks    int           `json:"max_marks"` // legacy aggregate
 	Status      string        `json:"status"`

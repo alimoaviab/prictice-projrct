@@ -1,0 +1,2 @@
+DROP INDEX IF EXISTS exams_term_idx;
+ALTER TABLE exams DROP COLUMN IF EXISTS term;

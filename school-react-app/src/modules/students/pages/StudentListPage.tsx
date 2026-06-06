@@ -2,8 +2,9 @@ import { AppIcon } from "shared/ui/AppIcon";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { useQueryParams } from "@/hooks/useQueryParams";
-import { DataTable, DataTableColumn, RowAction, Badge, DataState, ListToolbar, Skeleton, TableSkeleton, StatCardGrid, EntityCard, EntityGrid } from "@/components/ui";
+import { DataTable, DataTableColumn, RowAction, Badge, DataState, ListToolbar, Skeleton, TableSkeleton, StatCardGrid, EntityCard, EntityGrid, Pagination } from "@/components/ui";
 import { useStudents } from "../hooks/useStudents";
+import { StudentDetailsModal } from "../components/StudentDetailsModal";
 import { useClasses } from "../../classes/hooks/useClasses";
 import { useSubjects } from "../../subjects/hooks/useSubjects";
 import { StudentRow } from "../types/student.types";
@@ -15,12 +16,26 @@ export function StudentListPage() {
   const { currentParams, updateQuery, withQuery } = useQueryParams();
   const classFilter = currentParams.get("class_id") || "";
 
+  const [selectedStudentDetailsId, setSelectedStudentDetailsId] = useState<string | null>(null);
+
   // Pass the class_id from the URL straight into the hook so the API
   // request is already scoped server-side (matters when the school has
   // thousands of students and we shouldn't fetch all of them).
-  const { students, isLoading, isError, error, updateStudent, deleteStudent } = useStudents(
-    classFilter ? { class_id: classFilter } : undefined
-  );
+  const {
+    students,
+    isLoading,
+    isError,
+    error,
+    updateStudent,
+    deleteStudent,
+    page,
+    perPage,
+    total,
+    pages,
+    setPage,
+    setPerPage,
+    isFetching
+  } = useStudents(classFilter ? { class_id: classFilter } : undefined);
   const { state: classesState } = useClasses();
   // subjects unused after sidebar removal but kept for ListToolbar parity
   // (not currently consumed; left out intentionally).
@@ -118,7 +133,16 @@ export function StudentListPage() {
     {
       key: "name",
       label: "Name",
-      render: (row) => <span className="font-semibold text-gray-900">{row.first_name} {row.last_name}</span>,
+      render: (row) => (
+        <div className="flex flex-col">
+          <span className="font-semibold text-gray-900">{row.first_name} {row.last_name}</span>
+          {row.guardian?.email && (
+            <span className="text-[10px] text-slate-400 font-semibold lowercase mt-0.5">
+              {row.guardian.email}
+            </span>
+          )}
+        </div>
+      ),
       sortable: true,
       sortFn: (a, b) => `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`),
     },
@@ -139,6 +163,11 @@ export function StudentListPage() {
         <div className="flex flex-col">
           <span className="text-sm font-medium text-gray-700">{row.guardian.name}</span>
           <span className="text-xs text-gray-400">{row.guardian.phone}</span>
+          {row.guardian.email && (
+            <span className="text-[10px] text-slate-400 font-semibold lowercase mt-0.5">
+              {row.guardian.email}
+            </span>
+          )}
         </div>
       ),
     },
@@ -158,7 +187,7 @@ export function StudentListPage() {
       icon: "visibility",
       label: "View",
       onClick: (row) => {
-        alert(`Student: ${row.first_name} ${row.last_name}\nID: ${row.admission_no}\nGuardian: ${row.guardian.name} (${row.guardian.phone})`);
+        setSelectedStudentDetailsId(row._id);
       },
     },
     {
@@ -370,7 +399,7 @@ export function StudentListPage() {
                         label: "View details",
                         icon: "visibility",
                         onClick: () => {
-                          alert(`Student: ${row.first_name} ${row.last_name}\nID: ${row.admission_no}\nGuardian: ${row.guardian.name} (${row.guardian.phone})`);
+                          setSelectedStudentDetailsId(row._id);
                         },
                         accent: "blue",
                       },
@@ -406,6 +435,11 @@ export function StudentListPage() {
                         <p className="text-[10px] font-medium text-slate-500 line-clamp-1 leading-relaxed">
                           {row.guardian?.name || "No guardian"} • {row.guardian?.phone || "No phone"}
                         </p>
+                        {row.guardian?.email && (
+                          <p className="text-[9px] font-medium text-slate-400 truncate mt-0.5 lowercase">
+                            {row.guardian.email}
+                          </p>
+                        )}
                       </div>
 
                       <div className="flex items-center justify-between bg-slate-50/30 rounded-lg p-1.5 border border-slate-100/30">
@@ -446,7 +480,6 @@ export function StudentListPage() {
                 rows={filteredRows}
                 rowKey={(row) => row._id}
                 sortable
-                paginated={10}
                 rowActions={rowActions}
               />
             </div>
@@ -454,26 +487,21 @@ export function StudentListPage() {
         )}
       </div>
 
-      {/* Pagination Footer - Premium ERP Style */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100">
-        <p className="text-[10px] font-bold text-slate-400 normal-case ">
-          Showing <span className="text-blue-600">1</span> to <span className="text-slate-900">{filteredRows.length}</span> of <span className="text-slate-900">{students?.length}</span> records
-        </p>
-        <div className="flex items-center gap-2">
-          <button className="h-9 px-4 rounded-xl border border-slate-200 text-[10px] font-bold normal-case  text-slate-400 cursor-not-allowed flex items-center gap-2">
-            <AppIcon name="ChevronLeft" size={16} />
-            Previous
-          </button>
-          <div className="flex items-center gap-1">
-            <button className="h-9 w-9 rounded-xl bg-blue-600 text-[10px] font-bold text-white shadow-lg shadow-blue-600/20">1</button>
-          </div>
-          <button className="h-9 px-4 rounded-xl border border-slate-200 text-[10px] font-bold normal-case  text-slate-400 cursor-not-allowed flex items-center gap-2">
-            Next
-            <AppIcon name="ChevronRight" size={16} />
-          </button>
-        </div>
-      </div>
+      <Pagination
+        page={page}
+        pages={pages}
+        total={total}
+        limit={perPage}
+        onPageChange={setPage}
+        onLimitChange={setPerPage}
+        isFetching={isFetching}
+      />
 
+      <StudentDetailsModal
+        isOpen={selectedStudentDetailsId !== null}
+        studentId={selectedStudentDetailsId}
+        onClose={() => setSelectedStudentDetailsId(null)}
+      />
 
     </div>
   );

@@ -1,11 +1,22 @@
 import { AppIcon } from "shared/ui/AppIcon";
 import React, { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import VoucherGrid from "../components/VoucherGrid";
 import type { StudentData } from "../components/VoucherCard";
 import { useSettings } from "@/modules/settings/hooks/useSettings";
+import { useCertificateTemplates } from "@/modules/certificates/hooks/useCertificates";
+import { BulkGeneratorModal } from "@/modules/certificates/components/BulkGeneratorModal";
+import type { CertificateTemplate } from "@/modules/certificates/types/certificate.types";
 
 export const FeeVoucherPage: React.FC = () => {
+  const navigate = useNavigate();
   const { state: settingsState } = useSettings();
+  const { state: templatesState } = useCertificateTemplates();
+  const [selectedTemplate, setSelectedTemplate] = useState<CertificateTemplate | null>(null);
+
+  const feeTemplates = (templatesState.data || []).filter(
+    (t) => (t.type as string) === "fee_challan"
+  );
   
   // Custom interactive states
   const [voucherCount, setVoucherCount] = useState<number>(4); // Default to 4 vouchers per page
@@ -292,6 +303,64 @@ export const FeeVoucherPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Canva Designed Challan Layouts */}
+        {templatesState.status !== "loading" && templatesState.status !== "idle" && feeTemplates.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="h-6 w-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center">
+                <AppIcon name="Palette" size={14} />
+              </div>
+              <h2 className="text-xs font-black text-slate-800 uppercase tracking-widest">
+                Canva Designed Challan Layouts
+              </h2>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {feeTemplates.map((template) => (
+                <div 
+                  key={template._id} 
+                  className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group relative overflow-hidden"
+                >
+                  <div className="absolute right-0 top-0 w-24 h-24 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-full blur-xl pointer-events-none" />
+                  <div>
+                    <div className="flex items-start justify-between mb-2">
+                      <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 text-[9px] font-black uppercase tracking-widest">
+                        Canva Template
+                      </span>
+                      <span className="text-[9px] font-bold text-slate-400 capitalize">
+                        {template.orientation}
+                      </span>
+                    </div>
+                    <h3 className="font-bold text-slate-900 text-xs mb-1 group-hover:text-indigo-600 transition-colors">
+                      {template.name}
+                    </h3>
+                    <p className="text-[10px] text-slate-400 font-medium">
+                      Designed on {new Date(template.updated_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  
+                  <div className="mt-4 pt-3 border-t border-slate-100 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/admin/templates/edit/${template._id}`)}
+                      className="flex-1 h-8 rounded-lg border border-slate-200 text-[9px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-colors"
+                    >
+                      Edit Layout
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTemplate(template)}
+                      className="flex-1 h-8 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-[9px] font-black uppercase tracking-widest text-white shadow-sm transition-colors"
+                    >
+                      Generate Bills
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Voucher Printing A4 Preview Area */}
         <div className="bg-slate-200/50 rounded-3xl border border-slate-300 p-8 shadow-inner overflow-x-auto flex justify-center">
           <div
@@ -316,6 +385,32 @@ export const FeeVoucherPage: React.FC = () => {
             />
           </div>
         </div>
+
+        {selectedTemplate && (
+          <BulkGeneratorModal
+            isOpen={selectedTemplate !== null}
+            onClose={() => setSelectedTemplate(null)}
+            activeType="fee_challan"
+            template={selectedTemplate}
+            customStudents={students.map((s) => ({
+              _id: s.id,
+              first_name: s.studentName.split(" ")[0] || s.studentName,
+              last_name: s.studentName.split(" ").slice(1).join(" ") || "",
+              roll_no: s.rollNumber,
+              registration_no: s.rollNumber,
+              class_name: s.className,
+              section: s.section,
+              father_name: s.fatherName,
+              marks: "—",
+              grade: "—",
+              percentage: "—",
+              fee_amount: String(s.totalAmount),
+              due_date: s.dueDate,
+              course_name: "General Curriculum",
+              issue_date: s.issueDate
+            }))}
+          />
+        )}
 
       </div>
 

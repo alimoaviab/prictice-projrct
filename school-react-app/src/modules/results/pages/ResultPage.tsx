@@ -14,10 +14,19 @@ import { exportMarksheet, exportExamMarksheet } from "@/utils/marksheet";
 import { showToast } from "@/utils/toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useSchoolBranding } from "@/hooks/useSchoolBranding";
+import { useCertificateTemplates } from "@/modules/certificates/hooks/useCertificates";
+import { BulkGeneratorModal } from "@/modules/certificates/components/BulkGeneratorModal";
+import type { CertificateTemplate } from "@/modules/certificates/types/certificate.types";
 
 export function ResultPage() {
     const navigate = useNavigate();
     const { pathname } = useLocation();
+    const { state: templatesState } = useCertificateTemplates();
+    const [selectedTemplate, setSelectedTemplate] = useState<CertificateTemplate | null>(null);
+
+    const resultTemplates = (templatesState.data || []).filter(
+        (t) => (t.type as string) === "result_card"
+    );
     const isTeacher = pathname.includes("/teacher");
     const { currentParams, updateQuery } = useQueryParams();
     const exam_id = currentParams.get("exam_id") || "all";
@@ -141,7 +150,14 @@ export function ResultPage() {
                     : (row.exam_subject ? row.exam_subject.split(",").filter(s => s.trim()).length : 0);
                 return (
                     <div>
-                        <p className="text-[11px] font-bold text-slate-700 leading-none mb-1">{row.exam_title}</p>
+                        <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                            <p className="text-[11px] font-bold text-slate-700 leading-none tracking-tight">{row.exam_title}</p>
+                            {row.exam_term && (
+                                <Badge variant="secondary" className="text-[8px] font-extrabold px-1 py-0">
+                                    {row.exam_term}
+                                </Badge>
+                            )}
+                        </div>
                         <p className="text-[9px] font-bold text-blue-600 normal-case ">
                             {count} {count === 1 ? "subject" : "subjects"}
                         </p>
@@ -421,6 +437,64 @@ export function ResultPage() {
                 </div>
             )}
 
+            {/* Canva Designed Result Card Layouts */}
+            {templatesState.status !== "loading" && templatesState.status !== "idle" && resultTemplates.length > 0 && (
+                <div className="space-y-4 no-print mb-6">
+                    <div className="flex items-center gap-2">
+                        <div className="h-6 w-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center">
+                            <AppIcon name="Palette" size={14} />
+                        </div>
+                        <h2 className="text-xs font-black text-slate-800 uppercase tracking-widest">
+                            Canva Designed Result Card Layouts
+                        </h2>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {resultTemplates.map((template) => (
+                            <div 
+                                key={template._id} 
+                                className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group relative overflow-hidden"
+                            >
+                                <div className="absolute right-0 top-0 w-24 h-24 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-full blur-xl pointer-events-none" />
+                                <div>
+                                    <div className="flex items-start justify-between mb-2">
+                                        <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 text-[9px] font-black uppercase tracking-widest">
+                                            Canva Template
+                                        </span>
+                                        <span className="text-[9px] font-bold text-slate-400 capitalize">
+                                            {template.orientation}
+                                        </span>
+                                    </div>
+                                    <h3 className="font-bold text-slate-900 text-xs mb-1 group-hover:text-indigo-600 transition-colors">
+                                        {template.name}
+                                    </h3>
+                                    <p className="text-[10px] text-slate-400 font-medium">
+                                        Designed on {new Date(template.updated_at).toLocaleDateString()}
+                                    </p>
+                                </div>
+                                
+                                <div className="mt-4 pt-3 border-t border-slate-100 flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => navigate(`/admin/templates/edit/${template._id}`)}
+                                        className="flex-1 h-8 rounded-lg border border-slate-200 text-[9px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-colors"
+                                    >
+                                        Edit Layout
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedTemplate(template)}
+                                        className="flex-1 h-8 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-[9px] font-black uppercase tracking-widest text-white shadow-sm transition-colors"
+                                    >
+                                        Print Marks Cards
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Main Content Area */}
             <div>
                 {state.status === "loading" || state.status === "idle" ? (
@@ -470,7 +544,14 @@ export function ResultPage() {
                                             <div className="flex items-center gap-2 pt-4 border-t border-slate-50">
                                                 <AppIcon name="FileText" size={14} className="text-blue-600" />
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-[10px] font-bold text-slate-900 truncate normal-case ">{row.exam_title}</p>
+                                                    <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                                                        <p className="text-[10px] font-bold text-slate-900 truncate normal-case leading-none">{row.exam_title}</p>
+                                                        {row.exam_term && (
+                                                            <Badge variant="secondary" className="text-[8px] font-extrabold px-1 py-0 shrink-0">
+                                                                {row.exam_term}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
                                                     <p className="text-[9px] font-bold text-slate-400 normal-case ">
                                                         {(() => {
                                                             const count = row.subjects && row.subjects.length > 0
@@ -522,6 +603,32 @@ export function ResultPage() {
             </div>
 
             {/* Real pagination is rendered by <DataTable paginated={N}> in the list view. */}
+            
+            {selectedTemplate && (
+                <BulkGeneratorModal
+                    isOpen={selectedTemplate !== null}
+                    onClose={() => setSelectedTemplate(null)}
+                    activeType="result_card"
+                    template={selectedTemplate}
+                    customStudents={filteredRows.map((r) => ({
+                        _id: r._id,
+                        first_name: r.student_name.split(" ")[0] || r.student_name,
+                        last_name: r.student_name.split(" ").slice(1).join(" ") || "",
+                        roll_no: r.admission_no || "N/A",
+                        registration_no: r.admission_no || "N/A",
+                        class_name: r.class_name || "N/A",
+                        section: "A",
+                        father_name: `Father of ${r.student_name}`,
+                        marks: String(r.obtained_marks),
+                        grade: r.grade || "A",
+                        percentage: String(Math.round((r.obtained_marks / (r.max_marks || 100)) * 100)),
+                        fee_amount: "—",
+                        due_date: "—",
+                        course_name: r.exam_title || "General Curriculum",
+                        issue_date: new Date(r.graded_at || Date.now()).toLocaleDateString()
+                    }))}
+                />
+            )}
         </div>
     );
 }

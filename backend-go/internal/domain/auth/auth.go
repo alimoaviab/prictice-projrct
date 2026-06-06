@@ -15,6 +15,7 @@ import (
 	"github.com/eduplexo/backend-go/internal/api"
 	authpkg "github.com/eduplexo/backend-go/internal/auth"
 	"github.com/eduplexo/backend-go/internal/config"
+	"github.com/eduplexo/backend-go/internal/domain/subscription"
 	"github.com/eduplexo/backend-go/internal/domain/superadmin"
 	"github.com/eduplexo/backend-go/internal/store"
 )
@@ -298,15 +299,16 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 // signupRequest mirrors the body shape the original signup endpoint accepts.
 // `school_name` / `schoolName` are alternative spellings the frontend uses.
 type signupRequest struct {
-	Role        string `json:"role"`
-	Email       string `json:"email"`
-	Password    string `json:"password"`
-	FullName    string `json:"fullName"`
-	AdminName   string `json:"admin_name"`
-	SchoolName  string `json:"schoolName"`
-	SchoolName2 string `json:"school_name"`
-	SchoolCode  string `json:"schoolCode"`
-	SchoolCode2 string `json:"school_code"`
+	Role             string   `json:"role"`
+	Email            string   `json:"email"`
+	Password         string   `json:"password"`
+	FullName         string   `json:"fullName"`
+	AdminName        string   `json:"admin_name"`
+	SchoolName       string   `json:"schoolName"`
+	SchoolName2      string   `json:"school_name"`
+	SchoolCode       string   `json:"schoolCode"`
+	SchoolCode2      string   `json:"school_code"`
+	SelectedPackages []string `json:"selected_packages,omitempty"`
 }
 
 // Signup implements POST /api/auth/signup. Mirrors the Node route file.
@@ -457,15 +459,23 @@ func (h *Handler) Signup(w http.ResponseWriter, r *http.Request) {
 		h.Store.SchoolSettings = append(h.Store.SchoolSettings, newSettings)
 
 		// ─── Auto 14-day free trial subscription ─────────────────────────
+		selected := body.SelectedPackages
+		if len(selected) == 0 {
+			selected = []string{"academic"}
+		} else {
+			selected = subscription.NormalizePackages(selected)
+		}
+
 		trialSub := &store.Subscription{
-			ID:          store.NewID("sub"),
-			SchoolID:    schoolID,
-			PackageID:   "trial",
-			Status:      "active",
-			AutoRenew:   false,
-			NextRenewal: now.AddDate(0, 0, 14),
-			CreatedAt:   now,
-			UpdatedAt:   now,
+			ID:               store.NewID("sub"),
+			SchoolID:         schoolID,
+			PackageID:        subscription.EncodeSelectedPackages(selected),
+			SelectedPackages: selected,
+			Status:           "trial",
+			AutoRenew:        false,
+			NextRenewal:      now.AddDate(0, 0, 14),
+			CreatedAt:        now,
+			UpdatedAt:        now,
 		}
 		h.Store.Subscriptions = append(h.Store.Subscriptions, trialSub)
 		h.Store.Unlock()

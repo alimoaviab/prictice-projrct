@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/eduplexo/backend-go/internal/api"
+	"github.com/eduplexo/backend-go/internal/domain/superadmin"
 	"github.com/eduplexo/backend-go/internal/store"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -143,12 +144,20 @@ func New(pool *pgxpool.Pool, s *store.MemStore) *Handler {
 // ─── GET /api/subscription/current ───────────────────────────────────────
 
 type CurrentResponse struct {
-	Subscription  *Subscription `json:"subscription"`
-	StudentsUsed  int           `json:"students_used"`
-	StudentsLimit int           `json:"students_limit"`
-	DaysRemaining int           `json:"days_remaining"`
-	IsExpired     bool          `json:"is_expired"`
-	CanTrial      bool          `json:"can_trial"`
+	Subscription           *Subscription   `json:"subscription"`
+	StudentsUsed           int             `json:"students_used"`
+	StudentsLimit          int             `json:"students_limit"`
+	ActiveStudents         int             `json:"active_students"`
+	DaysRemaining          int             `json:"days_remaining"`
+	IsExpired              bool            `json:"is_expired"`
+	CanTrial               bool            `json:"can_trial"`
+	SelectedPackages       []string        `json:"selected_packages"`
+	AvailablePackages      []ModulePackage `json:"available_packages"`
+	AllowedModules         map[string]bool `json:"allowed_modules"`
+	MonthlyCost            int             `json:"monthly_cost"`
+	MinimumMonthlyBill     int             `json:"minimum_monthly_bill"`
+	TrialWarning           string          `json:"trial_warning,omitempty"`
+	PackageBuilderRequired bool            `json:"package_builder_required"`
 }
 
 func (h *Handler) GetCurrent(w http.ResponseWriter, r *http.Request) {
@@ -159,8 +168,11 @@ func (h *Handler) GetCurrent(w http.ResponseWriter, r *http.Request) {
 			return CurrentResponse{}, err
 		}
 
-		// Count active students
 		studentsUsed := h.countActiveStudents(ctx.SchoolID)
+		rates := superadmin.GetPlatformSettings().PackageRates
+		selected := []string{PackageAcademic}
+		trialWarning := ""
+		builderRequired := false
 
 		// Check if trial is available
 		canTrial := false
@@ -174,10 +186,22 @@ func (h *Handler) GetCurrent(w http.ResponseWriter, r *http.Request) {
 		daysRemaining := 0
 		isExpired := true
 		if sub != nil {
+			selected = ParseSelectedPackages(sub.PlanName, nil)
 			remaining := time.Until(sub.EndDate)
 			if remaining > 0 {
 				daysRemaining = int(remaining.Hours() / 24)
 				isExpired = false
+				if sub.Status == "trial" || sub.Status == "active" {
+					if sub.Status == "trial" {
+						elapsedDays := int(time.Since(sub.StartDate).Hours() / 24)
+						if elapsedDays >= 13 {
+							trialWarning = "urgent"
+						} else if elapsedDays >= 10 {
+							trialWarning = "warning"
+						}
+					}
+					builderRequired = len(selected) == 1
+				}
 			} else {
 				// Auto-expire
 				h.expireSubscription(r.Context(), sub.ID)
@@ -191,12 +215,20 @@ func (h *Handler) GetCurrent(w http.ResponseWriter, r *http.Request) {
 		}
 
 		return CurrentResponse{
-			Subscription:  sub,
-			StudentsUsed:  studentsUsed,
-			StudentsLimit: limit,
-			DaysRemaining: daysRemaining,
-			IsExpired:     isExpired,
-			CanTrial:      canTrial,
+			Subscription:           sub,
+			StudentsUsed:           studentsUsed,
+			StudentsLimit:          limit,
+			ActiveStudents:         studentsUsed,
+			DaysRemaining:          daysRemaining,
+			IsExpired:              isExpired,
+			CanTrial:               canTrial,
+			SelectedPackages:       selected,
+			AvailablePackages:      PackageCatalog(rates),
+			AllowedModules:         PackageModules(selected),
+			MonthlyCost:            MonthlyEstimate(studentsUsed, selected, rates),
+			MinimumMonthlyBill:     500,
+			TrialWarning:           trialWarning,
+			PackageBuilderRequired: builderRequired,
 		}, nil
 	}))
 }
@@ -204,6 +236,43 @@ func (h *Handler) GetCurrent(w http.ResponseWriter, r *http.Request) {
 // ─── GET /api/subscription/plans ─────────────────────────────────────────
 
 func (h *Handler) GetPlans(w http.ResponseWriter, r *http.Request) {
+	if h.Pool != nil {
+		rows, err := h.Pool.Query(r.Context(), `
+			SELECT id, name, student_limit, price, COALESCE(currency,'PKR'), features, is_custom, display_order
+			FROM subscription_plans WHERE is_active = true ORDER BY display_order ASC, created_at ASC
+		`)
+		if err == nil {
+			defer rows.Close()
+			plans := make([]Plan, 0)
+			for rows.Next() {
+				var p Plan
+				var dbName string
+				var featuresJSON []byte
+				var displayOrder int
+				if err := rows.Scan(&p.ID, &dbName, &p.StudentLimit, &p.Price, &p.Currency, &featuresJSON, &p.IsCustom, &displayOrder); err == nil {
+					_ = json.Unmarshal(featuresJSON, &p.Features)
+					p.DisplayName = dbName
+					if p.ID == "plan_starter" {
+						p.Name = "starter"
+						p.Popular = false
+					} else if p.ID == "plan_growth" {
+						p.Name = "growth"
+						p.Popular = true
+					} else if p.ID == "plan_custom" {
+						p.Name = "custom"
+						p.Popular = false
+					} else {
+						p.Name = p.ID
+					}
+					plans = append(plans, p)
+				}
+			}
+			if len(plans) > 0 {
+				api.WriteResult(w, api.Ok(plans))
+				return
+			}
+		}
+	}
 	api.WriteResult(w, api.Ok(AvailablePlans))
 }
 
@@ -234,16 +303,17 @@ func (h *Handler) StartTrial(w http.ResponseWriter, r *http.Request) {
 			WHERE school_id = $1 AND status IN ('active', 'trial')
 		`, ctx.SchoolID)
 
-		// Create trial subscription (Growth plan for 14 days)
+		// Create trial subscription (Academic package for 14 days)
 		now := time.Now()
 		trialEnd := now.Add(14 * 24 * time.Hour)
 		id := store.NewID("sub")
+		selected := []string{PackageAcademic}
 
 		sub := &Subscription{
 			ID:             id,
 			SchoolID:       ctx.SchoolID,
-			PlanName:       "growth",
-			StudentLimit:   500,
+			PlanName:       EncodeSelectedPackages(selected),
+			StudentLimit:   h.countActiveStudents(ctx.SchoolID),
 			Price:          0,
 			Currency:       "PKR",
 			StartDate:      now,
@@ -268,9 +338,134 @@ func (h *Handler) StartTrial(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Record in history
-		h.recordHistory(r.Context(), ctx.SchoolID, "growth", 500, 0, "paid", now, trialEnd, "trial")
+		h.recordHistory(r.Context(), ctx.SchoolID, sub.PlanName, sub.StudentLimit, 0, "paid", now, trialEnd, "trial")
 
 		return sub, nil
+	}))
+}
+
+type packageUpdateInput struct {
+	SelectedPackages []string `json:"selected_packages"`
+	StudentLimit     int      `json:"student_limit,omitempty"`
+}
+
+func (h *Handler) UpdatePackages(w http.ResponseWriter, r *http.Request) {
+	ctx := api.FromRequest(r)
+	var body packageUpdateInput
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		api.WriteResult(w, api.Fail("VALIDATION_ERROR", "Invalid JSON body.", 400, nil))
+		return
+	}
+	api.WriteResult(w, api.ServiceTry(func() (CurrentResponse, error) {
+		selected := NormalizePackagesAndModules(body.SelectedPackages)
+		now := time.Now()
+		students := body.StudentLimit
+		if students <= 0 {
+			students = h.countActiveStudents(ctx.SchoolID)
+		}
+		if students <= 0 {
+			students = 100 // fallback
+		}
+		rates := superadmin.GetPlatformSettings().PackageRates
+		amount := MonthlyEstimate(students, selected, rates)
+		planName := EncodeSelectedPackages(selected)
+
+		if h.Pool != nil {
+			var subID string
+			var endDate time.Time
+			err := h.Pool.QueryRow(r.Context(), `
+				SELECT id, end_date FROM subscriptions
+				WHERE school_id=$1 AND status IN ('active','trial')
+				ORDER BY created_at DESC LIMIT 1
+			`, ctx.SchoolID).Scan(&subID, &endDate)
+			if err == pgx.ErrNoRows {
+				subID = store.NewID("sub")
+				endDate = now.AddDate(0, 0, 14)
+				_, err = h.Pool.Exec(r.Context(), `
+					INSERT INTO subscriptions (id, school_id, plan_name, student_limit, price, currency, start_date, end_date, status, is_trial, trial_used, trial_start_date, trial_end_date, created_at, updated_at)
+					VALUES ($1,$2,$3,$4,$5,'PKR',$6,$7,'trial',true,true,$6,$7,$6,$6)
+				`, subID, ctx.SchoolID, planName, students, amount, now, endDate)
+			} else if err == nil {
+				_, err = h.Pool.Exec(r.Context(), `
+					UPDATE subscriptions SET plan_name=$2, student_limit=$3, price=$4, updated_at=NOW()
+					WHERE id=$1
+				`, subID, planName, students, amount)
+			}
+			if err != nil {
+				return CurrentResponse{}, fmt.Errorf("update subscription packages: %w", err)
+			}
+			h.recordHistory(r.Context(), ctx.SchoolID, planName, students, amount, "pending", now, endDate, "package_change")
+		}
+
+		if h.Store != nil {
+			h.Store.Lock()
+			var latest *store.Subscription
+			for _, sub := range h.Store.Subscriptions {
+				if sub.SchoolID == ctx.SchoolID && (sub.Status == "active" || sub.Status == "trial") {
+					if latest == nil || sub.CreatedAt.After(latest.CreatedAt) {
+						latest = sub
+					}
+				}
+			}
+			if latest == nil {
+				latest = &store.Subscription{
+					ID:          store.NewID("sub"),
+					SchoolID:    ctx.SchoolID,
+					Status:      "trial",
+					AutoRenew:   false,
+					NextRenewal: now.AddDate(0, 0, 14),
+					CreatedAt:   now,
+				}
+				h.Store.Subscriptions = append(h.Store.Subscriptions, latest)
+			}
+			latest.PackageID = planName
+			latest.SelectedPackages = selected
+			latest.StudentLimit = students
+			latest.Price = amount
+			latest.UpdatedAt = now
+			h.Store.AuditLogs = append(h.Store.AuditLogs, &store.AuditLog{
+				ID:         store.NewID("aud"),
+				SchoolID:   ctx.SchoolID,
+				ActorID:    ctx.UserID,
+				ActorRole:  ctx.Role,
+				ActorEmail: ctx.ActorEmail,
+				Action:     "package_change",
+				EntityType: "subscription",
+				EntityID:   latest.ID,
+				After:      map[string]any{"selected_packages": selected, "student_limit": students, "monthly_cost": amount},
+				CreatedAt:  now,
+			})
+			h.Store.Unlock()
+		}
+
+		sub, err := h.getActiveSubscription(r.Context(), ctx.SchoolID)
+		if err != nil {
+			return CurrentResponse{}, err
+		}
+		days := 0
+		expired := true
+		if sub != nil {
+			selected = ParseSelectedPackages(sub.PlanName, nil)
+			if remaining := time.Until(sub.EndDate); remaining > 0 {
+				days = int(remaining.Hours() / 24)
+				expired = false
+			}
+		}
+		return CurrentResponse{
+			Subscription:           sub,
+			StudentsUsed:           students,
+			StudentsLimit:          students,
+			ActiveStudents:         students,
+			DaysRemaining:          days,
+			IsExpired:              expired,
+			CanTrial:               false,
+			SelectedPackages:       selected,
+			AvailablePackages:      PackageCatalog(rates),
+			AllowedModules:         PackageModules(selected),
+			MonthlyCost:            MonthlyEstimate(students, selected, rates),
+			MinimumMonthlyBill:     500,
+			PackageBuilderRequired: false,
+		}, nil
 	}))
 }
 
@@ -415,6 +610,10 @@ func (h *Handler) CheckStudentLimit(ctx context.Context, schoolID string) error 
 	// Count current active students
 	activeStudents := h.countActiveStudents(schoolID)
 
+	if len(ParseSelectedPackages(sub.PlanName, nil)) > 0 {
+		return nil
+	}
+
 	if activeStudents >= sub.StudentLimit {
 		return api.NewControlledError("STUDENT_LIMIT_REACHED",
 			fmt.Sprintf("You have reached your subscription student limit (%d students). Please upgrade your plan to add more students.", sub.StudentLimit),
@@ -483,22 +682,10 @@ func (h *Handler) activeSubscriptionFromStore(schoolID string) *Subscription {
 	if latest == nil {
 		return nil
 	}
-	planName := latest.PackageID
-	if planName == "" || planName == "trial" {
-		planName = "growth"
-	}
-	studentLimit := 500
-	price := 0
-	switch planName {
-	case "starter":
-		studentLimit = 200
-		price = 4000
-	case "growth":
-		studentLimit = 500
-		price = 9000
-	case "custom", "enterprise":
-		studentLimit = 800
-	}
+	selected := ParseSelectedPackages(latest.PackageID, latest.SelectedPackages)
+	planName := EncodeSelectedPackages(selected)
+	studentLimit := h.countActiveStudents(latest.SchoolID)
+	price := MonthlyEstimate(studentLimit, selected, superadmin.GetPlatformSettings().PackageRates)
 	start := latest.CreatedAt
 	if start.IsZero() {
 		start = time.Now()
@@ -507,12 +694,11 @@ func (h *Handler) activeSubscriptionFromStore(schoolID string) *Subscription {
 	if end.IsZero() {
 		end = start.AddDate(0, 0, 14)
 	}
-	isTrial := latest.PackageID == "trial" || latest.Status == "trial"
+	isTrial := latest.Status == "trial"
 	var trialStart, trialEnd *time.Time
 	if isTrial {
 		trialStart = &start
 		trialEnd = &end
-		price = 0
 	}
 	return &Subscription{
 		ID:             latest.ID,

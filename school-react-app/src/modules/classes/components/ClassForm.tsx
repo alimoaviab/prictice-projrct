@@ -82,7 +82,26 @@ export function ClassForm({
     const [saving, setSaving] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [teacherSearch, setTeacherSearch] = useState("");
-    const [selectedSections, setSelectedSections] = useState<string[]>(initialData?.section ? [initialData.section] : ["A"]);
+    const [sectionsList, setSectionsList] = useState<string[]>(() => {
+        const initial = initialData?.section || "A";
+        if (initial && initial !== "A") {
+            return ["A", initial];
+        }
+        return ["A"];
+    });
+    const [selectedSection, setSelectedSection] = useState<string>(initialData?.section || "A");
+
+    const handleAddSection = () => {
+        const newSec = window.prompt("Enter new section name (e.g. B, C, Gold):");
+        if (newSec && newSec.trim()) {
+            const trimmed = newSec.trim();
+            if (!sectionsList.includes(trimmed)) {
+                setSectionsList(prev => [...prev, trimmed]);
+            }
+            setSelectedSection(trimmed);
+            setForm(f => ({ ...f, section: trimmed }));
+        }
+    };
 
     // Auto-select logic for contextual creation
     useEffect(() => {
@@ -129,20 +148,16 @@ export function ClassForm({
         
         // If editing, just update the single class
         if (initialData) {
-            const result = await onCreate({ ...form, section: selectedSections[0] || "A" });
+            const result = await onCreate({ ...form, section: selectedSection });
             if (result && (result as any).ok !== false) {
                 // success
             }
         } else {
-            // Create one class per selected section
-            for (const section of selectedSections) {
-                const className = selectedSections.length > 1 
-                    ? `${form.name} ${section}` 
-                    : form.name;
-                await onCreate({ ...form, name: className, section });
-            }
+            // Create one class for the selected section
+            await onCreate({ ...form, section: selectedSection });
             setForm(initialForm);
-            setSelectedSections(["A"]);
+            setSelectedSection("A");
+            setSectionsList(["A"]);
         }
         setSaving(false);
     }
@@ -260,21 +275,17 @@ export function ClassForm({
                     />
                     <div className="space-y-1">
                         <label className="text-[11px] font-bold text-slate-500">Sections *</label>
-                        <div className="flex items-center gap-2 h-10">
-                            {["A", "B", "C"].map((s) => (
+                        <div className="flex items-center gap-1.5 h-10">
+                            {sectionsList.map((s) => (
                                 <button
                                     key={s}
                                     type="button"
                                     onClick={() => {
-                                        setSelectedSections(prev => 
-                                            prev.includes(s) 
-                                                ? prev.filter(x => x !== s).length === 0 ? [s] : prev.filter(x => x !== s)
-                                                : [...prev, s]
-                                        );
-                                        setForm(f => ({ ...f, section: selectedSections.includes(s) ? selectedSections.filter(x => x !== s)[0] || "A" : s }));
+                                        setSelectedSection(s);
+                                        setForm(f => ({ ...f, section: s }));
                                     }}
-                                    className={`h-9 w-9 rounded-lg border text-sm font-bold transition-all ${
-                                        selectedSections.includes(s)
+                                    className={`h-9 min-w-9 px-2.5 rounded-lg border text-sm font-bold transition-all ${
+                                        selectedSection === s
                                             ? "bg-blue-600 text-white border-blue-600 shadow-sm"
                                             : "bg-white text-slate-600 border-slate-200 hover:border-blue-300"
                                     }`}
@@ -282,12 +293,15 @@ export function ClassForm({
                                     {s}
                                 </button>
                             ))}
+                            <button
+                                type="button"
+                                onClick={handleAddSection}
+                                className="h-9 px-3 rounded-lg border border-dashed border-slate-300 bg-slate-50 text-slate-500 hover:text-blue-600 hover:border-blue-400 hover:bg-white transition-all text-xs font-bold flex items-center gap-1 active:scale-95"
+                            >
+                                <AppIcon name="Plus" size={14} />
+                                Add
+                            </button>
                         </div>
-                        {selectedSections.length > 1 && !initialData && (
-                            <p className="text-[9px] font-bold text-blue-600">
-                                {selectedSections.length} classes will be created
-                            </p>
-                        )}
                     </div>
                     <div className="space-y-1">
                         <label className="text-[11px] font-bold text-slate-500">Grade (1-12) *</label>
@@ -398,14 +412,6 @@ export function ClassForm({
                                 Add Subject
                             </Button>
                             <Button type="button" variant="ghost" className="h-9 px-4 border border-slate-200 rounded-lg text-[11px] font-bold">Template</Button>
-                            <Button 
-                                type="button" 
-                                variant="ghost" 
-                                onClick={applyPassPercentage}
-                                className="h-9 px-4 border border-slate-200 rounded-lg text-[11px] font-bold"
-                            >
-                                Apply Pass %
-                            </Button>
                         </div>
                     </div>
 
@@ -440,29 +446,13 @@ export function ClassForm({
                                         className="h-8 text-[10px] font-bold px-2 py-0 border-slate-200"
                                     />
 
-                                {/* Marks */}
-                                <div className="flex items-center gap-1 ml-auto">
-                                    <input
-                                        type="number"
-                                        value={subject.total_marks}
-                                        onChange={(e) => updateSubject(index, "total_marks", parseInt(e.target.value) || 0)}
-                                        className="w-11 h-8 text-center bg-white border border-slate-200 rounded-lg text-[9px] font-bold text-slate-900"
-                                        title="Total Marks"
-                                    />
-                                    <input
-                                        type="number"
-                                        value={subject.passing_marks}
-                                        onChange={(e) => updateSubject(index, "passing_marks", parseInt(e.target.value) || 0)}
-                                        className="w-11 h-8 text-center bg-white border border-slate-200 rounded-lg text-[9px] font-bold text-slate-900"
-                                        title="Pass Marks"
-                                    />
-                                </div>
+
 
                                 {/* Actions */}
                                 <button
                                     type="button"
                                     onClick={() => removeSubject(index)}
-                                    className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-300 hover:bg-red-50 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
+                                    className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-300 hover:bg-red-50 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100 ml-auto"
                                 >
                                     <AppIcon name="Trash2" size={14} />
                                 </button>
@@ -472,100 +462,7 @@ export function ClassForm({
                     </div>
                 </div>
 
-                {/* Grade Thresholds Section */}
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <h3 className="text-sm font-bold text-slate-900 normal-case ">Grade thresholds</h3>
-                        <div className="flex items-center gap-2">
-                            <Button
-                                type="button"
-                                variant="primary"
-                                onClick={addGrade}
-                                className="h-9 px-4 bg-blue-600 text-white rounded-lg text-[11px] font-bold gap-2"
-                            >
-                                <AppIcon name="Plus" size={14} />
-                                Add Grade
-                            </Button>
-                            <Button 
-                                type="button" 
-                                variant="ghost" 
-                                onClick={resetGrades}
-                                className="h-9 px-4 border border-slate-200 rounded-lg text-[11px] font-bold gap-2"
-                            >
-                                <AppIcon name="RefreshCw" size={14} />
-                                Reset
-                            </Button>
-                        </div>
-                    </div>
 
-                    <div className="space-y-1.5">
-                        {form.grade_thresholds?.map((grade, index) => (
-                            <div key={index} className="flex items-center gap-2 p-1.5 bg-slate-50/50 rounded-xl border border-slate-100 group">
-                                <div className="w-16 flex items-center justify-center gap-0.5 border border-slate-200/60 rounded-lg bg-white px-1 py-0.5">
-                                    <input
-                                        value={grade.grade.charAt(0) || ""}
-                                        onChange={(e) => {
-                                            const cleanLetter = e.target.value.replace(/[^a-zA-Z]/g, "").toUpperCase();
-                                            const currentSuffix = (grade.grade.charAt(1) === "+" || grade.grade.charAt(1) === "-") ? grade.grade.charAt(1) : "";
-                                            updateGrade(index, "grade", cleanLetter + currentSuffix);
-                                        }}
-                                        maxLength={1}
-                                        placeholder="G"
-                                        className="w-5 text-center bg-transparent border-none focus:ring-0 text-sm font-extrabold text-slate-900 p-0 outline-none"
-                                    />
-                                    <div className="relative flex items-center justify-center w-5 h-5">
-                                        <select
-                                            value={(grade.grade.charAt(1) === "+" || grade.grade.charAt(1) === "-") ? grade.grade.charAt(1) : ""}
-                                            onChange={(e) => {
-                                                const letter = grade.grade.charAt(0) || "";
-                                                updateGrade(index, "grade", letter + e.target.value);
-                                            }}
-                                            className="absolute inset-0 bg-transparent border-none text-xs font-extrabold text-slate-500 focus:ring-0 cursor-pointer p-0 w-full h-full outline-none appearance-none text-center z-10"
-                                        >
-                                            <option value=""> </option>
-                                            <option value="+">+</option>
-                                            <option value="-">-</option>
-                                        </select>
-                                        {!(grade.grade.charAt(1) === "+" || grade.grade.charAt(1) === "-") && (
-                                            <AppIcon name="ChevronDown" size={16} className="text-slate-400 pointer-events-none select-none z-0" />
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="w-14">
-                                    <input
-                                        type="number"
-                                        value={grade.min_score}
-                                        onChange={(e) => updateGrade(index, "min_score", parseInt(e.target.value) || 0)}
-                                        className="w-full text-center bg-transparent border-none focus:ring-0 text-sm font-bold text-blue-600"
-                                    />
-                                </div>
-                                <div className="w-14">
-                                    <input
-                                        type="number"
-                                        value={grade.max_score}
-                                        onChange={(e) => updateGrade(index, "max_score", parseInt(e.target.value) || 0)}
-                                        className="w-full text-center bg-transparent border-none focus:ring-0 text-sm font-bold text-blue-600"
-                                    />
-                                </div>
-                                <div className="flex-1">
-                                    <input
-                                        placeholder="Description"
-                                        value={grade.description}
-                                        onChange={(e) => updateGrade(index, "description", e.target.value)}
-                                        className="w-full bg-transparent border-none focus:ring-0 text-sm text-slate-500 placeholder:text-slate-300"
-                                    />
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => removeGrade(index)}
-                                    className="p-2 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                                >
-                                    <AppIcon name="Trash2" size={18} />
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                </div>
             </div>
 
             {/* Actions Bar */}

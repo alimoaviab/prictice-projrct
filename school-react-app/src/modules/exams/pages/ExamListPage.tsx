@@ -78,9 +78,16 @@ export function ExamListPage({
       label: "Name",
       render: (row) => (
         <div className="flex flex-col">
-          <span className="text-[12px] font-black text-slate-900 leading-none mb-1 tracking-tight">
-            {row.title}
-          </span>
+          <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+            <span className="text-[12px] font-black text-slate-900 leading-none tracking-tight">
+              {row.title}
+            </span>
+            {row.term && (
+              <Badge variant="secondary" className="text-[8px] font-extrabold px-1 py-0">
+                {row.term}
+              </Badge>
+            )}
+          </div>
           <span className="text-[10px] text-slate-500 font-bold tracking-tight truncate max-w-[260px]">
             {row.subject_count || (row.subjects || []).length} subj ·{" "}
             {(row.subjects || []).filter((s) => s).map((s) => s?.subject_name || "Unknown").join(", ") || row.subject}
@@ -326,8 +333,15 @@ function ExamCard({
   return (
     <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm hover:border-blue-200 transition-all flex flex-col">
       <div className="flex items-center justify-between mb-3">
-        <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
-          <AppIcon name="FileText" size={18} />
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+            <AppIcon name="FileText" size={18} />
+          </div>
+          {exam.term && (
+            <Badge variant="secondary" className="text-[8px] font-extrabold px-1.5 py-0.5">
+              {exam.term}
+            </Badge>
+          )}
         </div>
         <Badge
           variant={exam.status === "completed" ? "success" : "primary"}

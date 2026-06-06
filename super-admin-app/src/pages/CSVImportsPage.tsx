@@ -312,15 +312,95 @@ export function CSVImportsPage() {
     setValidationResult(null)
   }
 
+  const [showDoc, setShowDoc] = useState(true)
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold text-slate-900">CSV Import Engine</h1>
-        <p className="text-sm text-slate-500 mt-0.5">
-          Bulk import questions into the global question bank. Standard 19-column files or custom chapter/question files are supported.
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">CSV Import Engine</h1>
+          <p className="text-sm text-slate-500 mt-0.5">
+            Bulk import questions into the global question bank. Standard 19-column files or custom chapter/question files are supported.
+          </p>
+        </div>
+        <button
+          onClick={() => setShowDoc(!showDoc)}
+          className="h-9 px-3.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-all flex items-center gap-1.5 shadow-sm"
+        >
+          <AppIcon name={showDoc ? "VisibilityOff" : "Visibility"} size={15} />
+          {showDoc ? "Hide Instructions" : "Show CSV Schema"}
+        </button>
       </div>
+
+      {/* CSV Schema Documentation Panel */}
+      {showDoc && (
+        <div className="bg-gradient-to-r from-blue-50/40 via-indigo-50/20 to-slate-50/60 rounded-xl border border-blue-100 p-5 space-y-4 shadow-sm animate-[fadeIn_0.3s_ease]">
+          <div className="flex items-start gap-2.5">
+            <div className="h-6 w-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
+              <AppIcon name="Info" size={14} />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-slate-800">CSV Import Format & Auto-Handling Rules</h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                The import engine is designed to handle your 5-column question sheets automatically. It handles deduplication, auto-assigns marks, and dynamically registers new chapters.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-xs">
+            {/* Required/Core Columns */}
+            <div className="bg-white rounded-lg border border-slate-200/80 p-3.5 space-y-2">
+              <h3 className="font-bold text-slate-800 flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-blue-600">
+                <span>📋</span> Expected Columns (5-Column Layout)
+              </h3>
+              <div className="space-y-1.5 text-slate-600 leading-relaxed">
+                <div><strong>Sr No:</strong> Row serial number (ignored by the importer).</div>
+                <div><strong>Chapter:</strong> The chapter name. If the chapter already exists under the selected Class/Subject, it will be reused. If it is new, it will be automatically created.</div>
+                <div><strong>Section:</strong> Maps to the Question Topic (e.g. <code>Past Papers</code>, <code>Exercise</code>, <code>Additional</code>). If new, it will be created automatically.</div>
+                <div><strong>Question Type:</strong> Must contain <code>Short</code> or <code>Long</code> (e.g. <code>Short Question</code>, <code>Long Question</code>). Mapped automatically.</div>
+                <div><strong>Question Text:</strong> The actual text/HTML of the question.</div>
+              </div>
+            </div>
+
+            {/* Answer Options & Validation */}
+            <div className="bg-white rounded-lg border border-slate-200/80 p-3.5 space-y-2">
+              <h3 className="font-bold text-slate-800 flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-amber-600">
+                <span>⚡</span> Backend Auto-Handling
+              </h3>
+              <div className="space-y-1.5 text-slate-600 leading-relaxed">
+                <div><strong>Automatic Marks:</strong> Marks are assigned automatically based on type (Short Questions = <code>2 marks</code>, Long Questions = <code>5 marks</code>).</div>
+                <div><strong>Difficulty Default:</strong> Automatically sets the question difficulty to <code>medium</code>.</div>
+                <div><strong>Automatic Deduplication:</strong> If a question text already exists in the database, it will be skipped automatically to avoid creating duplicates.</div>
+                <div><strong>Context Mapping:</strong> Remember to select the target <strong>Board</strong>, <strong>Class</strong>, and <strong>Subject</strong> in the dropdowns below before uploading.</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Copyable Example Block */}
+          <div className="bg-slate-900 rounded-lg p-3 text-slate-300 font-mono text-[10px] space-y-1.5">
+            <div className="flex items-center justify-between text-[9px] uppercase font-bold text-slate-500 border-b border-slate-800 pb-1.5 mb-1.5">
+              <span>Your CSV Format Template</span>
+              <button 
+                onClick={() => {
+                  const csvText = `Sr No,Chapter,Section,Question Type,Question Text\n1,15.1 Concepts in Homeostasis,Past Papers,Short Question,What do you mean by homeostasis?\n2,15.1 Concepts in Homeostasis,Past Papers,Short Question,Differentiate between osmoregulation and thermoregulation.\n3,15.5 Excretion in Animals,Past Papers,Long Question,Draw labeled sketch of urea cycle.`;
+                  navigator.clipboard.writeText(csvText);
+                  toast('Copied to clipboard!');
+                }}
+                className="hover:text-white transition-colors flex items-center gap-1"
+              >
+                Copy Template
+              </button>
+            </div>
+            <div className="overflow-x-auto whitespace-pre">
+              {"Sr No,Chapter,Section,Question Type,Question Text\n" +
+               "1,15.1 Concepts in Homeostasis,Past Papers,Short Question,What do you mean by homeostasis?\n" +
+               "2,15.1 Concepts in Homeostasis,Past Papers,Short Question,Differentiate between osmoregulation and thermoregulation.\n" +
+               "3,15.5 Excretion in Animals,Past Papers,Long Question,Draw labeled sketch of urea cycle."}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Curriculum Mapping Context Card */}
       <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3 shadow-sm">
@@ -368,11 +448,10 @@ export function CSVImportsPage() {
           onDragLeave={handleDrag}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all ${
-            dragActive
+          className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all ${dragActive
               ? 'border-blue-500 bg-blue-50/40'
               : 'border-slate-300 bg-white hover:bg-slate-50/50 hover:border-slate-400'
-          }`}
+            }`}
         >
           <input
             ref={fileInputRef}
@@ -470,24 +549,22 @@ export function CSVImportsPage() {
                     return (
                       <tr
                         key={i}
-                        className={`border-b border-slate-50 last:border-0 hover:bg-slate-50/30 ${
-                          preview.status === 'invalid'
+                        className={`border-b border-slate-50 last:border-0 hover:bg-slate-50/30 ${preview.status === 'invalid'
                             ? 'bg-red-50/15'
                             : preview.status === 'duplicate'
-                            ? 'bg-amber-50/15'
-                            : 'bg-emerald-50/10'
-                        }`}
+                              ? 'bg-amber-50/15'
+                              : 'bg-emerald-50/10'
+                          }`}
                       >
                         <td className="px-3 py-2.5 font-mono text-slate-500">{preview.row_number}</td>
                         <td className="px-3 py-2.5">
                           <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                              preview.status === 'valid'
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${preview.status === 'valid'
                                 ? 'bg-emerald-100 text-emerald-700'
                                 : preview.status === 'invalid'
-                                ? 'bg-red-100 text-red-700'
-                                : 'bg-amber-100 text-amber-700'
-                            }`}
+                                  ? 'bg-red-100 text-red-700'
+                                  : 'bg-amber-100 text-amber-700'
+                              }`}
                           >
                             {preview.status}
                           </span>

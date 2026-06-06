@@ -30,7 +30,11 @@ export function StudentCreatePage() {
   const isClassDependencyLoading = classState.status === "idle" || classState.status === "loading";
   const rawData: any = classState.data;
   const classes = Array.isArray(rawData) ? rawData : (Array.isArray(rawData?.data) ? rawData.data : (Array.isArray(rawData?.items) ? rawData.items : []));
-  const classOptions = classes.map((item: any) => ({ id: item?._id || item?.id, label: item?.name || "Unnamed Class" }));
+  const classOptions = classes.map((item: any) => ({
+    id: item?._id || item?.id,
+    label: item?.name || "Unnamed Class",
+    section: item?.section || ""
+  }));
 
   async function handleCreate(input: StudentFormInput) {
     const result = await addStudent(input);

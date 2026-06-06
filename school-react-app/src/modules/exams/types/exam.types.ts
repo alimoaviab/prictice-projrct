@@ -21,6 +21,7 @@ export interface ExamFormInput {
   teacher_id?: string;
   title: string;
   type?: "exam" | "test";
+  term?: string;
   starts_at: string;
   status: "scheduled" | "completed" | "cancelled" | "results_published";
   description?: string;
@@ -43,6 +44,7 @@ export interface ExamRow {
   subject_count: number;
   title: string;
   type: "exam" | "test";
+  term: string;
   starts_at: string;
   // Aggregate max-marks across all subjects.
   max_marks: number;

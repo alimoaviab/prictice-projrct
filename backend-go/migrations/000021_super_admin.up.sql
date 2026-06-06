@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS platform_admins (
 -- SUBSCRIPTION PLANS
 -- ═══════════════════════════════════════════════════════════
 
+DROP TABLE IF EXISTS subscription_plans CASCADE;
+
 CREATE TABLE IF NOT EXISTS subscription_plans (
     id              TEXT PRIMARY KEY,
     name            TEXT NOT NULL,
@@ -83,6 +85,8 @@ CREATE INDEX idx_platform_schools_owner_email ON platform_schools(owner_email);
 -- ═══════════════════════════════════════════════════════════
 -- SUBSCRIPTIONS
 -- ═══════════════════════════════════════════════════════════
+
+DROP TABLE IF EXISTS subscriptions CASCADE;
 
 CREATE TABLE IF NOT EXISTS subscriptions (
     id              TEXT PRIMARY KEY,

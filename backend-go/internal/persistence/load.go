@@ -220,7 +220,7 @@ func (p *Persister) loadPackages(ctx context.Context, s *store.MemStore) error {
 
 func (p *Persister) loadSubscriptions(ctx context.Context, s *store.MemStore) error {
 	rows, err := p.pool.Query(ctx, `
-		SELECT id, school_id, plan_name, status, end_date, created_at, updated_at
+		SELECT id, school_id, plan_name, student_limit, price, status, end_date, created_at, updated_at
 		FROM subscriptions ORDER BY created_at`)
 	if err != nil {
 		log.Printf("[persistence] loadSubscriptions: %v (table may not exist yet)", err)
@@ -230,7 +230,7 @@ func (p *Persister) loadSubscriptions(ctx context.Context, s *store.MemStore) er
 	for rows.Next() {
 		v := &store.Subscription{}
 		var planName string
-		if err := rows.Scan(&v.ID, &v.SchoolID, &planName, &v.Status, &v.NextRenewal, &v.CreatedAt, &v.UpdatedAt); err != nil {
+		if err := rows.Scan(&v.ID, &v.SchoolID, &planName, &v.StudentLimit, &v.Price, &v.Status, &v.NextRenewal, &v.CreatedAt, &v.UpdatedAt); err != nil {
 			return err
 		}
 		v.PackageID = planName

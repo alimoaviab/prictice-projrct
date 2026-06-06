@@ -532,23 +532,57 @@ async function createStudents(classes) {
 }
 
 async function createLeaveRequests(class1Students) {
-  console.log("→ Seeding pending leave requests for Class-1...");
-  if (class1Students.length < 15) {
-    console.log(`⚠ Found only ${class1Students.length} students in Class-1. Seeding leaves for all available.`);
+  console.log("→ Seeding leave requests...");
+  
+  // Find student@gmail.com
+  const primaryStudent = class1Students.find(s => s.email?.toLowerCase() === "student@gmail.com");
+  
+  if (primaryStudent) {
+    console.log(`  → Seeding dedicated leave requests for ${primaryStudent.email}...`);
+    const leaveScenarios = [
+      { status: "pending", type: "Sick", daysOffset: 1, reason: "Sudden high fever, need rest." },
+      { status: "approved", type: "Casual", daysOffset: -5, reason: "Attending elder brother's wedding ceremony." },
+      { status: "rejected", type: "Emergency", daysOffset: -12, reason: "Going out of city for shopping." }
+    ];
+
+    for (const scenario of leaveScenarios) {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() + scenario.daysOffset);
+      const endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 1);
+
+      const body = {
+        requester_type: "student",
+        requester_id: primaryStudent._id || primaryStudent.id,
+        requester_name: `${primaryStudent.first_name} ${primaryStudent.last_name}`,
+        class_id: primaryStudent.class_id,
+        leave_type: scenario.type,
+        start_date: startDate.toISOString().split("T")[0],
+        end_date: endDate.toISOString().split("T")[0],
+        reason: scenario.reason,
+        status: scenario.status,
+      };
+
+      try {
+        await apiCall("POST", "/api/leave", body);
+      } catch (err) {
+        // may exist, ignore
+      }
+    }
   }
 
-  // Fetch existing leaves
+  // Fetch existing leaves count to see if we should seed the rest of Class-1
   let existingCount = 0;
   try {
     const existing = await apiCall("GET", "/api/leave");
-    const existingList = existing.items || existing.data || existing;
+    const existingList = existing.items || existing.data || existing || [];
     existingCount = existingList.length;
   } catch (err) {
     // Ignore and proceed
   }
 
   if (existingCount >= 15) {
-    console.log(`✓ Existing leave records found (${existingCount}), skipping leave creation.`);
+    console.log(`✓ General leaves check complete (existing count: ${existingCount}).`);
     return;
   }
 
@@ -557,6 +591,8 @@ async function createLeaveRequests(class1Students) {
 
   for (let i = 0; i < numToCreate; i++) {
     const student = class1Students[i];
+    if (student.email?.toLowerCase() === "student@gmail.com") continue; // Already handled
+
     const startDate = new Date();
     startDate.setDate(now.getDate() + 1 + i);
     const endDate = new Date();
@@ -580,7 +616,7 @@ async function createLeaveRequests(class1Students) {
       console.log(`  ⚠ Failed to create leave for ${student.email}: ${err.message}`);
     }
   }
-  console.log(`✓ Created ${numToCreate} pending leave requests.`);
+  console.log(`✓ Created general leave requests.`);
 }
 
 async function seedAttendance(students) {

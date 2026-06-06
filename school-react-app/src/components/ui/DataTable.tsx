@@ -86,8 +86,7 @@ export function DataTable<T>({
     row: T;
   } | null>(null);
 
-  const pageSize = typeof paginated === "number" ? paginated : 10;
-  const totalPages = Math.ceil(rows.length / pageSize);
+  const [pageSize, setPageSize] = useState(() => typeof paginated === "number" ? paginated : 10);
 
   const filteredRows = useMemo(() => {
     let result = [...rows];
@@ -119,6 +118,8 @@ export function DataTable<T>({
 
     return result;
   }, [rows, searchable, searchQuery, searchKeys, sortable, sort, columns]);
+
+  const totalPages = Math.ceil(filteredRows.length / pageSize);
 
   const paginatedRows = useMemo(() => {
     if (!paginated) return filteredRows;
@@ -388,39 +389,58 @@ export function DataTable<T>({
         </table>
       </div>
 
-      {paginated && totalPages > 1 && (
+      {paginated && filteredRows.length > 0 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-slate-500">
-            Showing {(page - 1) * pageSize + 1} to{" "}
-            {Math.min(page * pageSize, filteredRows.length)} of {filteredRows.length} results
-          </p>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="rounded-lg border border-slate-200 p-2 text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+          <div className="flex items-center gap-3">
+            <p className="text-sm text-slate-500">
+              Showing {(page - 1) * pageSize + 1} to{" "}
+              {Math.min(page * pageSize, filteredRows.length)} of {filteredRows.length} results
+            </p>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setPage(1);
+              }}
+              className="bg-white border border-slate-200 rounded px-1.5 py-0.5 text-[11px] font-bold text-slate-700 focus:outline-none focus:border-blue-400"
             >
-              <AppIcon name="ChevronLeft" />
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <button
-                key={p}
-                onClick={() => setPage(p)}
-                className={`h-9 w-9 rounded-lg text-sm font-semibold transition-colors ${
-                  p === page ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
-                }`}
-              >
-                {p}
-              </button>
-            ))}
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="rounded-lg border border-slate-200 p-2 text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <AppIcon name="ChevronRight" />
-            </button>
+              {[10, 20, 50, 100].map((size) => (
+                <option key={size} value={size}>
+                  {size} / page
+                </option>
+              ))}
+              <option value={filteredRows.length}>All</option>
+            </select>
           </div>
+          {totalPages > 1 && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="rounded-lg border border-slate-200 p-2 text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <AppIcon name="ChevronLeft" />
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={`h-9 w-9 rounded-lg text-sm font-semibold transition-colors ${
+                    p === page ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="rounded-lg border border-slate-200 p-2 text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <AppIcon name="ChevronRight" />
+              </button>
+            </div>
+          )}
         </div>
       )}
 

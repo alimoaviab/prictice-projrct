@@ -8,6 +8,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { StatCardCompact, Skeleton, DataState, EntityCard, EntityGrid, ConfirmModal } from "@/components/ui";
 import { useCertificateTemplates, useGeneratedCertificates } from "../hooks/useCertificates";
 import { useSchoolBranding } from "@/hooks/useSchoolBranding";
+import { getThemeLayoutHTML } from "../utils/themeHelper";
 import { CERTIFICATE_TYPE_LABELS, type CertificateType, type GeneratedCertificate } from "../types/certificate.types";
 
 type TabView = "templates" | "generated";
@@ -20,9 +21,11 @@ export function CertificateListPage() {
 
   const { state: templateState, deleteTemplate, duplicateTemplate } = useCertificateTemplates();
   const { state: certState, revokeCertificate } = useGeneratedCertificates();
-  const { schoolName } = useSchoolBranding();
+  const { schoolName, logoUrl } = useSchoolBranding();
 
-  const templates = templateState.data || [];
+  const templates = (templateState.data || []).filter(
+    (t) => (t.type as string) !== "fee_challan" && (t.type as string) !== "result_card" && (t.type as string) !== "admission_form"
+  );
   const certificates = certState.data || [];
 
   const filteredTemplates = useMemo(() => {
@@ -153,7 +156,7 @@ export function CertificateListPage() {
                   icon="description"
                   accent="blue"
                   title={template.name}
-                  subtitle={CERTIFICATE_TYPE_LABELS[template.type]}
+                  subtitle={CERTIFICATE_TYPE_LABELS[template.type as keyof typeof CERTIFICATE_TYPE_LABELS] || template.type}
                   status={{
                     label: template.orientation,
                     accent: template.orientation === "landscape" ? "blue" : "purple",
@@ -221,7 +224,7 @@ export function CertificateListPage() {
                   icon="verified"
                   accent={cert.status === "issued" ? "emerald" : "rose"}
                   title={cert.student_name}
-                  subtitle={CERTIFICATE_TYPE_LABELS[cert.certificate_type]}
+                  subtitle={CERTIFICATE_TYPE_LABELS[cert.certificate_type as keyof typeof CERTIFICATE_TYPE_LABELS] || cert.certificate_type}
                   status={{
                     label: cert.status,
                     accent: cert.status === "issued" ? "emerald" : "rose",
@@ -242,7 +245,7 @@ export function CertificateListPage() {
                     {
                       label: "Print",
                       icon: "print",
-                      onClick: () => printGeneratedCertificate(cert, schoolName),
+                      onClick: () => printGeneratedCertificate(cert, schoolName, logoUrl),
                       accent: "blue",
                     },
                     ...(cert.status === "issued"
@@ -286,16 +289,53 @@ function escapeHtml(value: unknown): string {
     .replace(/'/g, "&#039;");
 }
 
-function printGeneratedCertificate(cert: GeneratedCertificate, currentSchoolName: string) {
+function printGeneratedCertificate(cert: GeneratedCertificate, currentSchoolName: string, logoUrl?: string) {
   const printWin = window.open("", "_blank");
   if (!printWin) return;
   const metadata = cert.metadata || {};
   const schoolName = (metadata.school_name && metadata.school_name !== "School") ? metadata.school_name : (currentSchoolName || "School");
   const body = cert.body_text || "";
-  const title = CERTIFICATE_TYPE_LABELS[cert.certificate_type] || cert.certificate_type.replace("_", " ");
+  const title = CERTIFICATE_TYPE_LABELS[cert.certificate_type as keyof typeof CERTIFICATE_TYPE_LABELS] || cert.certificate_type.replace("_", " ");
   const safeBody = escapeHtml(body).replace(/\n/g, "<br>");
   const issueDate = metadata.issue_date || new Date(cert.issue_date).toLocaleDateString();
-  printWin.document.write(`<!DOCTYPE html><html><head><title>${escapeHtml(title)} - ${escapeHtml(cert.student_name)}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Georgia,serif;padding:48px;display:flex;align-items:center;justify-content:center;min-height:100vh;color:#172033}.cert{width:100%;max-width:860px;border:3px solid #d4a853;padding:56px;position:relative;text-align:center}.cert:before{content:'';position:absolute;inset:9px;border:1px solid #d4a85380}.school{font-size:28px;font-weight:bold}.school-meta{font-size:12px;color:#64748b;margin-top:4px}.title{font-size:22px;color:#1e40af;text-transform:uppercase;letter-spacing:3px;margin:22px 0;font-weight:bold}.divider{width:86px;height:2px;background:#d4a853;margin:12px auto}.body{font-size:15px;line-height:1.9;margin:30px auto;max-width:620px;color:#273449}.footer{display:flex;justify-content:space-between;gap:24px;margin-top:50px;padding-top:20px;border-top:1px solid #e5e7eb}.sig{text-align:center}.sig-line{width:132px;height:1px;background:#64748b;margin-bottom:5px}.sig-label{font-size:10px;color:#64748b;text-transform:uppercase;font-family:Arial,sans-serif}.meta{font-size:10px;color:#64748b;margin-top:4px;font-family:Arial,sans-serif}@media print{body{padding:0}.cert{min-height:100vh;border:3px solid #d4a853}}</style></head><body><div class="cert"><p class="school">${escapeHtml(schoolName)}</p><p class="school-meta">${escapeHtml(metadata.school_address || "")}${metadata.school_phone ? " | " + escapeHtml(metadata.school_phone) : ""}</p><div class="divider"></div><h1 class="title">${escapeHtml(title)}</h1><div class="divider"></div><p class="body">${safeBody}</p><div class="footer"><div class="sig"><div class="sig-line"></div><span class="sig-label">Principal</span></div><div><p class="meta">${escapeHtml(cert.certificate_no)}</p><p class="meta">${escapeHtml(cert.verification_code)}</p><p class="meta">${escapeHtml(issueDate)}</p></div><div class="sig"><div class="sig-line"></div><span class="sig-label">Class Teacher</span></div></div></div></body></html>`);
+
+  // Parse custom styles
+  let styles = {
+    primaryColor: "#d4a853",
+    titleColor: "#1e40af",
+    bodyColor: "#334155",
+    headingFont: "Cinzel",
+    recipientFont: "Great Vibes",
+    bodyFont: "EB Garamond",
+    themeLayout: "classic",
+  };
+  if (metadata.border_style) {
+    try {
+      const parsed = JSON.parse(metadata.border_style);
+      if (parsed && typeof parsed === "object") {
+        styles = {
+          primaryColor: parsed.primaryColor || styles.primaryColor,
+          titleColor: parsed.titleColor || styles.titleColor,
+          bodyColor: parsed.bodyColor || styles.bodyColor,
+          headingFont: parsed.headingFont || styles.headingFont,
+          recipientFont: parsed.recipientFont || styles.recipientFont,
+          bodyFont: parsed.bodyFont || styles.bodyFont,
+          themeLayout: parsed.themeLayout || styles.themeLayout,
+        };
+      }
+    } catch (e) {}
+  }
+
+  const logoHtml = logoUrl
+    ? `<img src="${logoUrl}" alt="Logo" style="height: 50px; max-width: 120px; object-fit: contain; margin-bottom: 12px; display: block; margin-left: auto; margin-right: auto;" />`
+    : `<div style="height: 48px; width: 48px; border-radius: 50%; background-color: ${styles.titleColor}; color: #fff; font-family: sans-serif; font-size: 20px; font-weight: bold; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; box-shadow: 0 3px 6px rgba(0,0,0,0.1);">${schoolName.charAt(0).toUpperCase()}</div>`;
+
+  const getPrintLayoutHTML = (layout: string, colors: typeof styles) => getThemeLayoutHTML(layout, colors);
+
+  const studentSpan = `<span style="font-family: '${styles.recipientFont}', cursive; font-size: 1.5em; color: ${styles.titleColor}; display: inline-block; font-weight: normal; line-height: 1; vertical-align: middle;">${escapeHtml(cert.student_name)}</span>`;
+  const formattedBody = safeBody.replace(new RegExp(escapeHtml(cert.student_name), "g"), studentSpan);
+
+  printWin.document.write(`<!DOCTYPE html><html><head><title>${escapeHtml(title)} - ${escapeHtml(cert.student_name)}</title><style>@import url('https://fonts.googleapis.com/css2?family=Alex+Brush&family=Allura&family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,700;1,400&family=EB+Garamond:ital,wght@0,400;0,700;1,400&family=Great+Vibes&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@400;700&family=Parisienne&family=Pinyon+Script&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Tangerine:wght@400;700&display=swap');*{margin:0;padding:0;box-sizing:border-box}body{font-family:Georgia,serif;padding:48px;display:flex;align-items:center;justify-content:center;min-height:100vh;background-color:#f8fafc;color:#172033}.cert{width:100%;max-width:860px;padding:56px;position:relative;text-align:center;background:#fff;box-shadow:0 10px 25px rgba(0,0,0,0.05);border-radius:12px;aspect-ratio:1.414/1}.school{font-size:28px;font-weight:bold;color:${styles.titleColor};font-family:'${styles.headingFont}', serif}.school-meta{font-size:11px;color:#64748b;margin-top:4px}.title{font-size:22px;color:${styles.titleColor};font-family:'${styles.headingFont}', serif;text-transform:uppercase;letter-spacing:3px;margin:22px 0;font-weight:bold}.divider{width:86px;height:2px;background:${styles.primaryColor};margin:12px auto}.body{font-size:15px;line-height:1.9;margin:30px auto;max-width:620px;color:${styles.bodyColor};font-family:'${styles.bodyFont}', serif}.footer{display:flex;justify-content:space-between;gap:24px;margin-top:50px;padding-top:10px;border-top:none}.sig{text-align:center}.sig-line{width:110px;height:1px;background:${styles.primaryColor};margin-bottom:5px}.sig-label{font-size:10px;color:#94a3b8;text-transform:uppercase;font-family:sans-serif;letter-spacing:1px;font-weight:bold}.meta{font-size:9px;color:#94a3b8;margin-top:4px;font-family:monospace}@media print{body{padding:0;background-color:#fff}.cert{min-height:100vh;box-shadow:none;border-radius:0}}</style></head><body><div class="cert">${getPrintLayoutHTML(styles.themeLayout, styles)}${logoHtml}<p class="school">${escapeHtml(schoolName)}</p><p class="school-meta">${escapeHtml(metadata.school_address || "")}${metadata.school_phone ? " | " + escapeHtml(metadata.school_phone) : ""}</p><div class="divider"></div><h1 class="title">${escapeHtml(title)}</h1><div class="divider"></div><p class="body">${formattedBody}</p><div class="footer"><div class="sig"><div class="sig-line"></div><span class="sig-label">Principal</span></div><div><p class="meta">${escapeHtml(cert.certificate_no)}</p><p class="meta">Code: ${escapeHtml(cert.verification_code)}</p><p class="meta">${escapeHtml(issueDate)}</p></div><div class="sig"><div class="sig-line"></div><span class="sig-label">Class Teacher</span></div></div></div></body></html>`);
   printWin.document.close();
   setTimeout(() => printWin.print(), 300);
 }

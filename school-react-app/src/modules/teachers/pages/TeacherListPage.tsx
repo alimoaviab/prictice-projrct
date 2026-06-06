@@ -19,6 +19,7 @@ import { showToast } from "@/utils/toast";
 import { useQueryParams } from "@/hooks/useQueryParams";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { usePagination } from "@/hooks/usePagination";
+import { TeacherDetailsModal } from "../components/TeacherDetailsModal";
 
 export function TeacherListPage() {
   const navigate = useNavigate();
@@ -60,6 +61,7 @@ export function TeacherListPage() {
 
   const [deletingTeacher, setDeletingTeacher] = useState<TeacherRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedTeacherDetails, setSelectedTeacherDetails] = useState<string | null>(null);
 
   useEffect(() => {
     setSearchQuery(currentParams.get("search") || "");
@@ -145,6 +147,12 @@ export function TeacherListPage() {
 
   const rowActions: RowAction<TeacherRow>[] = useMemo(
     () => [
+      {
+        icon: "visibility",
+        label: "View details",
+        variant: "ghost",
+        onClick: (row) => setSelectedTeacherDetails(row._id),
+      },
       {
         icon: "edit",
         label: "Edit Record",
@@ -317,9 +325,7 @@ export function TeacherListPage() {
                     {
                       label: "View details",
                       icon: "visibility",
-                      onClick: () => {
-                        alert(`Teacher: ${row.first_name} ${row.last_name}\nID: ${row.employee_no}\nQualification: ${row.qualification}\nPhone: ${row.phone}`);
-                      },
+                      onClick: () => setSelectedTeacherDetails(row._id),
                       accent: "blue",
                     },
                     {
@@ -385,25 +391,15 @@ export function TeacherListPage() {
         ))}
       </div>
 
-      {/* Pagination Footer - Premium ERP Style */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100">
-        <p className="text-[10px] font-bold text-slate-400 normal-case ">
-          Showing <span className="text-blue-600">1</span> to <span className="text-slate-900">{filteredRows.length}</span> of <span className="text-slate-900">{state.data?.length}</span> records
-        </p>
-        <div className="flex items-center gap-2">
-          <button className="h-9 px-4 rounded-xl border border-slate-200 text-[10px] font-bold normal-case  text-slate-400 cursor-not-allowed flex items-center gap-2">
-            <AppIcon name="ChevronLeft" size={16} />
-            Previous
-          </button>
-          <div className="flex items-center gap-1">
-            <button className="h-9 w-9 rounded-xl bg-blue-600 text-[10px] font-bold text-white shadow-lg shadow-blue-600/20">1</button>
-          </div>
-          <button className="h-9 px-4 rounded-xl border border-slate-200 text-[10px] font-bold normal-case  text-slate-400 cursor-not-allowed flex items-center gap-2">
-            Next
-            <AppIcon name="ChevronRight" size={16} />
-          </button>
-        </div>
-      </div>
+      <Pagination
+        page={pagination.page}
+        pages={pagination.pages}
+        total={pagination.total}
+        limit={pagination.limit}
+        onPageChange={pagination.setPage}
+        onLimitChange={pagination.setLimit}
+        isFetching={state.status === "loading"}
+      />
 
       <ConfirmModal
         isOpen={!!deletingTeacher}
@@ -414,6 +410,12 @@ export function TeacherListPage() {
         confirmLabel="Remove teacher"
         confirmVariant="danger"
         isLoading={isDeleting}
+      />
+
+      <TeacherDetailsModal
+        isOpen={selectedTeacherDetails !== null}
+        teacherId={selectedTeacherDetails}
+        onClose={() => setSelectedTeacherDetails(null)}
       />
     </div>
   );

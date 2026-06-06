@@ -28,6 +28,14 @@ export interface Subscription {
   trial_end_date?: string;
 }
 
+export interface ModulePackage {
+  id: string;
+  name: string;
+  rate: number;
+  mandatory: boolean;
+  modules: string[];
+}
+
 export interface CurrentSubscription {
   subscription: Subscription | null;
   students_used: number;
@@ -35,6 +43,10 @@ export interface CurrentSubscription {
   days_remaining: number;
   is_expired: boolean;
   can_trial: boolean;
+  selected_packages?: string[];
+  available_packages?: ModulePackage[];
+  allowed_modules?: Record<string, boolean>;
+  package_builder_required?: boolean;
 }
 
 export interface HistoryEntry {
@@ -59,6 +71,13 @@ export function getPlans() {
 
 export function startTrial() {
   return serviceRequest<Subscription>("/api/subscription/start-trial", { method: "POST" });
+}
+
+export function updatePackages(selectedPackages: string[]) {
+  return serviceRequest<CurrentSubscription>("/api/subscription/packages", {
+    method: "POST",
+    body: JSON.stringify({ selected_packages: selectedPackages }),
+  });
 }
 
 export function upgradePlan(planName: string, studentLimit?: number) {

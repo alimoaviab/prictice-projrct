@@ -29,7 +29,7 @@ export function StudentEditPage() {
 
     const { state: studentState, run: runStudent } = useSafeAsync<StudentRow>(NEVER_EMPTY);
     const { state: classState, run: runClasses } = useSafeAsync<
-        Array<{ _id: string; name: string }>
+        Array<{ _id: string; name: string; section?: string }>
     >(ARRAY_IS_EMPTY);
 
     const loadStudent = useCallback(() => {
@@ -77,6 +77,7 @@ export function StudentEditPage() {
     const classOptions = (classState.data ?? []).map((item) => ({
         id: item._id,
         label: item.name,
+        section: item.section || "",
     }));
 
     if (studentState.status === "error") {
