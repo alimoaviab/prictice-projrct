@@ -164,46 +164,57 @@ export function SubscriptionPage() {
         </div>
       </div>
 
-      {/* History */}
-      {history.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Subscription History</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="text-left py-3 px-2 text-gray-500 font-medium">Plan</th>
-                  <th className="text-left py-3 px-2 text-gray-500 font-medium">Action</th>
-                  <th className="text-left py-3 px-2 text-gray-500 font-medium">Amount</th>
-                  <th className="text-left py-3 px-2 text-gray-500 font-medium">Period</th>
-                  <th className="text-left py-3 px-2 text-gray-500 font-medium">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.map((entry) => (
-                  <tr key={entry.id} className="border-b border-gray-50">
-                    <td className="py-3 px-2 font-medium text-gray-900">{planDisplayName(entry.plan_name)}</td>
-                    <td className="py-3 px-2 capitalize text-gray-600">{entry.action}</td>
-                    <td className="py-3 px-2 text-gray-600">
-                      {entry.amount > 0 ? `PKR ${entry.amount.toLocaleString()}` : "Free"}
-                    </td>
-                    <td className="py-3 px-2 text-gray-500 text-xs">
-                      {new Date(entry.start_date).toLocaleDateString()} — {new Date(entry.end_date).toLocaleDateString()}
-                    </td>
-                    <td className="py-3 px-2">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                        entry.payment_status === "paid" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
-                      }`}>
-                        {entry.payment_status}
-                      </span>
-                    </td>
+      {/* History — deduplicated: group same-action+same-plan consecutive entries */}
+      {history.length > 0 && (() => {
+        // Keep only the LATEST entry per unique (action + plan_name) combination.
+        // This removes the dozens of repeated "trial" rows caused by repeated seeder runs.
+        const seen = new Set<string>();
+        const deduped = history.filter((entry) => {
+          const key = `${entry.action}::${entry.plan_name}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        return (
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Subscription History</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="text-left py-3 px-2 text-gray-500 font-medium">Plan</th>
+                    <th className="text-left py-3 px-2 text-gray-500 font-medium">Action</th>
+                    <th className="text-left py-3 px-2 text-gray-500 font-medium">Amount</th>
+                    <th className="text-left py-3 px-2 text-gray-500 font-medium">Period</th>
+                    <th className="text-left py-3 px-2 text-gray-500 font-medium">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {deduped.map((entry) => (
+                    <tr key={entry.id} className="border-b border-gray-50">
+                      <td className="py-3 px-2 font-medium text-gray-900">{planDisplayName(entry.plan_name)}</td>
+                      <td className="py-3 px-2 capitalize text-gray-600">{entry.action.replace(/_/g, " ")}</td>
+                      <td className="py-3 px-2 text-gray-600">
+                        {entry.amount > 0 ? `PKR ${entry.amount.toLocaleString()}` : "Free"}
+                      </td>
+                      <td className="py-3 px-2 text-gray-500 text-xs">
+                        {new Date(entry.start_date).toLocaleDateString()} — {new Date(entry.end_date).toLocaleDateString()}
+                      </td>
+                      <td className="py-3 px-2">
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          entry.payment_status === "paid" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                        }`}>
+                          {entry.payment_status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Contact Sales Modal */}
       {showContactModal && (
