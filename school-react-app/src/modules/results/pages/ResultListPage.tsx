@@ -29,7 +29,7 @@ import { showToast } from "@/utils/toast";
 import { useQueryParams } from "@/hooks/useQueryParams";
 import { useClasses } from "../../classes/hooks/useClasses";
 import { useExams } from "../../exams/hooks/useExams";
-import { exportMarksheet, exportExamMarksheet } from "@/utils/marksheet";
+import { exportMarksheet, exportExamMarksheet, exportClassMarksheet } from "@/utils/marksheet";
 import { useAuth } from "@/hooks/useAuth";
 import { useSchoolBranding } from "@/hooks/useSchoolBranding";
 
@@ -52,6 +52,10 @@ export function ResultListPage({
   const [examFilter, setExamFilter] = useState<string>(
     currentParams.get("exam_id") || "all"
   );
+
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [printClassId, setPrintClassId] = useState("all");
+  const [printTerm, setPrintTerm] = useState("all");
 
   const { state: examState } = useExams(
     classFilter !== "all" ? { class_id: classFilter } : {}
@@ -126,6 +130,17 @@ export function ResultListPage({
       avgMarks: `${avg}%`,
     };
   }, [filteredRows]);
+
+  const termsList = useMemo(() => {
+    const rows = Array.isArray(state.data) ? state.data : [];
+    const set = new Set<string>();
+    for (const r of rows) {
+      if (r.exam_term) {
+        set.add(r.exam_term);
+      }
+    }
+    return Array.from(set);
+  }, [state.data]);
 
   const columns: DataTableColumn<ResultRow>[] = useMemo(
     () => [
@@ -391,15 +406,16 @@ export function ResultListPage({
             Record Results
           </Link>
 
-          {filteredRows.length > 0 && (
+          {state.data && state.data.length > 0 && (
             <button
               type="button"
               onClick={() => {
-                exportExamMarksheet(filteredRows, { schoolName: brandedSchoolName, logoUrl });
-                showToast("Generating class marksheet…", "info");
+                setPrintClassId(classFilter !== "all" ? classFilter : "all");
+                setPrintTerm("all");
+                setIsPrintModalOpen(true);
               }}
               className="h-9 flex items-center gap-2 px-3 bg-white border border-slate-200 text-slate-700 rounded-lg text-[10px] font-black uppercase tracking-wider hover:border-blue-300 hover:text-blue-700 transition-all"
-              title="Download a marksheet covering every visible row"
+              title="Download a custom marksheet with subject breakdowns and rankings"
             >
               <AppIcon name="FileText" size={16} />
               Export Sheet
@@ -422,6 +438,192 @@ export function ResultListPage({
           }}
         />
       </div>
+
+      {isPrintModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-200"
+            onClick={() => setIsPrintModalOpen(false)}
+          />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 transform transition-all duration-200">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-blue-50">
+                <AppIcon name="FileText" size={24} className="text-blue-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-bold text-slate-900 leading-tight">
+                  Export Class Marksheet
+                </h3>
+                <p className="text-sm text-slate-600 mt-1.5 leading-relaxed">
+                  Generate a printable class marksheet. It will display a structured table of all subjects, marks, grades, and calculated class rankings (Positions).
+                </p>
+
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                      Class
+                    </label>
+                    <select
+                      value={printClassId}
+                      onChange={(e) => setPrintClassId(e.target.value)}
+                      className="w-full h-10 px-3 rounded-lg border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 outline-none cursor-pointer focus:border-blue-500 focus:bg-white"
+                    >
+                      <option value="all">All Classes</option>
+                      {((classState.data as any)?.data || []).map((c: any) => (
+                        <option key={c.id || c._id} value={c.id || c._id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                      Term / Evaluation
+                    </label>
+                    <select
+                      value={printTerm}
+                      onChange={(e) => setPrintTerm(e.target.value)}
+                      className="w-full h-10 px-3 rounded-lg border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 outline-none cursor-pointer focus:border-blue-500 focus:bg-white"
+                    >
+                      <option value="all">All Terms / Exams</option>
+                      {termsList.map((term: string) => (
+                        <option key={term} value={term}>
+                          {term}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 mt-6 pt-4 border-t border-slate-100">
+              <button
+                onClick={() => setIsPrintModalOpen(false)}
+                className="px-4 py-2 text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  let results = Array.isArray(state.data) ? state.data : [];
+                  if (printClassId !== "all") {
+                    results = results.filter((r) => r.class_id === printClassId);
+                  }
+                  if (printTerm !== "all") {
+                    results = results.filter((r) => r.exam_term === printTerm);
+                  }
+
+                  if (results.length === 0) {
+                    showToast("No results found for selected class and term.", "warning");
+                    return;
+                  }
+
+                  const classesList = (classState.data as any)?.data || [];
+                  const selectedClass = classesList.find((c: any) => (c.id || c._id) === printClassId);
+                  const className = selectedClass ? selectedClass.name : "All Classes";
+
+                  const studentMap = new Map<string, any>();
+                  const allSubjects = new Set<string>();
+
+                  for (const r of results) {
+                    if (!r.student_id) continue;
+                    let entry = studentMap.get(r.student_id);
+                    if (!entry) {
+                      entry = {
+                        student_id: r.student_id,
+                        student_name: r.student_name,
+                        admission_no: r.admission_no,
+                        subjectMarks: {} as Record<string, { obtained: number; max: number }>,
+                        totalObtained: 0,
+                        totalMax: 0,
+                        remarks: r.remarks,
+                      };
+                      studentMap.set(r.student_id, entry);
+                    }
+                    if (r.subjects && r.subjects.length > 0) {
+                      for (const sub of r.subjects) {
+                        allSubjects.add(sub.subject_name);
+                        const current = entry.subjectMarks[sub.subject_name] || { obtained: 0, max: 0 };
+                        if (sub.obtained_marks === -1) {
+                          entry.subjectMarks[sub.subject_name] = {
+                            obtained: current.obtained > 0 ? current.obtained : -1,
+                            max: current.max + sub.max_marks,
+                          };
+                        } else {
+                          entry.subjectMarks[sub.subject_name] = {
+                            obtained: (current.obtained === -1 ? 0 : current.obtained) + sub.obtained_marks,
+                            max: current.max + sub.max_marks,
+                          };
+                        }
+                      }
+                    } else {
+                      const subName = r.exam_subject || "General";
+                      allSubjects.add(subName);
+                      const current = entry.subjectMarks[subName] || { obtained: 0, max: 0 };
+                      entry.subjectMarks[subName] = {
+                        obtained: current.obtained + r.obtained_marks,
+                        max: current.max + r.max_marks,
+                      };
+                    }
+                  }
+
+                  const studentScores: any[] = [];
+                  studentMap.forEach((entry) => {
+                    let obtainedSum = 0;
+                    let maxSum = 0;
+                    Object.keys(entry.subjectMarks).forEach((subName) => {
+                      const mark = entry.subjectMarks[subName];
+                      if (mark.obtained !== -1) {
+                        obtainedSum += mark.obtained;
+                      }
+                      maxSum += mark.max;
+                    });
+                    entry.totalObtained = obtainedSum;
+                    entry.totalMax = maxSum;
+                    entry.percentage = maxSum > 0 ? (obtainedSum / maxSum) * 100 : 0;
+                    
+                    const ratio = maxSum > 0 ? obtainedSum / maxSum : 0;
+                    const pct = ratio * 100;
+                    let grade = "F";
+                    if (pct >= 90) grade = "A+";
+                    else if (pct >= 80) grade = "A";
+                    else if (pct >= 70) grade = "B";
+                    else if (pct >= 60) grade = "C";
+                    else if (pct >= 50) grade = "D";
+
+                    entry.grade = grade;
+                    studentScores.push(entry);
+                  });
+
+                  studentScores.sort((a, b) => b.percentage - a.percentage);
+                  let rank = 1;
+                  for (let i = 0; i < studentScores.length; i++) {
+                    if (i > 0 && studentScores[i].percentage < studentScores[i - 1].percentage) {
+                      rank = i + 1;
+                    }
+                    studentScores[i].rank = rank;
+                  }
+
+                  exportClassMarksheet(
+                    studentScores,
+                    Array.from(allSubjects),
+                    className,
+                    printTerm === "all" ? "All Terms / Exams" : printTerm,
+                    { schoolName: brandedSchoolName, logoUrl }
+                  );
+                  setIsPrintModalOpen(false);
+                  showToast("Generating marksheet…", "info");
+                }}
+                className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-all"
+              >
+                Print Marksheet
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

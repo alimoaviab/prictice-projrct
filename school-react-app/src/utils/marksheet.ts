@@ -468,3 +468,135 @@ export function exportExamMarksheet(rows: ResultRow[], opts: MarksheetOptions = 
 
   printHtmlDocument(html, `Exam Marksheet ${exam.exam_title}`);
 }
+
+export interface ClassMarksheetStudent {
+  student_id: string;
+  student_name: string;
+  admission_no: string;
+  subjectMarks: Record<string, { obtained: number; max: number }>;
+  totalObtained: number;
+  totalMax: number;
+  percentage: number;
+  grade: string;
+  remarks: string;
+  rank: number;
+}
+
+export function exportClassMarksheet(
+  students: ClassMarksheetStudent[],
+  subjects: string[],
+  className: string,
+  termLabel: string,
+  opts: MarksheetOptions = {}
+): void {
+  if (students.length === 0) return;
+
+  const subjectHeaders = subjects
+    .map((sub) => `<th style="text-align: center;">${htmlEscape(sub)}</th>`)
+    .join("");
+
+  const tableBody = students
+    .map((st) => {
+      const subjectCols = subjects
+        .map((sub) => {
+          const marks = st.subjectMarks[sub];
+          if (!marks || marks.max <= 0) return `<td style="text-align: center; color: #94a3b8;">—</td>`;
+          const isAbsent = marks.obtained === -1;
+          return `<td style="text-align: center;">${isAbsent ? "Absent" : `${htmlEscape(marks.obtained)} <span style="color: #64748b; font-size: 10px;">/ ${htmlEscape(marks.max)}</span>`}</td>`;
+        })
+        .join("");
+
+      return `<tr>
+        <td style="font-weight: 700; text-align: center;">${formatRank(st.rank)}</td>
+        <td style="font-weight: 600;">${htmlEscape(st.student_name)}</td>
+        <td style="color: #475569;">${htmlEscape(st.admission_no)}</td>
+        ${subjectCols}
+        <td style="font-weight: 700;">${htmlEscape(st.totalObtained)} <span style="color: #64748b; font-size: 10px; font-weight: 500;">/ ${htmlEscape(st.totalMax)}</span></td>
+        <td style="font-weight: 700; text-align: center; color: #2563eb;">${Math.round(st.percentage)}%</td>
+        <td style="text-align: center;"><span style="font-weight: 700; padding: 2px 6px; border-radius: 4px; background: ${st.grade === "F" ? "#fee2e2; color: #dc2626;" : "#dbeafe; color: #2563eb;"}">${htmlEscape(st.grade)}</span></td>
+        <td style="font-size: 11px; color: #475569;">${htmlEscape(st.remarks || "—")}</td>
+      </tr>`;
+    })
+    .join("");
+
+  const totalMarks = students.reduce((acc, s) => acc + s.totalObtained, 0);
+  const maxMarks = students.reduce((acc, s) => acc + s.totalMax, 0);
+  const overallPct = maxMarks > 0 ? Math.round((totalMarks / maxMarks) * 100) : 0;
+  const passed = students.filter((s) => s.grade.toUpperCase() !== "F").length;
+
+  const html = `<!DOCTYPE html><html lang="en"><head>
+    <meta charset="utf-8" />
+    <title>Class Marksheet — ${htmlEscape(className)}</title>
+    ${baseStyles}
+  </head><body>
+    <div class="sheet" style="max-width: 1000px;">
+      ${renderHeader(opts, "Class Marksheet")}
+
+      <div class="summary-grid" style="grid-template-columns: repeat(4, 1fr);">
+        <div>
+          <div class="label">Class</div>
+          <div class="value">${htmlEscape(className)}</div>
+        </div>
+        <div>
+          <div class="label">Term / Evaluation</div>
+          <div class="value">${htmlEscape(termLabel)}</div>
+        </div>
+        <div>
+          <div class="label">Total Students</div>
+          <div class="value">${students.length}</div>
+        </div>
+        <div>
+          <div class="label">Class Average</div>
+          <div class="value" style="color: #2563eb;">${overallPct}%</div>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align: center; width: 60px;">Pos</th>
+            <th>Student</th>
+            <th>Admission</th>
+            ${subjectHeaders}
+            <th>Total Marks</th>
+            <th style="text-align: center;">Percentage</th>
+            <th style="text-align: center;">Grade</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+        <tbody>${tableBody}</tbody>
+      </table>
+
+      <div class="totals" style="grid-template-columns: repeat(4, 1fr); margin-top: 30px;">
+        <div class="stat">
+          <div class="lbl">Class Aggregate</div>
+          <div class="val">${totalMarks} / ${maxMarks}</div>
+        </div>
+        <div class="stat">
+          <div class="lbl">Class Avg</div>
+          <div class="val">${overallPct}%</div>
+        </div>
+        <div class="stat">
+          <div class="lbl">Passed</div>
+          <div class="val" style="color: #16a34a;">${passed}</div>
+        </div>
+        <div class="stat">
+          <div class="lbl">Failed</div>
+          <div class="val" style="color: #dc2626;">${students.length - passed}</div>
+        </div>
+      </div>
+
+      ${renderFooter(opts)}
+    </div>
+  </body></html>`;
+
+  printHtmlDocument(html, `Class Marksheet ${className}`);
+}
+
+function formatRank(r: number): string {
+  const j = r % 10, k = r % 100;
+  if (j === 1 && k !== 11) return r + "st";
+  if (j === 2 && k !== 12) return r + "nd";
+  if (j === 3 && k !== 13) return r + "rd";
+  return r + "th";
+}
