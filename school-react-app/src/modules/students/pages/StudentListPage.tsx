@@ -267,8 +267,9 @@ export function StudentListPage() {
       )}
 
       {/* Toolbar Section - Unified & Sticky */}
-      <div className="premium-card p-2 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/80 backdrop-blur-md border-slate-200/60 shadow-sm rounded-xl">
-        <div className="flex flex-1 items-center gap-2 max-w-2xl">
+      <div className="premium-card p-2 flex flex-col gap-3 bg-white/80 backdrop-blur-md border-slate-200/60 shadow-sm rounded-xl">
+        {/* Top row: search + add button */}
+        <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <AppIcon name="Search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
@@ -282,7 +283,20 @@ export function StudentListPage() {
               className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-xs font-medium text-slate-700 outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-600/5 placeholder:text-slate-400"
             />
           </div>
-          <div className="h-6 w-px bg-slate-200" />
+          <Link
+            to={withQuery("/admin/students/create")}
+            className="inline-flex h-9 items-center gap-2 px-4 text-[11px] font-bold normal-case text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95 whitespace-nowrap flex-shrink-0"
+          >
+            <AppIcon name="UserPlus" size={18} />
+            <span className="hidden sm:inline">Add student</span>
+          </Link>
+        </div>
+
+        {/* Bottom row: filters + view toggle */}
+        <div
+          className="flex items-center gap-2"
+          style={{ overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
           <select
             value={statusFilter}
             onChange={(e) => {
@@ -290,7 +304,7 @@ export function StudentListPage() {
               setStatusFilter(value);
               updateQuery({ status: value });
             }}
-            className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none cursor-pointer transition-all hover:border-slate-300 focus:border-blue-400"
+            className="h-9 flex-shrink-0 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none cursor-pointer transition-all hover:border-slate-300 focus:border-blue-400"
           >
             <option value="all">Status: All</option>
             <option value="active">Active only</option>
@@ -301,7 +315,7 @@ export function StudentListPage() {
             onChange={(e) => {
               updateQuery({ class_id: e.target.value });
             }}
-            className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none cursor-pointer transition-all hover:border-slate-300 focus:border-blue-400"
+            className="h-9 flex-shrink-0 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none cursor-pointer transition-all hover:border-slate-300 focus:border-blue-400"
           >
             <option value="">Class: All</option>
             {classOptions.map((cls: { id: string; label: string }) => (
@@ -315,27 +329,25 @@ export function StudentListPage() {
               setPerformanceFilter(value);
               updateQuery({ performance: value });
             }}
-            className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none cursor-pointer transition-all hover:border-slate-300 focus:border-blue-400"
+            className="h-9 flex-shrink-0 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none cursor-pointer transition-all hover:border-slate-300 focus:border-blue-400"
           >
             <option value="all">Performance: All</option>
             <option value="topper">Topper Students</option>
             <option value="weak">Weak Students</option>
             <option value="progress">Student Progress</option>
           </select>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="flex items-center rounded-lg bg-slate-100 p-1 shadow-inner">
+          <div className="h-6 w-px bg-slate-200 flex-shrink-0" />
+          <div className="flex items-center rounded-lg bg-slate-100 p-1 shadow-inner flex-shrink-0">
             <button
               onClick={() => {
                 setViewMode("grid");
                 updateQuery({ view: "grid" });
               }}
-              className={`flex h-7 items-center gap-2 rounded-md px-3 text-[11px] font-bold transition-all ${
+              className={`flex h-7 items-center gap-1.5 rounded-md px-2.5 text-[11px] font-bold transition-all ${
                 viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              <AppIcon name="LayoutGrid" size={16} />
+              <AppIcon name="LayoutGrid" size={14} />
               Grid
             </button>
             <button
@@ -343,26 +355,17 @@ export function StudentListPage() {
                 setViewMode("list");
                 updateQuery({ view: "list" });
               }}
-              className={`flex h-7 items-center gap-2 rounded-md px-3 text-[11px] font-bold transition-all ${
+              className={`flex h-7 items-center gap-1.5 rounded-md px-2.5 text-[11px] font-bold transition-all ${
                 viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              <AppIcon name="ViewList" size={16} />
+              <AppIcon name="ViewList" size={14} />
               List
             </button>
           </div>
-          <div className="h-6 w-px bg-slate-200" />
-          <span className="text-[10px] font-bold text-slate-900 normal-case  px-2 whitespace-nowrap">
+          <span className="text-[10px] font-bold text-slate-900 px-1 whitespace-nowrap flex-shrink-0">
             {filteredRows.length} <span className="text-slate-400">records</span>
           </span>
-          <div className="h-6 w-px bg-slate-200" />
-          <Link
-            to={withQuery("/admin/students/create")}
-            className="inline-flex h-9 items-center gap-2 px-5 text-[11px] font-bold normal-case  text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
-          >
-            <AppIcon name="UserPlus" size={18} />
-            Add student
-          </Link>
         </div>
       </div>
 

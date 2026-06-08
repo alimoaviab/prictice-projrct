@@ -45,19 +45,29 @@ export function SettingsPage() {
     return (
         <div className="space-y-5">
             {/* Horizontal Tabs */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-1.5 flex items-center gap-1 overflow-x-auto">
+            <div
+                className="bg-white rounded-xl border border-slate-200 shadow-sm p-1.5 flex items-center gap-1"
+                style={{
+                    overflowX: "auto",
+                    WebkitOverflowScrolling: "touch",
+                    scrollbarWidth: "none",
+                    msOverflowStyle: "none",
+                }}
+            >
+                <style>{`.settings-tabs::-webkit-scrollbar { display: none; }`}</style>
                 {tabs.map((tab) => (
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+                        style={{ flexShrink: 0 }}
+                        className={`flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
                             activeTab === tab.id
                                 ? "bg-blue-600 text-white shadow-sm shadow-blue-600/20"
                                 : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                         }`}
                     >
-                        <AppIcon name={tab.icon} size={16} />
-                        {tab.label}
+                        <AppIcon name={tab.icon} size={14} />
+                        <span>{tab.label}</span>
                     </button>
                 ))}
             </div>
